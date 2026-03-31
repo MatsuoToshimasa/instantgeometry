@@ -25,6 +25,7 @@
       border: 1px solid #ccc;
       margin-top: 16px;
       background: white;
+      position: relative;
     }
 
     .controls {
@@ -70,54 +71,40 @@
     </label>
 
     <button onclick="drawTriangle()">描画</button>
-    <button onclick="saveImage()">画像保存</button>
+    <button onclick="saveTriangleOnly()">三角形だけ保存</button>
   </div>
 
   <div id="box" class="jxgbox"></div>
 
   <script>
     let board;
+    let currentData = null;
 
-    function pointLabel(name, x, y, showCoords) {
-      if (showCoords) {
-        return `${name}(${x.toFixed(2)}, ${y.toFixed(2)})`;
-      }
-      return name;
-    }
-
-    function initBoard(showAxes) {
-      board = JXG.JSXGraph.initBoard('box', {
-        boundingbox: [-2, 8, 8, -2],
-        axis: showAxes,
-        keepaspectratio: true,
-        showNavigation: false,
-        showCopyright: false
-      });
-    }
-
-    function drawTriangle() {
+    function getInputValues() {
       const a = parseFloat(document.getElementById('a').value);
       const b = parseFloat(document.getElementById('b').value);
       const c = parseFloat(document.getElementById('c').value);
       const showAxes = document.getElementById('showAxes').checked;
       const showPointCoords = document.getElementById('showPointCoords').checked;
 
+      return { a, b, c, showAxes, showPointCoords };
+    }
+
+    function validateTriangle(a, b, c) {
       if (!(a > 0 && b > 0 && c > 0)) {
         alert('正の数を入れてください');
-        return;
+        return false;
       }
 
       if (a + b <= c || a + c <= b || b + c <= a) {
         alert('三角形になりません');
-        return;
+        return false;
       }
 
-      if (board) {
-        JXG.JSXGraph.freeBoard(board);
-      }
+      return true;
+    }
 
-      initBoard(showAxes);
-
+    function computeTriangle(a, b, c) {
       const Ax = 0;
       const Ay = 0;
       const Bx = c;
@@ -126,28 +113,123 @@
       const Cy2 = b * b - Cx * Cx;
 
       if (Cy2 < 0) {
-        alert('三角形を描画できません');
-        return;
+        return null;
       }
 
       const Cy = Math.sqrt(Cy2);
 
-      const A = board.create('point', [Ax, Ay], {
-        name: pointLabel('A', Ax, Ay, showPointCoords),
-        size: 3,
-        fixed: true
+      return {
+        A: { x: Ax, y: Ay },
+        B: { x: Bx, y: By },
+        C: { x: Cx, y: Cy }
+      };
+    }
+
+    function makeBoundingBox(points) {
+      const xs = [points.A.x, points.B.x, points.C.x];
+      const ys = [points.A.y, points.B.y, points.C.y];
+
+      const minX = Math.min(...xs);
+      const maxX = Math.max(...xs);
+      const minY = Math.min(...ys);
+      const maxY = Math.max(...ys);
+
+      const width = maxX - minX || 1;
+      const height = maxY - minY || 1;
+
+      const margin = Math.max(width, height) * 0.25 + 0.5;
+
+      return [
+        minX - margin,
+        maxY + margin,
+        maxX + margin,
+        minY - margin
+      ];
+    }
+
+    function pointText(name, x, y, showPointCoords) {
+      if (showPointCoords) {
+        return `${name}(${x.toFixed(2)}, ${y.toFixed(2)})`;
+      }
+      return name;
+    }
+
+    function freeCurrentBoard() {
+      if (board) {
+        JXG.JSXGraph.freeBoard(board);
+        board = null;
+      }
+      document.getElementById('box').innerHTML = '';
+    }
+
+    function createBoard(points, showAxes) {
+      const bbox = makeBoundingBox(points);
+
+      board = JXG.JSXGraph.initBoard('box', {
+        boundingbox: bbox,
+        axis: false,
+        keepaspectratio: true,
+        showNavigation: false,
+        showCopyright: false
       });
 
-      const B = board.create('point', [Bx, By], {
-        name: pointLabel('B', Bx, By, showPointCoords),
+      if (showAxes) {
+        const xAxis = board.create('axis', [[0, 0], [1, 0]], {
+          withLabel: false,
+          ticks: {
+            drawLabels: false,
+            minorTicks: 0
+          }
+        });
+
+        const yAxis = board.create('axis', [[0, 0], [0, 1]], {
+          withLabel: false,
+          ticks: {
+            drawLabels: false,
+            minorTicks: 0
+          }
+        });
+      }
+    }
+
+    function drawTriangle() {
+      const { a, b, c, showAxes, showPointCoords } = getInputValues();
+
+      if (!validateTriangle(a, b, c)) {
+        return;
+      }
+
+      const points = computeTriangle(a, b, c);
+
+      if (!points) {
+        alert('三角形を描画できません');
+        return;
+      }
+
+      currentData = { a, b, c, showAxes, showPointCoords, points };
+
+      freeCurrentBoard();
+      createBoard(points, showAxes);
+
+      const A = board.create('point', [points.A.x, points.A.y], {
+        name: pointText('A', points.A.x, points.A.y, showPointCoords),
         size: 3,
-        fixed: true
+        fixed: true,
+        withLabel: true
       });
 
-      const C = board.create('point', [Cx, Cy], {
-        name: pointLabel('C', Cx, Cy, showPointCoords),
+      const B = board.create('point', [points.B.x, points.B.y], {
+        name: pointText('B', points.B.x, points.B.y, showPointCoords),
         size: 3,
-        fixed: true
+        fixed: true,
+        withLabel: true
+      });
+
+      const C = board.create('point', [points.C.x, points.C.y], {
+        name: pointText('C', points.C.x, points.C.y, showPointCoords),
+        size: 3,
+        fixed: true,
+        withLabel: true
       });
 
       board.create('polygon', [A, B, C], {
@@ -161,27 +243,135 @@
       board.update();
     }
 
-    async function saveImage() {
+    async function saveTriangleOnly() {
+      const { a, b, c } = getInputValues();
+
+      if (!validateTriangle(a, b, c)) {
+        return;
+      }
+
+      const points = computeTriangle(a, b, c);
+      if (!points) {
+        alert('三角形を描画できません');
+        return;
+      }
+
+      const oldData = currentData ? { ...currentData } : null;
+
+      freeCurrentBoard();
+      createBoard(points, false);
+
+      const A = board.create('point', [points.A.x, points.A.y], {
+        name: '',
+        size: 3,
+        fixed: true,
+        withLabel: false
+      });
+
+      const B = board.create('point', [points.B.x, points.B.y], {
+        name: '',
+        size: 3,
+        fixed: true,
+        withLabel: false
+      });
+
+      const C = board.create('point', [points.C.x, points.C.y], {
+        name: '',
+        size: 3,
+        fixed: true,
+        withLabel: false
+      });
+
+      board.create('polygon', [A, B, C], {
+        borders: {
+          strokeWidth: 2
+        },
+        fillColor: 'lightgray',
+        fillOpacity: 0.2
+      });
+
+      board.update();
+
       const box = document.getElementById('box');
 
       try {
         const canvas = await html2canvas(box, {
-          backgroundColor: '#ffffff',
+          backgroundColor: null,
           useCORS: true,
           scale: 2
         });
 
+        const trimmed = trimCanvas(canvas);
         const link = document.createElement('a');
-        link.download = 'geometry.png';
-        link.href = canvas.toDataURL('image/png');
+        link.download = 'triangle.png';
+        link.href = trimmed.toDataURL('image/png');
         link.click();
       } catch (error) {
         console.error(error);
         alert('画像保存に失敗しました');
       }
+
+      if (oldData) {
+        document.getElementById('showAxes').checked = oldData.showAxes;
+        document.getElementById('showPointCoords').checked = oldData.showPointCoords;
+      }
+
+      drawTriangle();
     }
 
-    initBoard(true);
+    function trimCanvas(sourceCanvas) {
+      const ctx = sourceCanvas.getContext('2d');
+      const { width, height } = sourceCanvas;
+      const imageData = ctx.getImageData(0, 0, width, height).data;
+
+      let top = height;
+      let left = width;
+      let right = 0;
+      let bottom = 0;
+      let found = false;
+
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          const index = (y * width + x) * 4;
+          const alpha = imageData[index + 3];
+
+          if (alpha > 0) {
+            found = true;
+            if (x < left) left = x;
+            if (x > right) right = x;
+            if (y < top) top = y;
+            if (y > bottom) bottom = y;
+          }
+        }
+      }
+
+      if (!found) {
+        return sourceCanvas;
+      }
+
+      const padding = 10;
+      left = Math.max(0, left - padding);
+      top = Math.max(0, top - padding);
+      right = Math.min(width - 1, right + padding);
+      bottom = Math.min(height - 1, bottom + padding);
+
+      const trimmedWidth = right - left + 1;
+      const trimmedHeight = bottom - top + 1;
+
+      const trimmedCanvas = document.createElement('canvas');
+      trimmedCanvas.width = trimmedWidth;
+      trimmedCanvas.height = trimmedHeight;
+
+      const trimmedCtx = trimmedCanvas.getContext('2d');
+      trimmedCtx.drawImage(
+        sourceCanvas,
+        left, top, trimmedWidth, trimmedHeight,
+        0, 0, trimmedWidth, trimmedHeight
+      );
+
+      return trimmedCanvas;
+    }
+
     drawTriangle();
   </script>
 </body>
