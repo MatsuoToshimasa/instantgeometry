@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Instant Geometry</title>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jsxgraph/distrib/jsxgraph.css" />
+  <script src="https://cdn.jsdelivr.net/npm/jsxgraph/distrib/jsxgraphcore.js"></script>
+
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 24px;
+    }
+
+    h1 {
+      margin-bottom: 8px;
+    }
+
+    #box {
+      width: 800px;
+      height: 500px;
+      border: 1px solid #ccc;
+      margin-top: 16px;
+    }
+
+    .controls {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    input {
+      width: 80px;
+      padding: 6px;
+    }
+
+    button {
+      padding: 8px 12px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>Instant Geometry</h1>
+  <div>3辺を入れると三角形を描く簡易版</div>
+
+  <div class="controls">
+    <label>a <input id="a" type="number" value="3" step="0.1" /></label>
+    <label>b <input id="b" type="number" value="4" step="0.1" /></label>
+    <label>c <input id="c" type="number" value="5" step="0.1" /></label>
+    <button onclick="drawTriangle()">描画</button>
+  </div>
+
+  <div id="box" class="jxgbox"></div>
+
+  <script>
+    let board;
+
+    function initBoard() {
+      board = JXG.JSXGraph.initBoard('box', {
+        boundingbox: [-2, 8, 8, -2],
+        axis: true,
+        showNavigation: false,
+        showCopyright: false
+      });
+    }
+
+    function drawTriangle() {
+      const a = parseFloat(document.getElementById('a').value);
+      const b = parseFloat(document.getElementById('b').value);
+      const c = parseFloat(document.getElementById('c').value);
+
+      if (!(a > 0 && b > 0 && c > 0)) {
+        alert('正の数を入れてください');
+        return;
+      }
+
+      if (a + b <= c || a + c <= b || b + c <= a) {
+        alert('三角形になりません');
+        return;
+      }
+
+      JXG.JSXGraph.freeBoard(board);
+      initBoard();
+
+      const A = board.create('point', [0, 0], { name: 'A', size: 3 });
+      const B = board.create('point', [c, 0], { name: 'B', size: 3 });
+
+      const x = (b * b + c * c - a * a) / (2 * c);
+      const y = Math.sqrt(b * b - x * x);
+
+      const C = board.create('point', [x, y], { name: 'C', size: 3 });
+
+      board.create('polygon', [A, B, C], {
+        borders: { strokeWidth: 2 },
+        fillColor: 'lightgray',
+        fillOpacity: 0.2
+      });
+    }
+
+    initBoard();
+    drawTriangle();
+  </script>
+</body>
+</html>
