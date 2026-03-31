@@ -82,14 +82,19 @@
     </label>
 
     <label>
-      <input id="showPointCoords" type="checkbox" checked />
-      点の座標を表示
+      <input id="showCoordLabels" type="checkbox" checked />
+      座標ラベルを表示
+    </label>
+
+    <label>
+      <input id="showSideLabels" type="checkbox" checked />
+      辺の長さを表示
     </label>
 
     <div class="range-wrap">
-      <label for="labelSize">点名サイズ</label>
-      <input id="labelSize" type="range" min="10" max="32" step="1" value="16" />
-      <span id="labelSizeValue" class="range-value">16</span>
+      <label for="labelSize">点ラベル</label>
+      <input id="labelSize" type="range" min="10" max="32" step="1" value="18" />
+      <span id="labelSizeValue" class="range-value">18</span>
     </div>
 
     <button onclick="saveImage()">保存</button>
@@ -99,7 +104,6 @@
 
   <script>
     let board = null;
-    let lastValidValues = null;
 
     function getInputValues() {
       return {
@@ -107,7 +111,8 @@
         b: parseFloat(document.getElementById('b').value),
         c: parseFloat(document.getElementById('c').value),
         showAxes: document.getElementById('showAxes').checked,
-        showPointCoords: document.getElementById('showPointCoords').checked,
+        showCoordLabels: document.getElementById('showCoordLabels').checked,
+        showSideLabels: document.getElementById('showSideLabels').checked,
         labelSize: parseInt(document.getElementById('labelSize').value, 10)
       };
     }
@@ -124,23 +129,13 @@
     }
 
     function computeTriangle(a, b, c) {
-      const Ax = 0;
-      const Ay = 0;
-      const Bx = c;
-      const By = 0;
-
+      const A = { x: 0, y: 0 };
+      const B = { x: c, y: 0 };
       const Cx = (b * b + c * c - a * a) / (2 * c);
       const Cy2 = b * b - Cx * Cx;
-
       if (Cy2 < 0) return null;
-
-      const Cy = Math.sqrt(Cy2);
-
-      return {
-        A: { x: Ax, y: Ay },
-        B: { x: Bx, y: By },
-        C: { x: Cx, y: Cy }
-      };
+      const C = { x: Cx, y: Math.sqrt(Cy2) };
+      return { A, B, C };
     }
 
     function makeSquareBoundingBox(points) {
@@ -154,11 +149,9 @@
 
       const width = Math.max(maxX - minX, 1);
       const height = Math.max(maxY - minY, 1);
-
       const centerX = (minX + maxX) / 2;
       const centerY = (minY + maxY) / 2;
-
-      const side = Math.max(width, height) * 1.8;
+      const side = Math.max(width, height) * 2.2;
 
       return [
         centerX - side / 2,
@@ -166,13 +159,6 @@
         centerX + side / 2,
         centerY - side / 2
       ];
-    }
-
-    function pointText(name, x, y, showPointCoords) {
-      if (showPointCoords) {
-        return `${name}(${x.toFixed(2)}, ${y.toFixed(2)})`;
-      }
-      return name;
     }
 
     function clearBoard() {
@@ -215,41 +201,127 @@
       });
     }
 
-    function createPoint(x, y, name, labelSize) {
-      return board.create('point', [x, y], {
-        name: name,
-        size: 3,
-        fixed: true,
-        withLabel: true,
+    function formatNumber(x) {
+      const rounded = Math.round(x * 100) / 100;
+      if (Math.abs(rounded - Math.round(rounded)) < 1e-9) {
+        return String(Math.round(rounded));
+      }
+      return rounded.toFixed(2);
+    }
+
+    function centroid(points) {
+      return {
+        x: (points.A.x + points.B.x + points.C.x) / 3,
+        y: (points.A.y + points.B.y + points.C.y) / 3
+      };
+    }
+
+    function addPointLabel(pointObj, x, y, name, labelSize, showCoordLabels) {
+      const text = showCoordLabels
+        ? `${name}(${formatNumber(x)}, ${formatNumber(y)})`
+        : name;
+
+      pointObj.setAttribute({
+        name: text,
         label: {
           fontSize: labelSize
         }
       });
     }
 
-    function renderTriangle(values, preserveView = false) {
-      const { a, b, c, showAxes, showPointCoords, labelSize } = values;
+    function unitNormalOutside(P, Q, ctr) {
+      const dx = Q.x - P.x;
+      const dy = Q.y - P.y;
+      const len = Math.hypot(dx, dy) || 1;
 
-      if (!isValidTriangle(a, b, c)) {
-        return;
+      let nx = -dy / len;
+      let ny = dx / len;
+
+      const mid = { x: (P.x + Q.x) / 2, y: (P.y + Q.y) / 2 };
+      const toCtr = { x: ctr.x - mid.x, y: ctr.y - mid.y };
+
+      if (nx * toCtr.x + ny * toCtr.y > 0) {
+        nx = -nx;
+        ny = -ny;
       }
+
+      return { x: nx, y: ny };
+    }
+
+    function addSideArcAndLabel(P, Q, lengthText, ctr, labelSize) {
+      const mid = { x: (P.x + Q.x) / 2, y: (P.y + Q.y) / 2 };
+      const dx = Q.x - P.x;
+      const dy = Q.y - P.y;
+      const len = Math.hypot(dx, dy) || 1;
+      const n = unitNormalOutside(P, Q, ctr);
+
+      const arcHeight = Math.max(0.35, len * 0.12);
+      const endInset = Math.min(0.25, len * 0.12);
+
+      const p1 = {
+        x: P.x + (dx / len) * endInset,
+        y: P.y + (dy / len) * endInset
+      };
+
+      const p2 = {
+        x: Q.x - (dx / len) * endInset,
+        y: Q.y - (dy / len) * endInset
+      };
+
+      const control = {
+        x: mid.x + n.x * arcHeight,
+        y: mid.y + n.y * arcHeight
+      };
+
+      board.create('curve', [
+        function(t) {
+          const x =
+            (1 - t) * (1 - t) * p1.x +
+            2 * (1 - t) * t * control.x +
+            t * t * p2.x;
+          return x;
+        },
+        function(t) {
+          const y =
+            (1 - t) * (1 - t) * p1.y +
+            2 * (1 - t) * t * control.y +
+            t * t * p2.y;
+          return y;
+        },
+        0, 1
+      ], {
+        strokeWidth: 2,
+        fixed: true
+      });
+
+      const labelPoint = {
+        x: mid.x + n.x * (arcHeight + 0.18),
+        y: mid.y + n.y * (arcHeight + 0.18)
+      };
+
+      board.create('text', [
+        labelPoint.x,
+        labelPoint.y,
+        lengthText
+      ], {
+        fontSize: labelSize,
+        fixed: true,
+        anchorX: 'middle',
+        anchorY: 'middle'
+      });
+    }
+
+    function renderTriangle(values) {
+      const { a, b, c, showAxes, showCoordLabels, showSideLabels, labelSize } = values;
+      if (!isValidTriangle(a, b, c)) return;
 
       const points = computeTriangle(a, b, c);
-      if (!points) {
-        return;
-      }
-
-      let oldBoundingBox = null;
-      if (preserveView && board) {
-        oldBoundingBox = board.getBoundingBox();
-      }
+      if (!points) return;
 
       clearBoard();
 
-      const bbox = oldBoundingBox || makeSquareBoundingBox(points);
-
       board = JXG.JSXGraph.initBoard('box', {
-        boundingbox: bbox,
+        boundingbox: makeSquareBoundingBox(points),
         axis: false,
         keepaspectratio: true,
         zoom: {
@@ -266,46 +338,71 @@
 
       createAxes(showAxes);
 
-      const A = createPoint(
-        points.A.x,
-        points.A.y,
-        pointText('A', points.A.x, points.A.y, showPointCoords),
-        labelSize
-      );
+      const A = board.create('point', [points.A.x, points.A.y], {
+        name: '',
+        size: 3,
+        fixed: true,
+        withLabel: true
+      });
 
-      const B = createPoint(
-        points.B.x,
-        points.B.y,
-        pointText('B', points.B.x, points.B.y, showPointCoords),
-        labelSize
-      );
+      const B = board.create('point', [points.B.x, points.B.y], {
+        name: '',
+        size: 3,
+        fixed: true,
+        withLabel: true
+      });
 
-      const C = createPoint(
-        points.C.x,
-        points.C.y,
-        pointText('C', points.C.x, points.C.y, showPointCoords),
-        labelSize
-      );
+      const C = board.create('point', [points.C.x, points.C.y], {
+        name: '',
+        size: 3,
+        fixed: true,
+        withLabel: true
+      });
 
       board.create('polygon', [A, B, C], {
         borders: {
           strokeWidth: 2
         },
         fillColor: 'lightgray',
-        fillOpacity: 0.2
+        fillOpacity: 0.15
       });
 
+      const ctr = centroid(points);
+
+      const push = Math.max(c, Math.max(a, b)) * 0.08 + 0.18;
+
+      const normalA = unitNormalOutside(points.B, points.C, ctr);
+      const normalB = unitNormalOutside(points.A, points.C, ctr);
+      const normalC = unitNormalOutside(points.A, points.B, ctr);
+
+      A.label.setAttribute({
+        offset: [normalA.x * push * 35, -normalA.y * push * 35]
+      });
+      B.label.setAttribute({
+        offset: [normalB.x * push * 35, -normalB.y * push * 35]
+      });
+      C.label.setAttribute({
+        offset: [normalC.x * push * 35, -normalC.y * push * 35]
+      });
+
+      addPointLabel(A, points.A.x, points.A.y, 'A', labelSize, showCoordLabels);
+      addPointLabel(B, points.B.x, points.B.y, 'B', labelSize, showCoordLabels);
+      addPointLabel(C, points.C.x, points.C.y, 'C', labelSize, showCoordLabels);
+
+      if (showSideLabels) {
+        addSideArcAndLabel(points.B, points.C, formatNumber(a), ctr, labelSize);
+        addSideArcAndLabel(points.A, points.C, formatNumber(b), ctr, labelSize);
+        addSideArcAndLabel(points.A, points.B, formatNumber(c), ctr, labelSize);
+      }
+
       board.update();
-      lastValidValues = { ...values };
     }
 
-    function autoRender(preserveView = false) {
+    function autoRender() {
       updateSliderLabel();
-
       const values = getInputValues();
-
       if (isValidTriangle(values.a, values.b, values.c)) {
-        renderTriangle(values, preserveView);
+        renderTriangle(values);
       }
     }
 
@@ -330,20 +427,20 @@
     }
 
     function setupAutoRender() {
-      const ids = ['a', 'b', 'c', 'showAxes', 'showPointCoords', 'labelSize'];
+      const ids = [
+        'a',
+        'b',
+        'c',
+        'showAxes',
+        'showCoordLabels',
+        'showSideLabels',
+        'labelSize'
+      ];
 
       ids.forEach((id) => {
         const el = document.getElementById(id);
-
-        el.addEventListener('input', () => {
-          const preserveView = id === 'labelSize';
-          autoRender(preserveView);
-        });
-
-        el.addEventListener('change', () => {
-          const preserveView = id === 'labelSize';
-          autoRender(preserveView);
-        });
+        el.addEventListener('input', autoRender);
+        el.addEventListener('change', autoRender);
       });
     }
 
