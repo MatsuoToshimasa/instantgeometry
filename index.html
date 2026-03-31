@@ -33,7 +33,7 @@
       margin-top: 12px;
     }
 
-    input {
+    input[type="number"] {
       width: 80px;
       padding: 6px;
     }
@@ -41,6 +41,10 @@
     button {
       padding: 8px 12px;
       cursor: pointer;
+    }
+
+    label {
+      user-select: none;
     }
   </style>
 </head>
@@ -52,7 +56,14 @@
     <label>a <input id="a" type="number" value="3" step="0.1" /></label>
     <label>b <input id="b" type="number" value="4" step="0.1" /></label>
     <label>c <input id="c" type="number" value="5" step="0.1" /></label>
+
+    <label>
+      <input id="showCoords" type="checkbox" checked />
+      座標を表示
+    </label>
+
     <button onclick="drawTriangle()">描画</button>
+    <button onclick="saveImage()">画像保存</button>
   </div>
 
   <div id="box" class="jxgbox"></div>
@@ -69,10 +80,18 @@
       });
     }
 
+    function pointLabel(name, x, y, showCoords) {
+      if (showCoords) {
+        return `${name}(${x.toFixed(2)}, ${y.toFixed(2)})`;
+      }
+      return name;
+    }
+
     function drawTriangle() {
       const a = parseFloat(document.getElementById('a').value);
       const b = parseFloat(document.getElementById('b').value);
       const c = parseFloat(document.getElementById('c').value);
+      const showCoords = document.getElementById('showCoords').checked;
 
       if (!(a > 0 && b > 0 && c > 0)) {
         alert('正の数を入れてください');
@@ -84,22 +103,86 @@
         return;
       }
 
-      JXG.JSXGraph.freeBoard(board);
+      if (board) {
+        JXG.JSXGraph.freeBoard(board);
+      }
       initBoard();
 
-      const A = board.create('point', [0, 0], { name: 'A', size: 3 });
-      const B = board.create('point', [c, 0], { name: 'B', size: 3 });
+      const Ax = 0;
+      const Ay = 0;
+      const Bx = c;
+      const By = 0;
 
-      const x = (b * b + c * c - a * a) / (2 * c);
-      const y = Math.sqrt(b * b - x * x);
+      const Cx = (b * b + c * c - a * a) / (2 * c);
+      const Cy = Math.sqrt(b * b - Cx * Cx);
 
-      const C = board.create('point', [x, y], { name: 'C', size: 3 });
+      const A = board.create('point', [Ax, Ay], {
+        name: pointLabel('A', Ax, Ay, showCoords),
+        size: 3,
+        fixed: true
+      });
+
+      const B = board.create('point', [Bx, By], {
+        name: pointLabel('B', Bx, By, showCoords),
+        size: 3,
+        fixed: true
+      });
+
+      const C = board.create('point', [Cx, Cy], {
+        name: pointLabel('C', Cx, Cy, showCoords),
+        size: 3,
+        fixed: true
+      });
 
       board.create('polygon', [A, B, C], {
         borders: { strokeWidth: 2 },
         fillColor: 'lightgray',
         fillOpacity: 0.2
       });
+    }
+
+    function saveImage() {
+      const svg = document.querySelector('#box svg');
+
+      if (!svg) {
+        alert('先に図形を描画してください');
+        return;
+      }
+
+      const serializer = new XMLSerializer();
+      let source = serializer.serializeToString(svg);
+
+      if (!source.includes('xmlns="http://www.w3.org/2000/svg"')) {
+        source = source.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
+      }
+
+      if (!source.includes('xmlns:xlink="http://www.w3.org/1999/xlink"')) {
+        source = source.replace('<svg', '<svg xmlns:xlink="http://www.w3.org/1999/xlink"');
+      }
+
+      const svgBlob = new Blob([source], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(svgBlob);
+
+      const img = new Image();
+      img.onload = function () {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width || 800;
+        canvas.height = img.height || 500;
+
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0);
+
+        const link = document.createElement('a');
+        link.download = 'triangle.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+
+        URL.revokeObjectURL(url);
+      };
+
+      img.src = url;
     }
 
     initBoard();
