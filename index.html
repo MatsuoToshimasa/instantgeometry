@@ -211,6 +211,22 @@
       line-height: 1.6;
     }
 
+    .board-controls {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+
+    .zoom-btn {
+      min-width: 42px;
+      padding: 7px 10px;
+      font-weight: 700;
+      font-size: 18px;
+      line-height: 1;
+    }
+
     #box {
       width: 100%;
       min-height: 640px;
@@ -417,6 +433,7 @@
           <label class="inline"><input id="showAxes" type="checkbox" checked />座標軸</label>
           <label class="inline"><input id="showCoordLabels" type="checkbox" checked />座標ラベル</label>
           <label class="inline"><input id="showSideLabels" type="checkbox" checked />辺の長さ</label>
+          <label class="inline"><input id="showDiagonals" type="checkbox" />四角形の対角線</label>
         </div>
         <div class="grid-2">
           <div class="field">
@@ -508,6 +525,14 @@
           <button id="openPrintPreviewWindow">印刷プレビュー</button>
         </div>
       </div>
+
+      <div class="board-controls">
+        <button class="zoom-btn" id="zoomInBtn">＋</button>
+        <button class="zoom-btn" id="zoomOutBtn">－</button>
+        <button id="resetViewBtn">表示リセット</button>
+        <span class="muted">ドラッグで移動 / ＋－で拡大縮小</span>
+      </div>
+
       <div id="box" class="jxgbox"></div>
     </div>
   </div>
@@ -522,6 +547,7 @@
       };
 
       const PAPER_PREVIEW_SCALE = 3.0;
+      const TRI_SIDE_KEYS = ['a', 'b', 'c'];
 
       let board = null;
       let latestModel = null;
@@ -716,6 +742,7 @@
           showAxes: document.getElementById('showAxes').checked,
           showCoordLabels: document.getElementById('showCoordLabels').checked,
           showSideLabels: document.getElementById('showSideLabels').checked,
+          showDiagonals: document.getElementById('showDiagonals').checked,
           pointLabelSize: Number(document.getElementById('pointLabelSize').value),
           sideLabelSize: Number(document.getElementById('sideLabelSize').value),
           pointLabelOffset: Number(document.getElementById('pointLabelOffset').value),
@@ -873,7 +900,11 @@
             B: { x: c.value, y: 0 },
             C: { x: t.value, y: h.value }
           },
-          expressions: { c: c.raw, h: h.raw, t: t.raw }
+          expressions: { c: c.raw, h: h.raw, t: t.raw },
+          aux: {
+            baseHeight: true,
+            foot: { x: t.value, y: 0 }
+          }
         };
       }
 
@@ -905,7 +936,7 @@
 
         return {
           points: points,
-          expressions: { s: document.getElementById('RPr').value }
+          expressions: {}
         };
       }
 
@@ -1040,13 +1071,15 @@
           const bc = sideLength(p.B, p.C);
           const cd = sideLength(p.C, p.D);
           const da = sideLength(p.D, p.A);
+          const ac = sideLength(p.A, p.C);
+          const bd = sideLength(p.B, p.D);
           const xs = [p.A.x, p.B.x, p.C.x, p.D.x];
           const ys = [p.A.y, p.B.y, p.C.y, p.D.y];
           const widthUnits = Math.max.apply(null, xs) - Math.min.apply(null, xs);
           const heightUnits = Math.max.apply(null, ys) - Math.min.apply(null, ys);
           return {
-            sideUnits: { ab: ab, bc: bc, cd: cd, da: da },
-            sideCm: { ab: ab * unitCm, bc: bc * unitCm, cd: cd * unitCm, da: da * unitCm },
+            sideUnits: { ab: ab, bc: bc, cd: cd, da: da, ac: ac, bd: bd },
+            sideCm: { ab: ab * unitCm, bc: bc * unitCm, cd: cd * unitCm, da: da * unitCm, ac: ac * unitCm, bd: bd * unitCm },
             widthUnits: widthUnits,
             heightUnits: heightUnits,
             widthCm: widthUnits * unitCm,
@@ -1129,7 +1162,7 @@
         return model;
       }
 
-      function getSideLabelText(model, key, value) {
+      function formatSideValue(model, key, value) {
         const textMode = model.display.sideTextMode;
         const unitMode = model.display.sideUnitMode;
         const expr = model.expressions ? model.expressions[key] : null;
@@ -1271,6 +1304,31 @@
         });
       }
 
+      function addHeightGuideForBaseHeight(targetBoard, model) {
+        if (!model.aux || !model.aux.baseHeight) return;
+
+        const C = model.points.C;
+        const F = model.aux.foot;
+
+        targetBoard.create('segment', [[C.x, C.y], [F.x, F.y]], {
+          strokeWidth: 2,
+          dash: 2,
+          fixed: true
+        });
+
+        const rightSize = Math.max(0.12, Math.min(0.35, Math.abs(C.y) * 0.18 || 0.2));
+        const dirBase = model.points.B.x >= model.points.A.x ? 1 : -1;
+        const dirHeight = C.y >= F.y ? 1 : -1;
+
+        const p1 = { x: F.x + dirBase * rightSize, y: F.y };
+        const p2 = { x: F.x + dirBase * rightSize, y: F.y + dirHeight * rightSize };
+        const p3 = { x: F.x, y: F.y + dirHeight * rightSize };
+
+        targetBoard.create('segment', [[F.x, F.y], [p1.x, p1.y]], { strokeWidth: 2, fixed: true });
+        targetBoard.create('segment', [[p1.x, p1.y], [p2.x, p2.y]], { strokeWidth: 2, fixed: true });
+        targetBoard.create('segment', [[p2.x, p2.y], [p3.x, p3.y]], { strokeWidth: 2, fixed: true });
+      }
+
       function renderTriangle(targetBoard, model) {
         const p = model.points;
         const A = targetBoard.create('point', [p.A.x, p.A.y], { name: '', size: 3, fixed: true, withLabel: false });
@@ -1283,6 +1341,8 @@
           fillOpacity: 0.15
         });
 
+        addHeightGuideForBaseHeight(targetBoard, model);
+
         const ctr = centroidTriangle(p);
 
         addPointLabelText(targetBoard, p.A, ctr, getPointDisplayText('A', p.A, model.display.showCoordLabels), model.display.pointLabelSize, model.display.pointLabelOffset);
@@ -1290,9 +1350,9 @@
         addPointLabelText(targetBoard, p.C, ctr, getPointDisplayText('C', p.C, model.display.showCoordLabels), model.display.pointLabelSize, model.display.pointLabelOffset);
 
         if (model.display.showSideLabels) {
-          addSideArcAndLabel(targetBoard, p.B, p.C, getSideLabelText(model, 'a', model.metrics.sideUnits.a), ctr, model.display.sideLabelSize);
-          addSideArcAndLabel(targetBoard, p.C, p.A, getSideLabelText(model, 'b', model.metrics.sideUnits.b), ctr, model.display.sideLabelSize);
-          addSideArcAndLabel(targetBoard, p.A, p.B, getSideLabelText(model, 'c', model.metrics.sideUnits.c), ctr, model.display.sideLabelSize);
+          addSideArcAndLabel(targetBoard, p.B, p.C, formatSideValue(model, 'a', model.metrics.sideUnits.a), ctr, model.display.sideLabelSize);
+          addSideArcAndLabel(targetBoard, p.C, p.A, formatSideValue(model, 'b', model.metrics.sideUnits.b), ctr, model.display.sideLabelSize);
+          addSideArcAndLabel(targetBoard, p.A, p.B, formatSideValue(model, 'c', model.metrics.sideUnits.c), ctr, model.display.sideLabelSize);
         }
       }
 
@@ -1313,10 +1373,30 @@
           fillOpacity: 0.15
         });
 
+        if (model.display.showDiagonals) {
+          targetBoard.create('segment', [[p.A.x, p.A.y], [p.C.x, p.C.y]], {
+            strokeWidth: 1.5,
+            dash: 2,
+            fixed: true
+          });
+          targetBoard.create('segment', [[p.B.x, p.B.y], [p.D.x, p.D.y]], {
+            strokeWidth: 1.5,
+            dash: 2,
+            fixed: true
+          });
+        }
+
         const ctr = centroidArray([p.A, p.B, p.C, p.D]);
         ['A', 'B', 'C', 'D'].forEach(function (k) {
           addPointLabelText(targetBoard, p[k], ctr, getPointDisplayText(k, p[k], model.display.showCoordLabels), model.display.pointLabelSize, model.display.pointLabelOffset);
         });
+
+        if (model.display.showSideLabels) {
+          addSideArcAndLabel(targetBoard, p.A, p.B, formatSideValue(model, null, model.metrics.sideUnits.ab), ctr, model.display.sideLabelSize);
+          addSideArcAndLabel(targetBoard, p.B, p.C, formatSideValue(model, null, model.metrics.sideUnits.bc), ctr, model.display.sideLabelSize);
+          addSideArcAndLabel(targetBoard, p.C, p.D, formatSideValue(model, null, model.metrics.sideUnits.cd), ctr, model.display.sideLabelSize);
+          addSideArcAndLabel(targetBoard, p.D, p.A, formatSideValue(model, null, model.metrics.sideUnits.da), ctr, model.display.sideLabelSize);
+        }
       }
 
       function renderRegularPolygon(targetBoard, model) {
@@ -1335,6 +1415,14 @@
           const name = String.fromCharCode(65 + (i % 26));
           addPointLabelText(targetBoard, p, ctr, model.display.showCoordLabels ? getPointDisplayText(name, p, true) : name, model.display.pointLabelSize, model.display.pointLabelOffset);
         });
+
+        if (model.display.showSideLabels) {
+          for (let i = 0; i < model.points.length; i++) {
+            const P = model.points[i];
+            const Q = model.points[(i + 1) % model.points.length];
+            addSideArcAndLabel(targetBoard, P, Q, formatSideValue(model, null, model.metrics.sideUnits.s), ctr, model.display.sideLabelSize);
+          }
+        }
       }
 
       function renderCircle(targetBoard, model) {
@@ -1404,8 +1492,17 @@
           boundingbox: makeBoundingBox(model),
           axis: false,
           keepaspectratio: true,
-          zoom: { wheel: true, needShift: false },
-          pan: { enabled: true, needTwoFingers: true },
+          zoom: {
+            wheel: false,
+            factorX: 1.25,
+            factorY: 1.25,
+            needShift: false
+          },
+          pan: {
+            enabled: true,
+            needTwoFingers: false,
+            needShift: false
+          },
           showNavigation: false,
           showCopyright: false
         });
@@ -1447,6 +1544,10 @@
             cloned.points[k].x = (cloned.points[k].x - ctr.x) * scale;
             cloned.points[k].y = (cloned.points[k].y - ctr.y) * scale;
           });
+          if (cloned.aux && cloned.aux.foot) {
+            cloned.aux.foot.x = (cloned.aux.foot.x - ctr.x) * scale;
+            cloned.aux.foot.y = (cloned.aux.foot.y - ctr.y) * scale;
+          }
         } else if (cloned.shapeType === 'quadrilateral') {
           const ctr = centroidArray([cloned.points.A, cloned.points.B, cloned.points.C, cloned.points.D]);
           ['A', 'B', 'C', 'D'].forEach(function (k) {
@@ -1482,12 +1583,17 @@
         return scaleModelForPrint(model, scale);
       }
 
+      function percentText(value, whole) {
+        if (whole <= 0) return '0%';
+        return formatDecimal((value / whole) * 100) + '%';
+      }
+
       function buildPreviewInfoHtml(model, printable, printModel) {
         return ''
           + '<div>用紙</div><div>' + model.print.paperSize + ' / ' + (model.print.orientation === 'portrait' ? '縦' : '横') + '</div>'
           + '<div>印刷可能領域</div><div>' + formatDecimal(printable.printableWidthCm) + 'cm × ' + formatDecimal(printable.printableHeightCm) + 'cm</div>'
-          + '<div>紙面上の横幅</div><div>' + formatDecimal(printModel.metrics.widthCm) + 'cm</div>'
-          + '<div>紙面上の縦幅</div><div>' + formatDecimal(printModel.metrics.heightCm) + 'cm</div>'
+          + '<div>紙面上の横幅</div><div>' + formatDecimal(printModel.metrics.widthCm) + 'cm （印刷可能領域横幅の ' + percentText(printModel.metrics.widthCm, printable.printableWidthCm) + '）</div>'
+          + '<div>紙面上の縦幅</div><div>' + formatDecimal(printModel.metrics.heightCm) + 'cm （印刷可能領域縦幅の ' + percentText(printModel.metrics.heightCm, printable.printableHeightCm) + '）</div>'
           + '<div>印刷倍率</div><div>' + formatDecimal(printModel.print.effectiveScale || 1, 4) + ' 倍</div>';
       }
 
@@ -1537,7 +1643,7 @@
           + '.paper{position:relative;background:#fff;border:1px solid #ccc;box-shadow:0 4px 16px rgba(0,0,0,.12);margin:auto;}'
           + '.inner{position:absolute;border:1px dashed #b9c2cc;overflow:hidden;background:#fff;}'
           + '.box{width:100%;height:100%;}'
-          + '.info{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;font-size:14px;max-width:560px;}'
+          + '.info{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;font-size:14px;max-width:760px;}'
           + 'button{padding:8px 12px;border:1px solid #ccc;border-radius:8px;background:#fff;cursor:pointer;}'
           + '@media print{body{margin:0;background:#fff}.top{display:none}.paper{box-shadow:none;border:none}}'
           + '</style></head><body>'
@@ -1671,31 +1777,15 @@
       function buildShapeDetailHtml(model) {
         if (!model) return '';
 
-        if (model.shapeType === 'triangle') {
-          return ''
-            + '横幅 ' + formatDecimal(model.metrics.widthCm) + 'cm / '
-            + '縦幅 ' + formatDecimal(model.metrics.heightCm) + 'cm';
-        }
-
-        if (model.shapeType === 'quadrilateral') {
-          return ''
-            + '横幅 ' + formatDecimal(model.metrics.widthCm) + 'cm / '
-            + '縦幅 ' + formatDecimal(model.metrics.heightCm) + 'cm';
-        }
-
-        if (model.shapeType === 'regularPolygon') {
-          return ''
-            + '横幅 ' + formatDecimal(model.metrics.widthCm) + 'cm / '
-            + '縦幅 ' + formatDecimal(model.metrics.heightCm) + 'cm';
+        if (model.shapeType === 'triangle' || model.shapeType === 'quadrilateral' || model.shapeType === 'regularPolygon' || model.shapeType === 'ellipse') {
+          return '横幅 ' + formatDecimal(model.metrics.widthCm) + 'cm / 縦幅 ' + formatDecimal(model.metrics.heightCm) + 'cm';
         }
 
         if (model.shapeType === 'circle') {
           return '直径 ' + formatDecimal(model.metrics.widthCm) + 'cm';
         }
 
-        return ''
-          + '横幅 ' + formatDecimal(model.metrics.widthCm) + 'cm / '
-          + '縦幅 ' + formatDecimal(model.metrics.heightCm) + 'cm';
+        return '';
       }
 
       function renderAll() {
@@ -1711,6 +1801,25 @@
           setShapeInfo([], '');
           setStatus(err && err.message ? err.message : String(err), 'error');
         }
+      }
+
+      function zoomBoard(factor) {
+        if (!board) return;
+        const bb = board.getBoundingBox();
+        const cx = (bb[0] + bb[2]) / 2;
+        const cy = (bb[1] + bb[3]) / 2;
+        const halfW = (bb[2] - bb[0]) / 2;
+        const halfH = (bb[1] - bb[3]) / 2;
+        const newHalfW = halfW / factor;
+        const newHalfH = halfH / factor;
+        board.setBoundingBox([cx - newHalfW, cy + newHalfH, cx + newHalfW, cy - newHalfH], false);
+        board.update();
+      }
+
+      function resetBoardView() {
+        if (!board || !latestModel) return;
+        board.setBoundingBox(makeBoundingBox(latestModel), false);
+        board.update();
       }
 
       function bindEvents() {
@@ -1751,6 +1860,18 @@
           } catch (e) {
             setStatus(e && e.message ? e.message : '印刷プレビューに失敗しました。', 'error');
           }
+        });
+
+        document.getElementById('zoomInBtn').addEventListener('click', function () {
+          zoomBoard(1.25);
+        });
+
+        document.getElementById('zoomOutBtn').addEventListener('click', function () {
+          zoomBoard(1 / 0.8);
+        });
+
+        document.getElementById('resetViewBtn').addEventListener('click', function () {
+          resetBoardView();
         });
       }
 
