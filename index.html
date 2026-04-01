@@ -420,21 +420,35 @@
         </div>
         <div class="grid-2">
           <div class="field">
-            <label for="pointLabelSize">点ラベル</label>
+            <label for="pointLabelSize">点ラベル文字サイズ</label>
             <input id="pointLabelSize" type="range" min="10" max="32" step="1" value="18" />
           </div>
           <div class="field">
-            <label for="sideLabelSize">辺ラベル</label>
+            <label for="sideLabelSize">辺ラベル文字サイズ</label>
             <input id="sideLabelSize" type="range" min="10" max="32" step="1" value="18" />
           </div>
         </div>
         <div class="grid-2">
+          <div class="field">
+            <label for="pointLabelOffset">頂点文字の距離</label>
+            <input id="pointLabelOffset" type="range" min="0.2" max="2.0" step="0.05" value="0.5" />
+          </div>
           <div class="field">
             <label for="sideTextMode">辺長表示形式</label>
             <select id="sideTextMode">
               <option value="decimal">小数</option>
               <option value="root">ルート優先</option>
               <option value="input">入力式優先</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="field">
+            <label for="sideUnitMode">辺ラベルの単位</label>
+            <select id="sideUnitMode">
+              <option value="none">なし</option>
+              <option value="unit">unit</option>
+              <option value="cm">cm</option>
             </select>
           </div>
           <div class="field">
@@ -704,7 +718,9 @@
           showSideLabels: document.getElementById('showSideLabels').checked,
           pointLabelSize: Number(document.getElementById('pointLabelSize').value),
           sideLabelSize: Number(document.getElementById('sideLabelSize').value),
+          pointLabelOffset: Number(document.getElementById('pointLabelOffset').value),
           sideTextMode: document.getElementById('sideTextMode').value,
+          sideUnitMode: document.getElementById('sideUnitMode').value,
           unitCm: parsePositiveExpr(document.getElementById('unitCm').value, '1単位あたりのcm').value
         };
       }
@@ -1114,15 +1130,21 @@
       }
 
       function getSideLabelText(model, key, value) {
-        const mode = model.display.sideTextMode;
+        const textMode = model.display.sideTextMode;
+        const unitMode = model.display.sideUnitMode;
         const expr = model.expressions ? model.expressions[key] : null;
 
-        if (mode === 'input' && expr) return expr;
-        if (mode === 'root') {
-          const root = tryRootFormat(value);
-          if (root) return root;
+        if (unitMode === 'cm') {
+          return formatDecimal(value * model.display.unitCm) + ' cm';
         }
-        return formatDecimal(value);
+
+        let core;
+        if (textMode === 'input' && expr) core = expr;
+        else if (textMode === 'root') core = tryRootFormat(value) || formatDecimal(value);
+        else core = formatDecimal(value);
+
+        if (unitMode === 'unit') return core + ' unit';
+        return core;
       }
 
       function makeBoundingBoxFromArray(arr, extra) {
@@ -1194,11 +1216,11 @@
         });
       }
 
-      function addPointLabelText(targetBoard, vertex, ctr, text, labelSize) {
+      function addPointLabelText(targetBoard, vertex, ctr, text, labelSize, offset) {
         const outward = unitVector(ctr, vertex);
         const pos = {
-          x: vertex.x + outward.x * 0.5,
-          y: vertex.y + outward.y * 0.5
+          x: vertex.x + outward.x * offset,
+          y: vertex.y + outward.y * offset
         };
 
         targetBoard.create('text', [pos.x, pos.y, text], {
@@ -1263,9 +1285,9 @@
 
         const ctr = centroidTriangle(p);
 
-        addPointLabelText(targetBoard, p.A, ctr, getPointDisplayText('A', p.A, model.display.showCoordLabels), model.display.pointLabelSize);
-        addPointLabelText(targetBoard, p.B, ctr, getPointDisplayText('B', p.B, model.display.showCoordLabels), model.display.pointLabelSize);
-        addPointLabelText(targetBoard, p.C, ctr, getPointDisplayText('C', p.C, model.display.showCoordLabels), model.display.pointLabelSize);
+        addPointLabelText(targetBoard, p.A, ctr, getPointDisplayText('A', p.A, model.display.showCoordLabels), model.display.pointLabelSize, model.display.pointLabelOffset);
+        addPointLabelText(targetBoard, p.B, ctr, getPointDisplayText('B', p.B, model.display.showCoordLabels), model.display.pointLabelSize, model.display.pointLabelOffset);
+        addPointLabelText(targetBoard, p.C, ctr, getPointDisplayText('C', p.C, model.display.showCoordLabels), model.display.pointLabelSize, model.display.pointLabelOffset);
 
         if (model.display.showSideLabels) {
           addSideArcAndLabel(targetBoard, p.B, p.C, getSideLabelText(model, 'a', model.metrics.sideUnits.a), ctr, model.display.sideLabelSize);
@@ -1293,7 +1315,7 @@
 
         const ctr = centroidArray([p.A, p.B, p.C, p.D]);
         ['A', 'B', 'C', 'D'].forEach(function (k) {
-          addPointLabelText(targetBoard, p[k], ctr, getPointDisplayText(k, p[k], model.display.showCoordLabels), model.display.pointLabelSize);
+          addPointLabelText(targetBoard, p[k], ctr, getPointDisplayText(k, p[k], model.display.showCoordLabels), model.display.pointLabelSize, model.display.pointLabelOffset);
         });
       }
 
@@ -1311,7 +1333,7 @@
         const ctr = centroidArray(model.points);
         model.points.forEach(function (p, i) {
           const name = String.fromCharCode(65 + (i % 26));
-          addPointLabelText(targetBoard, p, ctr, model.display.showCoordLabels ? getPointDisplayText(name, p, true) : name, model.display.pointLabelSize);
+          addPointLabelText(targetBoard, p, ctr, model.display.showCoordLabels ? getPointDisplayText(name, p, true) : name, model.display.pointLabelSize, model.display.pointLabelOffset);
         });
       }
 
@@ -1338,7 +1360,8 @@
           model.center,
           { x: model.center.x, y: model.center.y },
           model.display.showCoordLabels ? getPointDisplayText('O', model.center, true) : 'O',
-          model.display.pointLabelSize
+          model.display.pointLabelSize,
+          model.display.pointLabelOffset
         );
       }
 
@@ -1361,7 +1384,8 @@
           center,
           { x: center.x, y: center.y },
           model.display.showCoordLabels ? getPointDisplayText('O', center, true) : 'O',
-          model.display.pointLabelSize
+          model.display.pointLabelSize,
+          model.display.pointLabelOffset
         );
       }
 
@@ -1462,8 +1486,8 @@
         return ''
           + '<div>用紙</div><div>' + model.print.paperSize + ' / ' + (model.print.orientation === 'portrait' ? '縦' : '横') + '</div>'
           + '<div>印刷可能領域</div><div>' + formatDecimal(printable.printableWidthCm) + 'cm × ' + formatDecimal(printable.printableHeightCm) + 'cm</div>'
-          + '<div>図の横幅</div><div>' + formatDecimal(printModel.metrics.widthCm) + 'cm</div>'
-          + '<div>図の縦幅</div><div>' + formatDecimal(printModel.metrics.heightCm) + 'cm</div>'
+          + '<div>紙面上の横幅</div><div>' + formatDecimal(printModel.metrics.widthCm) + 'cm</div>'
+          + '<div>紙面上の縦幅</div><div>' + formatDecimal(printModel.metrics.heightCm) + 'cm</div>'
           + '<div>印刷倍率</div><div>' + formatDecimal(printModel.print.effectiveScale || 1, 4) + ' 倍</div>';
       }
 
