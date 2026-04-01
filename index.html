@@ -37,7 +37,7 @@
 
     .layout {
       display: grid;
-      grid-template-columns: 360px 1fr 360px;
+      grid-template-columns: 360px 1fr;
       gap: var(--panel-gap);
       align-items: start;
     }
@@ -118,6 +118,45 @@
       border: var(--border);
       border-radius: 12px;
       padding: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .board-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .board-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .status {
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: #f5f7fa;
+      border: 1px solid #e3e8ee;
+      min-height: 36px;
+      white-space: nowrap;
+      font-size: 13px;
+    }
+
+    .status.error {
+      background: #fee2e2;
+      border-color: #ef4444;
+      color: #991b1b;
+    }
+
+    .status.ok {
+      background: #eef6ff;
+      border-color: #bfd6f6;
+      color: #1f3d75;
     }
 
     #box {
@@ -128,6 +167,50 @@
       background: #fff;
       border-radius: 8px;
       touch-action: none;
+    }
+
+    .print-drawer-toggle {
+      padding: 9px 12px;
+      border-radius: 8px;
+      border: 1px solid #c5ced8;
+      background: white;
+      cursor: pointer;
+      font-size: 14px;
+      flex: 0 0 auto;
+    }
+
+    .print-drawer {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: min(380px, 92vw);
+      height: 100%;
+      background: #fff;
+      border-left: var(--border);
+      box-shadow: -6px 0 24px rgba(0, 0, 0, 0.14);
+      transform: translateX(100%);
+      transition: transform 0.25s ease;
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .print-drawer.open {
+      transform: translateX(0);
+    }
+
+    .print-drawer-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 16px 10px 16px;
+      border-bottom: 1px solid #ececec;
+    }
+
+    .print-drawer-body {
+      padding: 14px 16px 16px 16px;
+      overflow: auto;
     }
 
     .paper-stage {
@@ -165,17 +248,6 @@
 
     .muted {
       color: #666;
-      font-size: 13px;
-    }
-
-    .status {
-      margin-top: 12px;
-      padding: 10px 12px;
-      border-radius: 8px;
-      background: #f5f7fa;
-      border: 1px solid #e3e8ee;
-      min-height: 44px;
-      white-space: pre-wrap;
       font-size: 13px;
     }
 
@@ -396,23 +468,40 @@
         </div>
       </div>
 
-      <div class="status" id="status"></div>
+      
     </div>
 
     <div class="board-wrap">
-      <h2>編集画面</h2>
+      <div class="board-header">
+        <div class="board-title-wrap">
+          <h2>編集画面</h2>
+          <div class="status" id="status"></div>
+        </div>
+        <button class="print-drawer-toggle" id="openPrintDrawer">印刷プレビュー</button>
+      </div>
       <div id="box" class="jxgbox"></div>
-    </div>
 
-    <div class="panel">
-      <h2>印刷プレビュー</h2>
-      <div class="muted">この領域が PDF 出力の元になります。</div>
-      <div class="size-list" id="printInfo"></div>
-      <div class="paper-stage" style="margin-top:12px;">
-        <div id="paperPreview">
-          <div id="paperInner">
-            <div id="paperBox" class="jxgbox"></div>
+      <div class="print-drawer" id="printDrawer">
+        <div class="print-drawer-header">
+          <div>
+            <h2 style="margin-bottom:4px;">印刷プレビュー</h2>
+            <div class="muted">この領域が PDF 出力の元になります。</div>
           </div>
+          <button id="closePrintDrawer">閉じる</button>
+        </div>
+        <div class="print-drawer-body">
+          <div class="size-list" id="printInfo"></div>
+          <div class="paper-stage" style="margin-top:12px; min-height:520px;">
+            <div id="paperPreview">
+              <div id="paperInner">
+                <div id="paperBox" class="jxgbox"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
         </div>
       </div>
     </div>
@@ -430,8 +519,11 @@
     let paperBoard = null;
     let latestModel = null;
 
-    function setStatus(message) {
-      document.getElementById('status').textContent = message;
+    function setStatus(message, kind = 'ok') {
+      const el = document.getElementById('status');
+      el.textContent = message;
+      el.classList.remove('ok', 'error');
+      el.classList.add(kind === 'error' ? 'error' : 'ok');
     }
 
     function degToRad(deg) {
@@ -810,25 +902,22 @@
       const len = Math.hypot(dx, dy) || 1;
       const n = unitNormalOutside(P, Q, ctr);
       const arcHeight = Math.max(0.35, len * 0.12);
-      const endInset = Math.min(0.22, len * 0.1);
-      const p1 = { x: P.x + (dx / len) * endInset, y: P.y + (dy / len) * endInset };
-      const p2 = { x: Q.x - (dx / len) * endInset, y: Q.y - (dy / len) * endInset };
       const control = { x: mid.x + n.x * arcHeight, y: mid.y + n.y * arcHeight };
       const gapHalf = 0.14;
 
       targetBoard.create('curve', [
-        t => quadraticPoint(p1, control, p2, t).x,
-        t => quadraticPoint(p1, control, p2, t).y,
+        t => quadraticPoint(P, control, Q, t).x,
+        t => quadraticPoint(P, control, Q, t).y,
         0, 0.5 - gapHalf
       ], { strokeWidth: 2, dash: 2, fixed: true });
 
       targetBoard.create('curve', [
-        t => quadraticPoint(p1, control, p2, t).x,
-        t => quadraticPoint(p1, control, p2, t).y,
+        t => quadraticPoint(P, control, Q, t).x,
+        t => quadraticPoint(P, control, Q, t).y,
         0.5 + gapHalf, 1
       ], { strokeWidth: 2, dash: 2, fixed: true });
 
-      const centerPoint = quadraticPoint(p1, control, p2, 0.5);
+      const centerPoint = quadraticPoint(P, control, Q, 0.5);
       targetBoard.create('text', [centerPoint.x, centerPoint.y, labelText], {
         fontSize: labelSize,
         fixed: true,
@@ -976,9 +1065,9 @@
         if (document.getElementById('showPrintPreview').checked) {
           renderPaperBoard(model);
         }
-        setStatus('正常に描画しました。');
+        setStatus('正常に描画しました。', 'ok');
       } catch (err) {
-        setStatus(err.message || String(err));
+        setStatus(err.message || String(err), 'error');
       }
     }
 
@@ -1029,6 +1118,14 @@
       document.getElementById('btnPng').addEventListener('click', () => saveCanvasElement('box', 'image/png'));
       document.getElementById('btnJpeg').addEventListener('click', () => saveCanvasElement('box', 'image/jpeg'));
       document.getElementById('btnPdf').addEventListener('click', savePdf);
+
+      const drawer = document.getElementById('printDrawer');
+      document.getElementById('openPrintDrawer').addEventListener('click', () => {
+        drawer.classList.add('open');
+      });
+      document.getElementById('closePrintDrawer').addEventListener('click', () => {
+        drawer.classList.remove('open');
+      });
     }
 
     bindEvents();
