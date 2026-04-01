@@ -1,1873 +1,1737 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>InstantGeometry</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <title>Instant Geometry</title>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jsxgraph/distrib/jsxgraph.css" />
+  <script src="https://cdn.jsdelivr.net/npm/jsxgraph/distrib/jsxgraphcore.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+
   <style>
-    :root{
-      --bg:#0f1115;
-      --panel:#171a21;
-      --panel-2:#1f2430;
-      --line:#2a3140;
-      --text:#eef2ff;
-      --muted:#aeb8d0;
-      --accent:#7aa2ff;
-      --accent-2:#97b5ff;
-      --good:#1d7f4e;
-      --bad:#8f2731;
-      --warn:#7e5a16;
-      --white:#ffffff;
-      --shadow:0 10px 30px rgba(0,0,0,0.25);
-      --radius:16px;
+    :root {
+      --panel-gap: 16px;
+      --border: 1px solid #d0d7de;
+      --bg: #f7f7f8;
+      --panel-bg: #ffffff;
+      --text: #111;
+      --muted: #666;
+      --accent: #2447a8;
+      --soft: #eef3ff;
+      --error-bg: #fee2e2;
+      --error-border: #ef4444;
+      --error-text: #991b1b;
+      --ok-bg: #eef6ff;
+      --ok-border: #bfd6f6;
+      --ok-text: #1f3d75;
     }
 
-    *{box-sizing:border-box}
-    html,body{margin:0;padding:0;height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans JP","Hiragino Sans","Yu Gothic",sans-serif}
-    body{min-height:100vh}
+    * { box-sizing: border-box; }
 
-    .app{
-      display:grid;
-      grid-template-columns: 360px 1fr;
-      gap:16px;
-      padding:16px;
-      min-height:100vh;
+    body {
+      font-family: sans-serif;
+      margin: 16px;
+      color: var(--text);
+      background: var(--bg);
     }
 
-    .panel{
-      background:var(--panel);
-      border:1px solid var(--line);
-      border-radius:var(--radius);
-      box-shadow:var(--shadow);
+    h1, h2, h3 {
+      margin: 0 0 8px 0;
+      font-weight: 600;
     }
 
-    .left-panel{
-      padding:16px;
-      overflow:auto;
+    p { margin: 0; }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      gap: var(--panel-gap);
+      align-items: start;
     }
 
-    .section-title{
-      font-size:14px;
-      color:var(--muted);
-      margin:18px 0 8px 0;
-      font-weight:700;
-      letter-spacing:.04em;
+    .panel, .board-wrap {
+      background: var(--panel-bg);
+      border: var(--border);
+      border-radius: 12px;
+      padding: 16px;
     }
 
-    .brand{
-      font-size:22px;
-      font-weight:800;
-      margin-bottom:4px;
+    .section {
+      margin-top: 18px;
+      padding-top: 14px;
+      border-top: 1px solid #ececec;
     }
 
-    .sub{
-      color:var(--muted);
-      font-size:13px;
-      margin-bottom:14px;
-      line-height:1.5;
+    .section:first-of-type {
+      margin-top: 0;
+      padding-top: 0;
+      border-top: none;
     }
 
-    .field-grid{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap:10px;
+    .row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-top: 10px;
     }
 
-    .field{
-      display:flex;
-      flex-direction:column;
-      gap:6px;
-      margin-bottom:10px;
+    .row label.inline {
+      display: inline-flex;
+      gap: 6px;
+      align-items: center;
     }
 
-    .field.full{
-      grid-column:1 / -1;
+    .grid-2, .grid-3 {
+      display: grid;
+      gap: 10px;
+      margin-top: 10px;
     }
 
-    label{
-      font-size:12px;
-      color:var(--muted);
-      font-weight:700;
-      letter-spacing:.02em;
+    .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
     }
 
-    input, select, button, textarea{
-      font:inherit;
+    .field label {
+      font-size: 13px;
+      color: #333;
     }
 
-    input, select{
-      width:100%;
-      background:var(--panel-2);
-      color:var(--text);
-      border:1px solid var(--line);
-      border-radius:12px;
-      padding:10px 12px;
-      outline:none;
+    input[type="text"], select {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid #cfd7df;
+      border-radius: 8px;
+      background: #fff;
+      font-size: 14px;
     }
 
-    input:focus, select:focus{
-      border-color:var(--accent);
-      box-shadow:0 0 0 3px rgba(122,162,255,.15);
+    input[type="range"] {
+      width: 100%;
     }
 
-    .hint{
-      font-size:12px;
-      color:var(--muted);
-      line-height:1.5;
-      margin-top:2px;
+    .shape-group, .mode-group {
+      display: none;
     }
 
-    .btn-row{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap:10px;
-      margin-top:10px;
+    .shape-group.active, .mode-group.active {
+      display: block;
     }
 
-    .btn-row-3{
-      display:grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap:10px;
-      margin-top:10px;
+    .badge {
+      display: inline-block;
+      font-size: 12px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: var(--soft);
+      color: var(--accent);
+      margin-top: 8px;
     }
 
-    button{
-      border:1px solid var(--line);
-      background:var(--panel-2);
-      color:var(--text);
-      border-radius:12px;
-      padding:11px 12px;
-      cursor:pointer;
-      font-weight:700;
-      transition:transform .08s ease, background .15s ease, border-color .15s ease;
+    .muted {
+      color: var(--muted);
+      font-size: 13px;
     }
 
-    button:hover{
-      background:#252c3a;
-      border-color:#3b4860;
+    .buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
     }
 
-    button:active{
-      transform:translateY(1px);
+    button {
+      padding: 9px 12px;
+      border-radius: 8px;
+      border: 1px solid #c5ced8;
+      background: white;
+      cursor: pointer;
+      font-size: 14px;
     }
 
-    .primary{
-      background:var(--accent);
-      color:#08101f;
-      border-color:transparent;
+    button.primary {
+      background: #111;
+      color: white;
+      border-color: #111;
     }
 
-    .primary:hover{
-      background:var(--accent-2);
+    .board-wrap {
+      position: relative;
+      overflow: hidden;
     }
 
-    .right-panel{
-      display:flex;
-      flex-direction:column;
-      min-width:0;
-      padding:16px;
+    .board-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
     }
 
-    .topbar{
-      display:flex;
-      align-items:flex-start;
-      justify-content:space-between;
-      gap:16px;
-      margin-bottom:12px;
-      flex-wrap:wrap;
+    .board-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
     }
 
-    .topbar-left{
-      display:flex;
-      align-items:flex-start;
-      gap:12px;
-      flex-wrap:wrap;
+    .status {
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: #f5f7fa;
+      border: 1px solid #e3e8ee;
+      min-height: 36px;
+      white-space: nowrap;
+      font-size: 13px;
     }
 
-    .editor-title{
-      font-size:20px;
-      font-weight:800;
-      margin:0;
+    .status.error {
+      background: var(--error-bg);
+      border-color: var(--error-border);
+      color: var(--error-text);
     }
 
-    .status-box{
-      min-width:260px;
-      max-width:520px;
-      padding:12px 14px;
-      border-radius:12px;
-      border:1px solid #29446d;
-      background:#122238;
-      color:#dbe8ff;
-      font-size:13px;
-      line-height:1.55;
+    .status.ok {
+      background: var(--ok-bg);
+      border-color: var(--ok-border);
+      color: var(--ok-text);
     }
 
-    .status-box.error{
-      background:#471a1f;
-      border-color:#9c3340;
-      color:#ffe4e7;
+    #shapeInfo {
+      font-size: 14px;
+      color: #444;
+      line-height: 1.6;
     }
 
-    .status-box.success{
-      background:#123426;
-      border-color:#2b7f58;
-      color:#ddffef;
+    #box {
+      width: 100%;
+      min-height: 640px;
+      height: 70vh;
+      border: 1px solid #d8d8d8;
+      background: #fff;
+      border-radius: 8px;
+      touch-action: none;
     }
 
-    .editor-layout{
-      display:grid;
-      grid-template-columns: 1fr 280px;
-      gap:16px;
-      min-height:0;
-      flex:1;
-    }
-
-    .canvas-wrap{
-      background:#11151d;
-      border:1px solid var(--line);
-      border-radius:16px;
-      padding:12px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      min-height:660px;
-      overflow:auto;
-    }
-
-    .canvas-inner{
-      background:#fff;
-      border-radius:12px;
-      box-shadow:0 10px 30px rgba(0,0,0,.18);
-      width:min(100%, 920px);
-      aspect-ratio: 4 / 3;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      overflow:hidden;
-    }
-
-    #svgRoot{
-      width:100%;
-      height:100%;
-      display:block;
-      background:#fff;
-    }
-
-    .info-panel{
-      background:#11151d;
-      border:1px solid var(--line);
-      border-radius:16px;
-      padding:14px;
-      overflow:auto;
-    }
-
-    .info-block{
-      margin-bottom:14px;
-      padding-bottom:12px;
-      border-bottom:1px solid rgba(255,255,255,.08);
-    }
-
-    .info-block:last-child{
-      border-bottom:none;
-      margin-bottom:0;
-      padding-bottom:0;
-    }
-
-    .info-head{
-      font-size:13px;
-      color:var(--muted);
-      font-weight:800;
-      margin-bottom:8px;
-      letter-spacing:.03em;
-    }
-
-    .chips{
-      display:flex;
-      gap:8px;
-      flex-wrap:wrap;
-    }
-
-    .chip{
-      display:inline-flex;
-      align-items:center;
-      border:1px solid #3b4860;
-      background:#1d2330;
-      color:#ebf1ff;
-      border-radius:999px;
-      padding:6px 10px;
-      font-size:12px;
-      font-weight:700;
-    }
-
-    .meta{
-      font-size:13px;
-      color:#d8e2ff;
-      line-height:1.6;
-      word-break:break-word;
-    }
-
-    .small{
-      font-size:12px;
-      color:var(--muted);
-      line-height:1.55;
-    }
-
-    .footer-note{
-      margin-top:12px;
-      font-size:12px;
-      color:var(--muted);
-      line-height:1.55;
-    }
-
-    .hidden{
-      display:none !important;
-    }
-
-    .mono{
-      font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-    }
-
-    @media (max-width: 1100px){
-      .app{
-        grid-template-columns:1fr;
+    @media (max-width: 1200px) {
+      .layout {
+        grid-template-columns: 1fr;
       }
-      .editor-layout{
-        grid-template-columns:1fr;
-      }
-      .canvas-wrap{
-        min-height:520px;
+
+      #box {
+        min-height: 480px;
+        height: 60vh;
       }
     }
   </style>
 </head>
 <body>
-  <div class="app">
-    <aside class="panel left-panel">
-      <div class="brand">InstantGeometry</div>
-      <div class="sub">
-        図形を入力して即座に描画します。<br>
-        ルート入力、画像保存、PDF保存、印刷プレビューに対応。
-      </div>
+  <h1>Instant Geometry</h1>
+  <p class="muted">図形種別を切り替えられる版です。三角形 / 四角形 / 正N角形 / 円 / 楕円に対応し、印刷プレビューは別ウィンドウで開きます。</p>
 
-      <div class="section-title">図形種別</div>
-      <div class="field">
-        <label for="shapeType">図形種別</label>
-        <select id="shapeType">
-          <option value="triangle">三角形</option>
-          <option value="quadrilateral">四角形</option>
-          <option value="polygon">正N角形</option>
-          <option value="circle">円</option>
-          <option value="ellipse">楕円</option>
-        </select>
-      </div>
-
-      <div id="triangleControls">
-        <div class="section-title">三角形の入力方式</div>
+  <div class="layout">
+    <div class="panel">
+      <div class="section">
+        <h2>入力</h2>
         <div class="field">
-          <label for="triangleMode">入力方式</label>
-          <select id="triangleMode">
-            <option value="sss">SSS</option>
-            <option value="sas">SAS</option>
-            <option value="asa">ASA</option>
-            <option value="aas">AAS</option>
-            <option value="aaa">AAA</option>
+          <label for="shapeType">図形種別</label>
+          <select id="shapeType">
+            <option value="triangle">三角形</option>
+            <option value="quadrilateral">四角形</option>
+            <option value="regularPolygon">正N角形</option>
+            <option value="circle">円</option>
+            <option value="ellipse">楕円</option>
+          </select>
+        </div>
+
+        <div class="field shape-group active" data-shape="triangle">
+          <label for="mode">入力方式</label>
+          <select id="mode">
+            <option value="sss">SSS（三辺）</option>
+            <option value="sas">SAS（二辺とその間の角）</option>
+            <option value="asa">ASA（一辺とその両端の角）</option>
+            <option value="aas">AAS（一辺と二角）</option>
+            <option value="aaa">AAA（三角）</option>
             <option value="points">3点座標</option>
-            <option value="baseheight">底辺＋高さ＋足の位置</option>
+            <option value="baseHeight">底辺＋高さ＋足の位置</option>
           </select>
         </div>
 
-        <div id="triangleFields" class="field-grid"></div>
-      </div>
-
-      <div id="quadrilateralControls" class="hidden">
-        <div class="section-title">四角形</div>
-        <div class="field-grid" id="quadrilateralFields"></div>
-      </div>
-
-      <div id="polygonControls" class="hidden">
-        <div class="section-title">正N角形</div>
-        <div class="field-grid" id="polygonFields"></div>
-      </div>
-
-      <div id="circleControls" class="hidden">
-        <div class="section-title">円</div>
-        <div class="field-grid" id="circleFields"></div>
-      </div>
-
-      <div id="ellipseControls" class="hidden">
-        <div class="section-title">楕円</div>
-        <div class="field-grid" id="ellipseFields"></div>
-      </div>
-
-      <div class="section-title">印刷 / PDF</div>
-      <div class="field-grid">
-        <div class="field">
-          <label for="paperSize">用紙</label>
-          <select id="paperSize">
-            <option value="A4">A4</option>
-            <option value="B5">B5</option>
-          </select>
+        <div class="field shape-group" data-shape="quadrilateral">
+          <label>入力方式</label>
+          <select disabled><option>4点座標</option></select>
         </div>
-        <div class="field">
-          <label for="paperOrientation">向き</label>
-          <select id="paperOrientation">
-            <option value="portrait">縦</option>
-            <option value="landscape">横</option>
-          </select>
+
+        <div class="field shape-group" data-shape="regularPolygon">
+          <label>入力方式</label>
+          <select disabled><option>中心＋半径＋頂点数</option></select>
         </div>
-        <div class="field">
-          <label for="fitMode">配置</label>
-          <select id="fitMode">
-            <option value="fit">用紙内に収める</option>
-            <option value="actual">実寸</option>
-          </select>
+
+        <div class="field shape-group" data-shape="circle">
+          <label>入力方式</label>
+          <select disabled><option>中心＋半径</option></select>
         </div>
-        <div class="field">
-          <label for="printWidthCm">印刷時の横幅(cm)</label>
-          <input id="printWidthCm" value="12" />
+
+        <div class="field shape-group" data-shape="ellipse">
+          <label>入力方式</label>
+          <select disabled><option>中心＋長半径＋短半径＋回転角</option></select>
         </div>
-        <div class="field">
-          <label for="marginLeft">左余白(mm)</label>
-          <input id="marginLeft" value="12" />
-        </div>
-        <div class="field">
-          <label for="marginRight">右余白(mm)</label>
-          <input id="marginRight" value="12" />
-        </div>
-        <div class="field">
-          <label for="marginTop">上余白(mm)</label>
-          <input id="marginTop" value="12" />
-        </div>
-        <div class="field">
-          <label for="marginBottom">下余白(mm)</label>
-          <input id="marginBottom" value="12" />
-        </div>
+
+        <div class="badge">数式入力可: 3, 3/2, sqrt(5), √5, 2√3, 1+√2</div>
       </div>
 
-      <div class="section-title">操作</div>
-      <div class="btn-row">
-        <button id="drawBtn" class="primary">描画</button>
-        <button id="resetBtn">初期化</button>
-      </div>
-      <div class="btn-row-3">
-        <button id="savePngBtn">PNG保存</button>
-        <button id="saveJpegBtn">JPEG保存</button>
-        <button id="savePdfBtn">PDF保存</button>
-      </div>
-      <div class="btn-row">
-        <button id="previewBtn">印刷プレビュー</button>
-        <button id="printBtn">印刷</button>
-      </div>
+      <div class="section shape-group active" data-shape="triangle">
+        <div class="mode-group active" data-mode="sss">
+          <h3>SSS</h3>
+          <div class="grid-3">
+            <div class="field"><label for="sss-a">a = BC</label><input id="sss-a" type="text" value="3" /></div>
+            <div class="field"><label for="sss-b">b = CA</label><input id="sss-b" type="text" value="4" /></div>
+            <div class="field"><label for="sss-c">c = AB</label><input id="sss-c" type="text" value="5" /></div>
+          </div>
+        </div>
 
-      <div class="section-title">数式入力例</div>
-      <div class="hint mono">
-        3<br>
-        3/2<br>
-        sqrt(5)<br>
-        √5<br>
-        2√3<br>
-        1+√2
-      </div>
+        <div class="mode-group" data-mode="sas">
+          <h3>SAS</h3>
+          <div class="grid-3">
+            <div class="field"><label for="sas-b">b = CA</label><input id="sas-b" type="text" value="4" /></div>
+            <div class="field"><label for="sas-c">c = AB</label><input id="sas-c" type="text" value="5" /></div>
+            <div class="field"><label for="sas-A">∠A (deg)</label><input id="sas-A" type="text" value="90" /></div>
+          </div>
+        </div>
 
-      <div class="footer-note">
-        点ラベルは図形の外側に表示します。<br>
-        三角形では辺の長さを破線の補助曲線で表示します。
-      </div>
-    </aside>
+        <div class="mode-group" data-mode="asa">
+          <h3>ASA</h3>
+          <div class="grid-3">
+            <div class="field"><label for="asa-c">c = AB</label><input id="asa-c" type="text" value="5" /></div>
+            <div class="field"><label for="asa-A">∠A (deg)</label><input id="asa-A" type="text" value="36.87" /></div>
+            <div class="field"><label for="asa-B">∠B (deg)</label><input id="asa-B" type="text" value="53.13" /></div>
+          </div>
+        </div>
 
-    <main class="panel right-panel">
-      <div class="topbar">
-        <div class="topbar-left">
-          <h1 class="editor-title">編集画面</h1>
-          <div id="statusBox" class="status-box">
-            準備完了。描画できます。
+        <div class="mode-group" data-mode="aas">
+          <h3>AAS</h3>
+          <div class="grid-3">
+            <div class="field"><label for="aas-a">a = BC</label><input id="aas-a" type="text" value="3" /></div>
+            <div class="field"><label for="aas-A">∠A (deg)</label><input id="aas-A" type="text" value="36.87" /></div>
+            <div class="field"><label for="aas-B">∠B (deg)</label><input id="aas-B" type="text" value="53.13" /></div>
+          </div>
+        </div>
+
+        <div class="mode-group" data-mode="aaa">
+          <h3>AAA</h3>
+          <div class="grid-3">
+            <div class="field"><label for="aaa-A">∠A (deg)</label><input id="aaa-A" type="text" value="36.87" /></div>
+            <div class="field"><label for="aaa-B">∠B (deg)</label><input id="aaa-B" type="text" value="53.13" /></div>
+            <div class="field"><label for="aaa-C">∠C (deg)</label><input id="aaa-C" type="text" value="90" /></div>
+          </div>
+          <div class="muted" style="margin-top:8px;">内部では基準辺 AB = 1 として描画します。</div>
+        </div>
+
+        <div class="mode-group" data-mode="points">
+          <h3>3点座標</h3>
+          <div class="grid-3">
+            <div class="field"><label for="Ax">Ax</label><input id="Ax" type="text" value="0" /></div>
+            <div class="field"><label for="Ay">Ay</label><input id="Ay" type="text" value="0" /></div>
+            <div></div>
+            <div class="field"><label for="Bx">Bx</label><input id="Bx" type="text" value="5" /></div>
+            <div class="field"><label for="By">By</label><input id="By" type="text" value="0" /></div>
+            <div></div>
+            <div class="field"><label for="Cx">Cx</label><input id="Cx" type="text" value="1.8" /></div>
+            <div class="field"><label for="Cy">Cy</label><input id="Cy" type="text" value="2.4" /></div>
+            <div></div>
+          </div>
+        </div>
+
+        <div class="mode-group" data-mode="baseHeight">
+          <h3>底辺＋高さ＋足の位置</h3>
+          <div class="grid-3">
+            <div class="field"><label for="bh-c">底辺 c = AB</label><input id="bh-c" type="text" value="5" /></div>
+            <div class="field"><label for="bh-h">高さ h</label><input id="bh-h" type="text" value="2.4" /></div>
+            <div class="field"><label for="bh-t">足の位置 t</label><input id="bh-t" type="text" value="1.8" /></div>
           </div>
         </div>
       </div>
 
-      <div class="editor-layout">
-        <div class="canvas-wrap">
-          <div class="canvas-inner">
-            <svg id="svgRoot" viewBox="0 0 1000 750" xmlns="http://www.w3.org/2000/svg" aria-label="geometry canvas">
-              <rect x="0" y="0" width="1000" height="750" fill="#ffffff"></rect>
-            </svg>
+      <div class="section shape-group" data-shape="quadrilateral">
+        <h3>四角形（4点座標）</h3>
+        <div class="grid-3">
+          <div class="field"><label for="QAx">Ax</label><input id="QAx" type="text" value="0" /></div>
+          <div class="field"><label for="QAy">Ay</label><input id="QAy" type="text" value="0" /></div>
+          <div></div>
+          <div class="field"><label for="QBx">Bx</label><input id="QBx" type="text" value="5" /></div>
+          <div class="field"><label for="QBy">By</label><input id="QBy" type="text" value="0" /></div>
+          <div></div>
+          <div class="field"><label for="QCx">Cx</label><input id="QCx" type="text" value="6" /></div>
+          <div class="field"><label for="QCy">Cy</label><input id="QCy" type="text" value="3" /></div>
+          <div></div>
+          <div class="field"><label for="QDx">Dx</label><input id="QDx" type="text" value="1" /></div>
+          <div class="field"><label for="QDy">Dy</label><input id="QDy" type="text" value="3" /></div>
+          <div></div>
+        </div>
+      </div>
+
+      <div class="section shape-group" data-shape="regularPolygon">
+        <h3>正N角形</h3>
+        <div class="grid-3">
+          <div class="field"><label for="RPn">頂点数 N</label><input id="RPn" type="text" value="6" /></div>
+          <div class="field"><label for="RPcx">中心 x</label><input id="RPcx" type="text" value="0" /></div>
+          <div class="field"><label for="RPcy">中心 y</label><input id="RPcy" type="text" value="0" /></div>
+          <div class="field"><label for="RPr">半径</label><input id="RPr" type="text" value="3" /></div>
+          <div class="field"><label for="RPang">回転角(deg)</label><input id="RPang" type="text" value="90" /></div>
+          <div></div>
+        </div>
+      </div>
+
+      <div class="section shape-group" data-shape="circle">
+        <h3>円</h3>
+        <div class="grid-3">
+          <div class="field"><label for="CCx">中心 x</label><input id="CCx" type="text" value="0" /></div>
+          <div class="field"><label for="CCy">中心 y</label><input id="CCy" type="text" value="0" /></div>
+          <div class="field"><label for="Cr">半径</label><input id="Cr" type="text" value="3" /></div>
+        </div>
+      </div>
+
+      <div class="section shape-group" data-shape="ellipse">
+        <h3>楕円</h3>
+        <div class="grid-3">
+          <div class="field"><label for="ECx">中心 x</label><input id="ECx" type="text" value="0" /></div>
+          <div class="field"><label for="ECy">中心 y</label><input id="ECy" type="text" value="0" /></div>
+          <div class="field"><label for="Ea">長半径</label><input id="Ea" type="text" value="4" /></div>
+          <div class="field"><label for="Eb">短半径</label><input id="Eb" type="text" value="2.5" /></div>
+          <div class="field"><label for="Eang">回転角(deg)</label><input id="Eang" type="text" value="20" /></div>
+          <div></div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>表示</h2>
+        <div class="row">
+          <label class="inline"><input id="showAxes" type="checkbox" checked />座標軸</label>
+          <label class="inline"><input id="showCoordLabels" type="checkbox" checked />座標ラベル</label>
+          <label class="inline"><input id="showSideLabels" type="checkbox" checked />辺の長さ</label>
+        </div>
+        <div class="grid-2">
+          <div class="field">
+            <label for="pointLabelSize">点ラベル</label>
+            <input id="pointLabelSize" type="range" min="10" max="32" step="1" value="18" />
+          </div>
+          <div class="field">
+            <label for="sideLabelSize">辺ラベル</label>
+            <input id="sideLabelSize" type="range" min="10" max="32" step="1" value="18" />
           </div>
         </div>
-
-        <aside class="info-panel">
-          <div class="info-block">
-            <div class="info-head">図形判定</div>
-            <div id="classificationChips" class="chips"></div>
+        <div class="grid-2">
+          <div class="field">
+            <label for="sideTextMode">辺長表示形式</label>
+            <select id="sideTextMode">
+              <option value="decimal">小数</option>
+              <option value="root">ルート優先</option>
+              <option value="input">入力式優先</option>
+            </select>
           </div>
-
-          <div class="info-block">
-            <div class="info-head">図形情報</div>
-            <div id="shapeMeta" class="meta">未描画</div>
+          <div class="field">
+            <label for="unitCm">1単位 = 何cm</label>
+            <input id="unitCm" type="text" value="1" />
           </div>
-
-          <div class="info-block">
-            <div class="info-head">印刷情報</div>
-            <div id="printMeta" class="meta">未計算</div>
-          </div>
-
-          <div class="small">
-            エラー時はステータスが赤背景になります。
-          </div>
-        </aside>
+        </div>
       </div>
-    </main>
+
+      <div class="section">
+        <h2>印刷設定</h2>
+        <div class="grid-2">
+          <div class="field">
+            <label for="paperSize">用紙</label>
+            <select id="paperSize">
+              <option value="A4">A4</option>
+              <option value="B5">B5</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="paperOrientation">向き</label>
+            <select id="paperOrientation">
+              <option value="portrait">縦</option>
+              <option value="landscape">横</option>
+            </select>
+          </div>
+          <div class="field"><label for="marginTop">上余白(cm)</label><input id="marginTop" type="text" value="1.5" /></div>
+          <div class="field"><label for="marginBottom">下余白(cm)</label><input id="marginBottom" type="text" value="1.5" /></div>
+          <div class="field"><label for="marginLeft">左余白(cm)</label><input id="marginLeft" type="text" value="1.5" /></div>
+          <div class="field"><label for="marginRight">右余白(cm)</label><input id="marginRight" type="text" value="1.5" /></div>
+        </div>
+        <div class="row">
+          <label class="inline"><input type="radio" name="printMode" value="actual" checked />実寸</label>
+          <label class="inline"><input type="radio" name="printMode" value="fit" />用紙内に収める</label>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>保存</h2>
+        <div class="buttons">
+          <button class="primary" id="btnPng">PNG</button>
+          <button id="btnJpeg">JPEG</button>
+          <button id="btnPdf">PDF</button>
+          <button id="btnRender">再描画</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="board-wrap">
+      <div class="board-header">
+        <div class="board-title-wrap">
+          <h2>編集画面</h2>
+          <div class="status" id="status"></div>
+        </div>
+        <div class="board-title-wrap">
+          <div id="shapeInfo"></div>
+          <button id="openPrintPreviewWindow">印刷プレビュー</button>
+        </div>
+      </div>
+      <div id="box" class="jxgbox"></div>
+    </div>
   </div>
 
   <script>
-    (function(){
+    (function () {
       'use strict';
 
-      var svg = document.getElementById('svgRoot');
-      var shapeTypeEl = document.getElementById('shapeType');
-      var triangleModeEl = document.getElementById('triangleMode');
-      var statusBox = document.getElementById('statusBox');
-      var classificationChips = document.getElementById('classificationChips');
-      var shapeMeta = document.getElementById('shapeMeta');
-      var printMeta = document.getElementById('printMeta');
-
-      var triangleControls = document.getElementById('triangleControls');
-      var quadrilateralControls = document.getElementById('quadrilateralControls');
-      var polygonControls = document.getElementById('polygonControls');
-      var circleControls = document.getElementById('circleControls');
-      var ellipseControls = document.getElementById('ellipseControls');
-
-      var triangleFields = document.getElementById('triangleFields');
-      var quadrilateralFields = document.getElementById('quadrilateralFields');
-      var polygonFields = document.getElementById('polygonFields');
-      var circleFields = document.getElementById('circleFields');
-      var ellipseFields = document.getElementById('ellipseFields');
-
-      var state = {
-        current: null
+      const PAPER_SIZES_MM = {
+        A4: { width: 210, height: 297 },
+        B5: { width: 182, height: 257 }
       };
 
-      function setStatus(message, kind){
-        statusBox.textContent = message;
-        statusBox.classList.remove('error');
-        statusBox.classList.remove('success');
-        if(kind === 'error') statusBox.classList.add('error');
-        if(kind === 'success') statusBox.classList.add('success');
+      const PAPER_PREVIEW_SCALE = 3.0;
+
+      let board = null;
+      let latestModel = null;
+
+      function setStatus(message, kind) {
+        const el = document.getElementById('status');
+        el.textContent = message || '';
+        el.classList.remove('ok', 'error');
+        el.classList.add(kind === 'error' ? 'error' : 'ok');
       }
 
-      function createField(id, labelText, value, spanFull){
-        var wrap = document.createElement('div');
-        wrap.className = 'field' + (spanFull ? ' full' : '');
-        var label = document.createElement('label');
-        label.setAttribute('for', id);
-        label.textContent = labelText;
-        var input = document.createElement('input');
-        input.id = id;
-        input.value = value;
-        wrap.appendChild(label);
-        wrap.appendChild(input);
-        return wrap;
+      function setShapeInfo(labels, detailHtml) {
+        const el = document.getElementById('shapeInfo');
+        const parts = [];
+        if (labels && labels.length) parts.push(labels.join(' / '));
+        if (detailHtml) parts.push(detailHtml);
+        el.innerHTML = parts.join('<br>');
       }
 
-      function createSelectField(id, labelText, options, value, spanFull){
-        var wrap = document.createElement('div');
-        wrap.className = 'field' + (spanFull ? ' full' : '');
-        var label = document.createElement('label');
-        label.setAttribute('for', id);
-        label.textContent = labelText;
-        var select = document.createElement('select');
-        select.id = id;
-        for(var i=0;i<options.length;i++){
-          var opt = document.createElement('option');
-          opt.value = options[i].value;
-          opt.textContent = options[i].label;
-          if(options[i].value === value) opt.selected = true;
-          select.appendChild(opt);
+      function degToRad(deg) {
+        return deg * Math.PI / 180;
+      }
+
+      function nearlyEqual(a, b, eps) {
+        return Math.abs(a - b) < (eps || 1e-9);
+      }
+
+      function sanitizeExpression(expr) {
+        return String(expr ?? '')
+          .replace(/\s+/g, '')
+          .replace(/√/g, 'sqrt')
+          .replace(/(\d)(sqrt)/g, '$1*$2')
+          .replace(/\)(\d|sqrt)/g, ')*$1')
+          .replace(/(\d|\))(\()/g, '$1*$2');
+      }
+
+      function parseExpr(expr) {
+        const raw = String(expr ?? '').trim();
+        if (!raw) throw new Error('空の入力があります。');
+        const safe = sanitizeExpression(raw);
+        if (!/^[0-9+\-*/().sqrt]+$/i.test(safe)) {
+          throw new Error('使えない文字があります: ' + raw);
         }
-        wrap.appendChild(label);
-        wrap.appendChild(select);
-        return wrap;
+        const jsExpr = safe.replace(/sqrt/gi, 'Math.sqrt');
+        const value = Function('"use strict"; return (' + jsExpr + ');')();
+        if (!Number.isFinite(value)) throw new Error('数値として解釈できません: ' + raw);
+        return { value, raw };
       }
 
-      function rebuildTriangleFields(){
-        triangleFields.innerHTML = '';
-        var mode = triangleModeEl.value;
-        if(mode === 'sss'){
-          triangleFields.appendChild(createField('tri_a', 'a = BC', '5'));
-          triangleFields.appendChild(createField('tri_b', 'b = CA', '6'));
-          triangleFields.appendChild(createField('tri_c', 'c = AB', '7'));
-        }else if(mode === 'sas'){
-          triangleFields.appendChild(createField('tri_b', 'b = CA', '6'));
-          triangleFields.appendChild(createField('tri_c', 'c = AB', '7'));
-          triangleFields.appendChild(createField('tri_A', '∠A (度)', '60', true));
-        }else if(mode === 'asa'){
-          triangleFields.appendChild(createField('tri_A', '∠A (度)', '50'));
-          triangleFields.appendChild(createField('tri_B', '∠B (度)', '60'));
-          triangleFields.appendChild(createField('tri_c', 'c = AB', '8', true));
-        }else if(mode === 'aas'){
-          triangleFields.appendChild(createField('tri_A', '∠A (度)', '45'));
-          triangleFields.appendChild(createField('tri_B', '∠B (度)', '60'));
-          triangleFields.appendChild(createField('tri_a', 'a = BC', '7', true));
-        }else if(mode === 'aaa'){
-          triangleFields.appendChild(createField('tri_A', '∠A (度)', '50'));
-          triangleFields.appendChild(createField('tri_B', '∠B (度)', '60'));
-          triangleFields.appendChild(createField('tri_C', '∠C (度)', '70'));
-          triangleFields.appendChild(createField('tri_scale', '基準辺 c = AB', '8', true));
-        }else if(mode === 'points'){
-          triangleFields.appendChild(createField('tri_Ax', 'A.x', '0'));
-          triangleFields.appendChild(createField('tri_Ay', 'A.y', '0'));
-          triangleFields.appendChild(createField('tri_Bx', 'B.x', '8'));
-          triangleFields.appendChild(createField('tri_By', 'B.y', '0'));
-          triangleFields.appendChild(createField('tri_Cx', 'C.x', '3'));
-          triangleFields.appendChild(createField('tri_Cy', 'C.y', '5'));
-        }else if(mode === 'baseheight'){
-          triangleFields.appendChild(createField('tri_base', '底辺 AB', '8'));
-          triangleFields.appendChild(createField('tri_height', '高さ', '5'));
-          triangleFields.appendChild(createField('tri_foot', '足の位置 x', '3', true));
+      function parsePositiveExpr(expr, label) {
+        const parsed = parseExpr(expr);
+        if (!(parsed.value > 0)) throw new Error(label + ' は正である必要があります。');
+        return parsed;
+      }
+
+      function parseNonNegativeExpr(expr, label) {
+        const parsed = parseExpr(expr);
+        if (!(parsed.value >= 0)) throw new Error(label + ' は 0 以上である必要があります。');
+        return parsed;
+      }
+
+      function parseAngleExpr(expr, label) {
+        const parsed = parseExpr(expr);
+        if (!(parsed.value > 0 && parsed.value < 180)) {
+          throw new Error(label + ' は 0° より大きく 180° 未満にしてください。');
         }
+        return parsed;
       }
 
-      function rebuildQuadrilateralFields(){
-        quadrilateralFields.innerHTML = '';
-        quadrilateralFields.appendChild(createField('quad_Ax', 'A.x', '0'));
-        quadrilateralFields.appendChild(createField('quad_Ay', 'A.y', '0'));
-        quadrilateralFields.appendChild(createField('quad_Bx', 'B.x', '8'));
-        quadrilateralFields.appendChild(createField('quad_By', 'B.y', '0'));
-        quadrilateralFields.appendChild(createField('quad_Cx', 'C.x', '10'));
-        quadrilateralFields.appendChild(createField('quad_Cy', 'C.y', '5'));
-        quadrilateralFields.appendChild(createField('quad_Dx', 'D.x', '2'));
-        quadrilateralFields.appendChild(createField('quad_Dy', 'D.y', '5'));
+      function formatDecimal(x, digits) {
+        const d = typeof digits === 'number' ? digits : 2;
+        const rounded = Math.round(x * Math.pow(10, d)) / Math.pow(10, d);
+        if (nearlyEqual(rounded, Math.round(rounded))) return String(Math.round(rounded));
+        return rounded.toFixed(d).replace(/\.?0+$/, '');
       }
 
-      function rebuildPolygonFields(){
-        polygonFields.innerHTML = '';
-        polygonFields.appendChild(createField('poly_cx', '中心 x', '0'));
-        polygonFields.appendChild(createField('poly_cy', '中心 y', '0'));
-        polygonFields.appendChild(createField('poly_r', '半径', '5'));
-        polygonFields.appendChild(createField('poly_n', '頂点数 N', '6'));
-        polygonFields.appendChild(createField('poly_rot', '回転角 (度)', '0', true));
-      }
-
-      function rebuildCircleFields(){
-        circleFields.innerHTML = '';
-        circleFields.appendChild(createField('circle_cx', '中心 x', '0'));
-        circleFields.appendChild(createField('circle_cy', '中心 y', '0'));
-        circleFields.appendChild(createField('circle_r', '半径', '5', true));
-      }
-
-      function rebuildEllipseFields(){
-        ellipseFields.innerHTML = '';
-        ellipseFields.appendChild(createField('ellipse_cx', '中心 x', '0'));
-        ellipseFields.appendChild(createField('ellipse_cy', '中心 y', '0'));
-        ellipseFields.appendChild(createField('ellipse_rx', '長半径', '6'));
-        ellipseFields.appendChild(createField('ellipse_ry', '短半径', '4'));
-        ellipseFields.appendChild(createField('ellipse_rot', '回転角 (度)', '20', true));
-      }
-
-      function updateControlsVisibility(){
-        var type = shapeTypeEl.value;
-        triangleControls.classList.add('hidden');
-        quadrilateralControls.classList.add('hidden');
-        polygonControls.classList.add('hidden');
-        circleControls.classList.add('hidden');
-        ellipseControls.classList.add('hidden');
-
-        if(type === 'triangle') triangleControls.classList.remove('hidden');
-        if(type === 'quadrilateral') quadrilateralControls.classList.remove('hidden');
-        if(type === 'polygon') polygonControls.classList.remove('hidden');
-        if(type === 'circle') circleControls.classList.remove('hidden');
-        if(type === 'ellipse') ellipseControls.classList.remove('hidden');
-      }
-
-      function getValue(id){
-        var el = document.getElementById(id);
-        if(!el) throw new Error('入力欄が見つかりません: ' + id);
-        return el.value;
-      }
-
-      function tokenizeExpression(str){
-        var s = String(str || '').trim();
-        s = s.replace(/\s+/g, '');
-        if(s === '') throw new Error('空の入力です');
-        var tokens = [];
-        var i = 0;
-        while(i < s.length){
-          var ch = s[i];
-
-          if(/[0-9.]/.test(ch)){
-            var num = ch;
-            i++;
-            while(i < s.length && /[0-9.]/.test(s[i])){
-              num += s[i];
-              i++;
-            }
-            if((num.match(/\./g) || []).length > 1) throw new Error('数値の形式が不正です: ' + num);
-            tokens.push({type:'number', value: parseFloat(num)});
-            continue;
-          }
-
-          if(ch === '√'){
-            tokens.push({type:'sqrt', value:'sqrt'});
-            i++;
-            continue;
-          }
-
-          if(/[a-zA-Z]/.test(ch)){
-            var word = ch;
-            i++;
-            while(i < s.length && /[a-zA-Z]/.test(s[i])){
-              word += s[i];
-              i++;
-            }
-            if(word.toLowerCase() === 'sqrt'){
-              tokens.push({type:'sqrt', value:'sqrt'});
-            }else{
-              throw new Error('未対応の識別子です: ' + word);
-            }
-            continue;
-          }
-
-          if('+-*/()'.indexOf(ch) >= 0){
-            tokens.push({type:ch, value:ch});
-            i++;
-            continue;
-          }
-
-          throw new Error('未対応の文字です: ' + ch);
-        }
-        return tokens;
-      }
-
-      function parseMathExpression(str){
-        var tokens = tokenizeExpression(str);
-        var pos = 0;
-
-        function peek(){
-          return tokens[pos] || null;
-        }
-
-        function consume(type){
-          var t = tokens[pos];
-          if(!t || t.type !== type) throw new Error('構文エラーです');
-          pos++;
-          return t;
-        }
-
-        function startsFactor(t){
-          if(!t) return false;
-          return t.type === 'number' || t.type === '(' || t.type === 'sqrt' || t.type === '+' || t.type === '-';
-        }
-
-        function parseExpression(){
-          var value = parseTerm();
-          while(true){
-            var t = peek();
-            if(!t) break;
-            if(t.type === '+'){
-              consume('+');
-              value += parseTerm();
-            }else if(t.type === '-'){
-              consume('-');
-              value -= parseTerm();
-            }else{
-              break;
+      function tryRootFormat(x) {
+        const sign = x < 0 ? '-' : '';
+        const abs = Math.abs(x);
+        for (let k = 1; k <= 12; k++) {
+          for (let n = 1; n <= 200; n++) {
+            const candidate = k * Math.sqrt(n);
+            if (Math.abs(candidate - abs) < 1e-8) {
+              if (n === 1) return sign + String(k);
+              if (k === 1) return sign + '√' + n;
+              return sign + k + '√' + n;
             }
           }
-          return value;
+        }
+        return null;
+      }
+
+      function vec(P, Q) {
+        return { x: Q.x - P.x, y: Q.y - P.y };
+      }
+
+      function dot(u, v) {
+        return u.x * v.x + u.y * v.y;
+      }
+
+      function cross(u, v) {
+        return u.x * v.y - u.y * v.x;
+      }
+
+      function sideLength(P, Q) {
+        return Math.hypot(Q.x - P.x, Q.y - P.y);
+      }
+
+      function equalLen(x, y) {
+        return Math.abs(x - y) < 1e-8;
+      }
+
+      function parallel(u, v) {
+        return Math.abs(cross(u, v)) < 1e-8;
+      }
+
+      function perpendicular(u, v) {
+        return Math.abs(dot(u, v)) < 1e-8;
+      }
+
+      function triangleArea2(points) {
+        const A = points.A;
+        const B = points.B;
+        const C = points.C;
+        return (B.x - A.x) * (C.y - A.y) - (B.y - A.y) * (C.x - A.x);
+      }
+
+      function polygonSignedArea(arr) {
+        let s = 0;
+        for (let i = 0; i < arr.length; i++) {
+          const p = arr[i];
+          const q = arr[(i + 1) % arr.length];
+          s += p.x * q.y - p.y * q.x;
+        }
+        return s / 2;
+      }
+
+      function quadrilateralSignedArea(points) {
+        return polygonSignedArea([points.A, points.B, points.C, points.D]);
+      }
+
+      function centroidTriangle(points) {
+        return {
+          x: (points.A.x + points.B.x + points.C.x) / 3,
+          y: (points.A.y + points.B.y + points.C.y) / 3
+        };
+      }
+
+      function centroidArray(arr) {
+        return {
+          x: arr.reduce(function (s, p) { return s + p.x; }, 0) / arr.length,
+          y: arr.reduce(function (s, p) { return s + p.y; }, 0) / arr.length
+        };
+      }
+
+      function unitVector(from, to) {
+        const dx = to.x - from.x;
+        const dy = to.y - from.y;
+        const len = Math.hypot(dx, dy) || 1;
+        return { x: dx / len, y: dy / len };
+      }
+
+      function unitNormalOutside(P, Q, ctr) {
+        const dx = Q.x - P.x;
+        const dy = Q.y - P.y;
+        const len = Math.hypot(dx, dy) || 1;
+        let nx = -dy / len;
+        let ny = dx / len;
+        const mid = { x: (P.x + Q.x) / 2, y: (P.y + Q.y) / 2 };
+        const toCtr = { x: ctr.x - mid.x, y: ctr.y - mid.y };
+        if (nx * toCtr.x + ny * toCtr.y > 0) {
+          nx = -nx;
+          ny = -ny;
+        }
+        return { x: nx, y: ny };
+      }
+
+      function quadraticPoint(p1, control, p2, t) {
+        return {
+          x: (1 - t) * (1 - t) * p1.x + 2 * (1 - t) * t * control.x + t * t * p2.x,
+          y: (1 - t) * (1 - t) * p1.y + 2 * (1 - t) * t * control.y + t * t * p2.y
+        };
+      }
+
+      function getPointDisplayText(name, point, showCoordLabels) {
+        if (!showCoordLabels) return name;
+        return name + '(' + formatDecimal(point.x) + ', ' + formatDecimal(point.y) + ')';
+      }
+
+      function getDisplayOptions() {
+        return {
+          showAxes: document.getElementById('showAxes').checked,
+          showCoordLabels: document.getElementById('showCoordLabels').checked,
+          showSideLabels: document.getElementById('showSideLabels').checked,
+          pointLabelSize: Number(document.getElementById('pointLabelSize').value),
+          sideLabelSize: Number(document.getElementById('sideLabelSize').value),
+          sideTextMode: document.getElementById('sideTextMode').value,
+          unitCm: parsePositiveExpr(document.getElementById('unitCm').value, '1単位あたりのcm').value
+        };
+      }
+
+      function getPrintOptions() {
+        return {
+          paperSize: document.getElementById('paperSize').value,
+          orientation: document.getElementById('paperOrientation').value,
+          marginTop: parseNonNegativeExpr(document.getElementById('marginTop').value, '上余白').value,
+          marginBottom: parseNonNegativeExpr(document.getElementById('marginBottom').value, '下余白').value,
+          marginLeft: parseNonNegativeExpr(document.getElementById('marginLeft').value, '左余白').value,
+          marginRight: parseNonNegativeExpr(document.getElementById('marginRight').value, '右余白').value,
+          mode: document.querySelector('input[name="printMode"]:checked').value
+        };
+      }
+
+      function showModeFields() {
+        const shapeType = document.getElementById('shapeType').value;
+        document.querySelectorAll('.shape-group').forEach(function (group) {
+          group.classList.toggle('active', group.dataset.shape === shapeType);
+        });
+
+        const mode = document.getElementById('mode').value;
+        document.querySelectorAll('.mode-group').forEach(function (group) {
+          group.classList.toggle('active', shapeType === 'triangle' && group.dataset.mode === mode);
+        });
+      }
+
+      function computeTriangleFromSSS() {
+        const a = parsePositiveExpr(document.getElementById('sss-a').value, 'a');
+        const b = parsePositiveExpr(document.getElementById('sss-b').value, 'b');
+        const c = parsePositiveExpr(document.getElementById('sss-c').value, 'c');
+
+        if (a.value + b.value <= c.value || b.value + c.value <= a.value || c.value + a.value <= b.value) {
+          throw new Error('三角形不成立です。');
         }
 
-        function parseTerm(){
-          var value = parseFactor();
-          while(true){
-            var t = peek();
-            if(!t) break;
-            if(t.type === '*'){
-              consume('*');
-              value *= parseFactor();
-            }else if(t.type === '/'){
-              consume('/');
-              var d = parseFactor();
-              if(Math.abs(d) < 1e-12) throw new Error('0で割ることはできません');
-              value /= d;
-            }else if(startsFactor(t)){
-              value *= parseFactor();
-            }else{
-              break;
+        const A = { x: 0, y: 0 };
+        const B = { x: c.value, y: 0 };
+        const Cx = (b.value * b.value + c.value * c.value - a.value * a.value) / (2 * c.value);
+        const Cy2 = b.value * b.value - Cx * Cx;
+        const C = { x: Cx, y: Math.sqrt(Math.max(0, Cy2)) };
+
+        return {
+          points: { A, B, C },
+          expressions: { a: a.raw, b: b.raw, c: c.raw }
+        };
+      }
+
+      function computeTriangleFromSAS() {
+        const b = parsePositiveExpr(document.getElementById('sas-b').value, 'b');
+        const c = parsePositiveExpr(document.getElementById('sas-c').value, 'c');
+        const Aang = parseAngleExpr(document.getElementById('sas-A').value, '∠A');
+
+        return {
+          points: {
+            A: { x: 0, y: 0 },
+            B: { x: c.value, y: 0 },
+            C: {
+              x: b.value * Math.cos(degToRad(Aang.value)),
+              y: b.value * Math.sin(degToRad(Aang.value))
             }
-          }
-          return value;
+          },
+          expressions: { b: b.raw, c: c.raw }
+        };
+      }
+
+      function computeTriangleFromASA() {
+        const c = parsePositiveExpr(document.getElementById('asa-c').value, 'c');
+        const Aang = parseAngleExpr(document.getElementById('asa-A').value, '∠A');
+        const Bang = parseAngleExpr(document.getElementById('asa-B').value, '∠B');
+        const Cang = 180 - Aang.value - Bang.value;
+
+        if (!(Cang > 0)) throw new Error('角の和が 180° 未満ではありません。');
+
+        const x = (c.value * Math.tan(degToRad(Bang.value))) / (Math.tan(degToRad(Aang.value)) + Math.tan(degToRad(Bang.value)));
+        return {
+          points: {
+            A: { x: 0, y: 0 },
+            B: { x: c.value, y: 0 },
+            C: { x: x, y: x * Math.tan(degToRad(Aang.value)) }
+          },
+          expressions: { c: c.raw }
+        };
+      }
+
+      function computeTriangleFromAAS() {
+        const a = parsePositiveExpr(document.getElementById('aas-a').value, 'a');
+        const Aang = parseAngleExpr(document.getElementById('aas-A').value, '∠A');
+        const Bang = parseAngleExpr(document.getElementById('aas-B').value, '∠B');
+        const Cang = 180 - Aang.value - Bang.value;
+
+        if (!(Cang > 0)) throw new Error('角の和が 180° 未満ではありません。');
+
+        const cVal = a.value * Math.sin(degToRad(Cang)) / Math.sin(degToRad(Aang.value));
+        const x = (cVal * Math.tan(degToRad(Bang.value))) / (Math.tan(degToRad(Aang.value)) + Math.tan(degToRad(Bang.value)));
+
+        return {
+          points: {
+            A: { x: 0, y: 0 },
+            B: { x: cVal, y: 0 },
+            C: { x: x, y: x * Math.tan(degToRad(Aang.value)) }
+          },
+          expressions: { a: a.raw }
+        };
+      }
+
+      function computeTriangleFromAAA() {
+        const Aang = parseAngleExpr(document.getElementById('aaa-A').value, '∠A');
+        const Bang = parseAngleExpr(document.getElementById('aaa-B').value, '∠B');
+        const Cang = parseAngleExpr(document.getElementById('aaa-C').value, '∠C');
+
+        if (Math.abs(Aang.value + Bang.value + Cang.value - 180) > 1e-7) {
+          throw new Error('三角の和を 180° にしてください。');
         }
 
-        function parseFactor(){
-          var t = peek();
-          if(!t) throw new Error('式が途中で終わっています');
+        const cVal = 1;
+        const x = (cVal * Math.tan(degToRad(Bang.value))) / (Math.tan(degToRad(Aang.value)) + Math.tan(degToRad(Bang.value)));
 
-          if(t.type === '+'){
-            consume('+');
-            return parseFactor();
-          }
-          if(t.type === '-'){
-            consume('-');
-            return -parseFactor();
-          }
-          if(t.type === 'number'){
-            consume('number');
-            return t.value;
-          }
-          if(t.type === '('){
-            consume('(');
-            var v = parseExpression();
-            consume(')');
-            return v;
-          }
-          if(t.type === 'sqrt'){
-            consume('sqrt');
-            return Math.sqrt(parseFactor());
-          }
-          throw new Error('構文エラーです');
+        return {
+          points: {
+            A: { x: 0, y: 0 },
+            B: { x: cVal, y: 0 },
+            C: { x: x, y: x * Math.tan(degToRad(Aang.value)) }
+          },
+          expressions: { c: '1' }
+        };
+      }
+
+      function computeTriangleFromPoints() {
+        const points = {
+          A: { x: parseExpr(document.getElementById('Ax').value).value, y: parseExpr(document.getElementById('Ay').value).value },
+          B: { x: parseExpr(document.getElementById('Bx').value).value, y: parseExpr(document.getElementById('By').value).value },
+          C: { x: parseExpr(document.getElementById('Cx').value).value, y: parseExpr(document.getElementById('Cy').value).value }
+        };
+
+        if (Math.abs(triangleArea2(points)) < 1e-9) throw new Error('3点が一直線上にあります。');
+
+        return { points: points, expressions: {} };
+      }
+
+      function computeTriangleFromBaseHeight() {
+        const c = parsePositiveExpr(document.getElementById('bh-c').value, '底辺');
+        const h = parsePositiveExpr(document.getElementById('bh-h').value, '高さ');
+        const t = parseExpr(document.getElementById('bh-t').value);
+
+        return {
+          points: {
+            A: { x: 0, y: 0 },
+            B: { x: c.value, y: 0 },
+            C: { x: t.value, y: h.value }
+          },
+          expressions: { c: c.raw, h: h.raw, t: t.raw }
+        };
+      }
+
+      function computeQuadrilateralFromPoints() {
+        const points = {
+          A: { x: parseExpr(document.getElementById('QAx').value).value, y: parseExpr(document.getElementById('QAy').value).value },
+          B: { x: parseExpr(document.getElementById('QBx').value).value, y: parseExpr(document.getElementById('QBy').value).value },
+          C: { x: parseExpr(document.getElementById('QCx').value).value, y: parseExpr(document.getElementById('QCy').value).value },
+          D: { x: parseExpr(document.getElementById('QDx').value).value, y: parseExpr(document.getElementById('QDy').value).value }
+        };
+
+        if (Math.abs(quadrilateralSignedArea(points)) < 1e-9) throw new Error('四角形の面積が 0 です。');
+        return { points: points, expressions: {} };
+      }
+
+      function computeRegularPolygon() {
+        const n = Math.round(parsePositiveExpr(document.getElementById('RPn').value, '頂点数 N').value);
+        if (n < 3) throw new Error('N は 3 以上にしてください。');
+        const cx = parseExpr(document.getElementById('RPcx').value).value;
+        const cy = parseExpr(document.getElementById('RPcy').value).value;
+        const r = parsePositiveExpr(document.getElementById('RPr').value, '半径').value;
+        const ang = parseExpr(document.getElementById('RPang').value).value;
+
+        const points = [];
+        for (let i = 0; i < n; i++) {
+          const t = degToRad(ang + (360 * i) / n);
+          points.push({ x: cx + r * Math.cos(t), y: cy + r * Math.sin(t) });
         }
 
-        var result = parseExpression();
-        if(pos !== tokens.length) throw new Error('式の解釈に失敗しました');
-        if(!isFinite(result)) throw new Error('値が不正です');
-        return result;
+        return {
+          points: points,
+          expressions: { s: document.getElementById('RPr').value }
+        };
       }
 
-      function rad(deg){ return deg * Math.PI / 180; }
-      function deg(radValue){ return radValue * 180 / Math.PI; }
-
-      function nearlyEqual(a,b,eps){
-        return Math.abs(a-b) <= (eps || 1e-6);
+      function computeCircle() {
+        return {
+          center: {
+            x: parseExpr(document.getElementById('CCx').value).value,
+            y: parseExpr(document.getElementById('CCy').value).value
+          },
+          radius: parsePositiveExpr(document.getElementById('Cr').value, '半径').value,
+          expressions: { r: document.getElementById('Cr').value }
+        };
       }
 
-      function point(x,y){
-        return {x:x,y:y};
+      function computeEllipse() {
+        return {
+          center: {
+            x: parseExpr(document.getElementById('ECx').value).value,
+            y: parseExpr(document.getElementById('ECy').value).value
+          },
+          a: parsePositiveExpr(document.getElementById('Ea').value, '長半径').value,
+          b: parsePositiveExpr(document.getElementById('Eb').value, '短半径').value,
+          angle: parseExpr(document.getElementById('Eang').value).value,
+          expressions: {
+            a: document.getElementById('Ea').value,
+            b: document.getElementById('Eb').value
+          }
+        };
       }
 
-      function add(p,q){ return {x:p.x+q.x,y:p.y+q.y}; }
-      function sub(p,q){ return {x:p.x-q.x,y:p.y-q.y}; }
-      function mul(p,k){ return {x:p.x*k,y:p.y*k}; }
-      function len(v){ return Math.hypot(v.x,v.y); }
-      function dist(a,b){ return Math.hypot(a.x-b.x,a.y-b.y); }
-      function dot(a,b){ return a.x*b.x + a.y*b.y; }
-      function cross(a,b){ return a.x*b.y - a.y*b.x; }
-      function normalize(v){
-        var l = len(v);
-        if(l < 1e-12) return {x:0,y:0};
-        return {x:v.x/l,y:v.y/l};
-      }
-      function perp(v){ return {x:-v.y,y:v.x}; }
+      function classifyTriangle(points) {
+        const a = sideLength(points.B, points.C);
+        const b = sideLength(points.C, points.A);
+        const c = sideLength(points.A, points.B);
+        const labels = [];
 
-      function polygonSignedArea(points){
-        var s = 0;
-        for(var i=0;i<points.length;i++){
-          var a = points[i];
-          var b = points[(i+1)%points.length];
-          s += a.x*b.y - a.y*b.x;
-        }
-        return s/2;
+        if (equalLen(a, b) && equalLen(b, c)) labels.push('正三角形');
+        else if (equalLen(a, b) || equalLen(b, c) || equalLen(c, a)) labels.push('二等辺三角形');
+
+        const arr = [a * a, b * b, c * c].sort(function (x, y) { return x - y; });
+        if (Math.abs(arr[0] + arr[1] - arr[2]) < 1e-8) labels.push('直角三角形');
+        else if (arr[0] + arr[1] > arr[2]) labels.push('鋭角三角形');
+        else labels.push('鈍角三角形');
+
+        return labels;
       }
 
-      function isConvexPolygon(points){
-        var n = points.length;
-        if(n < 4) return true;
-        var sign = 0;
-        for(var i=0;i<n;i++){
-          var a = points[i];
-          var b = points[(i+1)%n];
-          var c = points[(i+2)%n];
-          var z = cross(sub(b,a), sub(c,b));
-          if(Math.abs(z) < 1e-9) continue;
-          var cur = z > 0 ? 1 : -1;
-          if(sign === 0) sign = cur;
-          else if(sign !== cur) return false;
+      function polygonIsConvex(arr) {
+        const n = arr.length;
+        let sign = 0;
+        for (let i = 0; i < n; i++) {
+          const a = arr[i];
+          const b = arr[(i + 1) % n];
+          const c = arr[(i + 2) % n];
+          const z = cross(vec(a, b), vec(b, c));
+          if (Math.abs(z) < 1e-9) continue;
+          if (sign === 0) sign = z > 0 ? 1 : -1;
+          else if ((z > 0 ? 1 : -1) !== sign) return false;
         }
         return true;
       }
 
-      function lineIntersection(p1,p2,p3,p4){
-        var r = sub(p2,p1);
-        var s = sub(p4,p3);
-        var denom = cross(r,s);
-        if(Math.abs(denom) < 1e-9) return null;
-        var t = cross(sub(p3,p1), s) / denom;
-        return add(p1, mul(r, t));
-      }
+      function classifyQuadrilateral(points) {
+        const A = points.A;
+        const B = points.B;
+        const C = points.C;
+        const D = points.D;
 
-      function safeNumber(v, name){
-        var x = parseMathExpression(v);
-        if(!isFinite(x)) throw new Error(name + ' が不正です');
-        return x;
-      }
+        const AB = vec(A, B);
+        const BC = vec(B, C);
+        const CD = vec(C, D);
+        const DA = vec(D, A);
 
-      function triangleFromInputs(){
-        var mode = triangleModeEl.value;
-        var A,B,C;
-        var meta = [];
-        if(mode === 'sss'){
-          var a = safeNumber(getValue('tri_a'), 'a');
-          var b = safeNumber(getValue('tri_b'), 'b');
-          var c = safeNumber(getValue('tri_c'), 'c');
-          if(a<=0 || b<=0 || c<=0) throw new Error('辺の長さは正である必要があります');
-          if(a+b<=c || b+c<=a || c+a<=b) throw new Error('三角形が成立しません');
-          A = point(0,0);
-          B = point(c,0);
-          var x = (b*b + c*c - a*a) / (2*c);
-          var y2 = b*b - x*x;
-          if(y2 < -1e-9) throw new Error('三角形を作れません');
-          var y = Math.sqrt(Math.max(0,y2));
-          C = point(x,y);
-          meta.push('入力: SSS');
-          meta.push('a=' + formatNum(a) + ', b=' + formatNum(b) + ', c=' + formatNum(c));
-        }else if(mode === 'sas'){
-          var bs = safeNumber(getValue('tri_b'), 'b');
-          var cs = safeNumber(getValue('tri_c'), 'c');
-          var Adeg = safeNumber(getValue('tri_A'), '∠A');
-          if(bs<=0 || cs<=0) throw new Error('辺の長さは正である必要があります');
-          if(Adeg<=0 || Adeg>=180) throw new Error('角度は 0 < 角 < 180 を満たす必要があります');
-          A = point(0,0);
-          B = point(cs,0);
-          C = point(bs*Math.cos(rad(Adeg)), bs*Math.sin(rad(Adeg)));
-          meta.push('入力: SAS');
-          meta.push('b=' + formatNum(bs) + ', c=' + formatNum(cs) + ', ∠A=' + formatNum(Adeg) + '°');
-        }else if(mode === 'asa'){
-          var A1 = safeNumber(getValue('tri_A'), '∠A');
-          var B1 = safeNumber(getValue('tri_B'), '∠B');
-          var c1 = safeNumber(getValue('tri_c'), 'c');
-          var C1 = 180 - A1 - B1;
-          if(c1<=0) throw new Error('辺の長さは正である必要があります');
-          if(A1<=0 || B1<=0 || C1<=0) throw new Error('角度の合計が不正です');
-          var a1 = c1 * Math.sin(rad(A1)) / Math.sin(rad(C1));
-          var b1 = c1 * Math.sin(rad(B1)) / Math.sin(rad(C1));
-          A = point(0,0);
-          B = point(c1,0);
-          C = point(b1*Math.cos(rad(A1)), b1*Math.sin(rad(A1)));
-          meta.push('入力: ASA');
-          meta.push('∠A=' + formatNum(A1) + '°, ∠B=' + formatNum(B1) + '°, c=' + formatNum(c1));
-        }else if(mode === 'aas'){
-          var A2 = safeNumber(getValue('tri_A'), '∠A');
-          var B2 = safeNumber(getValue('tri_B'), '∠B');
-          var a2 = safeNumber(getValue('tri_a'), 'a');
-          var C2 = 180 - A2 - B2;
-          if(a2<=0) throw new Error('辺の長さは正である必要があります');
-          if(A2<=0 || B2<=0 || C2<=0) throw new Error('角度の合計が不正です');
-          var c2 = a2 * Math.sin(rad(C2)) / Math.sin(rad(A2));
-          var b2 = a2 * Math.sin(rad(B2)) / Math.sin(rad(A2));
-          A = point(0,0);
-          B = point(c2,0);
-          C = point(b2*Math.cos(rad(A2)), b2*Math.sin(rad(A2)));
-          meta.push('入力: AAS');
-          meta.push('∠A=' + formatNum(A2) + '°, ∠B=' + formatNum(B2) + '°, a=' + formatNum(a2));
-        }else if(mode === 'aaa'){
-          var A3 = safeNumber(getValue('tri_A'), '∠A');
-          var B3 = safeNumber(getValue('tri_B'), '∠B');
-          var C3 = safeNumber(getValue('tri_C'), '∠C');
-          var scale = safeNumber(getValue('tri_scale'), '基準辺');
-          if(scale<=0) throw new Error('基準辺は正である必要があります');
-          if(Math.abs((A3+B3+C3)-180) > 1e-6) throw new Error('AAA では角度の合計が180°である必要があります');
-          if(A3<=0 || B3<=0 || C3<=0) throw new Error('角度はすべて正である必要があります');
-          var a3 = scale * Math.sin(rad(A3)) / Math.sin(rad(C3));
-          var b3 = scale * Math.sin(rad(B3)) / Math.sin(rad(C3));
-          A = point(0,0);
-          B = point(scale,0);
-          C = point(b3*Math.cos(rad(A3)), b3*Math.sin(rad(A3)));
-          meta.push('入力: AAA');
-          meta.push('∠A=' + formatNum(A3) + '°, ∠B=' + formatNum(B3) + '°, ∠C=' + formatNum(C3) + '°, c=' + formatNum(scale));
-        }else if(mode === 'points'){
-          A = point(safeNumber(getValue('tri_Ax'),'A.x'), safeNumber(getValue('tri_Ay'),'A.y'));
-          B = point(safeNumber(getValue('tri_Bx'),'B.x'), safeNumber(getValue('tri_By'),'B.y'));
-          C = point(safeNumber(getValue('tri_Cx'),'C.x'), safeNumber(getValue('tri_Cy'),'C.y'));
-          meta.push('入力: 3点座標');
-        }else if(mode === 'baseheight'){
-          var base = safeNumber(getValue('tri_base'),'底辺');
-          var height = safeNumber(getValue('tri_height'),'高さ');
-          var foot = safeNumber(getValue('tri_foot'),'足の位置');
-          if(base<=0) throw new Error('底辺は正である必要があります');
-          A = point(0,0);
-          B = point(base,0);
-          C = point(foot,height);
-          meta.push('入力: 底辺＋高さ＋足の位置');
-          meta.push('AB=' + formatNum(base) + ', 高さ=' + formatNum(height) + ', 足=' + formatNum(foot));
-        }else{
-          throw new Error('未対応の三角形モードです');
-        }
+        const ab = sideLength(A, B);
+        const bc = sideLength(B, C);
+        const cd = sideLength(C, D);
+        const da = sideLength(D, A);
 
-        if(Math.abs(cross(sub(B,A), sub(C,A))) < 1e-9) throw new Error('3点が一直線上にあり、三角形が成立しません');
+        const para1 = parallel(AB, CD);
+        const para2 = parallel(BC, DA);
+        const right = perpendicular(AB, BC) && perpendicular(BC, CD) && perpendicular(CD, DA);
+        const allEqual = equalLen(ab, bc) && equalLen(bc, cd) && equalLen(cd, da);
 
-        return {
-          type:'triangle',
-          points:[A,B,C],
-          labels:['A','B','C'],
-          meta:meta
-        };
-      }
+        const labels = [];
 
-      function quadrilateralFromInputs(){
-        var A = point(safeNumber(getValue('quad_Ax'),'A.x'), safeNumber(getValue('quad_Ay'),'A.y'));
-        var B = point(safeNumber(getValue('quad_Bx'),'B.x'), safeNumber(getValue('quad_By'),'B.y'));
-        var C = point(safeNumber(getValue('quad_Cx'),'C.x'), safeNumber(getValue('quad_Cy'),'C.y'));
-        var D = point(safeNumber(getValue('quad_Dx'),'D.x'), safeNumber(getValue('quad_Dy'),'D.y'));
+        if (para1 && para2) labels.push('平行四辺形');
+        if (para1 && para2 && right) labels.push('長方形');
+        if (para1 && para2 && allEqual) labels.push('菱形');
+        if (para1 && para2 && right && allEqual) labels.unshift('正方形');
 
-        var points = [A,B,C,D];
-        var area = polygonSignedArea(points);
-        if(Math.abs(area) < 1e-9) throw new Error('四角形の面積が 0 です');
-        return {
-          type:'quadrilateral',
-          points:points,
-          labels:['A','B','C','D'],
-          meta:['入力: 4点座標']
-        };
-      }
+        const trapezoid = para1 || para2;
+        if (trapezoid) labels.push('台形');
 
-      function polygonFromInputs(){
-        var cx = safeNumber(getValue('poly_cx'),'中心 x');
-        var cy = safeNumber(getValue('poly_cy'),'中心 y');
-        var r = safeNumber(getValue('poly_r'),'半径');
-        var n = Math.round(safeNumber(getValue('poly_n'),'N'));
-        var rot = safeNumber(getValue('poly_rot'),'回転角');
-        if(r <= 0) throw new Error('半径は正である必要があります');
-        if(n < 3) throw new Error('N は 3 以上である必要があります');
-        var pts = [];
-        for(var i=0;i<n;i++){
-          var ang = rad(rot) + i * 2*Math.PI / n - Math.PI/2;
-          pts.push(point(cx + r*Math.cos(ang), cy + r*Math.sin(ang)));
-        }
-        var labels = [];
-        for(var j=0;j<n;j++) labels.push(String.fromCharCode(65 + (j % 26)));
-        return {
-          type:'polygon',
-          points:pts,
-          center:point(cx,cy),
-          radius:r,
-          n:n,
-          rotation:rot,
-          labels:labels,
-          meta:['入力: 正N角形', '中心=(' + formatNum(cx) + ', ' + formatNum(cy) + '), 半径=' + formatNum(r) + ', N=' + n + ', 回転=' + formatNum(rot) + '°']
-        };
-      }
-
-      function circleFromInputs(){
-        var cx = safeNumber(getValue('circle_cx'),'中心 x');
-        var cy = safeNumber(getValue('circle_cy'),'中心 y');
-        var r = safeNumber(getValue('circle_r'),'半径');
-        if(r <= 0) throw new Error('半径は正である必要があります');
-        return {
-          type:'circle',
-          center:point(cx,cy),
-          radius:r,
-          meta:['入力: 円', '中心=(' + formatNum(cx) + ', ' + formatNum(cy) + '), 半径=' + formatNum(r)]
-        };
-      }
-
-      function ellipseFromInputs(){
-        var cx = safeNumber(getValue('ellipse_cx'),'中心 x');
-        var cy = safeNumber(getValue('ellipse_cy'),'中心 y');
-        var rx = safeNumber(getValue('ellipse_rx'),'長半径');
-        var ry = safeNumber(getValue('ellipse_ry'),'短半径');
-        var rot = safeNumber(getValue('ellipse_rot'),'回転角');
-        if(rx <= 0 || ry <= 0) throw new Error('半径は正である必要があります');
-        return {
-          type:'ellipse',
-          center:point(cx,cy),
-          rx:rx,
-          ry:ry,
-          rotation:rot,
-          meta:['入力: 楕円', '中心=(' + formatNum(cx) + ', ' + formatNum(cy) + '), 長半径=' + formatNum(rx) + ', 短半径=' + formatNum(ry) + ', 回転=' + formatNum(rot) + '°']
-        };
-      }
-
-      function getShapeData(){
-        var type = shapeTypeEl.value;
-        if(type === 'triangle') return triangleFromInputs();
-        if(type === 'quadrilateral') return quadrilateralFromInputs();
-        if(type === 'polygon') return polygonFromInputs();
-        if(type === 'circle') return circleFromInputs();
-        if(type === 'ellipse') return ellipseFromInputs();
-        throw new Error('未対応の図形種別です');
-      }
-
-      function getBoundsForShape(shape){
-        if(shape.type === 'circle'){
-          return {
-            minX: shape.center.x - shape.radius,
-            maxX: shape.center.x + shape.radius,
-            minY: shape.center.y - shape.radius,
-            maxY: shape.center.y + shape.radius
-          };
-        }
-        if(shape.type === 'ellipse'){
-          var t = rad(shape.rotation);
-          var wx = Math.sqrt(shape.rx*shape.rx*Math.cos(t)*Math.cos(t) + shape.ry*shape.ry*Math.sin(t)*Math.sin(t));
-          var hy = Math.sqrt(shape.rx*shape.rx*Math.sin(t)*Math.sin(t) + shape.ry*shape.ry*Math.cos(t)*Math.cos(t));
-          return {
-            minX: shape.center.x - wx,
-            maxX: shape.center.x + wx,
-            minY: shape.center.y - hy,
-            maxY: shape.center.y + hy
-          };
-        }
-        var pts = shape.points;
-        var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-        for(var i=0;i<pts.length;i++){
-          minX = Math.min(minX, pts[i].x);
-          minY = Math.min(minY, pts[i].y);
-          maxX = Math.max(maxX, pts[i].x);
-          maxY = Math.max(maxY, pts[i].y);
-        }
-        return {minX:minX,minY:minY,maxX:maxX,maxY:maxY};
-      }
-
-      function transformForShape(shape){
-        var bounds = getBoundsForShape(shape);
-        var margin = 70;
-        var width = 1000;
-        var height = 750;
-        var bw = Math.max(1e-6, bounds.maxX - bounds.minX);
-        var bh = Math.max(1e-6, bounds.maxY - bounds.minY);
-        var scale = Math.min((width - 2*margin)/bw, (height - 2*margin)/bh);
-        if(!isFinite(scale) || scale <= 0) scale = 40;
-
-        function mapPoint(p){
-          return {
-            x: (p.x - bounds.minX) * scale + (width - bw*scale)/2,
-            y: height - ((p.y - bounds.minY) * scale + (height - bh*scale)/2)
-          };
-        }
-
-        return {
-          scale: scale,
-          mapPoint: mapPoint,
-          width: width,
-          height: height,
-          bounds: bounds
-        };
-      }
-
-      function clearSvg(){
-        while(svg.firstChild) svg.removeChild(svg.firstChild);
-        var bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-        bg.setAttribute('x', '0');
-        bg.setAttribute('y', '0');
-        bg.setAttribute('width', '1000');
-        bg.setAttribute('height', '750');
-        bg.setAttribute('fill', '#ffffff');
-        svg.appendChild(bg);
-      }
-
-      function makeSvg(tag, attrs){
-        var el = document.createElementNS('http://www.w3.org/2000/svg', tag);
-        for(var k in attrs){
-          if(Object.prototype.hasOwnProperty.call(attrs, k)){
-            el.setAttribute(k, String(attrs[k]));
+        if (trapezoid) {
+          if (para1 && !para2) {
+            if (equalLen(bc, da)) labels.push('等脚台形');
+          } else if (!para1 && para2) {
+            if (equalLen(ab, cd)) labels.push('等脚台形');
+          } else if (para1 && para2 && right) {
+            if (equalLen(ab, cd) || equalLen(bc, da)) labels.push('等脚台形');
           }
         }
-        return el;
+
+        labels.push(polygonIsConvex([A, B, C, D]) ? '凸四角形' : '凹四角形');
+
+        return Array.from(new Set(labels));
       }
 
-      function drawLabel(text, position){
-        var t = makeSvg('text', {
-          x: position.x,
-          y: position.y,
-          'font-size': 24,
-          'font-weight': 700,
-          fill: '#111827',
-          'text-anchor': 'middle',
-          'dominant-baseline': 'middle'
+      function computeGeneralMetrics(model, unitCm) {
+        if (model.shapeType === 'triangle') {
+          const p = model.points;
+          const a = sideLength(p.B, p.C);
+          const b = sideLength(p.C, p.A);
+          const c = sideLength(p.A, p.B);
+          const xs = [p.A.x, p.B.x, p.C.x];
+          const ys = [p.A.y, p.B.y, p.C.y];
+          const widthUnits = Math.max.apply(null, xs) - Math.min.apply(null, xs);
+          const heightUnits = Math.max.apply(null, ys) - Math.min.apply(null, ys);
+          return {
+            sideUnits: { a: a, b: b, c: c },
+            sideCm: { a: a * unitCm, b: b * unitCm, c: c * unitCm },
+            widthUnits: widthUnits,
+            heightUnits: heightUnits,
+            widthCm: widthUnits * unitCm,
+            heightCm: heightUnits * unitCm
+          };
+        }
+
+        if (model.shapeType === 'quadrilateral') {
+          const p = model.points;
+          const ab = sideLength(p.A, p.B);
+          const bc = sideLength(p.B, p.C);
+          const cd = sideLength(p.C, p.D);
+          const da = sideLength(p.D, p.A);
+          const xs = [p.A.x, p.B.x, p.C.x, p.D.x];
+          const ys = [p.A.y, p.B.y, p.C.y, p.D.y];
+          const widthUnits = Math.max.apply(null, xs) - Math.min.apply(null, xs);
+          const heightUnits = Math.max.apply(null, ys) - Math.min.apply(null, ys);
+          return {
+            sideUnits: { ab: ab, bc: bc, cd: cd, da: da },
+            sideCm: { ab: ab * unitCm, bc: bc * unitCm, cd: cd * unitCm, da: da * unitCm },
+            widthUnits: widthUnits,
+            heightUnits: heightUnits,
+            widthCm: widthUnits * unitCm,
+            heightCm: heightUnits * unitCm
+          };
+        }
+
+        if (model.shapeType === 'regularPolygon') {
+          const xs = model.points.map(function (p) { return p.x; });
+          const ys = model.points.map(function (p) { return p.y; });
+          const s = sideLength(model.points[0], model.points[1]);
+          const widthUnits = Math.max.apply(null, xs) - Math.min.apply(null, xs);
+          const heightUnits = Math.max.apply(null, ys) - Math.min.apply(null, ys);
+          return {
+            sideUnits: { s: s },
+            sideCm: { s: s * unitCm },
+            widthUnits: widthUnits,
+            heightUnits: heightUnits,
+            widthCm: widthUnits * unitCm,
+            heightCm: heightUnits * unitCm
+          };
+        }
+
+        if (model.shapeType === 'circle') {
+          const d = 2 * model.radius;
+          return {
+            widthUnits: d,
+            heightUnits: d,
+            widthCm: d * unitCm,
+            heightCm: d * unitCm
+          };
+        }
+
+        return {
+          widthUnits: 2 * model.a,
+          heightUnits: 2 * model.b,
+          widthCm: 2 * model.a * unitCm,
+          heightCm: 2 * model.b * unitCm
+        };
+      }
+
+      function computeModel() {
+        const shapeType = document.getElementById('shapeType').value;
+        let model;
+
+        if (shapeType === 'triangle') {
+          const mode = document.getElementById('mode').value;
+          if (mode === 'sss') model = computeTriangleFromSSS();
+          else if (mode === 'sas') model = computeTriangleFromSAS();
+          else if (mode === 'asa') model = computeTriangleFromASA();
+          else if (mode === 'aas') model = computeTriangleFromAAS();
+          else if (mode === 'aaa') model = computeTriangleFromAAA();
+          else if (mode === 'points') model = computeTriangleFromPoints();
+          else if (mode === 'baseHeight') model = computeTriangleFromBaseHeight();
+          else throw new Error('未対応の三角形モードです。');
+
+          if (Math.abs(triangleArea2(model.points)) < 1e-9) throw new Error('面積が 0 のため三角形になりません。');
+          model.classification = classifyTriangle(model.points);
+        } else if (shapeType === 'quadrilateral') {
+          model = computeQuadrilateralFromPoints();
+          model.classification = classifyQuadrilateral(model.points);
+        } else if (shapeType === 'regularPolygon') {
+          model = computeRegularPolygon();
+          model.classification = ['正' + model.points.length + '角形'];
+        } else if (shapeType === 'circle') {
+          model = computeCircle();
+          model.classification = ['円'];
+        } else if (shapeType === 'ellipse') {
+          model = computeEllipse();
+          model.classification = ['楕円'];
+        } else {
+          throw new Error('未対応の図形種別です。');
+        }
+
+        model.shapeType = shapeType;
+        model.display = getDisplayOptions();
+        model.print = getPrintOptions();
+        model.metrics = computeGeneralMetrics(model, model.display.unitCm);
+
+        return model;
+      }
+
+      function getSideLabelText(model, key, value) {
+        const mode = model.display.sideTextMode;
+        const expr = model.expressions ? model.expressions[key] : null;
+
+        if (mode === 'input' && expr) return expr;
+        if (mode === 'root') {
+          const root = tryRootFormat(value);
+          if (root) return root;
+        }
+        return formatDecimal(value);
+      }
+
+      function makeBoundingBoxFromArray(arr, extra) {
+        const ex = typeof extra === 'number' ? extra : 0.9;
+        const xs = arr.map(function (p) { return p.x; });
+        const ys = arr.map(function (p) { return p.y; });
+        const minX = Math.min.apply(null, xs);
+        const maxX = Math.max.apply(null, xs);
+        const minY = Math.min.apply(null, ys);
+        const maxY = Math.max.apply(null, ys);
+        const width = Math.max(maxX - minX, 1);
+        const height = Math.max(maxY - minY, 1);
+        const centerX = (minX + maxX) / 2;
+        const centerY = (minY + maxY) / 2;
+        const side = Math.max(width, height) + ex * Math.max(width, height, 1);
+        return [centerX - side / 2, centerY + side / 2, centerX + side / 2, centerY - side / 2];
+      }
+
+      function makeBoundingBox(model, extra) {
+        const ex = typeof extra === 'number' ? extra : 0.9;
+
+        if (model.shapeType === 'triangle') return makeBoundingBoxFromArray([model.points.A, model.points.B, model.points.C], ex);
+        if (model.shapeType === 'quadrilateral') return makeBoundingBoxFromArray([model.points.A, model.points.B, model.points.C, model.points.D], ex);
+        if (model.shapeType === 'regularPolygon') return makeBoundingBoxFromArray(model.points, ex);
+
+        if (model.shapeType === 'circle') {
+          const c = model.center;
+          const r = model.radius;
+          return [c.x - r - ex, c.y + r + ex, c.x + r + ex, c.y - r - ex];
+        }
+
+        const c = model.center;
+        const a = model.a;
+        const b = model.b;
+        return [c.x - a - ex, c.y + Math.max(a, b) + ex, c.x + a + ex, c.y - Math.max(a, b) - ex];
+      }
+
+      function disposeMainBoard() {
+        if (board) {
+          JXG.JSXGraph.freeBoard(board);
+          board = null;
+        }
+        document.getElementById('box').innerHTML = '';
+      }
+
+      function createAxes(targetBoard) {
+        targetBoard.create('axis', [[0, 0], [1, 0]], {
+          withLabel: false,
+          strokeWidth: 1,
+          ticks: {
+            drawLabels: true,
+            insertTicks: true,
+            ticksDistance: 1,
+            minorTicks: 0,
+            label: { offset: [0, -12] }
+          }
         });
-        t.textContent = text;
-        svg.appendChild(t);
-      }
 
-      function labelPositionForVertex(mappedPts, index){
-        var p = mappedPts[index];
-        var cx = 0, cy = 0;
-        for(var i=0;i<mappedPts.length;i++){
-          cx += mappedPts[i].x;
-          cy += mappedPts[i].y;
-        }
-        cx /= mappedPts.length;
-        cy /= mappedPts.length;
-        var away = normalize({x:p.x-cx, y:p.y-cy});
-        if(len(away) < 1e-9) away = {x:0,y:-1};
-        return {
-          x: p.x + away.x * 28,
-          y: p.y + away.y * 28
-        };
-      }
-
-      function drawTriangleSideDimensions(mappedPts, originalPts){
-        var pairs = [
-          [1,2,'a'],
-          [2,0,'b'],
-          [0,1,'c']
-        ];
-        var centroid = {
-          x:(mappedPts[0].x + mappedPts[1].x + mappedPts[2].x)/3,
-          y:(mappedPts[0].y + mappedPts[1].y + mappedPts[2].y)/3
-        };
-
-        for(var i=0;i<pairs.length;i++){
-          var i1 = pairs[i][0], i2 = pairs[i][1];
-          var p1 = mappedPts[i1], p2 = mappedPts[i2];
-          var mid = {x:(p1.x+p2.x)/2, y:(p1.y+p2.y)/2};
-          var edge = sub(p2,p1);
-          var n = normalize(perp(edge));
-          var toCenter = sub(centroid, mid);
-          if(dot(n, toCenter) > 0) n = mul(n, -1);
-          var offset = 26;
-
-          var c1 = add(p1, mul(n, offset));
-          var c2 = add(p2, mul(n, offset));
-
-          var pathData = 'M ' + p1.x + ' ' + p1.y + ' Q ' + mid.x + ' ' + mid.y + ' ' + p2.x + ' ' + p2.y;
-          var guideData = 'M ' + c1.x + ' ' + c1.y + ' Q ' + (mid.x + n.x*offset) + ' ' + (mid.y + n.y*offset) + ' ' + c2.x + ' ' + c2.y;
-
-          var guide = makeSvg('path', {
-            d: guideData,
-            fill: 'none',
-            stroke: '#8094c6',
-            'stroke-width': 2,
-            'stroke-dasharray': '8 6'
-          });
-          svg.appendChild(guide);
-
-          var lengthText = formatNum(dist(originalPts[i1], originalPts[i2]));
-          var tx = mid.x + n.x*(offset + 18);
-          var ty = mid.y + n.y*(offset + 18);
-          var textBg = makeSvg('rect', {
-            x: tx - 20,
-            y: ty - 12,
-            width: 40,
-            height: 24,
-            rx: 10,
-            fill: '#ffffff',
-            stroke: '#d6ddf0'
-          });
-          svg.appendChild(textBg);
-
-          var text = makeSvg('text', {
-            x: tx,
-            y: ty,
-            'font-size': 18,
-            fill: '#51627d',
-            'text-anchor': 'middle',
-            'dominant-baseline': 'middle',
-            'font-weight': 700
-          });
-          text.textContent = lengthText;
-          svg.appendChild(text);
-        }
-      }
-
-      function drawCenterPoint(mappedCenter){
-        var c = makeSvg('circle', {
-          cx: mappedCenter.x,
-          cy: mappedCenter.y,
-          r: 4,
-          fill: '#1f4fd8'
+        targetBoard.create('axis', [[0, 0], [0, 1]], {
+          withLabel: false,
+          strokeWidth: 1,
+          ticks: {
+            drawLabels: true,
+            insertTicks: true,
+            ticksDistance: 1,
+            minorTicks: 0,
+            label: { offset: [-12, 0] }
+          }
         });
-        svg.appendChild(c);
       }
 
-      function renderShape(shape){
-        clearSvg();
-        var t = transformForShape(shape);
-        var mappedPts, poly;
+      function addPointLabelText(targetBoard, vertex, ctr, text, labelSize) {
+        const outward = unitVector(ctr, vertex);
+        const pos = {
+          x: vertex.x + outward.x * 0.5,
+          y: vertex.y + outward.y * 0.5
+        };
 
-        if(shape.type === 'triangle' || shape.type === 'quadrilateral' || shape.type === 'polygon'){
-          mappedPts = shape.points.map(t.mapPoint);
+        targetBoard.create('text', [pos.x, pos.y, text], {
+          fontSize: labelSize,
+          fixed: true,
+          anchorX: 'middle',
+          anchorY: 'middle'
+        });
+      }
 
-          poly = makeSvg('polygon', {
-            points: mappedPts.map(function(p){ return p.x + ',' + p.y; }).join(' '),
-            fill: 'rgba(122,162,255,0.14)',
-            stroke: '#111827',
-            'stroke-width': 3,
-            'stroke-linejoin': 'round'
+      function addSideArcAndLabel(targetBoard, P, Q, labelText, ctr, labelSize) {
+        const mid = { x: (P.x + Q.x) / 2, y: (P.y + Q.y) / 2 };
+        const len = Math.hypot(Q.x - P.x, Q.y - P.y) || 1;
+        const n = unitNormalOutside(P, Q, ctr);
+        const arcHeight = Math.max(0.35, len * 0.12);
+        const control = { x: mid.x + n.x * arcHeight, y: mid.y + n.y * arcHeight };
+        const gapHalf = 0.14;
+
+        targetBoard.create('curve', [
+          function (t) { return quadraticPoint(P, control, Q, t).x; },
+          function (t) { return quadraticPoint(P, control, Q, t).y; },
+          0,
+          0.5 - gapHalf
+        ], {
+          strokeWidth: 2,
+          dash: 2,
+          fixed: true
+        });
+
+        targetBoard.create('curve', [
+          function (t) { return quadraticPoint(P, control, Q, t).x; },
+          function (t) { return quadraticPoint(P, control, Q, t).y; },
+          0.5 + gapHalf,
+          1
+        ], {
+          strokeWidth: 2,
+          dash: 2,
+          fixed: true
+        });
+
+        const centerPoint = quadraticPoint(P, control, Q, 0.5);
+        targetBoard.create('text', [centerPoint.x, centerPoint.y, labelText], {
+          fontSize: labelSize,
+          fixed: true,
+          anchorX: 'middle',
+          anchorY: 'middle',
+          cssStyle: 'background:white;padding:0 4px;'
+        });
+      }
+
+      function renderTriangle(targetBoard, model) {
+        const p = model.points;
+        const A = targetBoard.create('point', [p.A.x, p.A.y], { name: '', size: 3, fixed: true, withLabel: false });
+        const B = targetBoard.create('point', [p.B.x, p.B.y], { name: '', size: 3, fixed: true, withLabel: false });
+        const C = targetBoard.create('point', [p.C.x, p.C.y], { name: '', size: 3, fixed: true, withLabel: false });
+
+        targetBoard.create('polygon', [A, B, C], {
+          borders: { strokeWidth: 2 },
+          fillColor: 'lightgray',
+          fillOpacity: 0.15
+        });
+
+        const ctr = centroidTriangle(p);
+
+        addPointLabelText(targetBoard, p.A, ctr, getPointDisplayText('A', p.A, model.display.showCoordLabels), model.display.pointLabelSize);
+        addPointLabelText(targetBoard, p.B, ctr, getPointDisplayText('B', p.B, model.display.showCoordLabels), model.display.pointLabelSize);
+        addPointLabelText(targetBoard, p.C, ctr, getPointDisplayText('C', p.C, model.display.showCoordLabels), model.display.pointLabelSize);
+
+        if (model.display.showSideLabels) {
+          addSideArcAndLabel(targetBoard, p.B, p.C, getSideLabelText(model, 'a', model.metrics.sideUnits.a), ctr, model.display.sideLabelSize);
+          addSideArcAndLabel(targetBoard, p.C, p.A, getSideLabelText(model, 'b', model.metrics.sideUnits.b), ctr, model.display.sideLabelSize);
+          addSideArcAndLabel(targetBoard, p.A, p.B, getSideLabelText(model, 'c', model.metrics.sideUnits.c), ctr, model.display.sideLabelSize);
+        }
+      }
+
+      function renderQuadrilateral(targetBoard, model) {
+        const p = model.points;
+        const pts = ['A', 'B', 'C', 'D'].map(function (k) {
+          return targetBoard.create('point', [p[k].x, p[k].y], {
+            name: '',
+            size: 3,
+            fixed: true,
+            withLabel: false
           });
-          svg.appendChild(poly);
+        });
 
-          if(shape.type === 'triangle'){
-            drawTriangleSideDimensions(mappedPts, shape.points);
-          }
+        targetBoard.create('polygon', pts, {
+          borders: { strokeWidth: 2 },
+          fillColor: 'lightgray',
+          fillOpacity: 0.15
+        });
 
-          for(var i=0;i<mappedPts.length;i++){
-            var dotPt = makeSvg('circle', {
-              cx: mappedPts[i].x,
-              cy: mappedPts[i].y,
-              r: 4,
-              fill: '#111827'
-            });
-            svg.appendChild(dotPt);
-          }
-
-          for(var j=0;j<mappedPts.length;j++){
-            drawLabel(shape.labels[j], labelPositionForVertex(mappedPts, j));
-          }
-        }else if(shape.type === 'circle'){
-          var center = t.mapPoint(shape.center);
-          var screenR = shape.radius * t.scale;
-          var circle = makeSvg('circle', {
-            cx: center.x,
-            cy: center.y,
-            r: screenR,
-            fill: 'rgba(122,162,255,0.14)',
-            stroke: '#111827',
-            'stroke-width': 3
-          });
-          svg.appendChild(circle);
-
-          var radiusLine = makeSvg('line', {
-            x1: center.x,
-            y1: center.y,
-            x2: center.x + screenR,
-            y2: center.y,
-            stroke: '#8094c6',
-            'stroke-width': 2,
-            'stroke-dasharray': '8 6'
-          });
-          svg.appendChild(radiusLine);
-
-          drawCenterPoint(center);
-          drawLabel('O', {x:center.x - 22, y:center.y - 22});
-
-          var text = makeSvg('text', {
-            x: center.x + screenR/2,
-            y: center.y - 14,
-            'font-size': 18,
-            fill: '#51627d',
-            'text-anchor': 'middle',
-            'font-weight': 700
-          });
-          text.textContent = 'r=' + formatNum(shape.radius);
-          svg.appendChild(text);
-        }else if(shape.type === 'ellipse'){
-          var centerE = t.mapPoint(shape.center);
-          var rx = shape.rx * t.scale;
-          var ry = shape.ry * t.scale;
-          var ell = makeSvg('ellipse', {
-            cx: centerE.x,
-            cy: centerE.y,
-            rx: rx,
-            ry: ry,
-            fill: 'rgba(122,162,255,0.14)',
-            stroke: '#111827',
-            'stroke-width': 3,
-            transform: 'rotate(' + (-shape.rotation) + ' ' + centerE.x + ' ' + centerE.y + ')'
-          });
-          svg.appendChild(ell);
-
-          drawCenterPoint(centerE);
-          drawLabel('O', {x:centerE.x - 24, y:centerE.y - 24});
-
-          var rotRad = rad(shape.rotation);
-          var majorEnd = {
-            x: centerE.x + rx * Math.cos(rotRad),
-            y: centerE.y - rx * Math.sin(rotRad)
-          };
-          var minorEnd = {
-            x: centerE.x - ry * Math.sin(rotRad),
-            y: centerE.y - ry * Math.cos(rotRad)
-          };
-
-          svg.appendChild(makeSvg('line', {
-            x1:centerE.x, y1:centerE.y, x2:majorEnd.x, y2:majorEnd.y,
-            stroke:'#8094c6','stroke-width':2,'stroke-dasharray':'8 6'
-          }));
-          svg.appendChild(makeSvg('line', {
-            x1:centerE.x, y1:centerE.y, x2:minorEnd.x, y2:minorEnd.y,
-            stroke:'#8094c6','stroke-width':2,'stroke-dasharray':'8 6'
-          }));
-
-          var txt1 = makeSvg('text', {
-            x:(centerE.x + majorEnd.x)/2,
-            y:(centerE.y + majorEnd.y)/2 - 8,
-            'font-size':18,
-            fill:'#51627d',
-            'text-anchor':'middle',
-            'font-weight':700
-          });
-          txt1.textContent = 'a=' + formatNum(shape.rx);
-          svg.appendChild(txt1);
-
-          var txt2 = makeSvg('text', {
-            x:(centerE.x + minorEnd.x)/2,
-            y:(centerE.y + minorEnd.y)/2 - 8,
-            'font-size':18,
-            fill:'#51627d',
-            'text-anchor':'middle',
-            'font-weight':700
-          });
-          txt2.textContent = 'b=' + formatNum(shape.ry);
-          svg.appendChild(txt2);
-        }
+        const ctr = centroidArray([p.A, p.B, p.C, p.D]);
+        ['A', 'B', 'C', 'D'].forEach(function (k) {
+          addPointLabelText(targetBoard, p[k], ctr, getPointDisplayText(k, p[k], model.display.showCoordLabels), model.display.pointLabelSize);
+        });
       }
 
-      function triangleClassifications(points){
-        var A = points[0], B = points[1], C = points[2];
-        var a = dist(B,C);
-        var b = dist(C,A);
-        var c = dist(A,B);
-        var cls = [];
+      function renderRegularPolygon(targetBoard, model) {
+        const pts = model.points.map(function (p) {
+          return targetBoard.create('point', [p.x, p.y], { name: '', size: 2.5, fixed: true, withLabel: false });
+        });
 
-        if(nearlyEqual(a,b) || nearlyEqual(b,c) || nearlyEqual(c,a)) cls.push('二等辺三角形');
-        if(nearlyEqual(a,b) && nearlyEqual(b,c)) cls.push('正三角形');
+        targetBoard.create('polygon', pts, {
+          borders: { strokeWidth: 2 },
+          fillColor: 'lightgray',
+          fillOpacity: 0.15
+        });
 
-        var arr = [a*a,b*b,c*c].sort(function(x,y){ return x-y; });
-        var s1 = arr[0], s2 = arr[1], s3 = arr[2];
-        if(nearlyEqual(s1+s2, s3, 1e-5)) cls.push('直角三角形');
-        else if(s1+s2 > s3) cls.push('鋭角三角形');
-        else cls.push('鈍角三角形');
-
-        return cls;
+        const ctr = centroidArray(model.points);
+        model.points.forEach(function (p, i) {
+          const name = String.fromCharCode(65 + (i % 26));
+          addPointLabelText(targetBoard, p, ctr, model.display.showCoordLabels ? getPointDisplayText(name, p, true) : name, model.display.pointLabelSize);
+        });
       }
 
-      function quadrilateralClassifications(points){
-        var A=points[0], B=points[1], C=points[2], D=points[3];
-        var AB=sub(B,A), BC=sub(C,B), CD=sub(D,C), DA=sub(A,D);
-        var lenAB=len(AB), lenBC=len(BC), lenCD=len(CD), lenDA=len(DA);
-        var cls = [];
+      function renderCircle(targetBoard, model) {
+        const O = targetBoard.create('point', [model.center.x, model.center.y], {
+          name: '',
+          size: 3,
+          fixed: true,
+          withLabel: false
+        });
 
-        var convex = isConvexPolygon(points);
-        cls.push(convex ? '凸四角形' : '凹四角形');
+        const P = targetBoard.create('point', [model.center.x + model.radius, model.center.y], {
+          name: '',
+          size: 2,
+          fixed: true,
+          withLabel: false,
+          visible: false
+        });
 
-        var ab_cd_parallel = Math.abs(cross(AB, CD)) < 1e-6;
-        var bc_da_parallel = Math.abs(cross(BC, DA)) < 1e-6;
-        var angleB90 = Math.abs(dot(AB, BC)) < 1e-6;
-        var allSidesEqual = nearlyEqual(lenAB,lenBC,1e-5) && nearlyEqual(lenBC,lenCD,1e-5) && nearlyEqual(lenCD,lenDA,1e-5);
+        targetBoard.create('circle', [O, P], { strokeWidth: 2 });
 
-        if(ab_cd_parallel && bc_da_parallel) cls.push('平行四辺形');
-        if(ab_cd_parallel && bc_da_parallel && angleB90) cls.push('長方形');
-        if(ab_cd_parallel && bc_da_parallel && allSidesEqual) cls.push('菱形');
-        if(ab_cd_parallel && bc_da_parallel && angleB90 && allSidesEqual) cls.push('正方形');
-
-        var isTrapezoid = (ab_cd_parallel && !bc_da_parallel) || (!ab_cd_parallel && bc_da_parallel);
-        if(isTrapezoid) cls.push('台形');
-
-        if(isTrapezoid){
-          var nonParallel1, nonParallel2;
-          if(ab_cd_parallel && !bc_da_parallel){
-            nonParallel1 = lenBC;
-            nonParallel2 = lenDA;
-          }else{
-            nonParallel1 = lenAB;
-            nonParallel2 = lenCD;
-          }
-          if(nearlyEqual(nonParallel1, nonParallel2, 1e-5)) cls.push('等脚台形');
-        }
-
-        return cls;
+        addPointLabelText(
+          targetBoard,
+          model.center,
+          { x: model.center.x, y: model.center.y },
+          model.display.showCoordLabels ? getPointDisplayText('O', model.center, true) : 'O',
+          model.display.pointLabelSize
+        );
       }
 
-      function classificationsForShape(shape){
-        if(shape.type === 'triangle') return triangleClassifications(shape.points);
-        if(shape.type === 'quadrilateral') return quadrilateralClassifications(shape.points);
-        if(shape.type === 'polygon') return ['正' + shape.n + '角形'];
-        if(shape.type === 'circle') return ['円'];
-        if(shape.type === 'ellipse') return ['楕円'];
-        return [];
+      function renderEllipse(targetBoard, model) {
+        const center = model.center;
+        const phi = degToRad(model.angle);
+
+        targetBoard.create('curve', [
+          function (t) { return center.x + model.a * Math.cos(t) * Math.cos(phi) - model.b * Math.sin(t) * Math.sin(phi); },
+          function (t) { return center.y + model.a * Math.cos(t) * Math.sin(phi) + model.b * Math.sin(t) * Math.cos(phi); },
+          0,
+          2 * Math.PI
+        ], {
+          strokeWidth: 2,
+          fixed: true
+        });
+
+        addPointLabelText(
+          targetBoard,
+          center,
+          { x: center.x, y: center.y },
+          model.display.showCoordLabels ? getPointDisplayText('O', center, true) : 'O',
+          model.display.pointLabelSize
+        );
       }
 
-      function updateClassifications(chips){
-        classificationChips.innerHTML = '';
-        if(!chips || !chips.length){
-          var span = document.createElement('div');
-          span.className = 'small';
-          span.textContent = '判定なし';
-          classificationChips.appendChild(span);
-          return;
-        }
-        for(var i=0;i<chips.length;i++){
-          var chip = document.createElement('span');
-          chip.className = 'chip';
-          chip.textContent = chips[i];
-          classificationChips.appendChild(chip);
-        }
+      function renderToBoard(targetBoard, model) {
+        if (model.display.showAxes) createAxes(targetBoard);
+        if (model.shapeType === 'triangle') return renderTriangle(targetBoard, model);
+        if (model.shapeType === 'quadrilateral') return renderQuadrilateral(targetBoard, model);
+        if (model.shapeType === 'regularPolygon') return renderRegularPolygon(targetBoard, model);
+        if (model.shapeType === 'circle') return renderCircle(targetBoard, model);
+        return renderEllipse(targetBoard, model);
       }
 
-      function formatNum(x){
-        if(!isFinite(x)) return String(x);
-        if(Math.abs(x) < 1e-12) x = 0;
-        var s = x.toFixed(6);
-        s = s.replace(/\.?0+$/,'');
-        return s;
+      function renderMainBoard(model) {
+        disposeMainBoard();
+        board = JXG.JSXGraph.initBoard('box', {
+          boundingbox: makeBoundingBox(model),
+          axis: false,
+          keepaspectratio: true,
+          zoom: { wheel: true, needShift: false },
+          pan: { enabled: true, needTwoFingers: true },
+          showNavigation: false,
+          showCopyright: false
+        });
+        renderToBoard(board, model);
+        board.update();
       }
 
-      function shapeMetaText(shape){
-        var lines = [];
-        if(shape.meta && shape.meta.length){
-          for(var i=0;i<shape.meta.length;i++) lines.push(shape.meta[i]);
+      function setupPaperFrame(printOptions) {
+        const base = PAPER_SIZES_MM[printOptions.paperSize];
+        let widthMm = base.width;
+        let heightMm = base.height;
+        if (printOptions.orientation === 'landscape') {
+          const tmp = widthMm;
+          widthMm = heightMm;
+          heightMm = tmp;
         }
 
-        if(shape.type === 'triangle' || shape.type === 'quadrilateral' || shape.type === 'polygon'){
-          for(var j=0;j<shape.points.length;j++){
-            lines.push(shape.labels[j] + ' = (' + formatNum(shape.points[j].x) + ', ' + formatNum(shape.points[j].y) + ')');
-          }
-        }else if(shape.type === 'circle'){
-          lines.push('中心 = (' + formatNum(shape.center.x) + ', ' + formatNum(shape.center.y) + ')');
-          lines.push('半径 = ' + formatNum(shape.radius));
-        }else if(shape.type === 'ellipse'){
-          lines.push('中心 = (' + formatNum(shape.center.x) + ', ' + formatNum(shape.center.y) + ')');
-          lines.push('長半径 = ' + formatNum(shape.rx));
-          lines.push('短半径 = ' + formatNum(shape.ry));
-          lines.push('回転角 = ' + formatNum(shape.rotation) + '°');
-        }
+        const printableWidthCm = (widthMm / 10) - printOptions.marginLeft - printOptions.marginRight;
+        const printableHeightCm = (heightMm / 10) - printOptions.marginTop - printOptions.marginBottom;
 
-        if(shape.type === 'triangle'){
-          var a = dist(shape.points[1], shape.points[2]);
-          var b = dist(shape.points[2], shape.points[0]);
-          var c = dist(shape.points[0], shape.points[1]);
-          var area = Math.abs(cross(sub(shape.points[1], shape.points[0]), sub(shape.points[2], shape.points[0]))) / 2;
-          lines.push('a = BC = ' + formatNum(a));
-          lines.push('b = CA = ' + formatNum(b));
-          lines.push('c = AB = ' + formatNum(c));
-          lines.push('面積 = ' + formatNum(area));
-        }
-
-        if(shape.type === 'quadrilateral'){
-          var areaQ = Math.abs(polygonSignedArea(shape.points));
-          lines.push('面積 = ' + formatNum(areaQ));
-        }
-
-        if(shape.type === 'polygon'){
-          var side = dist(shape.points[0], shape.points[1]);
-          lines.push('1辺 = ' + formatNum(side));
-        }
-
-        if(shape.type === 'circle'){
-          lines.push('面積 = ' + formatNum(Math.PI * shape.radius * shape.radius));
-        }
-
-        if(shape.type === 'ellipse'){
-          lines.push('面積 = ' + formatNum(Math.PI * shape.rx * shape.ry));
-        }
-
-        return lines.join('<br>');
-      }
-
-      function getPaperDimensionsMm(){
-        var size = document.getElementById('paperSize').value;
-        var orientation = document.getElementById('paperOrientation').value;
-        var w,h;
-        if(size === 'A4'){
-          w = 210; h = 297;
-        }else{
-          w = 182; h = 257;
-        }
-        if(orientation === 'landscape'){
-          var tmp = w; w = h; h = tmp;
-        }
-        return {widthMm:w, heightMm:h, size:size, orientation:orientation};
-      }
-
-      function getPrintConfig(){
-        var paper = getPaperDimensionsMm();
-        var marginLeft = safeNumber(getValue('marginLeft'), '左余白');
-        var marginRight = safeNumber(getValue('marginRight'), '右余白');
-        var marginTop = safeNumber(getValue('marginTop'), '上余白');
-        var marginBottom = safeNumber(getValue('marginBottom'), '下余白');
-        var printWidthCm = safeNumber(getValue('printWidthCm'), '印刷時の横幅');
-        var fitMode = document.getElementById('fitMode').value;
-
-        if(marginLeft < 0 || marginRight < 0 || marginTop < 0 || marginBottom < 0) throw new Error('余白は 0 以上で指定してください');
-        if(printWidthCm <= 0) throw new Error('印刷時の横幅は正である必要があります');
-
-        var printableW = paper.widthMm - marginLeft - marginRight;
-        var printableH = paper.heightMm - marginTop - marginBottom;
-        if(printableW <= 0 || printableH <= 0) throw new Error('余白が大きすぎて印刷領域がありません');
-
-        var aspect = 1000 / 750;
-        var targetWmm = printWidthCm * 10;
-        var targetHmm = targetWmm / aspect;
-
-        var actualW = targetWmm;
-        var actualH = targetHmm;
-
-        if(fitMode === 'fit'){
-          var scale = Math.min(printableW / targetWmm, printableH / targetHmm, 1);
-          actualW = targetWmm * scale;
-          actualH = targetHmm * scale;
+        if (printableWidthCm <= 0 || printableHeightCm <= 0) {
+          throw new Error('余白が大きすぎて印刷可能領域がありません。');
         }
 
         return {
-          paper: paper,
-          marginLeft: marginLeft,
-          marginRight: marginRight,
-          marginTop: marginTop,
-          marginBottom: marginBottom,
-          printableW: printableW,
-          printableH: printableH,
-          fitMode: fitMode,
-          requestedWmm: targetWmm,
-          requestedHmm: targetHmm,
-          actualWmm: actualW,
-          actualHmm: actualH
+          widthMm: widthMm,
+          heightMm: heightMm,
+          printableWidthCm: printableWidthCm,
+          printableHeightCm: printableHeightCm
         };
       }
 
-      function updatePrintMeta(){
-        try{
-          var p = getPrintConfig();
-          printMeta.innerHTML =
-            '用紙 = ' + p.paper.size + ' / ' + (p.paper.orientation === 'portrait' ? '縦' : '横') + '<br>' +
-            '余白 = 左' + formatNum(p.marginLeft) + ' 右' + formatNum(p.marginRight) + ' 上' + formatNum(p.marginTop) + ' 下' + formatNum(p.marginBottom) + ' mm<br>' +
-            '配置 = ' + (p.fitMode === 'fit' ? '用紙内に収める' : '実寸') + '<br>' +
-            '印刷時サイズ = ' + formatNum(p.actualWmm / 10) + ' cm × ' + formatNum(p.actualHmm / 10) + ' cm';
-        }catch(err){
-          printMeta.innerHTML = '印刷設定エラー: ' + escapeHtml(err.message);
+      function scaleModelForPrint(model, scale) {
+        const cloned = JSON.parse(JSON.stringify(model));
+
+        if (cloned.shapeType === 'triangle') {
+          const ctr = centroidTriangle(cloned.points);
+          ['A', 'B', 'C'].forEach(function (k) {
+            cloned.points[k].x = (cloned.points[k].x - ctr.x) * scale;
+            cloned.points[k].y = (cloned.points[k].y - ctr.y) * scale;
+          });
+        } else if (cloned.shapeType === 'quadrilateral') {
+          const ctr = centroidArray([cloned.points.A, cloned.points.B, cloned.points.C, cloned.points.D]);
+          ['A', 'B', 'C', 'D'].forEach(function (k) {
+            cloned.points[k].x = (cloned.points[k].x - ctr.x) * scale;
+            cloned.points[k].y = (cloned.points[k].y - ctr.y) * scale;
+          });
+        } else if (cloned.shapeType === 'regularPolygon') {
+          const ctr = centroidArray(cloned.points);
+          cloned.points.forEach(function (p) {
+            p.x = (p.x - ctr.x) * scale;
+            p.y = (p.y - ctr.y) * scale;
+          });
+        } else if (cloned.shapeType === 'circle') {
+          cloned.center = { x: 0, y: 0 };
+          cloned.radius *= scale;
+        } else if (cloned.shapeType === 'ellipse') {
+          cloned.center = { x: 0, y: 0 };
+          cloned.a *= scale;
+          cloned.b *= scale;
         }
+
+        cloned.metrics = computeGeneralMetrics(cloned, cloned.display.unitCm);
+        cloned.print.effectiveScale = scale;
+
+        return cloned;
       }
 
-      function escapeHtml(s){
-        return String(s)
-          .replace(/&/g,'&amp;')
-          .replace(/</g,'&lt;')
-          .replace(/>/g,'&gt;')
-          .replace(/"/g,'&quot;')
-          .replace(/'/g,'&#39;');
+      function makePrintModel(model, printable) {
+        const widthCm = Math.max(model.metrics.widthCm, 0.01);
+        const heightCm = Math.max(model.metrics.heightCm, 0.01);
+        const fitScale = Math.min(printable.printableWidthCm / widthCm, printable.printableHeightCm / heightCm);
+        const scale = model.print.mode === 'actual' ? 1 : Math.min(1, fitScale);
+        return scaleModelForPrint(model, scale);
       }
 
-      function draw(){
-        try{
-          var shape = getShapeData();
-          renderShape(shape);
-          state.current = shape;
-          updateClassifications(classificationsForShape(shape));
-          shapeMeta.innerHTML = shapeMetaText(shape);
-          updatePrintMeta();
-          setStatus('描画成功。', 'success');
-        }catch(err){
-          setStatus(err.message, 'error');
-          state.current = null;
-          updateClassifications([]);
-          shapeMeta.innerHTML = 'エラー';
-        }
+      function buildPreviewInfoHtml(model, printable, printModel) {
+        return ''
+          + '<div>用紙</div><div>' + model.print.paperSize + ' / ' + (model.print.orientation === 'portrait' ? '縦' : '横') + '</div>'
+          + '<div>印刷可能領域</div><div>' + formatDecimal(printable.printableWidthCm) + 'cm × ' + formatDecimal(printable.printableHeightCm) + 'cm</div>'
+          + '<div>図の横幅</div><div>' + formatDecimal(printModel.metrics.widthCm) + 'cm</div>'
+          + '<div>図の縦幅</div><div>' + formatDecimal(printModel.metrics.heightCm) + 'cm</div>'
+          + '<div>印刷倍率</div><div>' + formatDecimal(printModel.print.effectiveScale || 1, 4) + ' 倍</div>';
       }
 
-      function resetAll(){
-        shapeTypeEl.value = 'triangle';
-        triangleModeEl.value = 'sss';
-        rebuildTriangleFields();
-        rebuildQuadrilateralFields();
-        rebuildPolygonFields();
-        rebuildCircleFields();
-        rebuildEllipseFields();
-        document.getElementById('paperSize').value = 'A4';
-        document.getElementById('paperOrientation').value = 'portrait';
-        document.getElementById('fitMode').value = 'fit';
-        document.getElementById('printWidthCm').value = '12';
-        document.getElementById('marginLeft').value = '12';
-        document.getElementById('marginRight').value = '12';
-        document.getElementById('marginTop').value = '12';
-        document.getElementById('marginBottom').value = '12';
-        updateControlsVisibility();
-        clearSvg();
-        state.current = null;
-        updateClassifications([]);
-        shapeMeta.innerHTML = '未描画';
-        updatePrintMeta();
-        setStatus('準備完了。描画できます。');
-      }
+      function waitForPreviewWindowReady(win, callback, retry) {
+        const remain = typeof retry === 'number' ? retry : 120;
+        if (!win || win.closed) return;
 
-      function svgToDataUrl(){
-        var serializer = new XMLSerializer();
-        var source = serializer.serializeToString(svg);
-        return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(source);
-      }
+        try {
+          const ready =
+            win.document &&
+            win.document.getElementById('paper') &&
+            win.document.getElementById('inner') &&
+            win.document.getElementById('paperBox') &&
+            win.JXG &&
+            win.JXG.JSXGraph;
 
-      function svgToCanvas(callback, jpegBackground){
-        var img = new Image();
-        img.onload = function(){
-          var canvas = document.createElement('canvas');
-          canvas.width = 2000;
-          canvas.height = 1500;
-          var ctx = canvas.getContext('2d');
-          if(jpegBackground){
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0,0,canvas.width,canvas.height);
-          }else{
-            ctx.clearRect(0,0,canvas.width,canvas.height);
-          }
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          callback(canvas);
-        };
-        img.onerror = function(){
-          setStatus('画像変換に失敗しました', 'error');
-        };
-        img.src = svgToDataUrl();
-      }
-
-      function downloadBlob(blob, filename){
-        var url = URL.createObjectURL(blob);
-        var a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
-      }
-
-      function savePng(){
-        if(!state.current) draw();
-        if(!state.current) return;
-        svgToCanvas(function(canvas){
-          canvas.toBlob(function(blob){
-            if(blob) downloadBlob(blob, 'instantgeometry.png');
-          }, 'image/png');
-        }, false);
-      }
-
-      function saveJpeg(){
-        if(!state.current) draw();
-        if(!state.current) return;
-        svgToCanvas(function(canvas){
-          canvas.toBlob(function(blob){
-            if(blob) downloadBlob(blob, 'instantgeometry.jpg');
-          }, 'image/jpeg', 0.95);
-        }, true);
-      }
-
-      function buildPreviewHtml(svgMarkupEscaped, conf){
-        var scalePx = 3.2;
-        var paperW = conf.paper.widthMm * scalePx;
-        var paperH = conf.paper.heightMm * scalePx;
-        var innerLeft = conf.marginLeft * scalePx;
-        var innerTop = conf.marginTop * scalePx;
-        var innerW = conf.printableW * scalePx;
-        var innerH = conf.printableH * scalePx;
-
-        var drawW = conf.actualWmm * scalePx;
-        var drawH = conf.actualHmm * scalePx;
-        var drawX = innerLeft + (innerW - drawW)/2;
-        var drawY = innerTop + (innerH - drawH)/2;
-
-        var infoText =
-          '用紙: ' + conf.paper.size + ' / ' + (conf.paper.orientation === 'portrait' ? '縦' : '横') +
-          '　余白(mm): 左' + formatNum(conf.marginLeft) + ' 右' + formatNum(conf.marginRight) + ' 上' + formatNum(conf.marginTop) + ' 下' + formatNum(conf.marginBottom) +
-          '　図形サイズ: ' + formatNum(conf.actualWmm/10) + 'cm × ' + formatNum(conf.actualHmm/10) + 'cm';
-
-        var html = '';
-        html += '<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8">';
-        html += '<title>印刷プレビュー</title>';
-        html += '<style>';
-        html += 'html,body{margin:0;padding:0;background:#f3f5f9;color:#111827;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Noto Sans JP,sans-serif}';
-        html += '.wrap{padding:20px}';
-        html += '.bar{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:14px}';
-        html += '.info{font-size:13px;line-height:1.5;color:#334155}';
-        html += '.btns{display:flex;gap:8px;flex-wrap:wrap}';
-        html += 'button{font:inherit;border:1px solid #cbd5e1;background:#fff;border-radius:10px;padding:10px 12px;cursor:pointer;font-weight:700}';
-        html += '.paper{position:relative;margin:0 auto;background:#fff;box-shadow:0 12px 30px rgba(0,0,0,.16);width:' + paperW + 'px;height:' + paperH + 'px}';
-        html += '.inner{position:absolute;left:' + innerLeft + 'px;top:' + innerTop + 'px;width:' + innerW + 'px;height:' + innerH + 'px;border:1px dashed #cbd5e1}';
-        html += '.drawing{position:absolute;left:' + drawX + 'px;top:' + drawY + 'px;width:' + drawW + 'px;height:' + drawH + 'px;background:#fff}';
-        html += '.drawing svg{width:100%;height:100%;display:block;background:#fff}';
-        html += '@page{size:' + conf.paper.size + ' ' + conf.paper.orientation + ';margin:0}';
-        html += '@media print{body{background:#fff}.wrap{padding:0}.bar{display:none}.paper{box-shadow:none}.inner{border:none}}';
-        html += '</style></head><body>';
-        html += '<div class="wrap">';
-        html += '<div class="bar">';
-        html += '<div class="info">' + escapeHtml(infoText) + '</div>';
-        html += '<div class="btns"><button onclick="window.print()">印刷</button><button onclick="window.close()">閉じる</button></div>';
-        html += '</div>';
-        html += '<div class="paper">';
-        html += '<div class="inner"></div>';
-        html += '<div class="drawing">' + svgMarkupEscaped + '</div>';
-        html += '</div>';
-        html += '</div>';
-        html += '</body></html>';
-        return html;
-      }
-
-      function openPrintPreview(doPrint){
-        try{
-          if(!state.current) draw();
-          if(!state.current) return;
-          var conf = getPrintConfig();
-          var serializer = new XMLSerializer();
-          var markup = serializer.serializeToString(svg);
-          var win = window.open('', '_blank', 'noopener,noreferrer,width=1100,height=900');
-          if(!win){
-            setStatus('プレビューウィンドウを開けませんでした', 'error');
+          if (ready) {
+            callback();
             return;
           }
-          var html = buildPreviewHtml(markup, conf);
-          win.document.open();
-          win.document.write(html);
-          win.document.close();
-          if(doPrint){
-            win.onload = function(){
-              setTimeout(function(){ win.print(); }, 200);
-            };
+        } catch (e) {}
+
+        if (remain <= 0) return;
+        setTimeout(function () {
+          waitForPreviewWindowReady(win, callback, remain - 1);
+        }, 100);
+      }
+
+      function openPrintPreviewWindow(model) {
+        const printable = setupPaperFrame(model.print);
+        const printModel = makePrintModel(model, printable);
+
+        const win = window.open('', '_blank', 'width=1100,height=900');
+        if (!win) {
+          setStatus('印刷プレビュー用ウィンドウを開けませんでした。ポップアップを許可してください。', 'error');
+          return null;
+        }
+
+        const previewHtml = ''
+          + '<!doctype html>'
+          + '<html lang="ja"><head><meta charset="UTF-8"><title>印刷プレビュー</title>'
+          + '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jsxgraph/distrib/jsxgraph.css" />'
+          + '<script src="https://cdn.jsdelivr.net/npm/jsxgraph/distrib/jsxgraphcore.js"><\/script>'
+          + '<style>'
+          + 'body{font-family:sans-serif;margin:16px;background:#eef1f4;color:#111;}'
+          + '.top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:12px;flex-wrap:wrap;}'
+          + '.paper{position:relative;background:#fff;border:1px solid #ccc;box-shadow:0 4px 16px rgba(0,0,0,.12);margin:auto;}'
+          + '.inner{position:absolute;border:1px dashed #b9c2cc;overflow:hidden;background:#fff;}'
+          + '.box{width:100%;height:100%;}'
+          + '.info{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;font-size:14px;max-width:560px;}'
+          + 'button{padding:8px 12px;border:1px solid #ccc;border-radius:8px;background:#fff;cursor:pointer;}'
+          + '@media print{body{margin:0;background:#fff}.top{display:none}.paper{box-shadow:none;border:none}}'
+          + '</style></head><body>'
+          + '<div class="top"><div class="info" id="info"></div><div><button onclick="window.print()">印刷</button></div></div>'
+          + '<div id="paper" class="paper"><div id="inner" class="inner"><div id="paperBox" class="box jxgbox"></div></div></div>'
+          + '</body></html>';
+
+        win.document.open();
+        win.document.write(previewHtml);
+        win.document.close();
+
+        waitForPreviewWindowReady(win, function () {
+          const paper = win.document.getElementById('paper');
+          const inner = win.document.getElementById('inner');
+
+          paper.style.width = (printable.widthMm * PAPER_PREVIEW_SCALE) + 'px';
+          paper.style.height = (printable.heightMm * PAPER_PREVIEW_SCALE) + 'px';
+
+          const leftPx = model.print.marginLeft * 10 * PAPER_PREVIEW_SCALE;
+          const rightPx = model.print.marginRight * 10 * PAPER_PREVIEW_SCALE;
+          const topPx = model.print.marginTop * 10 * PAPER_PREVIEW_SCALE;
+          const bottomPx = model.print.marginBottom * 10 * PAPER_PREVIEW_SCALE;
+
+          inner.style.left = leftPx + 'px';
+          inner.style.top = topPx + 'px';
+          inner.style.width = (printable.widthMm * PAPER_PREVIEW_SCALE - leftPx - rightPx) + 'px';
+          inner.style.height = (printable.heightMm * PAPER_PREVIEW_SCALE - topPx - bottomPx) + 'px';
+
+          const info = win.document.getElementById('info');
+          info.innerHTML = buildPreviewInfoHtml(model, printable, printModel);
+
+          const previewBoard = win.JXG.JSXGraph.initBoard('paperBox', {
+            boundingbox: makeBoundingBox(printModel, 0.6),
+            axis: false,
+            keepaspectratio: true,
+            showNavigation: false,
+            showCopyright: false,
+            pan: { enabled: false },
+            zoom: { wheel: false }
+          });
+
+          renderToBoard(previewBoard, printModel);
+          previewBoard.update();
+        });
+
+        return win;
+      }
+
+      async function saveCanvasElement(elementId, type) {
+        const target = document.getElementById(elementId);
+        const canvas = await html2canvas(target, {
+          backgroundColor: '#ffffff',
+          useCORS: true,
+          scale: 2
+        });
+        const link = document.createElement('a');
+        const ext = type === 'image/jpeg' ? 'jpeg' : 'png';
+        link.download = 'geometry.' + ext;
+        link.href = canvas.toDataURL(type, 0.95);
+        link.click();
+      }
+
+      async function savePdf() {
+        if (!latestModel) return;
+
+        const printable = setupPaperFrame(latestModel.print);
+        const printModel = makePrintModel(latestModel, printable);
+
+        const container = document.createElement('div');
+        container.style.position = 'fixed';
+        container.style.left = '-99999px';
+        container.style.top = '0';
+        container.style.background = '#fff';
+        container.style.width = (printable.widthMm * PAPER_PREVIEW_SCALE) + 'px';
+        container.style.height = (printable.heightMm * PAPER_PREVIEW_SCALE) + 'px';
+
+        container.innerHTML = ''
+          + '<div id="tmpInner" style="position:absolute;'
+          + 'left:' + (latestModel.print.marginLeft * 10 * PAPER_PREVIEW_SCALE) + 'px;'
+          + 'top:' + (latestModel.print.marginTop * 10 * PAPER_PREVIEW_SCALE) + 'px;'
+          + 'width:' + (printable.widthMm * PAPER_PREVIEW_SCALE - (latestModel.print.marginLeft + latestModel.print.marginRight) * 10 * PAPER_PREVIEW_SCALE) + 'px;'
+          + 'height:' + (printable.heightMm * PAPER_PREVIEW_SCALE - (latestModel.print.marginTop + latestModel.print.marginBottom) * 10 * PAPER_PREVIEW_SCALE) + 'px;'
+          + 'background:#fff;">'
+          + '<div id="tmpBox" class="jxgbox" style="width:100%;height:100%;"></div>'
+          + '</div>';
+
+        document.body.appendChild(container);
+
+        const tmpBoard = JXG.JSXGraph.initBoard('tmpBox', {
+          boundingbox: makeBoundingBox(printModel, 0.6),
+          axis: false,
+          keepaspectratio: true,
+          showNavigation: false,
+          showCopyright: false,
+          pan: { enabled: false },
+          zoom: { wheel: false }
+        });
+
+        renderToBoard(tmpBoard, printModel);
+        tmpBoard.update();
+
+        const canvas = await html2canvas(container, {
+          backgroundColor: '#ffffff',
+          useCORS: true,
+          scale: 2
+        });
+
+        JXG.JSXGraph.freeBoard(tmpBoard);
+        document.body.removeChild(container);
+
+        const jsPDF = window.jspdf.jsPDF;
+        const orientation = latestModel.print.orientation === 'portrait' ? 'p' : 'l';
+        const pdf = new jsPDF({
+          orientation: orientation,
+          unit: 'mm',
+          format: latestModel.print.paperSize.toLowerCase()
+        });
+
+        let widthMm = PAPER_SIZES_MM[latestModel.print.paperSize].width;
+        let heightMm = PAPER_SIZES_MM[latestModel.print.paperSize].height;
+        if (orientation === 'l') {
+          const tmp = widthMm;
+          widthMm = heightMm;
+          heightMm = tmp;
+        }
+
+        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, widthMm, heightMm);
+        pdf.save('geometry.pdf');
+      }
+
+      function buildShapeDetailHtml(model) {
+        if (!model) return '';
+
+        if (model.shapeType === 'triangle') {
+          return ''
+            + '横幅 ' + formatDecimal(model.metrics.widthCm) + 'cm / '
+            + '縦幅 ' + formatDecimal(model.metrics.heightCm) + 'cm';
+        }
+
+        if (model.shapeType === 'quadrilateral') {
+          return ''
+            + '横幅 ' + formatDecimal(model.metrics.widthCm) + 'cm / '
+            + '縦幅 ' + formatDecimal(model.metrics.heightCm) + 'cm';
+        }
+
+        if (model.shapeType === 'regularPolygon') {
+          return ''
+            + '横幅 ' + formatDecimal(model.metrics.widthCm) + 'cm / '
+            + '縦幅 ' + formatDecimal(model.metrics.heightCm) + 'cm';
+        }
+
+        if (model.shapeType === 'circle') {
+          return '直径 ' + formatDecimal(model.metrics.widthCm) + 'cm';
+        }
+
+        return ''
+          + '横幅 ' + formatDecimal(model.metrics.widthCm) + 'cm / '
+          + '縦幅 ' + formatDecimal(model.metrics.heightCm) + 'cm';
+      }
+
+      function renderAll() {
+        try {
+          showModeFields();
+          const model = computeModel();
+          latestModel = model;
+          renderMainBoard(model);
+          setShapeInfo(model.classification, buildShapeDetailHtml(model));
+          setStatus('正常に描画しました。', 'ok');
+        } catch (err) {
+          latestModel = null;
+          setShapeInfo([], '');
+          setStatus(err && err.message ? err.message : String(err), 'error');
+        }
+      }
+
+      function bindEvents() {
+        document.querySelectorAll('input, select').forEach(function (el) {
+          el.addEventListener('input', renderAll);
+          el.addEventListener('change', renderAll);
+        });
+
+        document.getElementById('btnRender').addEventListener('click', renderAll);
+
+        document.getElementById('btnPng').addEventListener('click', async function () {
+          try {
+            await saveCanvasElement('box', 'image/png');
+          } catch (e) {
+            setStatus('PNG保存に失敗しました。', 'error');
           }
-        }catch(err){
-          setStatus(err.message, 'error');
-        }
-      }
-
-      function savePdf(){
-        try{
-          if(!state.current) draw();
-          if(!state.current) return;
-          var conf = getPrintConfig();
-          svgToCanvas(function(canvas){
-            var jspdf = window.jspdf;
-            if(!jspdf || !jspdf.jsPDF){
-              setStatus('jsPDF の読み込みに失敗しました', 'error');
-              return;
-            }
-            var doc = new jspdf.jsPDF({
-              orientation: conf.paper.orientation === 'portrait' ? 'p' : 'l',
-              unit: 'mm',
-              format: conf.paper.size
-            });
-
-            var imgData = canvas.toDataURL('image/png');
-            var x = conf.marginLeft + (conf.printableW - conf.actualWmm)/2;
-            var y = conf.marginTop + (conf.printableH - conf.actualHmm)/2;
-            doc.addImage(imgData, 'PNG', x, y, conf.actualWmm, conf.actualHmm);
-            doc.save('instantgeometry.pdf');
-          }, true);
-        }catch(err){
-          setStatus(err.message, 'error');
-        }
-      }
-
-      function bindAutoRedraw(root){
-        root.addEventListener('input', function(){
-          updatePrintMeta();
         });
-        root.addEventListener('change', function(){
-          updatePrintMeta();
+
+        document.getElementById('btnJpeg').addEventListener('click', async function () {
+          try {
+            await saveCanvasElement('box', 'image/jpeg');
+          } catch (e) {
+            setStatus('JPEG保存に失敗しました。', 'error');
+          }
+        });
+
+        document.getElementById('btnPdf').addEventListener('click', async function () {
+          try {
+            await savePdf();
+          } catch (e) {
+            setStatus(e && e.message ? e.message : 'PDF保存に失敗しました。', 'error');
+          }
+        });
+
+        document.getElementById('openPrintPreviewWindow').addEventListener('click', function () {
+          try {
+            if (latestModel) openPrintPreviewWindow(latestModel);
+          } catch (e) {
+            setStatus(e && e.message ? e.message : '印刷プレビューに失敗しました。', 'error');
+          }
         });
       }
 
-      document.getElementById('drawBtn').addEventListener('click', draw);
-      document.getElementById('resetBtn').addEventListener('click', resetAll);
-      document.getElementById('savePngBtn').addEventListener('click', savePng);
-      document.getElementById('saveJpegBtn').addEventListener('click', saveJpeg);
-      document.getElementById('savePdfBtn').addEventListener('click', savePdf);
-      document.getElementById('previewBtn').addEventListener('click', function(){ openPrintPreview(false); });
-      document.getElementById('printBtn').addEventListener('click', function(){ openPrintPreview(true); });
-
-      shapeTypeEl.addEventListener('change', function(){
-        updateControlsVisibility();
-        draw();
-      });
-
-      triangleModeEl.addEventListener('change', function(){
-        rebuildTriangleFields();
-        draw();
-      });
-
-      bindAutoRedraw(document.body);
-
-      rebuildTriangleFields();
-      rebuildQuadrilateralFields();
-      rebuildPolygonFields();
-      rebuildCircleFields();
-      rebuildEllipseFields();
-      updateControlsVisibility();
-      updatePrintMeta();
-      draw();
+      bindEvents();
+      renderAll();
     })();
   </script>
 </body>
