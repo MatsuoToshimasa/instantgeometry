@@ -46,7 +46,7 @@
 
     .layout {
       display: grid;
-      grid-template-columns: 400px 1fr;
+      grid-template-columns: 430px 1fr;
       gap: var(--panel-gap);
       align-items: start;
     }
@@ -84,7 +84,7 @@
       align-items: center;
     }
 
-    .grid-2, .grid-3 {
+    .grid-2, .grid-3, .grid-4 {
       display: grid;
       gap: 10px;
       margin-top: 10px;
@@ -92,6 +92,7 @@
 
     .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 
     .field {
       display: flex;
@@ -104,7 +105,7 @@
       color: #333;
     }
 
-    input[type="text"], select {
+    input[type="text"], input[type="number"], select, textarea {
       width: 100%;
       padding: 8px 10px;
       border: 1px solid #cfd7df;
@@ -113,13 +114,22 @@
       font-size: 14px;
     }
 
+    input[type="color"] {
+      width: 100%;
+      height: 40px;
+      padding: 2px;
+      border: 1px solid #cfd7df;
+      border-radius: 8px;
+      background: #fff;
+    }
+
     input[type="range"] { width: 100%; }
 
-    .shape-group, .mode-group, .function-group {
+    .shape-group, .mode-group, .function-group, .quad-subgroup, .quad-general-mode-group {
       display: none;
     }
 
-    .shape-group.active, .mode-group.active, .function-group.active {
+    .shape-group.active, .mode-group.active, .function-group.active, .quad-subgroup.active, .quad-general-mode-group.active {
       display: block;
     }
 
@@ -161,6 +171,20 @@
       border-color: #111;
     }
 
+    details.settings-group {
+      margin-top: 10px;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 8px 10px 10px 10px;
+      background: #fafcff;
+    }
+
+    details.settings-group summary {
+      cursor: pointer;
+      font-weight: 600;
+      user-select: none;
+    }
+
     .board-wrap {
       position: relative;
       overflow: hidden;
@@ -177,7 +201,7 @@
 
     .board-title-wrap {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       gap: 10px;
       flex-wrap: wrap;
     }
@@ -208,6 +232,7 @@
       font-size: 14px;
       color: #444;
       line-height: 1.6;
+      max-width: 720px;
     }
 
     .board-controls {
@@ -236,6 +261,13 @@
       touch-action: none;
     }
 
+    .small-note {
+      font-size: 12px;
+      color: #666;
+      margin-top: 6px;
+      line-height: 1.45;
+    }
+
     @media (max-width: 1200px) {
       .layout {
         grid-template-columns: 1fr;
@@ -255,6 +287,7 @@
     <div class="panel">
       <div class="section">
         <h2>入力</h2>
+
         <div class="field">
           <label for="shapeType">図形種別</label>
           <select id="shapeType">
@@ -281,9 +314,54 @@
           </select>
         </div>
 
-        <div class="field shape-group" data-shape="quadrilateral">
-          <label>入力方式</label>
-          <select disabled><option>4点座標</option></select>
+        <div class="shape-group" data-shape="quadrilateral">
+          <div class="field">
+            <label for="quadType">四角形種別</label>
+            <select id="quadType">
+              <option value="square">正方形</option>
+              <option value="rectangle">長方形</option>
+              <option value="parallelogram">平行四辺形</option>
+              <option value="rhombus">菱形</option>
+              <option value="trapezoid">台形</option>
+              <option value="general">一般の四角形</option>
+            </select>
+          </div>
+
+          <div class="field quad-subgroup active" data-quadtype="square">
+            <label>入力方式</label>
+            <select disabled><option>中心＋一辺＋回転角</option></select>
+          </div>
+
+          <div class="field quad-subgroup" data-quadtype="rectangle">
+            <label>入力方式</label>
+            <select disabled><option>中心＋横＋縦＋回転角</option></select>
+          </div>
+
+          <div class="field quad-subgroup" data-quadtype="parallelogram">
+            <label for="quadParaMode">入力方式</label>
+            <select id="quadParaMode">
+              <option value="baseHeight">底辺×高さ＋横ずれ</option>
+              <option value="twoSidesAngle">2辺の長さ＋なす角</option>
+            </select>
+          </div>
+
+          <div class="field quad-subgroup" data-quadtype="rhombus">
+            <label>入力方式</label>
+            <select disabled><option>中心＋一辺＋角＋回転角</option></select>
+          </div>
+
+          <div class="field quad-subgroup" data-quadtype="trapezoid">
+            <label>入力方式</label>
+            <select disabled><option>上底＋下底＋高さ＋左右ずれ</option></select>
+          </div>
+
+          <div class="field quad-subgroup" data-quadtype="general">
+            <label for="quadGeneralMode">入力方式</label>
+            <select id="quadGeneralMode">
+              <option value="points">4点の座標指定</option>
+              <option value="conditions">条件指定</option>
+            </select>
+          </div>
         </div>
 
         <div class="field shape-group" data-shape="regularPolygon">
@@ -394,20 +472,114 @@
       </div>
 
       <div class="section shape-group" data-shape="quadrilateral">
-        <h3>四角形（4点座標）</h3>
-        <div class="grid-3">
-          <div class="field"><label for="QAx">Ax</label><input id="QAx" type="text" value="0" /></div>
-          <div class="field"><label for="QAy">Ay</label><input id="QAy" type="text" value="0" /></div>
-          <div></div>
-          <div class="field"><label for="QBx">Bx</label><input id="QBx" type="text" value="5" /></div>
-          <div class="field"><label for="QBy">By</label><input id="QBy" type="text" value="0" /></div>
-          <div></div>
-          <div class="field"><label for="QCx">Cx</label><input id="QCx" type="text" value="6" /></div>
-          <div class="field"><label for="QCy">Cy</label><input id="QCy" type="text" value="3" /></div>
-          <div></div>
-          <div class="field"><label for="QDx">Dx</label><input id="QDx" type="text" value="1" /></div>
-          <div class="field"><label for="QDy">Dy</label><input id="QDy" type="text" value="3" /></div>
-          <div></div>
+        <div class="quad-subgroup active" data-quadtype="square">
+          <h3>正方形</h3>
+          <div class="grid-3">
+            <div class="field"><label for="SQcx">中心 x</label><input id="SQcx" type="text" value="0" /></div>
+            <div class="field"><label for="SQcy">中心 y</label><input id="SQcy" type="text" value="0" /></div>
+            <div class="field"><label for="SQside">一辺</label><input id="SQside" type="text" value="4" /></div>
+            <div class="field"><label for="SQang">回転角(deg)</label><input id="SQang" type="text" value="0" /></div>
+          </div>
+        </div>
+
+        <div class="quad-subgroup" data-quadtype="rectangle">
+          <h3>長方形</h3>
+          <div class="grid-3">
+            <div class="field"><label for="REcx">中心 x</label><input id="REcx" type="text" value="0" /></div>
+            <div class="field"><label for="REcy">中心 y</label><input id="REcy" type="text" value="0" /></div>
+            <div class="field"><label for="REw">横</label><input id="REw" type="text" value="6" /></div>
+            <div class="field"><label for="REh">縦</label><input id="REh" type="text" value="3" /></div>
+            <div class="field"><label for="REang">回転角(deg)</label><input id="REang" type="text" value="0" /></div>
+          </div>
+        </div>
+
+        <div class="quad-subgroup" data-quadtype="parallelogram">
+          <div class="quad-subgroup active" data-quadtype="parallelogram"></div>
+
+          <div class="mode-group active" data-quadpara-mode="baseHeight">
+            <h3>平行四辺形：底辺×高さ＋横ずれ</h3>
+            <div class="grid-3">
+              <div class="field"><label for="PAbase">底辺</label><input id="PAbase" type="text" value="6" /></div>
+              <div class="field"><label for="PAheight">高さ</label><input id="PAheight" type="text" value="3" /></div>
+              <div class="field"><label for="PAshift">横ずれ</label><input id="PAshift" type="text" value="2" /></div>
+            </div>
+          </div>
+
+          <div class="mode-group" data-quadpara-mode="twoSidesAngle">
+            <h3>平行四辺形：2辺＋なす角</h3>
+            <div class="grid-3">
+              <div class="field"><label for="PBside1">辺1</label><input id="PBside1" type="text" value="6" /></div>
+              <div class="field"><label for="PBside2">辺2</label><input id="PBside2" type="text" value="4" /></div>
+              <div class="field"><label for="PBangle">なす角(deg)</label><input id="PBangle" type="text" value="40" /></div>
+            </div>
+          </div>
+        </div>
+
+                <div class="quad-subgroup" data-quadtype="rhombus">
+          <h3>菱形</h3>
+          <div class="grid-3">
+            <div class="field"><label for="RHcx">中心 x</label><input id="RHcx" type="text" value="0" /></div>
+            <div class="field"><label for="RHcy">中心 y</label><input id="RHcy" type="text" value="0" /></div>
+            <div class="field"><label for="RHside">一辺</label><input id="RHside" type="text" value="4" /></div>
+            <div class="field"><label for="RHangle">角(deg)</label><input id="RHangle" type="text" value="60" /></div>
+            <div class="field"><label for="RHang">回転角(deg)</label><input id="RHang" type="text" value="0" /></div>
+          </div>
+        </div>
+
+        <div class="quad-subgroup" data-quadtype="trapezoid">
+          <h3>台形</h3>
+          <div class="grid-3">
+            <div class="field"><label for="TRtop">上底</label><input id="TRtop" type="text" value="4" /></div>
+            <div class="field"><label for="TRbottom">下底</label><input id="TRbottom" type="text" value="8" /></div>
+            <div class="field"><label for="TRheight">高さ</label><input id="TRheight" type="text" value="3" /></div>
+            <div class="field"><label for="TRoffset">上底左端のずれ</label><input id="TRoffset" type="text" value="1.5" /></div>
+          </div>
+        </div>
+
+        <div class="quad-subgroup" data-quadtype="general">
+          <div class="quad-general-mode-group active" data-quadgeneral-mode="points">
+            <h3>一般の四角形（4点座標）</h3>
+            <div class="grid-3">
+              <div class="field"><label for="QAx">Ax</label><input id="QAx" type="text" value="0" /></div>
+              <div class="field"><label for="QAy">Ay</label><input id="QAy" type="text" value="0" /></div>
+              <div></div>
+              <div class="field"><label for="QBx">Bx</label><input id="QBx" type="text" value="5" /></div>
+              <div class="field"><label for="QBy">By</label><input id="QBy" type="text" value="0" /></div>
+              <div></div>
+              <div class="field"><label for="QCx">Cx</label><input id="QCx" type="text" value="6" /></div>
+              <div class="field"><label for="QCy">Cy</label><input id="QCy" type="text" value="3" /></div>
+              <div></div>
+              <div class="field"><label for="QDx">Dx</label><input id="QDx" type="text" value="1" /></div>
+              <div class="field"><label for="QDy">Dy</label><input id="QDy" type="text" value="3" /></div>
+              <div></div>
+            </div>
+          </div>
+
+          <div class="quad-general-mode-group" data-quadgeneral-mode="conditions">
+            <h3>一般の四角形（条件指定）</h3>
+            <div class="small-note">
+              現在対応: 4辺＋対角線AC / 4辺＋対角線BD<br>
+              未対応の条件組は右側に理由を表示します。
+            </div>
+
+            <div class="grid-3">
+              <div class="field"><label for="condAB">AB</label><input id="condAB" type="text" value="" /></div>
+              <div class="field"><label for="condBC">BC</label><input id="condBC" type="text" value="" /></div>
+              <div class="field"><label for="condCD">CD</label><input id="condCD" type="text" value="" /></div>
+              <div class="field"><label for="condDA">DA</label><input id="condDA" type="text" value="" /></div>
+              <div class="field"><label for="condAC">AC</label><input id="condAC" type="text" value="" /></div>
+              <div class="field"><label for="condBD">BD</label><input id="condBD" type="text" value="" /></div>
+            </div>
+
+            <div class="grid-3">
+              <div class="field"><label for="condABC">∠ABC</label><input id="condABC" type="text" value="" /></div>
+              <div class="field"><label for="condBCD">∠BCD</label><input id="condBCD" type="text" value="" /></div>
+              <div class="field"><label for="condCDA">∠CDA</label><input id="condCDA" type="text" value="" /></div>
+              <div class="field"><label for="condDAB">∠DAB</label><input id="condDAB" type="text" value="" /></div>
+              <div class="field"><label for="condACB">∠ACB</label><input id="condACB" type="text" value="" /></div>
+              <div class="field"><label for="condADB">∠ADB</label><input id="condADB" type="text" value="" /></div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -419,7 +591,6 @@
           <div class="field"><label for="RPcy">中心 y</label><input id="RPcy" type="text" value="0" /></div>
           <div class="field"><label for="RPr">半径</label><input id="RPr" type="text" value="3" /></div>
           <div class="field"><label for="RPang">回転角(deg)</label><input id="RPang" type="text" value="90" /></div>
-          <div></div>
         </div>
       </div>
 
@@ -440,7 +611,6 @@
           <div class="field"><label for="Ea">長半径</label><input id="Ea" type="text" value="4" /></div>
           <div class="field"><label for="Eb">短半径</label><input id="Eb" type="text" value="2.5" /></div>
           <div class="field"><label for="Eang">回転角(deg)</label><input id="Eang" type="text" value="20" /></div>
-          <div></div>
         </div>
       </div>
 
@@ -508,7 +678,6 @@
             <div class="field"><label for="fnTrigB">b</label><input id="fnTrigB" type="text" value="1" /></div>
             <div class="field"><label for="fnTrigC">c</label><input id="fnTrigC" type="text" value="0" /></div>
             <div class="field"><label for="fnTrigD">d</label><input id="fnTrigD" type="text" value="0" /></div>
-            <div></div>
           </div>
           <div class="muted">y = a * trig(bx + c) + d</div>
         </div>
@@ -548,67 +717,184 @@
       </div>
 
       <div class="section">
-        <h2>表示</h2>
-        <div class="row">
-          <label class="inline"><input id="showAxes" type="checkbox" checked />座標軸</label>
-          <label class="inline"><input id="showCoordLabels" type="checkbox" checked />座標ラベル</label>
-          <label class="inline"><input id="showSideLabels" type="checkbox" checked />辺の長さ</label>
-          <label class="inline"><input id="showDiagonals" type="checkbox" />四角形の対角線</label>
-        </div>
-        <div class="grid-2">
-          <div class="field">
-            <label for="pointLabelSize">点ラベル文字サイズ</label>
-            <input id="pointLabelSize" type="range" min="10" max="32" step="1" value="18" />
+        <h2>表示設定</h2>
+
+        <details class="settings-group" open>
+          <summary>頂点設定</summary>
+          <div class="grid-2">
+            <div class="field">
+              <label for="vertexLabelPosition">頂点ラベル位置</label>
+              <select id="vertexLabelPosition">
+                <option value="auto">自動</option>
+                <option value="inside">内側</option>
+                <option value="outside">外側</option>
+                <option value="up">上</option>
+                <option value="down">下</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="pointLabelSize">頂点ラベルサイズ</label>
+              <input id="pointLabelSize" type="range" min="10" max="32" step="1" value="18" />
+            </div>
+            <div class="field">
+              <label for="vertexLabelColor">頂点ラベル色</label>
+              <input id="vertexLabelColor" type="color" value="#000000" />
+            </div>
+            <div class="field">
+              <label for="vertexColor">頂点色</label>
+              <input id="vertexColor" type="color" value="#111111" />
+            </div>
+            <div class="field">
+              <label for="vertexSymbolMode">頂点の記号形式</label>
+              <select id="vertexSymbolMode">
+                <option value="ABC">A,B,C,...</option>
+                <option value="Aindex">A₁,A₂,A₃,...</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="pointLabelOffset">頂点文字の距離</label>
+              <input id="pointLabelOffset" type="range" min="0.2" max="2.0" step="0.05" value="0.5" />
+            </div>
           </div>
-          <div class="field">
-            <label for="sideLabelSize">辺ラベル文字サイズ</label>
-            <input id="sideLabelSize" type="range" min="10" max="32" step="1" value="18" />
+        </details>
+
+        <details class="settings-group">
+          <summary>直線・曲線設定</summary>
+          <div class="grid-2">
+            <div class="field">
+              <label for="edgeLabelPosition">辺ラベル位置</label>
+              <select id="edgeLabelPosition">
+                <option value="auto">自動</option>
+                <option value="inside">内側</option>
+                <option value="outside">外側</option>
+                <option value="up">上</option>
+                <option value="down">下</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="sideLabelSize">辺ラベルサイズ</label>
+              <input id="sideLabelSize" type="range" min="10" max="32" step="1" value="18" />
+            </div>
+            <div class="field">
+              <label for="edgeColor">辺の色</label>
+              <input id="edgeColor" type="color" value="#000000" />
+            </div>
+            <div class="field">
+              <label for="sideUnitMode">辺の単位</label>
+              <select id="sideUnitMode">
+                <option value="none">単位なし</option>
+                <option value="cm">cm</option>
+                <option value="m">m</option>
+                <option value="km">km</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="sideTextMode">辺ラベル表示形式</label>
+              <select id="sideTextMode">
+                <option value="decimal">小数</option>
+                <option value="root">ルート優先</option>
+                <option value="input">入力式優先</option>
+                <option value="trig">三角関数風</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="unitCm">1単位 = 何cm</label>
+              <input id="unitCm" type="text" value="1" />
+            </div>
           </div>
-        </div>
-        <div class="grid-2">
-          <div class="field">
-            <label for="pointLabelOffset">頂点文字の距離</label>
-            <input id="pointLabelOffset" type="range" min="0.2" max="2.0" step="0.05" value="0.5" />
+        </details>
+
+                <details class="settings-group">
+          <summary>角設定</summary>
+          <div class="grid-2">
+            <div class="field">
+              <label for="angleDisplayMode">表示形式</label>
+              <select id="angleDisplayMode">
+                <option value="degree">度数法</option>
+                <option value="radian">弧度法</option>
+                <option value="none">表示なし</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="angleLabelSize">角ラベルサイズ</label>
+              <input id="angleLabelSize" type="range" min="10" max="28" step="1" value="16" />
+            </div>
           </div>
-          <div class="field">
-            <label for="sideTextMode">辺長表示形式</label>
-            <select id="sideTextMode">
-              <option value="decimal">小数</option>
-              <option value="root">ルート優先</option>
-              <option value="input">入力式優先</option>
-              <option value="trig">三角関数風</option>
-            </select>
+        </details>
+
+        <details class="settings-group">
+          <summary>面積設定</summary>
+          <div class="grid-2">
+            <div class="field">
+              <label for="areaLabelMode">面積表示</label>
+              <select id="areaLabelMode">
+                <option value="none">表示なし</option>
+                <option value="symbol">S</option>
+                <option value="plain">面積</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="areaLabelSize">面積ラベルサイズ</label>
+              <input id="areaLabelSize" type="range" min="12" max="36" step="1" value="18" />
+            </div>
+            <div class="field">
+              <label for="areaUnitMode">面積単位</label>
+              <select id="areaUnitMode">
+                <option value="none">単位なし</option>
+                <option value="cm2">cm2</option>
+                <option value="m2">m2</option>
+                <option value="km2">km2</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="areaFillColor">面積色</label>
+              <input id="areaFillColor" type="color" value="#d9d9d9" />
+            </div>
           </div>
-        </div>
-        <div class="grid-2">
-          <div class="field">
-            <label for="sideUnitMode">辺ラベルの単位</label>
-            <select id="sideUnitMode">
-              <option value="none">なし</option>
-              <option value="unit">unit</option>
-              <option value="cm">cm</option>
-            </select>
+        </details>
+
+        <details class="settings-group">
+          <summary>座標設定</summary>
+          <div class="grid-2">
+            <div class="field">
+              <label for="axisLabelSize">軸ラベルサイズ</label>
+              <input id="axisLabelSize" type="range" min="10" max="24" step="1" value="14" />
+            </div>
+            <div class="field">
+              <label for="showAxesMode">軸表示</label>
+              <select id="showAxesMode">
+                <option value="yes">あり</option>
+                <option value="no">なし</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="axisColor">軸の色</label>
+              <input id="axisColor" type="color" value="#000000" />
+            </div>
+            <div class="field">
+              <label for="coordDisplayMode">座標表示</label>
+              <select id="coordDisplayMode">
+                <option value="cartesian">直交座標</option>
+                <option value="oblique">斜交座標（準備中）</option>
+                <option value="polar">極座標（準備中）</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="showCoordLabels">頂点ラベルに座標を含める</label>
+              <select id="showCoordLabels">
+                <option value="yes">あり</option>
+                <option value="no">なし</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="showDiagonals">四角形の対角線</label>
+              <select id="showDiagonals">
+                <option value="no">なし</option>
+                <option value="yes">あり</option>
+              </select>
+            </div>
           </div>
-          <div class="field">
-            <label for="unitCm">1単位 = 何cm</label>
-            <input id="unitCm" type="text" value="1" />
-          </div>
-        </div>
-        <div class="grid-2">
-          <div class="field">
-            <label for="areaLabelMode">面積表示</label>
-            <select id="areaLabelMode">
-              <option value="none">表示なし</option>
-              <option value="symbol">S</option>
-              <option value="plain">面積（単位なし）</option>
-              <option value="cm2">面積（cm²付き）</option>
-            </select>
-          </div>
-          <div class="field">
-            <label for="areaLabelSize">面積文字サイズ</label>
-            <input id="areaLabelSize" type="range" min="12" max="36" step="1" value="18" />
-          </div>
-        </div>
+        </details>
       </div>
 
       <div class="section">
@@ -693,21 +979,17 @@
         el.classList.add(kind === 'error' ? 'error' : 'ok');
       }
 
-      function setShapeInfo(labels, detailHtml) {
+      function setShapeInfo(titleLines, detailHtml) {
         const el = document.getElementById('shapeInfo');
         const parts = [];
-        if (labels && labels.length) parts.push(labels.join(' / '));
+        if (titleLines && titleLines.length) parts.push(titleLines.join(' / '));
         if (detailHtml) parts.push(detailHtml);
         el.innerHTML = parts.join('<br>');
       }
 
-      function degToRad(deg) {
-        return deg * Math.PI / 180;
-      }
-
-      function nearlyEqual(a, b, eps) {
-        return Math.abs(a - b) < (eps || 1e-9);
-      }
+      function degToRad(deg) { return deg * Math.PI / 180; }
+      function radToDeg(rad) { return rad * 180 / Math.PI; }
+      function nearlyEqual(a, b, eps) { return Math.abs(a - b) < (eps || 1e-9); }
 
       function sanitizeExpression(expr) {
         return String(expr ?? '')
@@ -722,12 +1004,10 @@
       function parseExpr(expr) {
         const raw = String(expr ?? '').trim();
         if (!raw) throw new Error('空の入力があります。');
-
         const safe = sanitizeExpression(raw);
         if (!/^[0-9+\-*/().,^a-zA-Z]+$/.test(safe)) {
           throw new Error('使えない文字があります: ' + raw);
         }
-
         let jsExpr = safe;
         jsExpr = jsExpr.replace(/\^/g, '**');
         jsExpr = jsExpr.replace(/\bpi\b/gi, 'Math.PI');
@@ -752,7 +1032,6 @@
         if (!/^[0-9+\-*/().,^a-zA-Z]+$/.test(safe)) {
           throw new Error('関数式に使えない文字があります: ' + raw);
         }
-
         let jsExpr = safe;
         jsExpr = jsExpr.replace(/\^/g, '**');
         jsExpr = jsExpr.replace(/\bpi\b/gi, 'Math.PI');
@@ -764,9 +1043,7 @@
         jsExpr = jsExpr.replace(/\babs\b/gi, 'Math.abs');
         jsExpr = jsExpr.replace(/\bln\b/gi, 'Math.log');
         jsExpr = jsExpr.replace(/\blog\b/gi, 'Math.log10');
-
         if (!allowX && /\bx\b/.test(jsExpr)) throw new Error('この式では x は使えません。');
-
         return new Function('x', '"use strict"; return (' + jsExpr + ');');
       }
 
@@ -780,6 +1057,14 @@
         const parsed = parseExpr(expr);
         if (!(parsed.value >= 0)) throw new Error(label + ' は 0 以上である必要があります。');
         return parsed;
+      }
+
+      function parseOptionalPositiveExpr(expr) {
+        const raw = String(expr ?? '').trim();
+        if (!raw) return null;
+        const parsed = parseExpr(raw);
+        if (!(parsed.value > 0)) throw new Error(raw + ' は正である必要があります。');
+        return parsed.value;
       }
 
       function parseAngleExpr(expr, label) {
@@ -821,13 +1106,9 @@
           { v: 0.5, t: 'sin(π/6)' },
           { v: Math.sqrt(2) / 2, t: 'sin(π/4)' },
           { v: Math.sqrt(3) / 2, t: 'sin(π/3)' },
-          { v: 1, t: 'sin(π/2)' },
           { v: 1 / Math.sqrt(3), t: 'tan(π/6)' },
           { v: 1, t: 'tan(π/4)' },
-          { v: Math.sqrt(3), t: 'tan(π/3)' },
-          { v: Math.cos(Math.PI / 6), t: 'cos(π/6)' },
-          { v: Math.cos(Math.PI / 4), t: 'cos(π/4)' },
-          { v: Math.cos(Math.PI / 3), t: 'cos(π/3)' }
+          { v: Math.sqrt(3), t: 'tan(π/3)' }
         ];
         for (let i = 0; i < table.length; i++) {
           if (Math.abs(table[i].v - abs) < eps) return sign + table[i].t;
@@ -837,39 +1118,20 @@
         return formatDecimal(x);
       }
 
-      function vec(P, Q) {
-        return { x: Q.x - P.x, y: Q.y - P.y };
-      }
+      function vec(P, Q) { return { x: Q.x - P.x, y: Q.y - P.y }; }
+      function dot(u, v) { return u.x * v.x + u.y * v.y; }
+      function cross(u, v) { return u.x * v.y - u.y * v.x; }
+      function sideLength(P, Q) { return Math.hypot(Q.x - P.x, Q.y - P.y); }
+      function equalLen(x, y) { return Math.abs(x - y) < 1e-8; }
+      function parallel(u, v) { return Math.abs(cross(u, v)) < 1e-8; }
+      function perpendicular(u, v) { return Math.abs(dot(u, v)) < 1e-8; }
 
-      function dot(u, v) {
-        return u.x * v.x + u.y * v.y;
-      }
-
-      function cross(u, v) {
-        return u.x * v.y - u.y * v.x;
-      }
-
-      function sideLength(P, Q) {
-        return Math.hypot(Q.x - P.x, Q.y - P.y);
-      }
-
-      function equalLen(x, y) {
-        return Math.abs(x - y) < 1e-8;
-      }
-
-      function parallel(u, v) {
-        return Math.abs(cross(u, v)) < 1e-8;
-      }
-
-      function perpendicular(u, v) {
-        return Math.abs(dot(u, v)) < 1e-8;
-      }
-
-      function triangleArea2(points) {
-        const A = points.A;
-        const B = points.B;
-        const C = points.C;
-        return (B.x - A.x) * (C.y - A.y) - (B.y - A.y) * (C.x - A.x);
+      function rotatePoint(x, y, deg) {
+        const t = degToRad(deg);
+        return {
+          x: x * Math.cos(t) - y * Math.sin(t),
+          y: x * Math.sin(t) + y * Math.cos(t)
+        };
       }
 
       function polygonSignedArea(arr) {
@@ -880,6 +1142,13 @@
           s += p.x * q.y - p.y * q.x;
         }
         return s / 2;
+      }
+
+      function triangleArea2(points) {
+        const A = points.A;
+        const B = points.B;
+        const C = points.C;
+        return (B.x - A.x) * (C.y - A.y) - (B.y - A.y) * (C.x - A.x);
       }
 
       function quadrilateralSignedArea(points) {
@@ -907,46 +1176,65 @@
         return { x: dx / len, y: dy / len };
       }
 
-      function unitNormalOutside(P, Q, ctr) {
-        const dx = Q.x - P.x;
-        const dy = Q.y - P.y;
-        const len = Math.hypot(dx, dy) || 1;
-        let nx = -dy / len;
-        let ny = dx / len;
-        const mid = { x: (P.x + Q.x) / 2, y: (P.y + Q.y) / 2 };
-        const toCtr = { x: ctr.x - mid.x, y: ctr.y - mid.y };
-        if (nx * toCtr.x + ny * toCtr.y > 0) {
-          nx = -nx;
-          ny = -ny;
-        }
-        return { x: nx, y: ny };
+      function normalize(v) {
+        const len = Math.hypot(v.x, v.y) || 1;
+        return { x: v.x / len, y: v.y / len };
       }
 
-      function quadraticPoint(p1, control, p2, t) {
-        return {
-          x: (1 - t) * (1 - t) * p1.x + 2 * (1 - t) * t * control.x + t * t * p2.x,
-          y: (1 - t) * (1 - t) * p1.y + 2 * (1 - t) * t * control.y + t * t * p2.y
-        };
+      function midpoint(P, Q) {
+        return { x: (P.x + Q.x) / 2, y: (P.y + Q.y) / 2 };
       }
 
-      function getPointDisplayText(name, point, showCoordLabels) {
-        if (!showCoordLabels) return name;
-        return name + '(' + formatDecimal(point.x) + ', ' + formatDecimal(point.y) + ')';
+      function pointFromCenterOffsets(cx, cy, dx, dy, angleDeg) {
+        const r = rotatePoint(dx, dy, angleDeg);
+        return { x: cx + r.x, y: cy + r.y };
+      }
+
+      function unicodeSubscript(num) {
+        const map = { '0': '₀', '1': '₁', '2': '₂', '3': '₃', '4': '₄', '5': '₅', '6': '₆', '7': '₇', '8': '₈', '9': '₉' };
+        return String(num).split('').map(function (c) { return map[c] || c; }).join('');
+      }
+
+      function vertexName(index, mode) {
+        if (mode === 'Aindex') return 'A' + unicodeSubscript(index + 1);
+        return String.fromCharCode(65 + (index % 26));
       }
 
       function getDisplayOptions() {
         return {
-          showAxes: document.getElementById('showAxes').checked,
-          showCoordLabels: document.getElementById('showCoordLabels').checked,
-          showSideLabels: document.getElementById('showSideLabels').checked,
-          showDiagonals: document.getElementById('showDiagonals').checked,
-          pointLabelSize: Number(document.getElementById('pointLabelSize').value),
-          sideLabelSize: Number(document.getElementById('sideLabelSize').value),
-          pointLabelOffset: Number(document.getElementById('pointLabelOffset').value),
-          sideTextMode: document.getElementById('sideTextMode').value,
-          sideUnitMode: document.getElementById('sideUnitMode').value,
-          areaLabelMode: document.getElementById('areaLabelMode').value,
-          areaLabelSize: Number(document.getElementById('areaLabelSize').value),
+          vertex: {
+            labelPosition: document.getElementById('vertexLabelPosition').value,
+            labelSize: Number(document.getElementById('pointLabelSize').value),
+            labelColor: document.getElementById('vertexLabelColor').value,
+            color: document.getElementById('vertexColor').value,
+            symbolMode: document.getElementById('vertexSymbolMode').value,
+            labelOffset: Number(document.getElementById('pointLabelOffset').value)
+          },
+          edge: {
+            labelPosition: document.getElementById('edgeLabelPosition').value,
+            labelSize: Number(document.getElementById('sideLabelSize').value),
+            color: document.getElementById('edgeColor').value,
+            unitMode: document.getElementById('sideUnitMode').value,
+            textMode: document.getElementById('sideTextMode').value
+          },
+          angle: {
+            displayMode: document.getElementById('angleDisplayMode').value,
+            labelSize: Number(document.getElementById('angleLabelSize').value)
+          },
+          area: {
+            labelMode: document.getElementById('areaLabelMode').value,
+            labelSize: Number(document.getElementById('areaLabelSize').value),
+            unitMode: document.getElementById('areaUnitMode').value,
+            fillColor: document.getElementById('areaFillColor').value
+          },
+          coordinate: {
+            axisLabelSize: Number(document.getElementById('axisLabelSize').value),
+            showAxes: document.getElementById('showAxesMode').value === 'yes',
+            axisColor: document.getElementById('axisColor').value,
+            coordMode: document.getElementById('coordDisplayMode').value,
+            showCoordLabels: document.getElementById('showCoordLabels').value === 'yes',
+            showDiagonals: document.getElementById('showDiagonals').value === 'yes'
+          },
           unitCm: parsePositiveExpr(document.getElementById('unitCm').value, '1単位あたりのcm').value
         };
       }
@@ -970,13 +1258,28 @@
         });
 
         const mode = document.getElementById('mode').value;
-        document.querySelectorAll('.mode-group').forEach(function (group) {
+        document.querySelectorAll('.mode-group[data-mode]').forEach(function (group) {
           group.classList.toggle('active', shapeType === 'triangle' && group.dataset.mode === mode);
         });
 
         const functionType = document.getElementById('functionType').value;
         document.querySelectorAll('.function-group').forEach(function (group) {
           group.classList.toggle('active', shapeType === 'function' && group.dataset.function === functionType);
+        });
+
+        const quadType = document.getElementById('quadType').value;
+        document.querySelectorAll('.quad-subgroup').forEach(function (group) {
+          group.classList.toggle('active', shapeType === 'quadrilateral' && group.dataset.quadtype === quadType);
+        });
+
+        const quadGeneralMode = document.getElementById('quadGeneralMode').value;
+        document.querySelectorAll('.quad-general-mode-group').forEach(function (group) {
+          group.classList.toggle('active', shapeType === 'quadrilateral' && quadType === 'general' && group.dataset.quadgeneralMode === quadGeneralMode);
+        });
+
+        const quadParaMode = document.getElementById('quadParaMode').value;
+        document.querySelectorAll('.mode-group[data-quadpara-mode]').forEach(function (group) {
+          group.classList.toggle('active', shapeType === 'quadrilateral' && quadType === 'parallelogram' && group.dataset.quadparaMode === quadParaMode);
         });
       }
 
@@ -1019,12 +1322,11 @@
         };
       }
 
-      function computeTriangleFromASA() {
+            function computeTriangleFromASA() {
         const c = parsePositiveExpr(document.getElementById('asa-c').value, 'c');
         const Aang = parseAngleExpr(document.getElementById('asa-A').value, '∠A');
         const Bang = parseAngleExpr(document.getElementById('asa-B').value, '∠B');
         const Cang = 180 - Aang.value - Bang.value;
-
         if (!(Cang > 0)) throw new Error('角の和が 180° 未満ではありません。');
 
         const x = (c.value * Math.tan(degToRad(Bang.value))) / (Math.tan(degToRad(Aang.value)) + Math.tan(degToRad(Bang.value)));
@@ -1043,7 +1345,6 @@
         const Aang = parseAngleExpr(document.getElementById('aas-A').value, '∠A');
         const Bang = parseAngleExpr(document.getElementById('aas-B').value, '∠B');
         const Cang = 180 - Aang.value - Bang.value;
-
         if (!(Cang > 0)) throw new Error('角の和が 180° 未満ではありません。');
 
         const cVal = a.value * Math.sin(degToRad(Cang)) / Math.sin(degToRad(Aang.value));
@@ -1063,14 +1364,12 @@
         const Aang = parseAngleExpr(document.getElementById('aaa-A').value, '∠A');
         const Bang = parseAngleExpr(document.getElementById('aaa-B').value, '∠B');
         const Cang = parseAngleExpr(document.getElementById('aaa-C').value, '∠C');
-
         if (Math.abs(Aang.value + Bang.value + Cang.value - 180) > 1e-7) {
           throw new Error('三角の和を 180° にしてください。');
         }
 
         const cVal = 1;
         const x = (cVal * Math.tan(degToRad(Bang.value))) / (Math.tan(degToRad(Aang.value)) + Math.tan(degToRad(Bang.value)));
-
         return {
           points: {
             A: { x: 0, y: 0 },
@@ -1087,9 +1386,7 @@
           B: { x: parseExpr(document.getElementById('Bx').value).value, y: parseExpr(document.getElementById('By').value).value },
           C: { x: parseExpr(document.getElementById('Cx').value).value, y: parseExpr(document.getElementById('Cy').value).value }
         };
-
         if (Math.abs(triangleArea2(points)) < 1e-9) throw new Error('3点が一直線上にあります。');
-
         return { points: points, expressions: {} };
       }
 
@@ -1097,7 +1394,6 @@
         const c = parsePositiveExpr(document.getElementById('bh-c').value, '底辺');
         const h = parsePositiveExpr(document.getElementById('bh-h').value, '高さ');
         const t = parseExpr(document.getElementById('bh-t').value);
-
         return {
           points: {
             A: { x: 0, y: 0 },
@@ -1109,16 +1405,235 @@
         };
       }
 
-      function computeQuadrilateralFromPoints() {
+      function computeQuadrilateralSquare() {
+        const cx = parseExpr(document.getElementById('SQcx').value).value;
+        const cy = parseExpr(document.getElementById('SQcy').value).value;
+        const s = parsePositiveExpr(document.getElementById('SQside').value, '一辺').value;
+        const ang = parseExpr(document.getElementById('SQang').value).value;
+        const h = s / 2;
+
+        return {
+          points: {
+            A: pointFromCenterOffsets(cx, cy, -h, -h, ang),
+            B: pointFromCenterOffsets(cx, cy,  h, -h, ang),
+            C: pointFromCenterOffsets(cx, cy,  h,  h, ang),
+            D: pointFromCenterOffsets(cx, cy, -h,  h, ang)
+          },
+          expressions: { ab: String(s) }
+        };
+      }
+
+      function computeQuadrilateralRectangle() {
+        const cx = parseExpr(document.getElementById('REcx').value).value;
+        const cy = parseExpr(document.getElementById('REcy').value).value;
+        const w = parsePositiveExpr(document.getElementById('REw').value, '横').value;
+        const h = parsePositiveExpr(document.getElementById('REh').value, '縦').value;
+        const ang = parseExpr(document.getElementById('REang').value).value;
+        const hw = w / 2;
+        const hh = h / 2;
+
+        return {
+          points: {
+            A: pointFromCenterOffsets(cx, cy, -hw, -hh, ang),
+            B: pointFromCenterOffsets(cx, cy,  hw, -hh, ang),
+            C: pointFromCenterOffsets(cx, cy,  hw,  hh, ang),
+            D: pointFromCenterOffsets(cx, cy, -hw,  hh, ang)
+          },
+          expressions: { ab: String(w), bc: String(h) }
+        };
+      }
+
+      function computeQuadrilateralParallelogram() {
+        const mode = document.getElementById('quadParaMode').value;
+        if (mode === 'baseHeight') {
+          const base = parsePositiveExpr(document.getElementById('PAbase').value, '底辺').value;
+          const height = parsePositiveExpr(document.getElementById('PAheight').value, '高さ').value;
+          const shift = parseExpr(document.getElementById('PAshift').value).value;
+          return {
+            points: {
+              A: { x: 0, y: 0 },
+              B: { x: base, y: 0 },
+              C: { x: base + shift, y: height },
+              D: { x: shift, y: height }
+            },
+            expressions: {}
+          };
+        } else {
+          const s1 = parsePositiveExpr(document.getElementById('PBside1').value, '辺1').value;
+          const s2 = parsePositiveExpr(document.getElementById('PBside2').value, '辺2').value;
+          const ang = parseAngleExpr(document.getElementById('PBangle').value, 'なす角').value;
+          return {
+            points: {
+              A: { x: 0, y: 0 },
+              B: { x: s1, y: 0 },
+              C: { x: s1 + s2 * Math.cos(degToRad(ang.value)), y: s2 * Math.sin(degToRad(ang.value)) },
+              D: { x: s2 * Math.cos(degToRad(ang.value)), y: s2 * Math.sin(degToRad(ang.value)) }
+            },
+            expressions: {}
+          };
+        }
+      }
+
+      function computeQuadrilateralRhombus() {
+        const cx = parseExpr(document.getElementById('RHcx').value).value;
+        const cy = parseExpr(document.getElementById('RHcy').value).value;
+        const s = parsePositiveExpr(document.getElementById('RHside').value, '一辺').value;
+        const theta = parseAngleExpr(document.getElementById('RHangle').value, '角').value;
+        const rot = parseExpr(document.getElementById('RHang').value).value;
+
+        const A0 = { x: 0, y: 0 };
+        const B0 = { x: s, y: 0 };
+        const D0 = { x: s * Math.cos(degToRad(theta.value)), y: s * Math.sin(degToRad(theta.value)) };
+        const C0 = { x: B0.x + D0.x, y: B0.y + D0.y };
+        const ctr = centroidArray([A0, B0, C0, D0]);
+
+        function tr(p) {
+          const q = rotatePoint(p.x - ctr.x, p.y - ctr.y, rot);
+          return { x: cx + q.x, y: cy + q.y };
+        }
+
+        return {
+          points: {
+            A: tr(A0),
+            B: tr(B0),
+            C: tr(C0),
+            D: tr(D0)
+          },
+          expressions: {}
+        };
+      }
+
+      function computeQuadrilateralTrapezoid() {
+        const top = parsePositiveExpr(document.getElementById('TRtop').value, '上底').value;
+        const bottom = parsePositiveExpr(document.getElementById('TRbottom').value, '下底').value;
+        const height = parsePositiveExpr(document.getElementById('TRheight').value, '高さ').value;
+        const offset = parseExpr(document.getElementById('TRoffset').value).value;
+
+        return {
+          points: {
+            A: { x: 0, y: 0 },
+            B: { x: bottom, y: 0 },
+            C: { x: offset + top, y: height },
+            D: { x: offset, y: height }
+          },
+          expressions: {}
+        };
+      }
+
+      function computeQuadrilateralGeneralByPoints() {
         const points = {
           A: { x: parseExpr(document.getElementById('QAx').value).value, y: parseExpr(document.getElementById('QAy').value).value },
           B: { x: parseExpr(document.getElementById('QBx').value).value, y: parseExpr(document.getElementById('QBy').value).value },
           C: { x: parseExpr(document.getElementById('QCx').value).value, y: parseExpr(document.getElementById('QCy').value).value },
           D: { x: parseExpr(document.getElementById('QDx').value).value, y: parseExpr(document.getElementById('QDy').value).value }
         };
-
         if (Math.abs(quadrilateralSignedArea(points)) < 1e-9) throw new Error('四角形の面積が 0 です。');
-        return { points: points, expressions: {} };
+        return { points: points, expressions: {}, conditionMessage: '4点座標から描画しました。' };
+      }
+
+      function circleIntersections(c1, r1, c2, r2) {
+        const dx = c2.x - c1.x;
+        const dy = c2.y - c1.y;
+        const d = Math.hypot(dx, dy);
+        if (d <= 1e-9) return [];
+        if (d > r1 + r2 + 1e-9) return [];
+        if (d < Math.abs(r1 - r2) - 1e-9) return [];
+
+        const a = (r1 * r1 - r2 * r2 + d * d) / (2 * d);
+        const h2 = r1 * r1 - a * a;
+        if (h2 < -1e-9) return [];
+        const h = Math.sqrt(Math.max(0, h2));
+
+        const xm = c1.x + a * dx / d;
+        const ym = c1.y + a * dy / d;
+        const rx = -dy * (h / d);
+        const ry = dx * (h / d);
+
+        if (nearlyEqual(h, 0, 1e-9)) return [{ x: xm, y: ym }];
+
+        return [
+          { x: xm + rx, y: ym + ry },
+          { x: xm - rx, y: ym - ry }
+        ];
+      }
+
+      function computeQuadrilateralGeneralByConditions() {
+        const AB = parseOptionalPositiveExpr(document.getElementById('condAB').value);
+        const BC = parseOptionalPositiveExpr(document.getElementById('condBC').value);
+        const CD = parseOptionalPositiveExpr(document.getElementById('condCD').value);
+        const DA = parseOptionalPositiveExpr(document.getElementById('condDA').value);
+        const AC = parseOptionalPositiveExpr(document.getElementById('condAC').value);
+        const BD = parseOptionalPositiveExpr(document.getElementById('condBD').value);
+
+        const angleFields = [
+          document.getElementById('condABC').value.trim(),
+          document.getElementById('condBCD').value.trim(),
+          document.getElementById('condCDA').value.trim(),
+          document.getElementById('condDAB').value.trim(),
+          document.getElementById('condACB').value.trim(),
+          document.getElementById('condADB').value.trim()
+        ].filter(Boolean);
+
+        if (angleFields.length > 0 && !(AB && BC && CD && DA && (AC || BD))) {
+          throw new Error('未対応の条件組です：現在は 4辺＋対角線AC または 4辺＋対角線BD を優先対応しています。');
+        }
+
+        const count = [AB, BC, CD, DA, AC, BD].filter(function (v) { return v != null; }).length;
+        if (count < 5) {
+          throw new Error('条件不足です：現在は 4辺＋対角線1本 が必要です。');
+        }
+
+        if (AB && BC && CD && DA && AC) {
+          const A = { x: 0, y: 0 };
+          const C = { x: AC, y: 0 };
+          const Bcands = circleIntersections(A, AB, C, BC);
+          const Dcands = circleIntersections(A, DA, C, CD);
+
+          if (Bcands.length === 0 || Dcands.length === 0) {
+            throw new Error('条件が矛盾しています：4辺＋AC から点を構成できません。');
+          }
+
+          const B = Bcands.sort(function (p, q) { return q.y - p.y; })[0];
+          const D = Dcands.sort(function (p, q) { return p.y - q.y; })[0];
+          const pts = { A: A, B: B, C: C, D: D };
+
+          if (Math.abs(quadrilateralSignedArea(pts)) < 1e-9) {
+            throw new Error('条件が矛盾しています：面積が 0 になります。');
+          }
+
+          return {
+            points: pts,
+            expressions: {},
+            conditionMessage: '4辺＋対角線ACから描画しました。鏡映解のうち、Bを上側、Dを下側に固定しています。'
+          };
+        }
+
+        if (AB && BC && CD && DA && BD) {
+          const B = { x: 0, y: 0 };
+          const D = { x: BD, y: 0 };
+          const Acands = circleIntersections(B, AB, D, DA);
+          const Ccands = circleIntersections(B, BC, D, CD);
+
+          if (Acands.length === 0 || Ccands.length === 0) {
+            throw new Error('条件が矛盾しています：4辺＋BD から点を構成できません。');
+          }
+
+          const A = Acands.sort(function (p, q) { return p.y - q.y; })[0];
+          const C = Ccands.sort(function (p, q) { return q.y - p.y; })[0];
+          const pts = { A: A, B: B, C: C, D: D };
+
+          if (Math.abs(quadrilateralSignedArea(pts)) < 1e-9) {
+            throw new Error('条件が矛盾しています：面積が 0 になります。');
+          }
+
+          return {
+            points: pts,
+            expressions: {},
+            conditionMessage: '4辺＋対角線BDから描画しました。鏡映解のうち、Aを下側、Cを上側に固定しています。'
+          };
+        }
+
+        throw new Error('未対応の条件組です：現在は 4辺＋対角線AC または 4辺＋対角線BD のみ対応しています。');
       }
 
       function computeRegularPolygon() {
@@ -1128,17 +1643,12 @@
         const cy = parseExpr(document.getElementById('RPcy').value).value;
         const r = parsePositiveExpr(document.getElementById('RPr').value, '半径').value;
         const ang = parseExpr(document.getElementById('RPang').value).value;
-
         const points = [];
         for (let i = 0; i < n; i++) {
           const t = degToRad(ang + (360 * i) / n);
           points.push({ x: cx + r * Math.cos(t), y: cy + r * Math.sin(t) });
         }
-
-        return {
-          points: points,
-          expressions: {}
-        };
+        return { points: points, expressions: {} };
       }
 
       function computeCircle() {
@@ -1161,10 +1671,7 @@
           a: parsePositiveExpr(document.getElementById('Ea').value, '長半径').value,
           b: parsePositiveExpr(document.getElementById('Eb').value, '短半径').value,
           angle: parseExpr(document.getElementById('Eang').value).value,
-          expressions: {
-            a: document.getElementById('Ea').value,
-            b: document.getElementById('Eb').value
-          }
+          expressions: {}
         };
       }
 
@@ -1176,7 +1683,6 @@
         const outer = parsePositiveExpr(document.getElementById('STouter').value, '外半径').value;
         const inner = parsePositiveExpr(document.getElementById('STinner').value, '内半径').value;
         const ang = parseExpr(document.getElementById('STang').value).value;
-
         if (!(outer > inner)) throw new Error('外半径は内半径より大きくしてください。');
 
         const points = [];
@@ -1185,12 +1691,7 @@
           const t = degToRad(ang + (360 * i) / (n * 2));
           points.push({ x: cx + r * Math.cos(t), y: cy + r * Math.sin(t) });
         }
-
-        return {
-          points: points,
-          starPoints: n,
-          expressions: {}
-        };
+        return { points: points, starPoints: n, expressions: {} };
       }
 
       function computeFunctionModel() {
@@ -1199,7 +1700,6 @@
         const domainMax = parseExpr(document.getElementById('domainMax').value).value;
         const leftType = document.getElementById('domainLeftType').value;
         const rightType = document.getElementById('domainRightType').value;
-
         if (!(domainMin < domainMax)) throw new Error('定義域は 左端 < 右端 にしてください。');
 
         let fn;
@@ -1248,9 +1748,7 @@
         } else {
           const expr = document.getElementById('fnGeneralExpr').value;
           const compiled = compileFunctionExpression(expr, true);
-          fn = function (x) {
-            return compiled(x);
-          };
+          fn = function (x) { return compiled(x); };
           exprText = 'y = ' + expr;
         }
 
@@ -1272,15 +1770,12 @@
         const b = sideLength(points.C, points.A);
         const c = sideLength(points.A, points.B);
         const labels = [];
-
         if (equalLen(a, b) && equalLen(b, c)) labels.push('正三角形');
         else if (equalLen(a, b) || equalLen(b, c) || equalLen(c, a)) labels.push('二等辺三角形');
-
         const arr = [a * a, b * b, c * c].sort(function (x, y) { return x - y; });
         if (Math.abs(arr[0] + arr[1] - arr[2]) < 1e-8) labels.push('直角三角形');
         else if (arr[0] + arr[1] > arr[2]) labels.push('鋭角三角形');
         else labels.push('鈍角三角形');
-
         return labels;
       }
 
@@ -1300,83 +1795,42 @@
       }
 
       function classifyQuadrilateral(points) {
-        const A = points.A;
-        const B = points.B;
-        const C = points.C;
-        const D = points.D;
-
-        const AB = vec(A, B);
-        const BC = vec(B, C);
-        const CD = vec(C, D);
-        const DA = vec(D, A);
-
-        const ab = sideLength(A, B);
-        const bc = sideLength(B, C);
-        const cd = sideLength(C, D);
-        const da = sideLength(D, A);
-
+        const A = points.A, B = points.B, C = points.C, D = points.D;
+        const AB = vec(A, B), BC = vec(B, C), CD = vec(C, D), DA = vec(D, A);
+        const ab = sideLength(A, B), bc = sideLength(B, C), cd = sideLength(C, D), da = sideLength(D, A);
         const para1 = parallel(AB, CD);
         const para2 = parallel(BC, DA);
         const right = perpendicular(AB, BC) && perpendicular(BC, CD) && perpendicular(CD, DA);
         const allEqual = equalLen(ab, bc) && equalLen(bc, cd) && equalLen(cd, da);
-
         const labels = [];
 
         if (para1 && para2) labels.push('平行四辺形');
         if (para1 && para2 && right) labels.push('長方形');
         if (para1 && para2 && allEqual) labels.push('菱形');
         if (para1 && para2 && right && allEqual) labels.unshift('正方形');
-
-        const trapezoid = para1 || para2;
-        if (trapezoid) labels.push('台形');
-
-        if (trapezoid) {
-          if (para1 && !para2) {
-            if (equalLen(bc, da)) labels.push('等脚台形');
-          } else if (!para1 && para2) {
-            if (equalLen(ab, cd)) labels.push('等脚台形');
-          } else if (para1 && para2 && right) {
-            if (equalLen(ab, cd) || equalLen(bc, da)) labels.push('等脚台形');
-          }
-        }
-
+        if (para1 || para2) labels.push('台形');
         labels.push(polygonIsConvex([A, B, C, D]) ? '凸四角形' : '凹四角形');
-
         return Array.from(new Set(labels));
       }
 
       function computeAreaValue(model) {
-        if (model.shapeType === 'triangle') {
-          return Math.abs(triangleArea2(model.points)) / 2;
-        }
-        if (model.shapeType === 'quadrilateral') {
-          return Math.abs(quadrilateralSignedArea(model.points));
-        }
-        if (model.shapeType === 'regularPolygon' || model.shapeType === 'star') {
-          return Math.abs(polygonSignedArea(model.points));
-        }
-        if (model.shapeType === 'circle') {
-          return Math.PI * model.radius * model.radius;
-        }
-        if (model.shapeType === 'ellipse') {
-          return Math.PI * model.a * model.b;
-        }
+        if (model.shapeType === 'triangle') return Math.abs(triangleArea2(model.points)) / 2;
+        if (model.shapeType === 'quadrilateral') return Math.abs(quadrilateralSignedArea(model.points));
+        if (model.shapeType === 'regularPolygon' || model.shapeType === 'star') return Math.abs(polygonSignedArea(model.points));
+        if (model.shapeType === 'circle') return Math.PI * model.radius * model.radius;
+        if (model.shapeType === 'ellipse') return Math.PI * model.a * model.b;
         return null;
       }
 
       function computeGeneralMetrics(model, unitCm) {
         if (model.shapeType === 'triangle') {
           const p = model.points;
-          const a = sideLength(p.B, p.C);
-          const b = sideLength(p.C, p.A);
-          const c = sideLength(p.A, p.B);
-          const xs = [p.A.x, p.B.x, p.C.x];
-          const ys = [p.A.y, p.B.y, p.C.y];
+          const a = sideLength(p.B, p.C), b = sideLength(p.C, p.A), c = sideLength(p.A, p.B);
+          const xs = [p.A.x, p.B.x, p.C.x], ys = [p.A.y, p.B.y, p.C.y];
           const widthUnits = Math.max.apply(null, xs) - Math.min.apply(null, xs);
           const heightUnits = Math.max.apply(null, ys) - Math.min.apply(null, ys);
           return {
             sideUnits: { a: a, b: b, c: c },
-            sideCm: { a: a * unitCm, b: b * unitCm, c: c * unitCm },
             widthUnits: widthUnits,
             heightUnits: heightUnits,
             widthCm: widthUnits * unitCm,
@@ -1386,19 +1840,13 @@
 
         if (model.shapeType === 'quadrilateral') {
           const p = model.points;
-          const ab = sideLength(p.A, p.B);
-          const bc = sideLength(p.B, p.C);
-          const cd = sideLength(p.C, p.D);
-          const da = sideLength(p.D, p.A);
-          const ac = sideLength(p.A, p.C);
-          const bd = sideLength(p.B, p.D);
-          const xs = [p.A.x, p.B.x, p.C.x, p.D.x];
-          const ys = [p.A.y, p.B.y, p.C.y, p.D.y];
+          const ab = sideLength(p.A, p.B), bc = sideLength(p.B, p.C), cd = sideLength(p.C, p.D), da = sideLength(p.D, p.A);
+          const ac = sideLength(p.A, p.C), bd = sideLength(p.B, p.D);
+          const xs = [p.A.x, p.B.x, p.C.x, p.D.x], ys = [p.A.y, p.B.y, p.C.y, p.D.y];
           const widthUnits = Math.max.apply(null, xs) - Math.min.apply(null, xs);
           const heightUnits = Math.max.apply(null, ys) - Math.min.apply(null, ys);
           return {
             sideUnits: { ab: ab, bc: bc, cd: cd, da: da, ac: ac, bd: bd },
-            sideCm: { ab: ab * unitCm, bc: bc * unitCm, cd: cd * unitCm, da: da * unitCm, ac: ac * unitCm, bd: bd * unitCm },
             widthUnits: widthUnits,
             heightUnits: heightUnits,
             widthCm: widthUnits * unitCm,
@@ -1406,7 +1854,7 @@
           };
         }
 
-        if (model.shapeType === 'regularPolygon') {
+        if (model.shapeType === 'regularPolygon' || model.shapeType === 'star') {
           const xs = model.points.map(function (p) { return p.x; });
           const ys = model.points.map(function (p) { return p.y; });
           const s = sideLength(model.points[0], model.points[1]);
@@ -1414,23 +1862,6 @@
           const heightUnits = Math.max.apply(null, ys) - Math.min.apply(null, ys);
           return {
             sideUnits: { s: s },
-            sideCm: { s: s * unitCm },
-            widthUnits: widthUnits,
-            heightUnits: heightUnits,
-            widthCm: widthUnits * unitCm,
-            heightCm: heightUnits * unitCm
-          };
-        }
-
-        if (model.shapeType === 'star') {
-          const xs = model.points.map(function (p) { return p.x; });
-          const ys = model.points.map(function (p) { return p.y; });
-          const s = sideLength(model.points[0], model.points[1]);
-          const widthUnits = Math.max.apply(null, xs) - Math.min.apply(null, xs);
-          const heightUnits = Math.max.apply(null, ys) - Math.min.apply(null, ys);
-          return {
-            sideUnits: { s: s },
-            sideCm: { s: s * unitCm },
             widthUnits: widthUnits,
             heightUnits: heightUnits,
             widthCm: widthUnits * unitCm,
@@ -1440,30 +1871,15 @@
 
         if (model.shapeType === 'circle') {
           const d = 2 * model.radius;
-          return {
-            widthUnits: d,
-            heightUnits: d,
-            widthCm: d * unitCm,
-            heightCm: d * unitCm
-          };
+          return { widthUnits: d, heightUnits: d, widthCm: d * unitCm, heightCm: d * unitCm };
         }
 
         if (model.shapeType === 'ellipse') {
-          return {
-            widthUnits: 2 * model.a,
-            heightUnits: 2 * model.b,
-            widthCm: 2 * model.a * unitCm,
-            heightCm: 2 * model.b * unitCm
-          };
+          return { widthUnits: 2 * model.a, heightUnits: 2 * model.b, widthCm: 2 * model.a * unitCm, heightCm: 2 * model.b * unitCm };
         }
 
         if (model.shapeType === 'function') {
-          return {
-            widthUnits: model.domainMax - model.domainMin,
-            heightUnits: 0,
-            widthCm: (model.domainMax - model.domainMin) * unitCm,
-            heightCm: 0
-          };
+          return { widthUnits: model.domainMax - model.domainMin, heightUnits: 0, widthCm: (model.domainMax - model.domainMin) * unitCm, heightCm: 0 };
         }
 
         return { widthUnits: 0, heightUnits: 0, widthCm: 0, heightCm: 0 };
@@ -1483,11 +1899,21 @@
           else if (mode === 'points') model = computeTriangleFromPoints();
           else if (mode === 'baseHeight') model = computeTriangleFromBaseHeight();
           else throw new Error('未対応の三角形モードです。');
-
           if (Math.abs(triangleArea2(model.points)) < 1e-9) throw new Error('面積が 0 のため三角形になりません。');
           model.classification = classifyTriangle(model.points);
         } else if (shapeType === 'quadrilateral') {
-          model = computeQuadrilateralFromPoints();
+          const quadType = document.getElementById('quadType').value;
+          if (quadType === 'square') model = computeQuadrilateralSquare();
+          else if (quadType === 'rectangle') model = computeQuadrilateralRectangle();
+          else if (quadType === 'parallelogram') model = computeQuadrilateralParallelogram();
+          else if (quadType === 'rhombus') model = computeQuadrilateralRhombus();
+          else if (quadType === 'trapezoid') model = computeQuadrilateralTrapezoid();
+          else {
+            const gmode = document.getElementById('quadGeneralMode').value;
+            if (gmode === 'points') model = computeQuadrilateralGeneralByPoints();
+            else model = computeQuadrilateralGeneralByConditions();
+          }
+          if (Math.abs(quadrilateralSignedArea(model.points)) < 1e-9) throw new Error('四角形の面積が 0 です。');
           model.classification = classifyQuadrilateral(model.points);
         } else if (shapeType === 'regularPolygon') {
           model = computeRegularPolygon();
@@ -1512,18 +1938,13 @@
         model.print = getPrintOptions();
         model.areaValue = computeAreaValue(model);
         model.metrics = computeGeneralMetrics(model, model.display.unitCm);
-
         return model;
       }
 
       function formatSideValue(model, key, value) {
-        const textMode = model.display.sideTextMode;
-        const unitMode = model.display.sideUnitMode;
+        const textMode = model.display.edge.textMode;
+        const unitMode = model.display.edge.unitMode;
         const expr = model.expressions ? model.expressions[key] : null;
-
-        if (unitMode === 'cm') {
-          return formatDecimal(value * model.display.unitCm) + ' cm';
-        }
 
         let core;
         if (textMode === 'input' && expr) core = expr;
@@ -1531,22 +1952,31 @@
         else if (textMode === 'trig') core = trigLikeFormat(value);
         else core = formatDecimal(value);
 
-        if (unitMode === 'unit') return core + ' unit';
+        if (unitMode === 'cm') return formatDecimal(value * model.display.unitCm) + ' cm';
+        if (unitMode === 'm') return formatDecimal(value * model.display.unitCm / 100) + ' m';
+        if (unitMode === 'km') return formatDecimal(value * model.display.unitCm / 100000) + ' km';
         return core;
       }
 
       function getAreaLabelText(model) {
-        const mode = model.display.areaLabelMode;
+        const mode = model.display.area.labelMode;
         if (mode === 'none') return '';
         if (mode === 'symbol') return 'S';
         if (model.areaValue == null) return '';
-        if (mode === 'plain') return 'S = ' + formatDecimal(model.areaValue);
-        if (mode === 'cm2') return 'S = ' + formatDecimal(model.areaValue * model.display.unitCm * model.display.unitCm) + ' cm²';
-        return '';
-      }
 
-      function getAreaAnchor(model) {
-        if (model.shapeType === 'triangle') return centroidTriangle([model.points.A, model.points.B, model.points.C]);
+        let val = model.areaValue;
+        let suffix = '';
+        if (model.display.area.unitMode === 'cm2') {
+          val = model.areaValue * model.display.unitCm * model.display.unitCm;
+          suffix = ' cm2';
+        } else if (model.display.area.unitMode === 'm2') {
+          val = model.areaValue * model.display.unitCm * model.display.unitCm / 10000;
+          suffix = ' m2';
+        } else if (model.display.area.unitMode === 'km2') {
+          val = model.areaValue * model.display.unitCm * model.display.unitCm / 10000000000;
+          suffix = ' km2';
+        }
+        return 'S = ' + formatDecimal(val) + suffix;
       }
 
       function areaAnchorFromModel(model) {
@@ -1563,7 +1993,7 @@
         const pos = areaAnchorFromModel(model);
         if (!pos) return;
         targetBoard.create('text', [pos.x, pos.y, text], {
-          fontSize: model.display.areaLabelSize,
+          fontSize: model.display.area.labelSize,
           fixed: true,
           anchorX: 'middle',
           anchorY: 'middle',
@@ -1596,21 +2026,18 @@
           const x = xmin + (xmax - xmin) * i / samples;
           try {
             const y = model.fn(x);
-            if (Number.isFinite(y)) ys.push(y);
+            if (Number.isFinite(y) && Math.abs(y) < 1e6) ys.push(y);
           } catch (e) {}
         }
-        let ymin = -5;
-        let ymax = 5;
+        let ymin = -5, ymax = 5;
         if (ys.length) {
           ymin = Math.min.apply(null, ys);
           ymax = Math.max.apply(null, ys);
           if (nearlyEqual(ymin, ymax)) {
-            ymin -= 2;
-            ymax += 2;
+            ymin -= 2; ymax += 2;
           } else {
             const pad = (ymax - ymin) * 0.25;
-            ymin -= pad;
-            ymax += pad;
+            ymin -= pad; ymax += pad;
           }
         }
         const padX = Math.max((xmax - xmin) * 0.2, 1);
@@ -1618,25 +2045,18 @@
       }
 
       function makeBoundingBox(model, extra) {
-        const ex = typeof extra === 'number' ? extra : 0.9;
-
-        if (model.shapeType === 'triangle') return makeBoundingBoxFromArray([model.points.A, model.points.B, model.points.C], ex);
-        if (model.shapeType === 'quadrilateral') return makeBoundingBoxFromArray([model.points.A, model.points.B, model.points.C, model.points.D], ex);
-        if (model.shapeType === 'regularPolygon' || model.shapeType === 'star') return makeBoundingBoxFromArray(model.points, ex);
-
+        if (model.shapeType === 'triangle') return makeBoundingBoxFromArray([model.points.A, model.points.B, model.points.C], extra);
+        if (model.shapeType === 'quadrilateral') return makeBoundingBoxFromArray([model.points.A, model.points.B, model.points.C, model.points.D], extra);
+        if (model.shapeType === 'regularPolygon' || model.shapeType === 'star') return makeBoundingBoxFromArray(model.points, extra);
         if (model.shapeType === 'circle') {
-          const c = model.center;
-          const r = model.radius;
+          const c = model.center, r = model.radius, ex = typeof extra === 'number' ? extra : 0.9;
           return [c.x - r - ex, c.y + r + ex, c.x + r + ex, c.y - r - ex];
         }
-
         if (model.shapeType === 'ellipse') {
-          const c = model.center;
-          const a = model.a;
-          const b = model.b;
-          return [c.x - a - ex, c.y + Math.max(a, b) + ex, c.x + a + ex, c.y - Math.max(a, b) - ex];
+          const c = model.center, ex = typeof extra === 'number' ? extra : 0.9;
+          const d = Math.max(model.a, model.b);
+          return [c.x - d - ex, c.y + d + ex, c.x + d + ex, c.y - d - ex];
         }
-
         return makeFunctionBoundingBox(model);
       }
 
@@ -1648,54 +2068,104 @@
         document.getElementById('box').innerHTML = '';
       }
 
-      function createAxes(targetBoard) {
+      function createAxes(targetBoard, model) {
+        const axisColor = model.display.coordinate.axisColor;
+        const labelSize = model.display.coordinate.axisLabelSize;
+
         targetBoard.create('axis', [[0, 0], [1, 0]], {
           withLabel: false,
           strokeWidth: 1,
+          strokeColor: axisColor,
+          highlight: false,
           ticks: {
             drawLabels: true,
             insertTicks: true,
             ticksDistance: 1,
             minorTicks: 0,
-            label: { offset: [0, -12] }
+            strokeColor: axisColor,
+            label: { offset: [0, -12], fontSize: labelSize }
           }
         });
 
         targetBoard.create('axis', [[0, 0], [0, 1]], {
           withLabel: false,
           strokeWidth: 1,
+          strokeColor: axisColor,
+          highlight: false,
           ticks: {
             drawLabels: true,
             insertTicks: true,
             ticksDistance: 1,
             minorTicks: 0,
-            label: { offset: [-12, 0] }
+            strokeColor: axisColor,
+            label: { offset: [-12, 0], fontSize: labelSize }
           }
         });
       }
 
-      function addPointLabelText(targetBoard, vertex, ctr, text, labelSize, offset) {
+      function pointLabelPosition(vertex, ctr, posMode, offset) {
+        if (posMode === 'up') return { x: vertex.x, y: vertex.y + offset };
+        if (posMode === 'down') return { x: vertex.x, y: vertex.y - offset };
+        if (posMode === 'inside') {
+          const inward = unitVector(vertex, ctr);
+          return { x: vertex.x + inward.x * offset, y: vertex.y + inward.y * offset };
+        }
         const outward = unitVector(ctr, vertex);
-        const pos = {
-          x: vertex.x + outward.x * offset,
-          y: vertex.y + outward.y * offset
-        };
+        return { x: vertex.x + outward.x * offset, y: vertex.y + outward.y * offset };
+      }
 
+      function addPointLabelText(targetBoard, vertex, ctr, text, model) {
+        const pos = pointLabelPosition(vertex, ctr, model.display.vertex.labelPosition, model.display.vertex.labelOffset);
         targetBoard.create('text', [pos.x, pos.y, text], {
-          fontSize: labelSize,
+          fontSize: model.display.vertex.labelSize,
           fixed: true,
           anchorX: 'middle',
-          anchorY: 'middle'
+          anchorY: 'middle',
+          cssStyle: 'color:' + model.display.vertex.labelColor + ';'
         });
       }
 
-      function addSideArcAndLabel(targetBoard, P, Q, labelText, ctr, labelSize) {
-        const mid = { x: (P.x + Q.x) / 2, y: (P.y + Q.y) / 2 };
+      function unitNormalByMode(P, Q, ctr, mode) {
+        const dx = Q.x - P.x;
+        const dy = Q.y - P.y;
+        const len = Math.hypot(dx, dy) || 1;
+        let nx = -dy / len;
+        let ny = dx / len;
+        const mid = midpoint(P, Q);
+        const toCtr = { x: ctr.x - mid.x, y: ctr.y - mid.y };
+        const inward = nx * toCtr.x + ny * toCtr.y > 0;
+        if (mode === 'inside') {
+          if (!inward) { nx = -nx; ny = -ny; }
+        } else if (mode === 'outside' || mode === 'auto') {
+          if (inward) { nx = -nx; ny = -ny; }
+        } else if (mode === 'up') {
+          if (ny < 0) { nx = -nx; ny = -ny; }
+        } else if (mode === 'down') {
+          if (ny > 0) { nx = -nx; ny = -ny; }
+        }
+        return { x: nx, y: ny };
+      }
+
+      function quadraticPoint(p1, control, p2, t) {
+        return {
+          x: (1 - t) * (1 - t) * p1.x + 2 * (1 - t) * t * control.x + t * t * p2.x,
+          y: (1 - t) * (1 - t) * p1.y + 2 * (1 - t) * t * control.y + t * t * p2.y
+        };
+      }
+
+      function getPointDisplayText(name, point, showCoordLabels) {
+        if (!showCoordLabels) return name;
+        return name + '(' + formatDecimal(point.x) + ', ' + formatDecimal(point.y) + ')';
+      }
+
+      function addSideArcAndLabel(targetBoard, P, Q, labelText, ctr, model) {
+        const mid = midpoint(P, Q);
         const len = Math.hypot(Q.x - P.x, Q.y - P.y) || 1;
-        const n = unitNormalOutside(P, Q, ctr);
+        const n = unitNormalByMode(P, Q, ctr, model.display.edge.labelPosition);
         const arcHeight = Math.max(0.35, len * 0.12);
         const control = { x: mid.x + n.x * arcHeight, y: mid.y + n.y * arcHeight };
         const gapHalf = 0.14;
+        const color = model.display.edge.color;
 
         targetBoard.create('curve', [
           function (t) { return quadraticPoint(P, control, Q, t).x; },
@@ -1705,7 +2175,8 @@
         ], {
           strokeWidth: 2,
           dash: 2,
-          fixed: true
+          fixed: true,
+          strokeColor: color
         });
 
         targetBoard.create('curve', [
@@ -1716,12 +2187,13 @@
         ], {
           strokeWidth: 2,
           dash: 2,
-          fixed: true
+          fixed: true,
+          strokeColor: color
         });
 
         const centerPoint = quadraticPoint(P, control, Q, 0.5);
         targetBoard.create('text', [centerPoint.x, centerPoint.y, labelText], {
-          fontSize: labelSize,
+          fontSize: model.display.edge.labelSize,
           fixed: true,
           anchorX: 'middle',
           anchorY: 'middle',
@@ -1729,249 +2201,241 @@
         });
       }
 
+      function angleBetween(u, v) {
+        const nu = normalize(u), nv = normalize(v);
+        const c = Math.max(-1, Math.min(1, dot(nu, nv)));
+        return Math.acos(c);
+      }
+
+      function formatAngleText(rad, mode) {
+        if (mode === 'none') return '';
+        if (mode === 'radian') return formatDecimal(rad, 3) + ' rad';
+        return formatDecimal(radToDeg(rad), 1) + '°';
+      }
+
+      function addAngleLabel(targetBoard, vertex, p1, p2, text, model) {
+        if (!text) return;
+        const u = normalize(vec(vertex, p1));
+        const v = normalize(vec(vertex, p2));
+        const bis = normalize({ x: u.x + v.x, y: u.y + v.y });
+        const radius = 0.7;
+        const pos = { x: vertex.x + bis.x * radius, y: vertex.y + bis.y * radius };
+        targetBoard.create('text', [pos.x, pos.y, text], {
+          fontSize: model.display.angle.labelSize,
+          fixed: true,
+          anchorX: 'middle',
+          anchorY: 'middle',
+          cssStyle: 'background:rgba(255,255,255,0.85);padding:1px 3px;border-radius:6px;'
+        });
+      }
+
+      function addTriangleAngles(targetBoard, model) {
+        const mode = model.display.angle.displayMode;
+        if (mode === 'none') return;
+        const p = model.points;
+        const Aang = angleBetween(vec(p.A, p.B), vec(p.A, p.C));
+        const Bang = angleBetween(vec(p.B, p.A), vec(p.B, p.C));
+        const Cang = angleBetween(vec(p.C, p.A), vec(p.C, p.B));
+        addAngleLabel(targetBoard, p.A, p.B, p.C, formatAngleText(Aang, mode), model);
+        addAngleLabel(targetBoard, p.B, p.C, p.A, formatAngleText(Bang, mode), model);
+        addAngleLabel(targetBoard, p.C, p.A, p.B, formatAngleText(Cang, mode), model);
+      }
+
+      function addQuadrilateralAngles(targetBoard, model) {
+        const mode = model.display.angle.displayMode;
+        if (mode === 'none') return;
+        const p = model.points;
+        addAngleLabel(targetBoard, p.A, p.D, p.B, formatAngleText(angleBetween(vec(p.A, p.D), vec(p.A, p.B)), mode), model);
+        addAngleLabel(targetBoard, p.B, p.A, p.C, formatAngleText(angleBetween(vec(p.B, p.A), vec(p.B, p.C)), mode), model);
+        addAngleLabel(targetBoard, p.C, p.B, p.D, formatAngleText(angleBetween(vec(p.C, p.B), vec(p.C, p.D)), mode), model);
+        addAngleLabel(targetBoard, p.D, p.C, p.A, formatAngleText(angleBetween(vec(p.D, p.C), vec(p.D, p.A)), mode), model);
+      }
+
       function addHeightGuideForBaseHeight(targetBoard, model) {
         if (!model.aux || !model.aux.baseHeight) return;
-
-        const C = model.points.C;
-        const F = model.aux.foot;
-
+        const C = model.points.C, F = model.aux.foot;
         targetBoard.create('segment', [[C.x, C.y], [F.x, F.y]], {
           strokeWidth: 2,
           dash: 2,
-          fixed: true
+          fixed: true,
+          strokeColor: model.display.edge.color
         });
+      }
 
-        const rightSize = Math.max(0.12, Math.min(0.35, Math.abs(C.y) * 0.18 || 0.2));
-        const dirBase = model.points.B.x >= model.points.A.x ? 1 : -1;
-        const dirHeight = C.y >= F.y ? 1 : -1;
-
-        const p1 = { x: F.x + dirBase * rightSize, y: F.y };
-        const p2 = { x: F.x + dirBase * rightSize, y: F.y + dirHeight * rightSize };
-        const p3 = { x: F.x, y: F.y + dirHeight * rightSize };
-
-        targetBoard.create('segment', [[F.x, F.y], [p1.x, p1.y]], { strokeWidth: 2, fixed: true });
-        targetBoard.create('segment', [[p1.x, p1.y], [p2.x, p2.y]], { strokeWidth: 2, fixed: true });
-        targetBoard.create('segment', [[p2.x, p2.y], [p3.x, p3.y]], { strokeWidth: 2, fixed: true });
+      function createPoint(targetBoard, p, model) {
+        return targetBoard.create('point', [p.x, p.y], {
+          name: '',
+          size: 3,
+          fixed: true,
+          withLabel: false,
+          fillColor: model.display.vertex.color,
+          strokeColor: model.display.vertex.color
+        });
       }
 
       function renderTriangle(targetBoard, model) {
         const p = model.points;
-        const A = targetBoard.create('point', [p.A.x, p.A.y], { name: '', size: 3, fixed: true, withLabel: false });
-        const B = targetBoard.create('point', [p.B.x, p.B.y], { name: '', size: 3, fixed: true, withLabel: false });
-        const C = targetBoard.create('point', [p.C.x, p.C.y], { name: '', size: 3, fixed: true, withLabel: false });
+        const A = createPoint(targetBoard, p.A, model);
+        const B = createPoint(targetBoard, p.B, model);
+        const C = createPoint(targetBoard, p.C, model);
 
         targetBoard.create('polygon', [A, B, C], {
-          borders: { strokeWidth: 2 },
-          fillColor: 'lightgray',
-          fillOpacity: 0.15
+          borders: { strokeWidth: 2, strokeColor: model.display.edge.color },
+          fillColor: model.display.area.fillColor,
+          fillOpacity: 0.18
         });
 
         addHeightGuideForBaseHeight(targetBoard, model);
 
         const ctr = centroidTriangle(p);
+        addPointLabelText(targetBoard, p.A, ctr, getPointDisplayText(vertexName(0, model.display.vertex.symbolMode), p.A, model.display.coordinate.showCoordLabels), model);
+        addPointLabelText(targetBoard, p.B, ctr, getPointDisplayText(vertexName(1, model.display.vertex.symbolMode), p.B, model.display.coordinate.showCoordLabels), model);
+        addPointLabelText(targetBoard, p.C, ctr, getPointDisplayText(vertexName(2, model.display.vertex.symbolMode), p.C, model.display.coordinate.showCoordLabels), model);
 
-        addPointLabelText(targetBoard, p.A, ctr, getPointDisplayText('A', p.A, model.display.showCoordLabels), model.display.pointLabelSize, model.display.pointLabelOffset);
-        addPointLabelText(targetBoard, p.B, ctr, getPointDisplayText('B', p.B, model.display.showCoordLabels), model.display.pointLabelSize, model.display.pointLabelOffset);
-        addPointLabelText(targetBoard, p.C, ctr, getPointDisplayText('C', p.C, model.display.showCoordLabels), model.display.pointLabelSize, model.display.pointLabelOffset);
+        addTriangleAngles(targetBoard, model);
 
-        if (model.display.showSideLabels) {
-          addSideArcAndLabel(targetBoard, p.B, p.C, formatSideValue(model, 'a', model.metrics.sideUnits.a), ctr, model.display.sideLabelSize);
-          addSideArcAndLabel(targetBoard, p.C, p.A, formatSideValue(model, 'b', model.metrics.sideUnits.b), ctr, model.display.sideLabelSize);
-          addSideArcAndLabel(targetBoard, p.A, p.B, formatSideValue(model, 'c', model.metrics.sideUnits.c), ctr, model.display.sideLabelSize);
-        }
-
+        addSideArcAndLabel(targetBoard, p.B, p.C, formatSideValue(model, 'a', model.metrics.sideUnits.a), ctr, model);
+        addSideArcAndLabel(targetBoard, p.C, p.A, formatSideValue(model, 'b', model.metrics.sideUnits.b), ctr, model);
+        addSideArcAndLabel(targetBoard, p.A, p.B, formatSideValue(model, 'c', model.metrics.sideUnits.c), ctr, model);
         addAreaLabel(targetBoard, model);
       }
 
       function renderQuadrilateral(targetBoard, model) {
         const p = model.points;
-        const pts = ['A', 'B', 'C', 'D'].map(function (k) {
-          return targetBoard.create('point', [p[k].x, p[k].y], {
-            name: '',
-            size: 3,
-            fixed: true,
-            withLabel: false
-          });
-        });
+        const pts = ['A', 'B', 'C', 'D'].map(function (k) { return createPoint(targetBoard, p[k], model); });
 
         targetBoard.create('polygon', pts, {
-          borders: { strokeWidth: 2 },
-          fillColor: 'lightgray',
-          fillOpacity: 0.15
+          borders: { strokeWidth: 2, strokeColor: model.display.edge.color },
+          fillColor: model.display.area.fillColor,
+          fillOpacity: 0.18
         });
 
-        if (model.display.showDiagonals) {
+        if (model.display.coordinate.showDiagonals) {
           targetBoard.create('segment', [[p.A.x, p.A.y], [p.C.x, p.C.y]], {
-            strokeWidth: 1.5,
-            dash: 2,
-            fixed: true
+            strokeWidth: 1.5, dash: 2, fixed: true, strokeColor: model.display.edge.color
           });
           targetBoard.create('segment', [[p.B.x, p.B.y], [p.D.x, p.D.y]], {
-            strokeWidth: 1.5,
-            dash: 2,
-            fixed: true
+            strokeWidth: 1.5, dash: 2, fixed: true, strokeColor: model.display.edge.color
           });
         }
 
         const ctr = centroidArray([p.A, p.B, p.C, p.D]);
-        ['A', 'B', 'C', 'D'].forEach(function (k) {
-          addPointLabelText(targetBoard, p[k], ctr, getPointDisplayText(k, p[k], model.display.showCoordLabels), model.display.pointLabelSize, model.display.pointLabelOffset);
+        ['A', 'B', 'C', 'D'].forEach(function (k, i) {
+          addPointLabelText(targetBoard, p[k], ctr, getPointDisplayText(vertexName(i, model.display.vertex.symbolMode), p[k], model.display.coordinate.showCoordLabels), model);
         });
 
-        if (model.display.showSideLabels) {
-          addSideArcAndLabel(targetBoard, p.A, p.B, formatSideValue(model, null, model.metrics.sideUnits.ab), ctr, model.display.sideLabelSize);
-          addSideArcAndLabel(targetBoard, p.B, p.C, formatSideValue(model, null, model.metrics.sideUnits.bc), ctr, model.display.sideLabelSize);
-          addSideArcAndLabel(targetBoard, p.C, p.D, formatSideValue(model, null, model.metrics.sideUnits.cd), ctr, model.display.sideLabelSize);
-          addSideArcAndLabel(targetBoard, p.D, p.A, formatSideValue(model, null, model.metrics.sideUnits.da), ctr, model.display.sideLabelSize);
-        }
+        addQuadrilateralAngles(targetBoard, model);
+
+        addSideArcAndLabel(targetBoard, p.A, p.B, formatSideValue(model, 'ab', model.metrics.sideUnits.ab), ctr, model);
+        addSideArcAndLabel(targetBoard, p.B, p.C, formatSideValue(model, 'bc', model.metrics.sideUnits.bc), ctr, model);
+        addSideArcAndLabel(targetBoard, p.C, p.D, formatSideValue(model, 'cd', model.metrics.sideUnits.cd), ctr, model);
+        addSideArcAndLabel(targetBoard, p.D, p.A, formatSideValue(model, 'da', model.metrics.sideUnits.da), ctr, model);
 
         addAreaLabel(targetBoard, model);
       }
 
       function renderRegularPolygon(targetBoard, model) {
-        const pts = model.points.map(function (p) {
-          return targetBoard.create('point', [p.x, p.y], { name: '', size: 2.5, fixed: true, withLabel: false });
-        });
-
+        const pts = model.points.map(function (p) { return createPoint(targetBoard, p, model); });
         targetBoard.create('polygon', pts, {
-          borders: { strokeWidth: 2 },
-          fillColor: 'lightgray',
-          fillOpacity: 0.15
+          borders: { strokeWidth: 2, strokeColor: model.display.edge.color },
+          fillColor: model.display.area.fillColor,
+          fillOpacity: 0.18
         });
 
         const ctr = centroidArray(model.points);
         model.points.forEach(function (p, i) {
-          const name = String.fromCharCode(65 + (i % 26));
-          addPointLabelText(targetBoard, p, ctr, model.display.showCoordLabels ? getPointDisplayText(name, p, true) : name, model.display.pointLabelSize, model.display.pointLabelOffset);
+          addPointLabelText(targetBoard, p, ctr, getPointDisplayText(vertexName(i, model.display.vertex.symbolMode), p, model.display.coordinate.showCoordLabels), model);
         });
 
-        if (model.display.showSideLabels) {
-          for (let i = 0; i < model.points.length; i++) {
-            const P = model.points[i];
-            const Q = model.points[(i + 1) % model.points.length];
-            addSideArcAndLabel(targetBoard, P, Q, formatSideValue(model, null, model.metrics.sideUnits.s), ctr, model.display.sideLabelSize);
-          }
+        for (let i = 0; i < model.points.length; i++) {
+          const P = model.points[i], Q = model.points[(i + 1) % model.points.length];
+          addSideArcAndLabel(targetBoard, P, Q, formatSideValue(model, null, model.metrics.sideUnits.s), ctr, model);
         }
 
         addAreaLabel(targetBoard, model);
       }
 
       function renderStar(targetBoard, model) {
-        const pts = model.points.map(function (p) {
-          return targetBoard.create('point', [p.x, p.y], { name: '', size: 2.5, fixed: true, withLabel: false });
-        });
-
+        const pts = model.points.map(function (p) { return createPoint(targetBoard, p, model); });
         targetBoard.create('polygon', pts, {
-          borders: { strokeWidth: 2 },
-          fillColor: 'lightgray',
-          fillOpacity: 0.15
+          borders: { strokeWidth: 2, strokeColor: model.display.edge.color },
+          fillColor: model.display.area.fillColor,
+          fillOpacity: 0.18
         });
 
         const ctr = centroidArray(model.points);
         model.points.forEach(function (p, i) {
-          const name = String.fromCharCode(65 + (i % 26));
-          addPointLabelText(targetBoard, p, ctr, model.display.showCoordLabels ? getPointDisplayText(name, p, true) : name, model.display.pointLabelSize, model.display.pointLabelOffset);
+          addPointLabelText(targetBoard, p, ctr, getPointDisplayText(vertexName(i, model.display.vertex.symbolMode), p, model.display.coordinate.showCoordLabels), model);
         });
 
-        if (model.display.showSideLabels) {
-          for (let i = 0; i < model.points.length; i++) {
-            const P = model.points[i];
-            const Q = model.points[(i + 1) % model.points.length];
-            addSideArcAndLabel(targetBoard, P, Q, formatSideValue(model, null, sideLength(P, Q)), ctr, model.display.sideLabelSize);
-          }
+        for (let i = 0; i < model.points.length; i++) {
+          const P = model.points[i], Q = model.points[(i + 1) % model.points.length];
+          addSideArcAndLabel(targetBoard, P, Q, formatSideValue(model, null, sideLength(P, Q)), ctr, model);
         }
 
         addAreaLabel(targetBoard, model);
       }
 
       function renderCircle(targetBoard, model) {
-        const O = targetBoard.create('point', [model.center.x, model.center.y], {
-          name: '',
-          size: 3,
-          fixed: true,
-          withLabel: false
-        });
-
+        const O = createPoint(targetBoard, model.center, model);
         const P = targetBoard.create('point', [model.center.x + model.radius, model.center.y], {
-          name: '',
-          size: 2,
-          fixed: true,
-          withLabel: false,
-          visible: false
+          name: '', size: 2, fixed: true, withLabel: false, visible: false
         });
 
-        targetBoard.create('circle', [O, P], { strokeWidth: 2 });
-
-        addPointLabelText(
-          targetBoard,
-          model.center,
-          { x: model.center.x, y: model.center.y },
-          model.display.showCoordLabels ? getPointDisplayText('O', model.center, true) : 'O',
-          model.display.pointLabelSize,
-          model.display.pointLabelOffset
-        );
-
+        targetBoard.create('circle', [O, P], { strokeWidth: 2, strokeColor: model.display.edge.color });
+        addPointLabelText(targetBoard, model.center, model.center, getPointDisplayText('O', model.center, model.display.coordinate.showCoordLabels), model);
         addAreaLabel(targetBoard, model);
       }
 
       function renderEllipse(targetBoard, model) {
         const center = model.center;
         const phi = degToRad(model.angle);
-
         targetBoard.create('curve', [
           function (t) { return center.x + model.a * Math.cos(t) * Math.cos(phi) - model.b * Math.sin(t) * Math.sin(phi); },
           function (t) { return center.y + model.a * Math.cos(t) * Math.sin(phi) + model.b * Math.sin(t) * Math.cos(phi); },
-          0,
-          2 * Math.PI
+          0, 2 * Math.PI
         ], {
           strokeWidth: 2,
-          fixed: true
+          fixed: true,
+          strokeColor: model.display.edge.color
         });
 
-        addPointLabelText(
-          targetBoard,
-          center,
-          { x: center.x, y: center.y },
-          model.display.showCoordLabels ? getPointDisplayText('O', center, true) : 'O',
-          model.display.pointLabelSize,
-          model.display.pointLabelOffset
-        );
-
+        createPoint(targetBoard, center, model);
+        addPointLabelText(targetBoard, center, center, getPointDisplayText('O', center, model.display.coordinate.showCoordLabels), model);
         addAreaLabel(targetBoard, model);
       }
 
-      function createWavyOutsideCurve(targetBoard, model, x1, x2) {
+      function drawFunctionSegment(targetBoard, fn, x1, x2, dashed, color) {
         if (!(x2 > x1)) return;
-        const length = x2 - x1;
-        const amp = Math.max(length * 0.03, 0.15);
-        const freq = 8;
-        targetBoard.create('curve', [
-          function (t) {
-            return x1 + (x2 - x1) * t;
+        targetBoard.create('functiongraph', [
+          function (x) {
+            try {
+              const y = fn(x);
+              if (!Number.isFinite(y) || Math.abs(y) > 1e6) return NaN;
+              return y;
+            } catch (e) {
+              return NaN;
+            }
           },
-          function (t) {
-            const x = x1 + (x2 - x1) * t;
-            let y = model.fn(x);
-            if (!Number.isFinite(y)) return NaN;
-            return y + amp * Math.sin(freq * Math.PI * t);
-          },
-          0,
-          1
+          x1,
+          x2
         ], {
           strokeWidth: 2,
-          fixed: true
+          fixed: true,
+          dash: dashed ? 2 : 0,
+          strokeColor: color
         });
       }
 
-      function addEndpointMarker(targetBoard, x, y, closed) {
+      function addEndpointMarker(targetBoard, x, y, closed, model) {
         if (!Number.isFinite(y)) return;
         targetBoard.create('point', [x, y], {
           name: '',
           size: 4,
           fixed: true,
           withLabel: false,
-          fillColor: closed ? '#000' : '#fff',
-          strokeColor: '#000',
+          fillColor: closed ? model.display.edge.color : '#ffffff',
+          strokeColor: model.display.edge.color,
           strokeWidth: 2
         });
       }
@@ -1980,43 +2444,22 @@
         const bb = targetBoard.getBoundingBox();
         const boardLeft = bb[0];
         const boardRight = bb[2];
+        const color = model.display.edge.color;
 
-        targetBoard.create('functiongraph', [
-          function (x) {
-            if (x < model.domainMin || x > model.domainMax) return NaN;
-            try {
-              const y = model.fn(x);
-              return Number.isFinite(y) ? y : NaN;
-            } catch (e) {
-              return NaN;
-            }
-          },
-          boardLeft,
-          boardRight
-        ], {
-          strokeWidth: 2,
-          fixed: true
-        });
+        drawFunctionSegment(targetBoard, model.fn, model.domainMin, model.domainMax, false, color);
+        if (boardLeft < model.domainMin) drawFunctionSegment(targetBoard, model.fn, boardLeft, model.domainMin, true, color);
+        if (boardRight > model.domainMax) drawFunctionSegment(targetBoard, model.fn, model.domainMax, boardRight, true, color);
 
-        if (boardLeft < model.domainMin) {
-          createWavyOutsideCurve(targetBoard, model, boardLeft, model.domainMin);
-        }
-        if (boardRight > model.domainMax) {
-          createWavyOutsideCurve(targetBoard, model, model.domainMax, boardRight);
-        }
-
-        let yL = NaN;
-        let yR = NaN;
+        let yL = NaN, yR = NaN;
         try { yL = model.fn(model.domainMin); } catch (e) {}
         try { yR = model.fn(model.domainMax); } catch (e) {}
 
-        addEndpointMarker(targetBoard, model.domainMin, yL, model.domainLeftType === 'closed');
-        addEndpointMarker(targetBoard, model.domainMax, yR, model.domainRightType === 'closed');
+        addEndpointMarker(targetBoard, model.domainMin, yL, model.domainLeftType === 'closed', model);
+        addEndpointMarker(targetBoard, model.domainMax, yR, model.domainRightType === 'closed', model);
       }
 
       function renderToBoard(targetBoard, model) {
-        if (model.display.showAxes) createAxes(targetBoard);
-
+        if (model.display.coordinate.showAxes) createAxes(targetBoard, model);
         if (model.shapeType === 'triangle') return renderTriangle(targetBoard, model);
         if (model.shapeType === 'quadrilateral') return renderQuadrilateral(targetBoard, model);
         if (model.shapeType === 'regularPolygon') return renderRegularPolygon(targetBoard, model);
@@ -2032,17 +2475,8 @@
           boundingbox: makeBoundingBox(model),
           axis: false,
           keepaspectratio: true,
-          zoom: {
-            wheel: false,
-            factorX: 1.25,
-            factorY: 1.25,
-            needShift: false
-          },
-          pan: {
-            enabled: true,
-            needTwoFingers: false,
-            needShift: false
-          },
+          zoom: { wheel: false, factorX: 1.25, factorY: 1.25, needShift: false },
+          pan: { enabled: true, needTwoFingers: false, needShift: false },
           showNavigation: false,
           showCopyright: false
         });
@@ -2052,48 +2486,36 @@
 
       function setupPaperFrame(printOptions) {
         const base = PAPER_SIZES_MM[printOptions.paperSize];
-        let widthMm = base.width;
-        let heightMm = base.height;
+        let widthMm = base.width, heightMm = base.height;
         if (printOptions.orientation === 'landscape') {
-          const tmp = widthMm;
-          widthMm = heightMm;
-          heightMm = tmp;
+          const tmp = widthMm; widthMm = heightMm; heightMm = tmp;
         }
-
         const printableWidthCm = (widthMm / 10) - printOptions.marginLeft - printOptions.marginRight;
         const printableHeightCm = (heightMm / 10) - printOptions.marginTop - printOptions.marginBottom;
-
-        if (printableWidthCm <= 0 || printableHeightCm <= 0) {
-          throw new Error('余白が大きすぎて印刷可能領域がありません。');
-        }
-
-        return {
-          widthMm: widthMm,
-          heightMm: heightMm,
-          printableWidthCm: printableWidthCm,
-          printableHeightCm: printableHeightCm
-        };
+        if (printableWidthCm <= 0 || printableHeightCm <= 0) throw new Error('余白が大きすぎて印刷可能領域がありません。');
+        return { widthMm, heightMm, printableWidthCm, printableHeightCm };
       }
 
       function scaleModelForPrint(model, scale) {
         const cloned = JSON.parse(JSON.stringify(model));
 
+        function transformPoints(objPoints, ctr) {
+          Object.keys(objPoints).forEach(function (k) {
+            objPoints[k].x = (objPoints[k].x - ctr.x) * scale;
+            objPoints[k].y = (objPoints[k].y - ctr.y) * scale;
+          });
+        }
+
         if (cloned.shapeType === 'triangle') {
           const ctr = centroidTriangle(cloned.points);
-          ['A', 'B', 'C'].forEach(function (k) {
-            cloned.points[k].x = (cloned.points[k].x - ctr.x) * scale;
-            cloned.points[k].y = (cloned.points[k].y - ctr.y) * scale;
-          });
+          transformPoints(cloned.points, ctr);
           if (cloned.aux && cloned.aux.foot) {
             cloned.aux.foot.x = (cloned.aux.foot.x - ctr.x) * scale;
             cloned.aux.foot.y = (cloned.aux.foot.y - ctr.y) * scale;
           }
         } else if (cloned.shapeType === 'quadrilateral') {
           const ctr = centroidArray([cloned.points.A, cloned.points.B, cloned.points.C, cloned.points.D]);
-          ['A', 'B', 'C', 'D'].forEach(function (k) {
-            cloned.points[k].x = (cloned.points[k].x - ctr.x) * scale;
-            cloned.points[k].y = (cloned.points[k].y - ctr.y) * scale;
-          });
+          transformPoints(cloned.points, ctr);
         } else if (cloned.shapeType === 'regularPolygon' || cloned.shapeType === 'star') {
           const ctr = centroidArray(cloned.points);
           cloned.points.forEach(function (p) {
@@ -2109,13 +2531,9 @@
           cloned.b *= scale;
         }
 
-        if (cloned.shapeType !== 'function') {
-          cloned.areaValue = computeAreaValue(cloned);
-        }
-
+        if (cloned.shapeType !== 'function') cloned.areaValue = computeAreaValue(cloned);
         cloned.metrics = computeGeneralMetrics(cloned, cloned.display.unitCm);
         cloned.print.effectiveScale = scale;
-
         return cloned;
       }
 
@@ -2127,49 +2545,20 @@
         return scaleModelForPrint(model, scale);
       }
 
-      function percentText(value, whole) {
-        if (whole <= 0) return '0%';
-        return formatDecimal((value / whole) * 100) + '%';
-      }
-
-      function buildPreviewInfoHtml(model, printable, printModel) {
-        return ''
-          + '<div>用紙</div><div>' + model.print.paperSize + ' / ' + (model.print.orientation === 'portrait' ? '縦' : '横') + '</div>'
-          + '<div>印刷可能領域</div><div>' + formatDecimal(printable.printableWidthCm) + 'cm × ' + formatDecimal(printable.printableHeightCm) + 'cm</div>'
-          + '<div>紙面上の横幅</div><div>' + formatDecimal(printModel.metrics.widthCm) + 'cm （印刷可能領域横幅の ' + percentText(printModel.metrics.widthCm, printable.printableWidthCm) + '）</div>'
-          + '<div>紙面上の縦幅</div><div>' + formatDecimal(printModel.metrics.heightCm) + 'cm （印刷可能領域縦幅の ' + percentText(printModel.metrics.heightCm, printable.printableHeightCm) + '）</div>'
-          + '<div>印刷倍率</div><div>' + formatDecimal(printModel.print.effectiveScale || 1, 4) + ' 倍</div>';
-      }
-
       function waitForPreviewWindowReady(win, callback, retry) {
         const remain = typeof retry === 'number' ? retry : 120;
         if (!win || win.closed) return;
-
         try {
-          const ready =
-            win.document &&
-            win.document.getElementById('paper') &&
-            win.document.getElementById('inner') &&
-            win.document.getElementById('paperBox') &&
-            win.JXG &&
-            win.JXG.JSXGraph;
-
-          if (ready) {
-            callback();
-            return;
-          }
+          const ready = win.document && win.document.getElementById('paper') && win.document.getElementById('inner') && win.document.getElementById('paperBox') && win.JXG && win.JXG.JSXGraph;
+          if (ready) { callback(); return; }
         } catch (e) {}
-
         if (remain <= 0) return;
-        setTimeout(function () {
-          waitForPreviewWindowReady(win, callback, remain - 1);
-        }, 100);
+        setTimeout(function () { waitForPreviewWindowReady(win, callback, remain - 1); }, 100);
       }
 
       function openPrintPreviewWindow(model) {
         const printable = setupPaperFrame(model.print);
         const printModel = makePrintModel(model, printable);
-
         const win = window.open('', '_blank', 'width=1100,height=900');
         if (!win) {
           setStatus('印刷プレビュー用ウィンドウを開けませんでした。ポップアップを許可してください。', 'error');
@@ -2177,8 +2566,7 @@
         }
 
         const previewHtml = ''
-          + '<!doctype html>'
-          + '<html lang="ja"><head><meta charset="UTF-8"><title>印刷プレビュー</title>'
+          + '<!doctype html><html lang="ja"><head><meta charset="UTF-8"><title>印刷プレビュー</title>'
           + '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jsxgraph/distrib/jsxgraph.css" />'
           + '<script src="https://cdn.jsdelivr.net/npm/jsxgraph/distrib/jsxgraphcore.js"><\/script>'
           + '<style>'
@@ -2187,11 +2575,10 @@
           + '.paper{position:relative;background:#fff;border:1px solid #ccc;box-shadow:0 4px 16px rgba(0,0,0,.12);margin:auto;}'
           + '.inner{position:absolute;border:1px dashed #b9c2cc;overflow:hidden;background:#fff;}'
           + '.box{width:100%;height:100%;}'
-          + '.info{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;font-size:14px;max-width:760px;}'
           + 'button{padding:8px 12px;border:1px solid #ccc;border-radius:8px;background:#fff;cursor:pointer;}'
           + '@media print{body{margin:0;background:#fff}.top{display:none}.paper{box-shadow:none;border:none}}'
           + '</style></head><body>'
-          + '<div class="top"><div class="info" id="info"></div><div><button onclick="window.print()">印刷</button></div></div>'
+          + '<div class="top"><div>印刷プレビュー</div><div><button onclick="window.print()">印刷</button></div></div>'
           + '<div id="paper" class="paper"><div id="inner" class="inner"><div id="paperBox" class="box jxgbox"></div></div></div>'
           + '</body></html>';
 
@@ -2216,9 +2603,6 @@
           inner.style.width = (printable.widthMm * PAPER_PREVIEW_SCALE - leftPx - rightPx) + 'px';
           inner.style.height = (printable.heightMm * PAPER_PREVIEW_SCALE - topPx - bottomPx) + 'px';
 
-          const info = win.document.getElementById('info');
-          info.innerHTML = buildPreviewInfoHtml(model, printable, printModel);
-
           const previewBoard = win.JXG.JSXGraph.initBoard('paperBox', {
             boundingbox: makeBoundingBox(printModel, 0.6),
             axis: false,
@@ -2228,7 +2612,6 @@
             pan: { enabled: false },
             zoom: { wheel: false }
           });
-
           renderToBoard(previewBoard, printModel);
           previewBoard.update();
         });
@@ -2238,11 +2621,7 @@
 
       async function saveCanvasElement(elementId, type) {
         const target = document.getElementById(elementId);
-        const canvas = await html2canvas(target, {
-          backgroundColor: '#ffffff',
-          useCORS: true,
-          scale: 2
-        });
+        const canvas = await html2canvas(target, { backgroundColor: '#ffffff', useCORS: true, scale: 2 });
         const link = document.createElement('a');
         const ext = type === 'image/jpeg' ? 'jpeg' : 'png';
         link.download = 'geometry.' + ext;
@@ -2252,7 +2631,6 @@
 
       async function savePdf() {
         if (!latestModel) return;
-
         const printable = setupPaperFrame(latestModel.print);
         const printModel = makePrintModel(latestModel, printable);
 
@@ -2270,9 +2648,7 @@
           + 'top:' + (latestModel.print.marginTop * 10 * PAPER_PREVIEW_SCALE) + 'px;'
           + 'width:' + (printable.widthMm * PAPER_PREVIEW_SCALE - (latestModel.print.marginLeft + latestModel.print.marginRight) * 10 * PAPER_PREVIEW_SCALE) + 'px;'
           + 'height:' + (printable.heightMm * PAPER_PREVIEW_SCALE - (latestModel.print.marginTop + latestModel.print.marginBottom) * 10 * PAPER_PREVIEW_SCALE) + 'px;'
-          + 'background:#fff;">'
-          + '<div id="tmpBox" class="jxgbox" style="width:100%;height:100%;"></div>'
-          + '</div>';
+          + 'background:#fff;"><div id="tmpBox" class="jxgbox" style="width:100%;height:100%;"></div></div>';
 
         document.body.appendChild(container);
 
@@ -2289,12 +2665,7 @@
         renderToBoard(tmpBoard, printModel);
         tmpBoard.update();
 
-        const canvas = await html2canvas(container, {
-          backgroundColor: '#ffffff',
-          useCORS: true,
-          scale: 2
-        });
-
+        const canvas = await html2canvas(container, { backgroundColor: '#ffffff', useCORS: true, scale: 2 });
         JXG.JSXGraph.freeBoard(tmpBoard);
         document.body.removeChild(container);
 
@@ -2309,9 +2680,7 @@
         let widthMm = PAPER_SIZES_MM[latestModel.print.paperSize].width;
         let heightMm = PAPER_SIZES_MM[latestModel.print.paperSize].height;
         if (orientation === 'l') {
-          const tmp = widthMm;
-          widthMm = heightMm;
-          heightMm = tmp;
+          const tmp = widthMm; widthMm = heightMm; heightMm = tmp;
         }
 
         pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, widthMm, heightMm);
@@ -2320,9 +2689,18 @@
 
       function buildShapeDetailHtml(model) {
         if (!model) return '';
-        if (model.shapeType === 'function') return model.exprText + '<br>定義域: ' + (model.domainLeftType === 'closed' ? '[' : '(') + formatDecimal(model.domainMin) + ', ' + formatDecimal(model.domainMax) + (model.domainRightType === 'closed' ? ']' : ')');
-        if (model.shapeType === 'circle') return '直径 ' + formatDecimal(model.metrics.widthCm) + 'cm';
-        return '横幅 ' + formatDecimal(model.metrics.widthCm) + 'cm / 縦幅 ' + formatDecimal(model.metrics.heightCm) + 'cm';
+        const parts = [];
+        if (model.shapeType === 'function') {
+          parts.push(model.exprText);
+          parts.push('定義域: ' + (model.domainLeftType === 'closed' ? '[' : '(') + formatDecimal(model.domainMin) + ', ' + formatDecimal(model.domainMax) + (model.domainRightType === 'closed' ? ']' : ')'));
+        } else {
+          parts.push('横幅 ' + formatDecimal(model.metrics.widthCm) + 'cm / 縦幅 ' + formatDecimal(model.metrics.heightCm) + 'cm');
+          if (model.areaValue != null) parts.push('面積 ' + formatDecimal(model.areaValue));
+        }
+        if (model.conditionMessage) parts.push(model.conditionMessage);
+        if (model.display.coordinate.coordMode === 'oblique') parts.push('斜交座標は準備中のため、現在は直交座標として描画しています。');
+        if (model.display.coordinate.coordMode === 'polar') parts.push('極座標は準備中のため、現在は直交座標として描画しています。');
+        return parts.join('<br>');
       }
 
       function renderAll() {
@@ -2335,7 +2713,7 @@
           setStatus('正常に描画しました。', 'ok');
         } catch (err) {
           latestModel = null;
-          setShapeInfo([], '');
+          setShapeInfo([], '詳細: ' + (err && err.message ? err.message : String(err)));
           setStatus(err && err.message ? err.message : String(err), 'error');
         }
       }
@@ -2348,10 +2726,7 @@
         const halfW = (bb[2] - bb[0]) / 2;
         const halfH = (bb[1] - bb[3]) / 2;
         const factor = mode === 'in' ? 0.8 : 1.25;
-        board.setBoundingBox(
-          [cx - halfW * factor, cy + halfH * factor, cx + halfW * factor, cy - halfH * factor],
-          true
-        );
+        board.setBoundingBox([cx - halfW * factor, cy + halfH * factor, cx + halfW * factor, cy - halfH * factor], true);
         board.update();
       }
 
@@ -2362,7 +2737,7 @@
       }
 
       function bindEvents() {
-        document.querySelectorAll('input, select').forEach(function (el) {
+        document.querySelectorAll('input, select, textarea').forEach(function (el) {
           el.addEventListener('input', renderAll);
           el.addEventListener('change', renderAll);
         });
@@ -2370,48 +2745,28 @@
         document.getElementById('btnRender').addEventListener('click', renderAll);
 
         document.getElementById('btnPng').addEventListener('click', async function () {
-          try {
-            await saveCanvasElement('box', 'image/png');
-          } catch (e) {
-            setStatus('PNG保存に失敗しました。', 'error');
-          }
+          try { await saveCanvasElement('box', 'image/png'); }
+          catch (e) { setStatus('PNG保存に失敗しました。', 'error'); }
         });
 
         document.getElementById('btnJpeg').addEventListener('click', async function () {
-          try {
-            await saveCanvasElement('box', 'image/jpeg');
-          } catch (e) {
-            setStatus('JPEG保存に失敗しました。', 'error');
-          }
+          try { await saveCanvasElement('box', 'image/jpeg'); }
+          catch (e) { setStatus('JPEG保存に失敗しました。', 'error'); }
         });
 
         document.getElementById('btnPdf').addEventListener('click', async function () {
-          try {
-            await savePdf();
-          } catch (e) {
-            setStatus(e && e.message ? e.message : 'PDF保存に失敗しました。', 'error');
-          }
+          try { await savePdf(); }
+          catch (e) { setStatus(e && e.message ? e.message : 'PDF保存に失敗しました。', 'error'); }
         });
 
         document.getElementById('openPrintPreviewWindow').addEventListener('click', function () {
-          try {
-            if (latestModel) openPrintPreviewWindow(latestModel);
-          } catch (e) {
-            setStatus(e && e.message ? e.message : '印刷プレビューに失敗しました。', 'error');
-          }
+          try { if (latestModel) openPrintPreviewWindow(latestModel); }
+          catch (e) { setStatus(e && e.message ? e.message : '印刷プレビューに失敗しました。', 'error'); }
         });
 
-        document.getElementById('zoomInBtn').addEventListener('click', function () {
-          zoomBoard('in');
-        });
-
-        document.getElementById('zoomOutBtn').addEventListener('click', function () {
-          zoomBoard('out');
-        });
-
-        document.getElementById('resetViewBtn').addEventListener('click', function () {
-          resetBoardView();
-        });
+        document.getElementById('zoomInBtn').addEventListener('click', function () { zoomBoard('in'); });
+        document.getElementById('zoomOutBtn').addEventListener('click', function () { zoomBoard('out'); });
+        document.getElementById('resetViewBtn').addEventListener('click', function () { resetBoardView(); });
       }
 
       bindEvents();
