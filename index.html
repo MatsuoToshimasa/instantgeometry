@@ -46,7 +46,7 @@
 
     .layout {
       display: grid;
-      grid-template-columns: 380px 1fr;
+      grid-template-columns: 400px 1fr;
       gap: var(--panel-gap);
       align-items: start;
     }
@@ -113,15 +113,13 @@
       font-size: 14px;
     }
 
-    input[type="range"] {
-      width: 100%;
-    }
+    input[type="range"] { width: 100%; }
 
-    .shape-group, .mode-group {
+    .shape-group, .mode-group, .function-group {
       display: none;
     }
 
-    .shape-group.active, .mode-group.active {
+    .shape-group.active, .mode-group.active, .function-group.active {
       display: block;
     }
 
@@ -138,6 +136,7 @@
     .muted {
       color: var(--muted);
       font-size: 13px;
+      line-height: 1.5;
     }
 
     .buttons {
@@ -241,7 +240,6 @@
       .layout {
         grid-template-columns: 1fr;
       }
-
       #box {
         min-height: 480px;
         height: 60vh;
@@ -251,7 +249,7 @@
 </head>
 <body>
   <h1>Instant Geometry</h1>
-  <p class="muted">図形種別を切り替えられる版です。三角形 / 四角形 / 正N角形 / 円 / 楕円に対応し、印刷プレビューは別ウィンドウで開きます。</p>
+  <p class="muted">三角形 / 四角形 / 正N角形 / 円 / 楕円 / 星型 / 関数に対応します。印刷プレビューは別ウィンドウで開きます。</p>
 
   <div class="layout">
     <div class="panel">
@@ -265,6 +263,8 @@
             <option value="regularPolygon">正N角形</option>
             <option value="circle">円</option>
             <option value="ellipse">楕円</option>
+            <option value="star">星型</option>
+            <option value="function">関数</option>
           </select>
         </div>
 
@@ -301,7 +301,24 @@
           <select disabled><option>中心＋長半径＋短半径＋回転角</option></select>
         </div>
 
-        <div class="badge">数式入力可: 3, 3/2, sqrt(5), √5, 2√3, 1+√2</div>
+        <div class="field shape-group" data-shape="star">
+          <label>入力方式</label>
+          <select disabled><option>中心＋外半径＋内半径＋頂点数</option></select>
+        </div>
+
+        <div class="field shape-group" data-shape="function">
+          <label for="functionType">関数種別</label>
+          <select id="functionType">
+            <option value="linear">一次関数</option>
+            <option value="quadratic">二次関数</option>
+            <option value="exponential">指数関数</option>
+            <option value="logarithmic">対数関数</option>
+            <option value="trigonometric">三角関数</option>
+            <option value="general">一般関数</option>
+          </select>
+        </div>
+
+        <div class="badge">数式入力可: 3, 3/2, sqrt(5), √5, 2√3, 1+√2, sin(pi/6), cos(pi/3), tan(pi/4), exp(1), log(10)</div>
       </div>
 
       <div class="section shape-group active" data-shape="triangle">
@@ -427,6 +444,109 @@
         </div>
       </div>
 
+      <div class="section shape-group" data-shape="star">
+        <h3>星型</h3>
+        <div class="grid-3">
+          <div class="field"><label for="STn">頂点数</label><input id="STn" type="text" value="5" /></div>
+          <div class="field"><label for="STcx">中心 x</label><input id="STcx" type="text" value="0" /></div>
+          <div class="field"><label for="STcy">中心 y</label><input id="STcy" type="text" value="0" /></div>
+          <div class="field"><label for="STouter">外半径</label><input id="STouter" type="text" value="4" /></div>
+          <div class="field"><label for="STinner">内半径</label><input id="STinner" type="text" value="2" /></div>
+          <div class="field"><label for="STang">回転角(deg)</label><input id="STang" type="text" value="90" /></div>
+        </div>
+      </div>
+
+      <div class="section shape-group" data-shape="function">
+        <h3>関数</h3>
+
+        <div class="function-group active" data-function="linear">
+          <div class="grid-3">
+            <div class="field"><label for="fnLinearA">a</label><input id="fnLinearA" type="text" value="1" /></div>
+            <div class="field"><label for="fnLinearB">b</label><input id="fnLinearB" type="text" value="0" /></div>
+            <div class="field"><label>式</label><input type="text" value="y = ax + b" disabled /></div>
+          </div>
+        </div>
+
+        <div class="function-group" data-function="quadratic">
+          <div class="grid-3">
+            <div class="field"><label for="fnQuadA">a</label><input id="fnQuadA" type="text" value="1" /></div>
+            <div class="field"><label for="fnQuadB">b</label><input id="fnQuadB" type="text" value="0" /></div>
+            <div class="field"><label for="fnQuadC">c</label><input id="fnQuadC" type="text" value="0" /></div>
+          </div>
+          <div class="muted">y = ax^2 + bx + c</div>
+        </div>
+
+        <div class="function-group" data-function="exponential">
+          <div class="grid-3">
+            <div class="field"><label for="fnExpA">a</label><input id="fnExpA" type="text" value="1" /></div>
+            <div class="field"><label for="fnExpB">b</label><input id="fnExpB" type="text" value="2" /></div>
+            <div class="field"><label for="fnExpC">c</label><input id="fnExpC" type="text" value="0" /></div>
+          </div>
+          <div class="muted">y = a * b^x + c</div>
+        </div>
+
+        <div class="function-group" data-function="logarithmic">
+          <div class="grid-3">
+            <div class="field"><label for="fnLogA">a</label><input id="fnLogA" type="text" value="1" /></div>
+            <div class="field"><label for="fnLogB">b</label><input id="fnLogB" type="text" value="0" /></div>
+            <div class="field"><label for="fnLogBase">底</label><input id="fnLogBase" type="text" value="10" /></div>
+          </div>
+          <div class="muted">y = a * log_base(x) + b</div>
+        </div>
+
+        <div class="function-group" data-function="trigonometric">
+          <div class="grid-3">
+            <div class="field">
+              <label for="fnTrigKind">種類</label>
+              <select id="fnTrigKind">
+                <option value="sin">sin</option>
+                <option value="cos">cos</option>
+                <option value="tan">tan</option>
+              </select>
+            </div>
+            <div class="field"><label for="fnTrigA">a</label><input id="fnTrigA" type="text" value="1" /></div>
+            <div class="field"><label for="fnTrigB">b</label><input id="fnTrigB" type="text" value="1" /></div>
+            <div class="field"><label for="fnTrigC">c</label><input id="fnTrigC" type="text" value="0" /></div>
+            <div class="field"><label for="fnTrigD">d</label><input id="fnTrigD" type="text" value="0" /></div>
+            <div></div>
+          </div>
+          <div class="muted">y = a * trig(bx + c) + d</div>
+        </div>
+
+        <div class="function-group" data-function="general">
+          <div class="field">
+            <label for="fnGeneralExpr">式</label>
+            <input id="fnGeneralExpr" type="text" value="sin(x)" />
+          </div>
+          <div class="muted">使えるもの: x, + - * / ^, sqrt, sin, cos, tan, log, ln, exp, abs, pi</div>
+        </div>
+
+        <div class="grid-2">
+          <div class="field">
+            <label for="domainMin">定義域 左端</label>
+            <input id="domainMin" type="text" value="-5" />
+          </div>
+          <div class="field">
+            <label for="domainMax">定義域 右端</label>
+            <input id="domainMax" type="text" value="5" />
+          </div>
+          <div class="field">
+            <label for="domainLeftType">左端</label>
+            <select id="domainLeftType">
+              <option value="closed">x ≥ 左端（黒丸）</option>
+              <option value="open">x > 左端（白丸）</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="domainRightType">右端</label>
+            <select id="domainRightType">
+              <option value="closed">x ≤ 右端（黒丸）</option>
+              <option value="open">x < 右端（白丸）</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
       <div class="section">
         <h2>表示</h2>
         <div class="row">
@@ -456,6 +576,7 @@
               <option value="decimal">小数</option>
               <option value="root">ルート優先</option>
               <option value="input">入力式優先</option>
+              <option value="trig">三角関数風</option>
             </select>
           </div>
         </div>
@@ -471,6 +592,21 @@
           <div class="field">
             <label for="unitCm">1単位 = 何cm</label>
             <input id="unitCm" type="text" value="1" />
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="field">
+            <label for="areaLabelMode">面積表示</label>
+            <select id="areaLabelMode">
+              <option value="none">表示なし</option>
+              <option value="symbol">S</option>
+              <option value="plain">面積（単位なし）</option>
+              <option value="cm2">面積（cm²付き）</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="areaLabelSize">面積文字サイズ</label>
+            <input id="areaLabelSize" type="range" min="12" max="36" step="1" value="18" />
           </div>
         </div>
       </div>
@@ -530,7 +666,7 @@
         <button class="zoom-btn" id="zoomInBtn">＋</button>
         <button class="zoom-btn" id="zoomOutBtn">－</button>
         <button id="resetViewBtn">表示リセット</button>
-        <span class="muted">ドラッグで移動 / ＋－で拡大縮小</span>
+        <span class="muted">ドラッグで移動 / ＋で拡大 / －で縮小</span>
       </div>
 
       <div id="box" class="jxgbox"></div>
@@ -547,8 +683,6 @@
       };
 
       const PAPER_PREVIEW_SCALE = 3.0;
-      const TRI_SIDE_KEYS = ['a', 'b', 'c'];
-
       let board = null;
       let latestModel = null;
 
@@ -578,23 +712,62 @@
       function sanitizeExpression(expr) {
         return String(expr ?? '')
           .replace(/\s+/g, '')
+          .replace(/π/gi, 'pi')
           .replace(/√/g, 'sqrt')
-          .replace(/(\d)(sqrt)/g, '$1*$2')
-          .replace(/\)(\d|sqrt)/g, ')*$1')
+          .replace(/(\d)(sqrt|sin|cos|tan|log|ln|exp|abs|pi)/gi, '$1*$2')
+          .replace(/\)(\d|sqrt|sin|cos|tan|log|ln|exp|abs|pi)/gi, ')*$1')
           .replace(/(\d|\))(\()/g, '$1*$2');
       }
 
       function parseExpr(expr) {
         const raw = String(expr ?? '').trim();
         if (!raw) throw new Error('空の入力があります。');
+
         const safe = sanitizeExpression(raw);
-        if (!/^[0-9+\-*/().sqrt]+$/i.test(safe)) {
+        if (!/^[0-9+\-*/().,^a-zA-Z]+$/.test(safe)) {
           throw new Error('使えない文字があります: ' + raw);
         }
-        const jsExpr = safe.replace(/sqrt/gi, 'Math.sqrt');
+
+        let jsExpr = safe;
+        jsExpr = jsExpr.replace(/\^/g, '**');
+        jsExpr = jsExpr.replace(/\bpi\b/gi, 'Math.PI');
+        jsExpr = jsExpr.replace(/\bsqrt\b/gi, 'Math.sqrt');
+        jsExpr = jsExpr.replace(/\bsin\b/gi, 'Math.sin');
+        jsExpr = jsExpr.replace(/\bcos\b/gi, 'Math.cos');
+        jsExpr = jsExpr.replace(/\btan\b/gi, 'Math.tan');
+        jsExpr = jsExpr.replace(/\bexp\b/gi, 'Math.exp');
+        jsExpr = jsExpr.replace(/\babs\b/gi, 'Math.abs');
+        jsExpr = jsExpr.replace(/\bln\b/gi, 'Math.log');
+        jsExpr = jsExpr.replace(/\blog\b/gi, 'Math.log10');
+
         const value = Function('"use strict"; return (' + jsExpr + ');')();
         if (!Number.isFinite(value)) throw new Error('数値として解釈できません: ' + raw);
         return { value, raw };
+      }
+
+      function compileFunctionExpression(expr, allowX) {
+        const raw = String(expr ?? '').trim();
+        if (!raw) throw new Error('関数式が空です。');
+        const safe = sanitizeExpression(raw);
+        if (!/^[0-9+\-*/().,^a-zA-Z]+$/.test(safe)) {
+          throw new Error('関数式に使えない文字があります: ' + raw);
+        }
+
+        let jsExpr = safe;
+        jsExpr = jsExpr.replace(/\^/g, '**');
+        jsExpr = jsExpr.replace(/\bpi\b/gi, 'Math.PI');
+        jsExpr = jsExpr.replace(/\bsqrt\b/gi, 'Math.sqrt');
+        jsExpr = jsExpr.replace(/\bsin\b/gi, 'Math.sin');
+        jsExpr = jsExpr.replace(/\bcos\b/gi, 'Math.cos');
+        jsExpr = jsExpr.replace(/\btan\b/gi, 'Math.tan');
+        jsExpr = jsExpr.replace(/\bexp\b/gi, 'Math.exp');
+        jsExpr = jsExpr.replace(/\babs\b/gi, 'Math.abs');
+        jsExpr = jsExpr.replace(/\bln\b/gi, 'Math.log');
+        jsExpr = jsExpr.replace(/\blog\b/gi, 'Math.log10');
+
+        if (!allowX && /\bx\b/.test(jsExpr)) throw new Error('この式では x は使えません。');
+
+        return new Function('x', '"use strict"; return (' + jsExpr + ');');
       }
 
       function parsePositiveExpr(expr, label) {
@@ -638,6 +811,30 @@
           }
         }
         return null;
+      }
+
+      function trigLikeFormat(x) {
+        const abs = Math.abs(x);
+        const sign = x < 0 ? '-' : '';
+        const eps = 1e-6;
+        const table = [
+          { v: 0.5, t: 'sin(π/6)' },
+          { v: Math.sqrt(2) / 2, t: 'sin(π/4)' },
+          { v: Math.sqrt(3) / 2, t: 'sin(π/3)' },
+          { v: 1, t: 'sin(π/2)' },
+          { v: 1 / Math.sqrt(3), t: 'tan(π/6)' },
+          { v: 1, t: 'tan(π/4)' },
+          { v: Math.sqrt(3), t: 'tan(π/3)' },
+          { v: Math.cos(Math.PI / 6), t: 'cos(π/6)' },
+          { v: Math.cos(Math.PI / 4), t: 'cos(π/4)' },
+          { v: Math.cos(Math.PI / 3), t: 'cos(π/3)' }
+        ];
+        for (let i = 0; i < table.length; i++) {
+          if (Math.abs(table[i].v - abs) < eps) return sign + table[i].t;
+        }
+        const root = tryRootFormat(abs);
+        if (root) return sign + root;
+        return formatDecimal(x);
       }
 
       function vec(P, Q) {
@@ -748,6 +945,8 @@
           pointLabelOffset: Number(document.getElementById('pointLabelOffset').value),
           sideTextMode: document.getElementById('sideTextMode').value,
           sideUnitMode: document.getElementById('sideUnitMode').value,
+          areaLabelMode: document.getElementById('areaLabelMode').value,
+          areaLabelSize: Number(document.getElementById('areaLabelSize').value),
           unitCm: parsePositiveExpr(document.getElementById('unitCm').value, '1単位あたりのcm').value
         };
       }
@@ -773,6 +972,11 @@
         const mode = document.getElementById('mode').value;
         document.querySelectorAll('.mode-group').forEach(function (group) {
           group.classList.toggle('active', shapeType === 'triangle' && group.dataset.mode === mode);
+        });
+
+        const functionType = document.getElementById('functionType').value;
+        document.querySelectorAll('.function-group').forEach(function (group) {
+          group.classList.toggle('active', shapeType === 'function' && group.dataset.function === functionType);
         });
       }
 
@@ -901,10 +1105,7 @@
             C: { x: t.value, y: h.value }
           },
           expressions: { c: c.raw, h: h.raw, t: t.raw },
-          aux: {
-            baseHeight: true,
-            foot: { x: t.value, y: 0 }
-          }
+          aux: { baseHeight: true, foot: { x: t.value, y: 0 } }
         };
       }
 
@@ -964,6 +1165,105 @@
             a: document.getElementById('Ea').value,
             b: document.getElementById('Eb').value
           }
+        };
+      }
+
+      function computeStar() {
+        const n = Math.round(parsePositiveExpr(document.getElementById('STn').value, '頂点数').value);
+        if (n < 3) throw new Error('星型の頂点数は 3 以上にしてください。');
+        const cx = parseExpr(document.getElementById('STcx').value).value;
+        const cy = parseExpr(document.getElementById('STcy').value).value;
+        const outer = parsePositiveExpr(document.getElementById('STouter').value, '外半径').value;
+        const inner = parsePositiveExpr(document.getElementById('STinner').value, '内半径').value;
+        const ang = parseExpr(document.getElementById('STang').value).value;
+
+        if (!(outer > inner)) throw new Error('外半径は内半径より大きくしてください。');
+
+        const points = [];
+        for (let i = 0; i < n * 2; i++) {
+          const r = i % 2 === 0 ? outer : inner;
+          const t = degToRad(ang + (360 * i) / (n * 2));
+          points.push({ x: cx + r * Math.cos(t), y: cy + r * Math.sin(t) });
+        }
+
+        return {
+          points: points,
+          starPoints: n,
+          expressions: {}
+        };
+      }
+
+      function computeFunctionModel() {
+        const functionType = document.getElementById('functionType').value;
+        const domainMin = parseExpr(document.getElementById('domainMin').value).value;
+        const domainMax = parseExpr(document.getElementById('domainMax').value).value;
+        const leftType = document.getElementById('domainLeftType').value;
+        const rightType = document.getElementById('domainRightType').value;
+
+        if (!(domainMin < domainMax)) throw new Error('定義域は 左端 < 右端 にしてください。');
+
+        let fn;
+        let exprText = '';
+
+        if (functionType === 'linear') {
+          const a = parseExpr(document.getElementById('fnLinearA').value).value;
+          const b = parseExpr(document.getElementById('fnLinearB').value).value;
+          fn = function (x) { return a * x + b; };
+          exprText = 'y = ' + formatDecimal(a) + 'x + ' + formatDecimal(b);
+        } else if (functionType === 'quadratic') {
+          const a = parseExpr(document.getElementById('fnQuadA').value).value;
+          const b = parseExpr(document.getElementById('fnQuadB').value).value;
+          const c = parseExpr(document.getElementById('fnQuadC').value).value;
+          fn = function (x) { return a * x * x + b * x + c; };
+          exprText = 'y = ' + formatDecimal(a) + 'x² + ' + formatDecimal(b) + 'x + ' + formatDecimal(c);
+        } else if (functionType === 'exponential') {
+          const a = parseExpr(document.getElementById('fnExpA').value).value;
+          const b = parsePositiveExpr(document.getElementById('fnExpB').value, '指数関数の底').value;
+          const c = parseExpr(document.getElementById('fnExpC').value).value;
+          fn = function (x) { return a * Math.pow(b, x) + c; };
+          exprText = 'y = ' + formatDecimal(a) + '・' + formatDecimal(b) + '^x + ' + formatDecimal(c);
+        } else if (functionType === 'logarithmic') {
+          const a = parseExpr(document.getElementById('fnLogA').value).value;
+          const b = parseExpr(document.getElementById('fnLogB').value).value;
+          const base = parsePositiveExpr(document.getElementById('fnLogBase').value, '対数の底').value;
+          if (nearlyEqual(base, 1)) throw new Error('対数の底は 1 以外にしてください。');
+          fn = function (x) {
+            if (x <= 0) return NaN;
+            return a * (Math.log(x) / Math.log(base)) + b;
+          };
+          exprText = 'y = ' + formatDecimal(a) + '・log_' + formatDecimal(base) + '(x) + ' + formatDecimal(b);
+        } else if (functionType === 'trigonometric') {
+          const kind = document.getElementById('fnTrigKind').value;
+          const a = parseExpr(document.getElementById('fnTrigA').value).value;
+          const b = parseExpr(document.getElementById('fnTrigB').value).value;
+          const c = parseExpr(document.getElementById('fnTrigC').value).value;
+          const d = parseExpr(document.getElementById('fnTrigD').value).value;
+          fn = function (x) {
+            const t = b * x + c;
+            if (kind === 'sin') return a * Math.sin(t) + d;
+            if (kind === 'cos') return a * Math.cos(t) + d;
+            return a * Math.tan(t) + d;
+          };
+          exprText = 'y = ' + formatDecimal(a) + '・' + kind + '(' + formatDecimal(b) + 'x + ' + formatDecimal(c) + ') + ' + formatDecimal(d);
+        } else {
+          const expr = document.getElementById('fnGeneralExpr').value;
+          const compiled = compileFunctionExpression(expr, true);
+          fn = function (x) {
+            return compiled(x);
+          };
+          exprText = 'y = ' + expr;
+        }
+
+        return {
+          shapeType: 'function',
+          functionType: functionType,
+          fn: fn,
+          exprText: exprText,
+          domainMin: domainMin,
+          domainMax: domainMax,
+          domainLeftType: leftType,
+          domainRightType: rightType,
+          classification: ['関数']
         };
       }
 
@@ -1045,6 +1345,25 @@
         return Array.from(new Set(labels));
       }
 
+      function computeAreaValue(model) {
+        if (model.shapeType === 'triangle') {
+          return Math.abs(triangleArea2(model.points)) / 2;
+        }
+        if (model.shapeType === 'quadrilateral') {
+          return Math.abs(quadrilateralSignedArea(model.points));
+        }
+        if (model.shapeType === 'regularPolygon' || model.shapeType === 'star') {
+          return Math.abs(polygonSignedArea(model.points));
+        }
+        if (model.shapeType === 'circle') {
+          return Math.PI * model.radius * model.radius;
+        }
+        if (model.shapeType === 'ellipse') {
+          return Math.PI * model.a * model.b;
+        }
+        return null;
+      }
+
       function computeGeneralMetrics(model, unitCm) {
         if (model.shapeType === 'triangle') {
           const p = model.points;
@@ -1103,6 +1422,22 @@
           };
         }
 
+        if (model.shapeType === 'star') {
+          const xs = model.points.map(function (p) { return p.x; });
+          const ys = model.points.map(function (p) { return p.y; });
+          const s = sideLength(model.points[0], model.points[1]);
+          const widthUnits = Math.max.apply(null, xs) - Math.min.apply(null, xs);
+          const heightUnits = Math.max.apply(null, ys) - Math.min.apply(null, ys);
+          return {
+            sideUnits: { s: s },
+            sideCm: { s: s * unitCm },
+            widthUnits: widthUnits,
+            heightUnits: heightUnits,
+            widthCm: widthUnits * unitCm,
+            heightCm: heightUnits * unitCm
+          };
+        }
+
         if (model.shapeType === 'circle') {
           const d = 2 * model.radius;
           return {
@@ -1113,12 +1448,25 @@
           };
         }
 
-        return {
-          widthUnits: 2 * model.a,
-          heightUnits: 2 * model.b,
-          widthCm: 2 * model.a * unitCm,
-          heightCm: 2 * model.b * unitCm
-        };
+        if (model.shapeType === 'ellipse') {
+          return {
+            widthUnits: 2 * model.a,
+            heightUnits: 2 * model.b,
+            widthCm: 2 * model.a * unitCm,
+            heightCm: 2 * model.b * unitCm
+          };
+        }
+
+        if (model.shapeType === 'function') {
+          return {
+            widthUnits: model.domainMax - model.domainMin,
+            heightUnits: 0,
+            widthCm: (model.domainMax - model.domainMin) * unitCm,
+            heightCm: 0
+          };
+        }
+
+        return { widthUnits: 0, heightUnits: 0, widthCm: 0, heightCm: 0 };
       }
 
       function computeModel() {
@@ -1150,6 +1498,11 @@
         } else if (shapeType === 'ellipse') {
           model = computeEllipse();
           model.classification = ['楕円'];
+        } else if (shapeType === 'star') {
+          model = computeStar();
+          model.classification = [model.starPoints + '芒星'];
+        } else if (shapeType === 'function') {
+          model = computeFunctionModel();
         } else {
           throw new Error('未対応の図形種別です。');
         }
@@ -1157,6 +1510,7 @@
         model.shapeType = shapeType;
         model.display = getDisplayOptions();
         model.print = getPrintOptions();
+        model.areaValue = computeAreaValue(model);
         model.metrics = computeGeneralMetrics(model, model.display.unitCm);
 
         return model;
@@ -1174,10 +1528,47 @@
         let core;
         if (textMode === 'input' && expr) core = expr;
         else if (textMode === 'root') core = tryRootFormat(value) || formatDecimal(value);
+        else if (textMode === 'trig') core = trigLikeFormat(value);
         else core = formatDecimal(value);
 
         if (unitMode === 'unit') return core + ' unit';
         return core;
+      }
+
+      function getAreaLabelText(model) {
+        const mode = model.display.areaLabelMode;
+        if (mode === 'none') return '';
+        if (mode === 'symbol') return 'S';
+        if (model.areaValue == null) return '';
+        if (mode === 'plain') return 'S = ' + formatDecimal(model.areaValue);
+        if (mode === 'cm2') return 'S = ' + formatDecimal(model.areaValue * model.display.unitCm * model.display.unitCm) + ' cm²';
+        return '';
+      }
+
+      function getAreaAnchor(model) {
+        if (model.shapeType === 'triangle') return centroidTriangle([model.points.A, model.points.B, model.points.C]);
+      }
+
+      function areaAnchorFromModel(model) {
+        if (model.shapeType === 'triangle') return centroidTriangle(model.points);
+        if (model.shapeType === 'quadrilateral') return centroidArray([model.points.A, model.points.B, model.points.C, model.points.D]);
+        if (model.shapeType === 'regularPolygon' || model.shapeType === 'star') return centroidArray(model.points);
+        if (model.shapeType === 'circle' || model.shapeType === 'ellipse') return model.center;
+        return null;
+      }
+
+      function addAreaLabel(targetBoard, model) {
+        const text = getAreaLabelText(model);
+        if (!text) return;
+        const pos = areaAnchorFromModel(model);
+        if (!pos) return;
+        targetBoard.create('text', [pos.x, pos.y, text], {
+          fontSize: model.display.areaLabelSize,
+          fixed: true,
+          anchorX: 'middle',
+          anchorY: 'middle',
+          cssStyle: 'background:rgba(255,255,255,0.9);padding:2px 6px;border-radius:8px;'
+        });
       }
 
       function makeBoundingBoxFromArray(arr, extra) {
@@ -1196,12 +1587,42 @@
         return [centerX - side / 2, centerY + side / 2, centerX + side / 2, centerY - side / 2];
       }
 
+      function makeFunctionBoundingBox(model) {
+        const xmin = model.domainMin;
+        const xmax = model.domainMax;
+        const ys = [];
+        const samples = 240;
+        for (let i = 0; i <= samples; i++) {
+          const x = xmin + (xmax - xmin) * i / samples;
+          try {
+            const y = model.fn(x);
+            if (Number.isFinite(y)) ys.push(y);
+          } catch (e) {}
+        }
+        let ymin = -5;
+        let ymax = 5;
+        if (ys.length) {
+          ymin = Math.min.apply(null, ys);
+          ymax = Math.max.apply(null, ys);
+          if (nearlyEqual(ymin, ymax)) {
+            ymin -= 2;
+            ymax += 2;
+          } else {
+            const pad = (ymax - ymin) * 0.25;
+            ymin -= pad;
+            ymax += pad;
+          }
+        }
+        const padX = Math.max((xmax - xmin) * 0.2, 1);
+        return [xmin - padX, ymax, xmax + padX, ymin];
+      }
+
       function makeBoundingBox(model, extra) {
         const ex = typeof extra === 'number' ? extra : 0.9;
 
         if (model.shapeType === 'triangle') return makeBoundingBoxFromArray([model.points.A, model.points.B, model.points.C], ex);
         if (model.shapeType === 'quadrilateral') return makeBoundingBoxFromArray([model.points.A, model.points.B, model.points.C, model.points.D], ex);
-        if (model.shapeType === 'regularPolygon') return makeBoundingBoxFromArray(model.points, ex);
+        if (model.shapeType === 'regularPolygon' || model.shapeType === 'star') return makeBoundingBoxFromArray(model.points, ex);
 
         if (model.shapeType === 'circle') {
           const c = model.center;
@@ -1209,10 +1630,14 @@
           return [c.x - r - ex, c.y + r + ex, c.x + r + ex, c.y - r - ex];
         }
 
-        const c = model.center;
-        const a = model.a;
-        const b = model.b;
-        return [c.x - a - ex, c.y + Math.max(a, b) + ex, c.x + a + ex, c.y - Math.max(a, b) - ex];
+        if (model.shapeType === 'ellipse') {
+          const c = model.center;
+          const a = model.a;
+          const b = model.b;
+          return [c.x - a - ex, c.y + Math.max(a, b) + ex, c.x + a + ex, c.y - Math.max(a, b) - ex];
+        }
+
+        return makeFunctionBoundingBox(model);
       }
 
       function disposeMainBoard() {
@@ -1354,6 +1779,8 @@
           addSideArcAndLabel(targetBoard, p.C, p.A, formatSideValue(model, 'b', model.metrics.sideUnits.b), ctr, model.display.sideLabelSize);
           addSideArcAndLabel(targetBoard, p.A, p.B, formatSideValue(model, 'c', model.metrics.sideUnits.c), ctr, model.display.sideLabelSize);
         }
+
+        addAreaLabel(targetBoard, model);
       }
 
       function renderQuadrilateral(targetBoard, model) {
@@ -1397,6 +1824,8 @@
           addSideArcAndLabel(targetBoard, p.C, p.D, formatSideValue(model, null, model.metrics.sideUnits.cd), ctr, model.display.sideLabelSize);
           addSideArcAndLabel(targetBoard, p.D, p.A, formatSideValue(model, null, model.metrics.sideUnits.da), ctr, model.display.sideLabelSize);
         }
+
+        addAreaLabel(targetBoard, model);
       }
 
       function renderRegularPolygon(targetBoard, model) {
@@ -1423,6 +1852,36 @@
             addSideArcAndLabel(targetBoard, P, Q, formatSideValue(model, null, model.metrics.sideUnits.s), ctr, model.display.sideLabelSize);
           }
         }
+
+        addAreaLabel(targetBoard, model);
+      }
+
+      function renderStar(targetBoard, model) {
+        const pts = model.points.map(function (p) {
+          return targetBoard.create('point', [p.x, p.y], { name: '', size: 2.5, fixed: true, withLabel: false });
+        });
+
+        targetBoard.create('polygon', pts, {
+          borders: { strokeWidth: 2 },
+          fillColor: 'lightgray',
+          fillOpacity: 0.15
+        });
+
+        const ctr = centroidArray(model.points);
+        model.points.forEach(function (p, i) {
+          const name = String.fromCharCode(65 + (i % 26));
+          addPointLabelText(targetBoard, p, ctr, model.display.showCoordLabels ? getPointDisplayText(name, p, true) : name, model.display.pointLabelSize, model.display.pointLabelOffset);
+        });
+
+        if (model.display.showSideLabels) {
+          for (let i = 0; i < model.points.length; i++) {
+            const P = model.points[i];
+            const Q = model.points[(i + 1) % model.points.length];
+            addSideArcAndLabel(targetBoard, P, Q, formatSideValue(model, null, sideLength(P, Q)), ctr, model.display.sideLabelSize);
+          }
+        }
+
+        addAreaLabel(targetBoard, model);
       }
 
       function renderCircle(targetBoard, model) {
@@ -1451,6 +1910,8 @@
           model.display.pointLabelSize,
           model.display.pointLabelOffset
         );
+
+        addAreaLabel(targetBoard, model);
       }
 
       function renderEllipse(targetBoard, model) {
@@ -1475,15 +1936,94 @@
           model.display.pointLabelSize,
           model.display.pointLabelOffset
         );
+
+        addAreaLabel(targetBoard, model);
+      }
+
+      function createWavyOutsideCurve(targetBoard, model, x1, x2) {
+        if (!(x2 > x1)) return;
+        const length = x2 - x1;
+        const amp = Math.max(length * 0.03, 0.15);
+        const freq = 8;
+        targetBoard.create('curve', [
+          function (t) {
+            return x1 + (x2 - x1) * t;
+          },
+          function (t) {
+            const x = x1 + (x2 - x1) * t;
+            let y = model.fn(x);
+            if (!Number.isFinite(y)) return NaN;
+            return y + amp * Math.sin(freq * Math.PI * t);
+          },
+          0,
+          1
+        ], {
+          strokeWidth: 2,
+          fixed: true
+        });
+      }
+
+      function addEndpointMarker(targetBoard, x, y, closed) {
+        if (!Number.isFinite(y)) return;
+        targetBoard.create('point', [x, y], {
+          name: '',
+          size: 4,
+          fixed: true,
+          withLabel: false,
+          fillColor: closed ? '#000' : '#fff',
+          strokeColor: '#000',
+          strokeWidth: 2
+        });
+      }
+
+      function renderFunction(targetBoard, model) {
+        const bb = targetBoard.getBoundingBox();
+        const boardLeft = bb[0];
+        const boardRight = bb[2];
+
+        targetBoard.create('functiongraph', [
+          function (x) {
+            if (x < model.domainMin || x > model.domainMax) return NaN;
+            try {
+              const y = model.fn(x);
+              return Number.isFinite(y) ? y : NaN;
+            } catch (e) {
+              return NaN;
+            }
+          },
+          boardLeft,
+          boardRight
+        ], {
+          strokeWidth: 2,
+          fixed: true
+        });
+
+        if (boardLeft < model.domainMin) {
+          createWavyOutsideCurve(targetBoard, model, boardLeft, model.domainMin);
+        }
+        if (boardRight > model.domainMax) {
+          createWavyOutsideCurve(targetBoard, model, model.domainMax, boardRight);
+        }
+
+        let yL = NaN;
+        let yR = NaN;
+        try { yL = model.fn(model.domainMin); } catch (e) {}
+        try { yR = model.fn(model.domainMax); } catch (e) {}
+
+        addEndpointMarker(targetBoard, model.domainMin, yL, model.domainLeftType === 'closed');
+        addEndpointMarker(targetBoard, model.domainMax, yR, model.domainRightType === 'closed');
       }
 
       function renderToBoard(targetBoard, model) {
         if (model.display.showAxes) createAxes(targetBoard);
+
         if (model.shapeType === 'triangle') return renderTriangle(targetBoard, model);
         if (model.shapeType === 'quadrilateral') return renderQuadrilateral(targetBoard, model);
         if (model.shapeType === 'regularPolygon') return renderRegularPolygon(targetBoard, model);
         if (model.shapeType === 'circle') return renderCircle(targetBoard, model);
-        return renderEllipse(targetBoard, model);
+        if (model.shapeType === 'ellipse') return renderEllipse(targetBoard, model);
+        if (model.shapeType === 'star') return renderStar(targetBoard, model);
+        return renderFunction(targetBoard, model);
       }
 
       function renderMainBoard(model) {
@@ -1554,7 +2094,7 @@
             cloned.points[k].x = (cloned.points[k].x - ctr.x) * scale;
             cloned.points[k].y = (cloned.points[k].y - ctr.y) * scale;
           });
-        } else if (cloned.shapeType === 'regularPolygon') {
+        } else if (cloned.shapeType === 'regularPolygon' || cloned.shapeType === 'star') {
           const ctr = centroidArray(cloned.points);
           cloned.points.forEach(function (p) {
             p.x = (p.x - ctr.x) * scale;
@@ -1567,6 +2107,10 @@
           cloned.center = { x: 0, y: 0 };
           cloned.a *= scale;
           cloned.b *= scale;
+        }
+
+        if (cloned.shapeType !== 'function') {
+          cloned.areaValue = computeAreaValue(cloned);
         }
 
         cloned.metrics = computeGeneralMetrics(cloned, cloned.display.unitCm);
@@ -1776,16 +2320,9 @@
 
       function buildShapeDetailHtml(model) {
         if (!model) return '';
-
-        if (model.shapeType === 'triangle' || model.shapeType === 'quadrilateral' || model.shapeType === 'regularPolygon' || model.shapeType === 'ellipse') {
-          return '横幅 ' + formatDecimal(model.metrics.widthCm) + 'cm / 縦幅 ' + formatDecimal(model.metrics.heightCm) + 'cm';
-        }
-
-        if (model.shapeType === 'circle') {
-          return '直径 ' + formatDecimal(model.metrics.widthCm) + 'cm';
-        }
-
-        return '';
+        if (model.shapeType === 'function') return model.exprText + '<br>定義域: ' + (model.domainLeftType === 'closed' ? '[' : '(') + formatDecimal(model.domainMin) + ', ' + formatDecimal(model.domainMax) + (model.domainRightType === 'closed' ? ']' : ')');
+        if (model.shapeType === 'circle') return '直径 ' + formatDecimal(model.metrics.widthCm) + 'cm';
+        return '横幅 ' + formatDecimal(model.metrics.widthCm) + 'cm / 縦幅 ' + formatDecimal(model.metrics.heightCm) + 'cm';
       }
 
       function renderAll() {
@@ -1803,22 +2340,24 @@
         }
       }
 
-      function zoomBoard(factor) {
+      function zoomBoard(mode) {
         if (!board) return;
         const bb = board.getBoundingBox();
         const cx = (bb[0] + bb[2]) / 2;
         const cy = (bb[1] + bb[3]) / 2;
         const halfW = (bb[2] - bb[0]) / 2;
         const halfH = (bb[1] - bb[3]) / 2;
-        const newHalfW = halfW / factor;
-        const newHalfH = halfH / factor;
-        board.setBoundingBox([cx - newHalfW, cy + newHalfH, cx + newHalfW, cy - newHalfH], false);
+        const factor = mode === 'in' ? 0.8 : 1.25;
+        board.setBoundingBox(
+          [cx - halfW * factor, cy + halfH * factor, cx + halfW * factor, cy - halfH * factor],
+          true
+        );
         board.update();
       }
 
       function resetBoardView() {
         if (!board || !latestModel) return;
-        board.setBoundingBox(makeBoundingBox(latestModel), false);
+        board.setBoundingBox(makeBoundingBox(latestModel), true);
         board.update();
       }
 
@@ -1863,11 +2402,11 @@
         });
 
         document.getElementById('zoomInBtn').addEventListener('click', function () {
-          zoomBoard(1.25);
+          zoomBoard('in');
         });
 
         document.getElementById('zoomOutBtn').addEventListener('click', function () {
-          zoomBoard(1 / 0.8);
+          zoomBoard('out');
         });
 
         document.getElementById('resetViewBtn').addEventListener('click', function () {
