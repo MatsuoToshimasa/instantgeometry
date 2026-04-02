@@ -391,12 +391,12 @@
             <option value="quadratic">二次関数</option>
             <option value="exponential">指数関数</option>
             <option value="logarithmic">対数関数</option>
-            <option value="trigonometric">三角関数</option>
+            <option value="trigonometric">三角・双曲線関数</option>
             <option value="general">一般関数</option>
           </select>
         </div>
 
-        <div class="badge">数式入力可: 3, 3/2, sqrt(5), √5, 2√3, 1+√2, sin(pi/6), cos(pi/3), tan(pi/4), exp(1), log(10)</div>
+        <div class="badge">数式入力可: 3, 3/2, sqrt(5), √5, 2√3, 1+√2, sin(pi/6), cos(pi/3), sec(pi/3), sinh(1), asinh(1)</div>
       </div>
 
       <div class="section shape-group active" data-shape="triangle">
@@ -494,8 +494,6 @@
         </div>
 
         <div class="quad-subgroup" data-quadtype="parallelogram">
-          <div class="quad-subgroup active" data-quadtype="parallelogram"></div>
-
           <div class="mode-group active" data-quadpara-mode="baseHeight">
             <h3>平行四辺形：底辺×高さ＋横ずれ</h3>
             <div class="grid-3">
@@ -515,7 +513,7 @@
           </div>
         </div>
 
-                <div class="quad-subgroup" data-quadtype="rhombus">
+              <div class="quad-subgroup" data-quadtype="rhombus">
           <h3>菱形</h3>
           <div class="grid-3">
             <div class="field"><label for="RHcx">中心 x</label><input id="RHcx" type="text" value="0" /></div>
@@ -672,6 +670,24 @@
                 <option value="sin">sin</option>
                 <option value="cos">cos</option>
                 <option value="tan">tan</option>
+                <option value="sec">sec</option>
+                <option value="cosec">cosec</option>
+                <option value="cotan">cotan</option>
+                <option value="asin">arcsin</option>
+                <option value="acos">arccos</option>
+                <option value="atan">arctan</option>
+                <option value="asec">arcsec</option>
+                <option value="acosec">arccosec</option>
+                <option value="acotan">arccotan</option>
+                <option value="sinh">sinh</option>
+                <option value="cosh">cosh</option>
+                <option value="tanh">tanh</option>
+                <option value="sech">sech</option>
+                <option value="cosech">cosech</option>
+                <option value="cotanh">cotanh</option>
+                <option value="asinh">arsinh</option>
+                <option value="acosh">arcosh</option>
+                <option value="atanh">artanh</option>
               </select>
             </div>
             <div class="field"><label for="fnTrigA">a</label><input id="fnTrigA" type="text" value="1" /></div>
@@ -679,7 +695,7 @@
             <div class="field"><label for="fnTrigC">c</label><input id="fnTrigC" type="text" value="0" /></div>
             <div class="field"><label for="fnTrigD">d</label><input id="fnTrigD" type="text" value="0" /></div>
           </div>
-          <div class="muted">y = a * trig(bx + c) + d</div>
+          <div class="muted">y = a * f(bx + c) + d</div>
         </div>
 
         <div class="function-group" data-function="general">
@@ -687,7 +703,7 @@
             <label for="fnGeneralExpr">式</label>
             <input id="fnGeneralExpr" type="text" value="sin(x)" />
           </div>
-          <div class="muted">使えるもの: x, + - * / ^, sqrt, sin, cos, tan, log, ln, exp, abs, pi</div>
+          <div class="muted">使えるもの: x, sqrt, sin, cos, tan, sec, cosec, cotan, asin, acos, atan, asec, acosec, acotan, sinh, cosh, tanh, sech, cosech, cotanh, asinh, acosh, atanh, log, ln, exp, abs, pi</div>
         </div>
 
         <div class="grid-2">
@@ -755,6 +771,13 @@
               <label for="pointLabelOffset">頂点文字の距離</label>
               <input id="pointLabelOffset" type="range" min="0.2" max="2.0" step="0.05" value="0.5" />
             </div>
+            <div class="field">
+              <label for="showCoordLabels">頂点ラベルに座標を含める</label>
+              <select id="showCoordLabels">
+                <option value="no" selected>なし</option>
+                <option value="yes">あり</option>
+              </select>
+            </div>
           </div>
         </details>
 
@@ -810,9 +833,9 @@
             <div class="field">
               <label for="angleDisplayMode">表示形式</label>
               <select id="angleDisplayMode">
+                <option value="none" selected>表示なし</option>
                 <option value="degree">度数法</option>
                 <option value="radian">弧度法</option>
-                <option value="none">表示なし</option>
               </select>
             </div>
             <div class="field">
@@ -841,9 +864,9 @@
               <label for="areaUnitMode">面積単位</label>
               <select id="areaUnitMode">
                 <option value="none">単位なし</option>
-                <option value="cm2">cm2</option>
-                <option value="m2">m2</option>
-                <option value="km2">km2</option>
+                <option value="cm2">cm²</option>
+                <option value="m2">m²</option>
+                <option value="km2">km²</option>
               </select>
             </div>
             <div class="field">
@@ -877,13 +900,6 @@
                 <option value="cartesian">直交座標</option>
                 <option value="oblique">斜交座標（準備中）</option>
                 <option value="polar">極座標（準備中）</option>
-              </select>
-            </div>
-            <div class="field">
-              <label for="showCoordLabels">頂点ラベルに座標を含める</label>
-              <select id="showCoordLabels">
-                <option value="yes">あり</option>
-                <option value="no">なし</option>
               </select>
             </div>
             <div class="field">
@@ -972,6 +988,20 @@
       let board = null;
       let latestModel = null;
 
+      const FN = {
+        sec: x => 1 / Math.cos(x),
+        cosec: x => 1 / Math.sin(x),
+        cotan: x => 1 / Math.tan(x),
+        csc: x => 1 / Math.sin(x),
+        cot: x => 1 / Math.tan(x),
+        asec: x => Math.acos(1 / x),
+        acosec: x => Math.asin(1 / x),
+        acotan: x => Math.atan(1 / x),
+        sech: x => 1 / Math.cosh(x),
+        cosech: x => 1 / Math.sinh(x),
+        cotanh: x => 1 / Math.tanh(x)
+      };
+
       function setStatus(message, kind) {
         const el = document.getElementById('status');
         el.textContent = message || '';
@@ -996,9 +1026,35 @@
           .replace(/\s+/g, '')
           .replace(/π/gi, 'pi')
           .replace(/√/g, 'sqrt')
-          .replace(/(\d)(sqrt|sin|cos|tan|log|ln|exp|abs|pi)/gi, '$1*$2')
-          .replace(/\)(\d|sqrt|sin|cos|tan|log|ln|exp|abs|pi)/gi, ')*$1')
+          .replace(/(\d)(sqrt|sin|cos|tan|sec|cosec|cotan|asin|acos|atan|asec|acosec|acotan|sinh|cosh|tanh|sech|cosech|cotanh|asinh|acosh|atanh|log|ln|exp|abs|pi)/gi, '$1*$2')
+          .replace(/\)(\d|sqrt|sin|cos|tan|sec|cosec|cotan|asin|acos|atan|asec|acosec|acotan|sinh|cosh|tanh|sech|cosech|cotanh|asinh|acosh|atanh|log|ln|exp|abs|pi)/gi, ')*$1')
           .replace(/(\d|\))(\()/g, '$1*$2');
+      }
+
+      function buildEvaluator(jsExpr, allowX) {
+        const names = [
+          'pi', 'sqrt', 'sin', 'cos', 'tan', 'sec', 'cosec', 'cotan',
+          'asin', 'acos', 'atan', 'asec', 'acosec', 'acotan',
+          'sinh', 'cosh', 'tanh', 'sech', 'cosech', 'cotanh',
+          'asinh', 'acosh', 'atanh',
+          'exp', 'abs', 'log', 'ln'
+        ];
+        const vals = [
+          Math.PI, Math.sqrt, Math.sin, Math.cos, Math.tan, FN.sec, FN.cosec, FN.cotan,
+          Math.asin, Math.acos, Math.atan, FN.asec, FN.acosec, FN.acotan,
+          Math.sinh, Math.cosh, Math.tanh, FN.sech, FN.cosech, FN.cotanh,
+          Math.asinh, Math.acosh, Math.atanh,
+          Math.exp, Math.abs, Math.log10, Math.log
+        ];
+
+        if (allowX) {
+          return function (x) {
+            return Function(...names, 'x', 'return (' + jsExpr + ');')(...vals, x);
+          };
+        }
+        return function () {
+          return Function(...names, 'return (' + jsExpr + ');')(...vals);
+        };
       }
 
       function parseExpr(expr) {
@@ -1008,19 +1064,9 @@
         if (!/^[0-9+\-*/().,^a-zA-Z]+$/.test(safe)) {
           throw new Error('使えない文字があります: ' + raw);
         }
-        let jsExpr = safe;
-        jsExpr = jsExpr.replace(/\^/g, '**');
-        jsExpr = jsExpr.replace(/\bpi\b/gi, 'Math.PI');
-        jsExpr = jsExpr.replace(/\bsqrt\b/gi, 'Math.sqrt');
-        jsExpr = jsExpr.replace(/\bsin\b/gi, 'Math.sin');
-        jsExpr = jsExpr.replace(/\bcos\b/gi, 'Math.cos');
-        jsExpr = jsExpr.replace(/\btan\b/gi, 'Math.tan');
-        jsExpr = jsExpr.replace(/\bexp\b/gi, 'Math.exp');
-        jsExpr = jsExpr.replace(/\babs\b/gi, 'Math.abs');
-        jsExpr = jsExpr.replace(/\bln\b/gi, 'Math.log');
-        jsExpr = jsExpr.replace(/\blog\b/gi, 'Math.log10');
-
-        const value = Function('"use strict"; return (' + jsExpr + ');')();
+        const jsExpr = safe.replace(/\^/g, '**');
+        const evaluator = buildEvaluator(jsExpr, false);
+        const value = evaluator();
         if (!Number.isFinite(value)) throw new Error('数値として解釈できません: ' + raw);
         return { value, raw };
       }
@@ -1032,19 +1078,8 @@
         if (!/^[0-9+\-*/().,^a-zA-Z]+$/.test(safe)) {
           throw new Error('関数式に使えない文字があります: ' + raw);
         }
-        let jsExpr = safe;
-        jsExpr = jsExpr.replace(/\^/g, '**');
-        jsExpr = jsExpr.replace(/\bpi\b/gi, 'Math.PI');
-        jsExpr = jsExpr.replace(/\bsqrt\b/gi, 'Math.sqrt');
-        jsExpr = jsExpr.replace(/\bsin\b/gi, 'Math.sin');
-        jsExpr = jsExpr.replace(/\bcos\b/gi, 'Math.cos');
-        jsExpr = jsExpr.replace(/\btan\b/gi, 'Math.tan');
-        jsExpr = jsExpr.replace(/\bexp\b/gi, 'Math.exp');
-        jsExpr = jsExpr.replace(/\babs\b/gi, 'Math.abs');
-        jsExpr = jsExpr.replace(/\bln\b/gi, 'Math.log');
-        jsExpr = jsExpr.replace(/\blog\b/gi, 'Math.log10');
-        if (!allowX && /\bx\b/.test(jsExpr)) throw new Error('この式では x は使えません。');
-        return new Function('x', '"use strict"; return (' + jsExpr + ');');
+        const jsExpr = safe.replace(/\^/g, '**');
+        return buildEvaluator(jsExpr, allowX);
       }
 
       function parsePositiveExpr(expr, label) {
@@ -1082,16 +1117,34 @@
         return rounded.toFixed(d).replace(/\.?0+$/, '');
       }
 
+      function squareFreePart(n) {
+        let a = 1;
+        let b = n;
+        for (let k = 2; k * k <= b; k++) {
+          while (b % (k * k) === 0) {
+            a *= k;
+            b /= (k * k);
+          }
+        }
+        return { a, b };
+      }
+
       function tryRootFormat(x) {
         const sign = x < 0 ? '-' : '';
         const abs = Math.abs(x);
-        for (let k = 1; k <= 12; k++) {
-          for (let n = 1; n <= 200; n++) {
-            const candidate = k * Math.sqrt(n);
+
+        if (nearlyEqual(abs, Math.round(abs), 1e-10)) return sign + String(Math.round(abs));
+
+        for (let b = 1; b <= 500; b++) {
+          const sf = squareFreePart(b);
+          const sqrtb = Math.sqrt(sf.b);
+          for (let a = 1; a <= 200; a++) {
+            const candidate = a * sqrtb;
             if (Math.abs(candidate - abs) < 1e-8) {
-              if (n === 1) return sign + String(k);
-              if (k === 1) return sign + '√' + n;
-              return sign + k + '√' + n;
+              const coef = a * sf.a;
+              if (sf.b === 1) return sign + String(coef);
+              if (coef === 1) return sign + '√' + sf.b;
+              return sign + coef + '√' + sf.b;
             }
           }
         }
@@ -1110,8 +1163,8 @@
           { v: 1, t: 'tan(π/4)' },
           { v: Math.sqrt(3), t: 'tan(π/3)' }
         ];
-        for (let i = 0; i < table.length; i++) {
-          if (Math.abs(table[i].v - abs) < eps) return sign + table[i].t;
+        for (const item of table) {
+          if (Math.abs(item.v - abs) < eps) return sign + item.t;
         }
         const root = tryRootFormat(abs);
         if (root) return sign + root;
@@ -1164,8 +1217,8 @@
 
       function centroidArray(arr) {
         return {
-          x: arr.reduce(function (s, p) { return s + p.x; }, 0) / arr.length,
-          y: arr.reduce(function (s, p) { return s + p.y; }, 0) / arr.length
+          x: arr.reduce((s, p) => s + p.x, 0) / arr.length,
+          y: arr.reduce((s, p) => s + p.y, 0) / arr.length
         };
       }
 
@@ -1191,8 +1244,8 @@
       }
 
       function unicodeSubscript(num) {
-        const map = { '0': '₀', '1': '₁', '2': '₂', '3': '₃', '4': '₄', '5': '₅', '6': '₆', '7': '₇', '8': '₈', '9': '₉' };
-        return String(num).split('').map(function (c) { return map[c] || c; }).join('');
+        const map = { '0':'₀','1':'₁','2':'₂','3':'₃','4':'₄','5':'₅','6':'₆','7':'₇','8':'₈','9':'₉' };
+        return String(num).split('').map(c => map[c] || c).join('');
       }
 
       function vertexName(index, mode) {
@@ -1208,7 +1261,8 @@
             labelColor: document.getElementById('vertexLabelColor').value,
             color: document.getElementById('vertexColor').value,
             symbolMode: document.getElementById('vertexSymbolMode').value,
-            labelOffset: Number(document.getElementById('pointLabelOffset').value)
+            labelOffset: Number(document.getElementById('pointLabelOffset').value),
+            showCoordLabels: document.getElementById('showCoordLabels').value === 'yes'
           },
           edge: {
             labelPosition: document.getElementById('edgeLabelPosition').value,
@@ -1232,7 +1286,6 @@
             showAxes: document.getElementById('showAxesMode').value === 'yes',
             axisColor: document.getElementById('axisColor').value,
             coordMode: document.getElementById('coordDisplayMode').value,
-            showCoordLabels: document.getElementById('showCoordLabels').value === 'yes',
             showDiagonals: document.getElementById('showDiagonals').value === 'yes'
           },
           unitCm: parsePositiveExpr(document.getElementById('unitCm').value, '1単位あたりのcm').value
@@ -1253,32 +1306,32 @@
 
       function showModeFields() {
         const shapeType = document.getElementById('shapeType').value;
-        document.querySelectorAll('.shape-group').forEach(function (group) {
+        document.querySelectorAll('.shape-group').forEach(group => {
           group.classList.toggle('active', group.dataset.shape === shapeType);
         });
 
         const mode = document.getElementById('mode').value;
-        document.querySelectorAll('.mode-group[data-mode]').forEach(function (group) {
+        document.querySelectorAll('.mode-group[data-mode]').forEach(group => {
           group.classList.toggle('active', shapeType === 'triangle' && group.dataset.mode === mode);
         });
 
         const functionType = document.getElementById('functionType').value;
-        document.querySelectorAll('.function-group').forEach(function (group) {
+        document.querySelectorAll('.function-group').forEach(group => {
           group.classList.toggle('active', shapeType === 'function' && group.dataset.function === functionType);
         });
 
         const quadType = document.getElementById('quadType').value;
-        document.querySelectorAll('.quad-subgroup').forEach(function (group) {
+        document.querySelectorAll('.quad-subgroup').forEach(group => {
           group.classList.toggle('active', shapeType === 'quadrilateral' && group.dataset.quadtype === quadType);
         });
 
         const quadGeneralMode = document.getElementById('quadGeneralMode').value;
-        document.querySelectorAll('.quad-general-mode-group').forEach(function (group) {
+        document.querySelectorAll('.quad-general-mode-group').forEach(group => {
           group.classList.toggle('active', shapeType === 'quadrilateral' && quadType === 'general' && group.dataset.quadgeneralMode === quadGeneralMode);
         });
 
         const quadParaMode = document.getElementById('quadParaMode').value;
-        document.querySelectorAll('.mode-group[data-quadpara-mode]').forEach(function (group) {
+        document.querySelectorAll('.mode-group[data-quadpara-mode]').forEach(group => {
           group.classList.toggle('active', shapeType === 'quadrilateral' && quadType === 'parallelogram' && group.dataset.quadparaMode === quadParaMode);
         });
       }
@@ -1287,28 +1340,21 @@
         const a = parsePositiveExpr(document.getElementById('sss-a').value, 'a');
         const b = parsePositiveExpr(document.getElementById('sss-b').value, 'b');
         const c = parsePositiveExpr(document.getElementById('sss-c').value, 'c');
-
         if (a.value + b.value <= c.value || b.value + c.value <= a.value || c.value + a.value <= b.value) {
           throw new Error('三角形不成立です。');
         }
-
         const A = { x: 0, y: 0 };
         const B = { x: c.value, y: 0 };
         const Cx = (b.value * b.value + c.value * c.value - a.value * a.value) / (2 * c.value);
         const Cy2 = b.value * b.value - Cx * Cx;
         const C = { x: Cx, y: Math.sqrt(Math.max(0, Cy2)) };
-
-        return {
-          points: { A, B, C },
-          expressions: { a: a.raw, b: b.raw, c: c.raw }
-        };
+        return { points: { A, B, C }, expressions: { a: a.raw, b: b.raw, c: c.raw } };
       }
 
       function computeTriangleFromSAS() {
         const b = parsePositiveExpr(document.getElementById('sas-b').value, 'b');
         const c = parsePositiveExpr(document.getElementById('sas-c').value, 'c');
         const Aang = parseAngleExpr(document.getElementById('sas-A').value, '∠A');
-
         return {
           points: {
             A: { x: 0, y: 0 },
@@ -1322,19 +1368,18 @@
         };
       }
 
-            function computeTriangleFromASA() {
+      function computeTriangleFromASA() {
         const c = parsePositiveExpr(document.getElementById('asa-c').value, 'c');
         const Aang = parseAngleExpr(document.getElementById('asa-A').value, '∠A');
         const Bang = parseAngleExpr(document.getElementById('asa-B').value, '∠B');
         const Cang = 180 - Aang.value - Bang.value;
         if (!(Cang > 0)) throw new Error('角の和が 180° 未満ではありません。');
-
         const x = (c.value * Math.tan(degToRad(Bang.value))) / (Math.tan(degToRad(Aang.value)) + Math.tan(degToRad(Bang.value)));
         return {
           points: {
             A: { x: 0, y: 0 },
             B: { x: c.value, y: 0 },
-            C: { x: x, y: x * Math.tan(degToRad(Aang.value)) }
+            C: { x, y: x * Math.tan(degToRad(Aang.value)) }
           },
           expressions: { c: c.raw }
         };
@@ -1346,15 +1391,13 @@
         const Bang = parseAngleExpr(document.getElementById('aas-B').value, '∠B');
         const Cang = 180 - Aang.value - Bang.value;
         if (!(Cang > 0)) throw new Error('角の和が 180° 未満ではありません。');
-
         const cVal = a.value * Math.sin(degToRad(Cang)) / Math.sin(degToRad(Aang.value));
         const x = (cVal * Math.tan(degToRad(Bang.value))) / (Math.tan(degToRad(Aang.value)) + Math.tan(degToRad(Bang.value)));
-
         return {
           points: {
             A: { x: 0, y: 0 },
             B: { x: cVal, y: 0 },
-            C: { x: x, y: x * Math.tan(degToRad(Aang.value)) }
+            C: { x, y: x * Math.tan(degToRad(Aang.value)) }
           },
           expressions: { a: a.raw }
         };
@@ -1364,30 +1407,27 @@
         const Aang = parseAngleExpr(document.getElementById('aaa-A').value, '∠A');
         const Bang = parseAngleExpr(document.getElementById('aaa-B').value, '∠B');
         const Cang = parseAngleExpr(document.getElementById('aaa-C').value, '∠C');
-        if (Math.abs(Aang.value + Bang.value + Cang.value - 180) > 1e-7) {
-          throw new Error('三角の和を 180° にしてください。');
-        }
-
+        if (Math.abs(Aang.value + Bang.value + Cang.value - 180) > 1e-7) throw new Error('三角の和を 180° にしてください。');
         const cVal = 1;
         const x = (cVal * Math.tan(degToRad(Bang.value))) / (Math.tan(degToRad(Aang.value)) + Math.tan(degToRad(Bang.value)));
         return {
           points: {
             A: { x: 0, y: 0 },
             B: { x: cVal, y: 0 },
-            C: { x: x, y: x * Math.tan(degToRad(Aang.value)) }
+            C: { x, y: x * Math.tan(degToRad(Aang.value)) }
           },
           expressions: { c: '1' }
         };
       }
 
-      function computeTriangleFromPoints() {
+            function computeTriangleFromPoints() {
         const points = {
           A: { x: parseExpr(document.getElementById('Ax').value).value, y: parseExpr(document.getElementById('Ay').value).value },
           B: { x: parseExpr(document.getElementById('Bx').value).value, y: parseExpr(document.getElementById('By').value).value },
           C: { x: parseExpr(document.getElementById('Cx').value).value, y: parseExpr(document.getElementById('Cy').value).value }
         };
         if (Math.abs(triangleArea2(points)) < 1e-9) throw new Error('3点が一直線上にあります。');
-        return { points: points, expressions: {} };
+        return { points, expressions: {} };
       }
 
       function computeTriangleFromBaseHeight() {
@@ -1411,7 +1451,6 @@
         const s = parsePositiveExpr(document.getElementById('SQside').value, '一辺').value;
         const ang = parseExpr(document.getElementById('SQang').value).value;
         const h = s / 2;
-
         return {
           points: {
             A: pointFromCenterOffsets(cx, cy, -h, -h, ang),
@@ -1429,9 +1468,7 @@
         const w = parsePositiveExpr(document.getElementById('REw').value, '横').value;
         const h = parsePositiveExpr(document.getElementById('REh').value, '縦').value;
         const ang = parseExpr(document.getElementById('REang').value).value;
-        const hw = w / 2;
-        const hh = h / 2;
-
+        const hw = w / 2, hh = h / 2;
         return {
           points: {
             A: pointFromCenterOffsets(cx, cy, -hw, -hh, ang),
@@ -1458,20 +1495,19 @@
             },
             expressions: {}
           };
-        } else {
-          const s1 = parsePositiveExpr(document.getElementById('PBside1').value, '辺1').value;
-          const s2 = parsePositiveExpr(document.getElementById('PBside2').value, '辺2').value;
-          const ang = parseAngleExpr(document.getElementById('PBangle').value, 'なす角').value;
-          return {
-            points: {
-              A: { x: 0, y: 0 },
-              B: { x: s1, y: 0 },
-              C: { x: s1 + s2 * Math.cos(degToRad(ang.value)), y: s2 * Math.sin(degToRad(ang.value)) },
-              D: { x: s2 * Math.cos(degToRad(ang.value)), y: s2 * Math.sin(degToRad(ang.value)) }
-            },
-            expressions: {}
-          };
         }
+        const s1 = parsePositiveExpr(document.getElementById('PBside1').value, '辺1').value;
+        const s2 = parsePositiveExpr(document.getElementById('PBside2').value, '辺2').value;
+        const ang = parseAngleExpr(document.getElementById('PBangle').value, 'なす角').value;
+        return {
+          points: {
+            A: { x: 0, y: 0 },
+            B: { x: s1, y: 0 },
+            C: { x: s1 + s2 * Math.cos(degToRad(ang.value)), y: s2 * Math.sin(degToRad(ang.value)) },
+            D: { x: s2 * Math.cos(degToRad(ang.value)), y: s2 * Math.sin(degToRad(ang.value)) }
+          },
+          expressions: {}
+        };
       }
 
       function computeQuadrilateralRhombus() {
@@ -1493,12 +1529,7 @@
         }
 
         return {
-          points: {
-            A: tr(A0),
-            B: tr(B0),
-            C: tr(C0),
-            D: tr(D0)
-          },
+          points: { A: tr(A0), B: tr(B0), C: tr(C0), D: tr(D0) },
           expressions: {}
         };
       }
@@ -1508,7 +1539,6 @@
         const bottom = parsePositiveExpr(document.getElementById('TRbottom').value, '下底').value;
         const height = parsePositiveExpr(document.getElementById('TRheight').value, '高さ').value;
         const offset = parseExpr(document.getElementById('TRoffset').value).value;
-
         return {
           points: {
             A: { x: 0, y: 0 },
@@ -1528,7 +1558,7 @@
           D: { x: parseExpr(document.getElementById('QDx').value).value, y: parseExpr(document.getElementById('QDy').value).value }
         };
         if (Math.abs(quadrilateralSignedArea(points)) < 1e-9) throw new Error('四角形の面積が 0 です。');
-        return { points: points, expressions: {}, conditionMessage: '4点座標から描画しました。' };
+        return { points, expressions: {}, conditionMessage: '4点座標から描画しました。' };
       }
 
       function circleIntersections(c1, r1, c2, r2) {
@@ -1550,7 +1580,6 @@
         const ry = dx * (h / d);
 
         if (nearlyEqual(h, 0, 1e-9)) return [{ x: xm, y: ym }];
-
         return [
           { x: xm + rx, y: ym + ry },
           { x: xm - rx, y: ym - ry }
@@ -1578,29 +1607,21 @@
           throw new Error('未対応の条件組です：現在は 4辺＋対角線AC または 4辺＋対角線BD を優先対応しています。');
         }
 
-        const count = [AB, BC, CD, DA, AC, BD].filter(function (v) { return v != null; }).length;
-        if (count < 5) {
-          throw new Error('条件不足です：現在は 4辺＋対角線1本 が必要です。');
-        }
+        const count = [AB, BC, CD, DA, AC, BD].filter(v => v != null).length;
+        if (count < 5) throw new Error('条件不足です：現在は 4辺＋対角線1本 が必要です。');
 
         if (AB && BC && CD && DA && AC) {
           const A = { x: 0, y: 0 };
           const C = { x: AC, y: 0 };
           const Bcands = circleIntersections(A, AB, C, BC);
           const Dcands = circleIntersections(A, DA, C, CD);
-
           if (Bcands.length === 0 || Dcands.length === 0) {
             throw new Error('条件が矛盾しています：4辺＋AC から点を構成できません。');
           }
-
-          const B = Bcands.sort(function (p, q) { return q.y - p.y; })[0];
-          const D = Dcands.sort(function (p, q) { return p.y - q.y; })[0];
-          const pts = { A: A, B: B, C: C, D: D };
-
-          if (Math.abs(quadrilateralSignedArea(pts)) < 1e-9) {
-            throw new Error('条件が矛盾しています：面積が 0 になります。');
-          }
-
+          const B = Bcands.sort((p, q) => q.y - p.y)[0];
+          const D = Dcands.sort((p, q) => p.y - q.y)[0];
+          const pts = { A, B, C, D };
+          if (Math.abs(quadrilateralSignedArea(pts)) < 1e-9) throw new Error('条件が矛盾しています：面積が 0 になります。');
           return {
             points: pts,
             expressions: {},
@@ -1613,19 +1634,13 @@
           const D = { x: BD, y: 0 };
           const Acands = circleIntersections(B, AB, D, DA);
           const Ccands = circleIntersections(B, BC, D, CD);
-
           if (Acands.length === 0 || Ccands.length === 0) {
             throw new Error('条件が矛盾しています：4辺＋BD から点を構成できません。');
           }
-
-          const A = Acands.sort(function (p, q) { return p.y - q.y; })[0];
-          const C = Ccands.sort(function (p, q) { return q.y - p.y; })[0];
-          const pts = { A: A, B: B, C: C, D: D };
-
-          if (Math.abs(quadrilateralSignedArea(pts)) < 1e-9) {
-            throw new Error('条件が矛盾しています：面積が 0 になります。');
-          }
-
+          const A = Acands.sort((p, q) => p.y - q.y)[0];
+          const C = Ccands.sort((p, q) => q.y - p.y)[0];
+          const pts = { A, B, C, D };
+          if (Math.abs(quadrilateralSignedArea(pts)) < 1e-9) throw new Error('条件が矛盾しています：面積が 0 になります。');
           return {
             points: pts,
             expressions: {},
@@ -1648,7 +1663,7 @@
           const t = degToRad(ang + (360 * i) / n);
           points.push({ x: cx + r * Math.cos(t), y: cy + r * Math.sin(t) });
         }
-        return { points: points, expressions: {} };
+        return { points, radius: r, n, expressions: {} };
       }
 
       function computeCircle() {
@@ -1687,11 +1702,38 @@
 
         const points = [];
         for (let i = 0; i < n * 2; i++) {
-          const r = i % 2 === 0 ? outer : inner;
+          const rr = i % 2 === 0 ? outer : inner;
           const t = degToRad(ang + (360 * i) / (n * 2));
-          points.push({ x: cx + r * Math.cos(t), y: cy + r * Math.sin(t) });
+          points.push({ x: cx + rr * Math.cos(t), y: cy + rr * Math.sin(t) });
         }
-        return { points: points, starPoints: n, expressions: {} };
+        return { points, starPoints: n, expressions: {} };
+      }
+
+      function trigFunctionValue(kind, t) {
+        const map = {
+          sin: Math.sin,
+          cos: Math.cos,
+          tan: Math.tan,
+          sec: FN.sec,
+          cosec: FN.cosec,
+          cotan: FN.cotan,
+          asin: Math.asin,
+          acos: Math.acos,
+          atan: Math.atan,
+          asec: FN.asec,
+          acosec: FN.acosec,
+          acotan: FN.acotan,
+          sinh: Math.sinh,
+          cosh: Math.cosh,
+          tanh: Math.tanh,
+          sech: FN.sech,
+          cosech: FN.cosech,
+          cotanh: FN.cotanh,
+          asinh: Math.asinh,
+          acosh: Math.acosh,
+          atanh: Math.atanh
+        };
+        return map[kind](t);
       }
 
       function computeFunctionModel() {
@@ -1708,26 +1750,26 @@
         if (functionType === 'linear') {
           const a = parseExpr(document.getElementById('fnLinearA').value).value;
           const b = parseExpr(document.getElementById('fnLinearB').value).value;
-          fn = function (x) { return a * x + b; };
+          fn = x => a * x + b;
           exprText = 'y = ' + formatDecimal(a) + 'x + ' + formatDecimal(b);
         } else if (functionType === 'quadratic') {
           const a = parseExpr(document.getElementById('fnQuadA').value).value;
           const b = parseExpr(document.getElementById('fnQuadB').value).value;
           const c = parseExpr(document.getElementById('fnQuadC').value).value;
-          fn = function (x) { return a * x * x + b * x + c; };
+          fn = x => a * x * x + b * x + c;
           exprText = 'y = ' + formatDecimal(a) + 'x² + ' + formatDecimal(b) + 'x + ' + formatDecimal(c);
         } else if (functionType === 'exponential') {
           const a = parseExpr(document.getElementById('fnExpA').value).value;
           const b = parsePositiveExpr(document.getElementById('fnExpB').value, '指数関数の底').value;
           const c = parseExpr(document.getElementById('fnExpC').value).value;
-          fn = function (x) { return a * Math.pow(b, x) + c; };
+          fn = x => a * Math.pow(b, x) + c;
           exprText = 'y = ' + formatDecimal(a) + '・' + formatDecimal(b) + '^x + ' + formatDecimal(c);
         } else if (functionType === 'logarithmic') {
           const a = parseExpr(document.getElementById('fnLogA').value).value;
           const b = parseExpr(document.getElementById('fnLogB').value).value;
           const base = parsePositiveExpr(document.getElementById('fnLogBase').value, '対数の底').value;
           if (nearlyEqual(base, 1)) throw new Error('対数の底は 1 以外にしてください。');
-          fn = function (x) {
+          fn = x => {
             if (x <= 0) return NaN;
             return a * (Math.log(x) / Math.log(base)) + b;
           };
@@ -1738,27 +1780,22 @@
           const b = parseExpr(document.getElementById('fnTrigB').value).value;
           const c = parseExpr(document.getElementById('fnTrigC').value).value;
           const d = parseExpr(document.getElementById('fnTrigD').value).value;
-          fn = function (x) {
-            const t = b * x + c;
-            if (kind === 'sin') return a * Math.sin(t) + d;
-            if (kind === 'cos') return a * Math.cos(t) + d;
-            return a * Math.tan(t) + d;
-          };
+          fn = x => a * trigFunctionValue(kind, b * x + c) + d;
           exprText = 'y = ' + formatDecimal(a) + '・' + kind + '(' + formatDecimal(b) + 'x + ' + formatDecimal(c) + ') + ' + formatDecimal(d);
         } else {
           const expr = document.getElementById('fnGeneralExpr').value;
           const compiled = compileFunctionExpression(expr, true);
-          fn = function (x) { return compiled(x); };
+          fn = x => compiled(x);
           exprText = 'y = ' + expr;
         }
 
         return {
           shapeType: 'function',
-          functionType: functionType,
-          fn: fn,
-          exprText: exprText,
-          domainMin: domainMin,
-          domainMax: domainMax,
+          functionType,
+          fn,
+          exprText,
+          domainMin,
+          domainMax,
           domainLeftType: leftType,
           domainRightType: rightType,
           classification: ['関数']
@@ -1772,7 +1809,7 @@
         const labels = [];
         if (equalLen(a, b) && equalLen(b, c)) labels.push('正三角形');
         else if (equalLen(a, b) || equalLen(b, c) || equalLen(c, a)) labels.push('二等辺三角形');
-        const arr = [a * a, b * b, c * c].sort(function (x, y) { return x - y; });
+        const arr = [a * a, b * b, c * c].sort((x, y) => x - y);
         if (Math.abs(arr[0] + arr[1] - arr[2]) < 1e-8) labels.push('直角三角形');
         else if (arr[0] + arr[1] > arr[2]) labels.push('鋭角三角形');
         else labels.push('鈍角三角形');
@@ -1827,15 +1864,9 @@
           const p = model.points;
           const a = sideLength(p.B, p.C), b = sideLength(p.C, p.A), c = sideLength(p.A, p.B);
           const xs = [p.A.x, p.B.x, p.C.x], ys = [p.A.y, p.B.y, p.C.y];
-          const widthUnits = Math.max.apply(null, xs) - Math.min.apply(null, xs);
-          const heightUnits = Math.max.apply(null, ys) - Math.min.apply(null, ys);
-          return {
-            sideUnits: { a: a, b: b, c: c },
-            widthUnits: widthUnits,
-            heightUnits: heightUnits,
-            widthCm: widthUnits * unitCm,
-            heightCm: heightUnits * unitCm
-          };
+          const widthUnits = Math.max(...xs) - Math.min(...xs);
+          const heightUnits = Math.max(...ys) - Math.min(...ys);
+          return { sideUnits: { a, b, c }, widthUnits, heightUnits, widthCm: widthUnits * unitCm, heightCm: heightUnits * unitCm };
         }
 
         if (model.shapeType === 'quadrilateral') {
@@ -1843,30 +1874,18 @@
           const ab = sideLength(p.A, p.B), bc = sideLength(p.B, p.C), cd = sideLength(p.C, p.D), da = sideLength(p.D, p.A);
           const ac = sideLength(p.A, p.C), bd = sideLength(p.B, p.D);
           const xs = [p.A.x, p.B.x, p.C.x, p.D.x], ys = [p.A.y, p.B.y, p.C.y, p.D.y];
-          const widthUnits = Math.max.apply(null, xs) - Math.min.apply(null, xs);
-          const heightUnits = Math.max.apply(null, ys) - Math.min.apply(null, ys);
-          return {
-            sideUnits: { ab: ab, bc: bc, cd: cd, da: da, ac: ac, bd: bd },
-            widthUnits: widthUnits,
-            heightUnits: heightUnits,
-            widthCm: widthUnits * unitCm,
-            heightCm: heightUnits * unitCm
-          };
+          const widthUnits = Math.max(...xs) - Math.min(...xs);
+          const heightUnits = Math.max(...ys) - Math.min(...ys);
+          return { sideUnits: { ab, bc, cd, da, ac, bd }, widthUnits, heightUnits, widthCm: widthUnits * unitCm, heightCm: heightUnits * unitCm };
         }
 
         if (model.shapeType === 'regularPolygon' || model.shapeType === 'star') {
-          const xs = model.points.map(function (p) { return p.x; });
-          const ys = model.points.map(function (p) { return p.y; });
+          const xs = model.points.map(p => p.x);
+          const ys = model.points.map(p => p.y);
           const s = sideLength(model.points[0], model.points[1]);
-          const widthUnits = Math.max.apply(null, xs) - Math.min.apply(null, xs);
-          const heightUnits = Math.max.apply(null, ys) - Math.min.apply(null, ys);
-          return {
-            sideUnits: { s: s },
-            widthUnits: widthUnits,
-            heightUnits: heightUnits,
-            widthCm: widthUnits * unitCm,
-            heightCm: heightUnits * unitCm
-          };
+          const widthUnits = Math.max(...xs) - Math.min(...xs);
+          const heightUnits = Math.max(...ys) - Math.min(...ys);
+          return { sideUnits: { s }, widthUnits, heightUnits, widthCm: widthUnits * unitCm, heightCm: heightUnits * unitCm };
         }
 
         if (model.shapeType === 'circle') {
@@ -1941,10 +1960,35 @@
         return model;
       }
 
+      function formatUnitSuffix(unitMode) {
+        if (unitMode === 'cm') return ' cm';
+        if (unitMode === 'm') return ' m';
+        if (unitMode === 'km') return ' km';
+        return '';
+      }
+
       function formatSideValue(model, key, value) {
         const textMode = model.display.edge.textMode;
         const unitMode = model.display.edge.unitMode;
         const expr = model.expressions ? model.expressions[key] : null;
+
+        if (model.shapeType === 'regularPolygon' && model.radius) {
+          const n = model.n;
+          const R = formatDecimal(model.radius);
+          const angleMode = model.display.angle.displayMode;
+          const trigText = angleMode === 'degree'
+            ? '2' + R + 'sin(' + formatDecimal(180 / n) + '°)'
+            : '2' + R + 'sin(π/' + n + ')';
+
+          if (unitMode === 'cm') return formatDecimal(value * model.display.unitCm) + ' cm';
+          if (unitMode === 'm') return formatDecimal(value * model.display.unitCm / 100) + ' m';
+          if (unitMode === 'km') return formatDecimal(value * model.display.unitCm / 100000) + ' km';
+          return trigText;
+        }
+
+        if (unitMode === 'cm') return formatDecimal(value * model.display.unitCm) + ' cm';
+        if (unitMode === 'm') return formatDecimal(value * model.display.unitCm / 100) + ' m';
+        if (unitMode === 'km') return formatDecimal(value * model.display.unitCm / 100000) + ' km';
 
         let core;
         if (textMode === 'input' && expr) core = expr;
@@ -1952,31 +1996,44 @@
         else if (textMode === 'trig') core = trigLikeFormat(value);
         else core = formatDecimal(value);
 
-        if (unitMode === 'cm') return formatDecimal(value * model.display.unitCm) + ' cm';
-        if (unitMode === 'm') return formatDecimal(value * model.display.unitCm / 100) + ' m';
-        if (unitMode === 'km') return formatDecimal(value * model.display.unitCm / 100000) + ' km';
-        return core;
+        return core + formatUnitSuffix(unitMode);
+      }
+
+      function formatAreaNumeric(model, rawArea) {
+        if (model.shapeType === 'regularPolygon' && model.radius) {
+          const n = model.n;
+          const R = formatDecimal(model.radius);
+          const angleMode = model.display.angle.displayMode;
+          if (angleMode === 'degree') {
+            return n + '×' + R + '²×sin(' + formatDecimal(360 / n) + '°)/2';
+          }
+          return n + '×' + R + '²×sin(2π/' + n + ')/2';
+        }
+        return tryRootFormat(rawArea) || formatDecimal(rawArea);
+      }
+
+      function formatAreaWithUnit(model) {
+        let val = model.areaValue;
+        if (val == null) return '';
+        let suffix = '';
+        if (model.display.area.unitMode === 'cm2') {
+          val *= model.display.unitCm * model.display.unitCm;
+          suffix = ' cm²';
+        } else if (model.display.area.unitMode === 'm2') {
+          val *= model.display.unitCm * model.display.unitCm / 10000;
+          suffix = ' m²';
+        } else if (model.display.area.unitMode === 'km2') {
+          val *= model.display.unitCm * model.display.unitCm / 10000000000;
+          suffix = ' km²';
+        }
+        return formatAreaNumeric(model, val) + suffix;
       }
 
       function getAreaLabelText(model) {
         const mode = model.display.area.labelMode;
         if (mode === 'none') return '';
         if (mode === 'symbol') return 'S';
-        if (model.areaValue == null) return '';
-
-        let val = model.areaValue;
-        let suffix = '';
-        if (model.display.area.unitMode === 'cm2') {
-          val = model.areaValue * model.display.unitCm * model.display.unitCm;
-          suffix = ' cm2';
-        } else if (model.display.area.unitMode === 'm2') {
-          val = model.areaValue * model.display.unitCm * model.display.unitCm / 10000;
-          suffix = ' m2';
-        } else if (model.display.area.unitMode === 'km2') {
-          val = model.areaValue * model.display.unitCm * model.display.unitCm / 10000000000;
-          suffix = ' km2';
-        }
-        return 'S = ' + formatDecimal(val) + suffix;
+        return 'S = ' + formatAreaWithUnit(model);
       }
 
       function areaAnchorFromModel(model) {
@@ -1997,18 +2054,18 @@
           fixed: true,
           anchorX: 'middle',
           anchorY: 'middle',
-          cssStyle: 'background:rgba(255,255,255,0.9);padding:2px 6px;border-radius:8px;'
+          cssStyle: 'padding:0;border-radius:0;background:transparent;'
         });
       }
 
       function makeBoundingBoxFromArray(arr, extra) {
         const ex = typeof extra === 'number' ? extra : 0.9;
-        const xs = arr.map(function (p) { return p.x; });
-        const ys = arr.map(function (p) { return p.y; });
-        const minX = Math.min.apply(null, xs);
-        const maxX = Math.max.apply(null, xs);
-        const minY = Math.min.apply(null, ys);
-        const maxY = Math.max.apply(null, ys);
+        const xs = arr.map(p => p.x);
+        const ys = arr.map(p => p.y);
+        const minX = Math.min(...xs);
+        const maxX = Math.max(...xs);
+        const minY = Math.min(...ys);
+        const maxY = Math.max(...ys);
         const width = Math.max(maxX - minX, 1);
         const height = Math.max(maxY - minY, 1);
         const centerX = (minX + maxX) / 2;
@@ -2031,8 +2088,8 @@
         }
         let ymin = -5, ymax = 5;
         if (ys.length) {
-          ymin = Math.min.apply(null, ys);
-          ymax = Math.max.apply(null, ys);
+          ymin = Math.min(...ys);
+          ymax = Math.max(...ys);
           if (nearlyEqual(ymin, ymax)) {
             ymin -= 2; ymax += 2;
           } else {
@@ -2168,8 +2225,8 @@
         const color = model.display.edge.color;
 
         targetBoard.create('curve', [
-          function (t) { return quadraticPoint(P, control, Q, t).x; },
-          function (t) { return quadraticPoint(P, control, Q, t).y; },
+          t => quadraticPoint(P, control, Q, t).x,
+          t => quadraticPoint(P, control, Q, t).y,
           0,
           0.5 - gapHalf
         ], {
@@ -2180,8 +2237,8 @@
         });
 
         targetBoard.create('curve', [
-          function (t) { return quadraticPoint(P, control, Q, t).x; },
-          function (t) { return quadraticPoint(P, control, Q, t).y; },
+          t => quadraticPoint(P, control, Q, t).x,
+          t => quadraticPoint(P, control, Q, t).y,
           0.5 + gapHalf,
           1
         ], {
@@ -2197,7 +2254,7 @@
           fixed: true,
           anchorX: 'middle',
           anchorY: 'middle',
-          cssStyle: 'background:white;padding:0 4px;'
+          cssStyle: 'background:transparent;padding:0;'
         });
       }
 
@@ -2225,7 +2282,7 @@
           fixed: true,
           anchorX: 'middle',
           anchorY: 'middle',
-          cssStyle: 'background:rgba(255,255,255,0.85);padding:1px 3px;border-radius:6px;'
+          cssStyle: 'background:transparent;padding:0;'
         });
       }
 
@@ -2288,9 +2345,9 @@
         addHeightGuideForBaseHeight(targetBoard, model);
 
         const ctr = centroidTriangle(p);
-        addPointLabelText(targetBoard, p.A, ctr, getPointDisplayText(vertexName(0, model.display.vertex.symbolMode), p.A, model.display.coordinate.showCoordLabels), model);
-        addPointLabelText(targetBoard, p.B, ctr, getPointDisplayText(vertexName(1, model.display.vertex.symbolMode), p.B, model.display.coordinate.showCoordLabels), model);
-        addPointLabelText(targetBoard, p.C, ctr, getPointDisplayText(vertexName(2, model.display.vertex.symbolMode), p.C, model.display.coordinate.showCoordLabels), model);
+        addPointLabelText(targetBoard, p.A, ctr, getPointDisplayText(vertexName(0, model.display.vertex.symbolMode), p.A, model.display.vertex.showCoordLabels), model);
+        addPointLabelText(targetBoard, p.B, ctr, getPointDisplayText(vertexName(1, model.display.vertex.symbolMode), p.B, model.display.vertex.showCoordLabels), model);
+        addPointLabelText(targetBoard, p.C, ctr, getPointDisplayText(vertexName(2, model.display.vertex.symbolMode), p.C, model.display.vertex.showCoordLabels), model);
 
         addTriangleAngles(targetBoard, model);
 
@@ -2302,7 +2359,7 @@
 
       function renderQuadrilateral(targetBoard, model) {
         const p = model.points;
-        const pts = ['A', 'B', 'C', 'D'].map(function (k) { return createPoint(targetBoard, p[k], model); });
+        const pts = ['A', 'B', 'C', 'D'].map(k => createPoint(targetBoard, p[k], model));
 
         targetBoard.create('polygon', pts, {
           borders: { strokeWidth: 2, strokeColor: model.display.edge.color },
@@ -2320,22 +2377,20 @@
         }
 
         const ctr = centroidArray([p.A, p.B, p.C, p.D]);
-        ['A', 'B', 'C', 'D'].forEach(function (k, i) {
-          addPointLabelText(targetBoard, p[k], ctr, getPointDisplayText(vertexName(i, model.display.vertex.symbolMode), p[k], model.display.coordinate.showCoordLabels), model);
+        ['A', 'B', 'C', 'D'].forEach((k, i) => {
+          addPointLabelText(targetBoard, p[k], ctr, getPointDisplayText(vertexName(i, model.display.vertex.symbolMode), p[k], model.display.vertex.showCoordLabels), model);
         });
 
         addQuadrilateralAngles(targetBoard, model);
-
         addSideArcAndLabel(targetBoard, p.A, p.B, formatSideValue(model, 'ab', model.metrics.sideUnits.ab), ctr, model);
         addSideArcAndLabel(targetBoard, p.B, p.C, formatSideValue(model, 'bc', model.metrics.sideUnits.bc), ctr, model);
         addSideArcAndLabel(targetBoard, p.C, p.D, formatSideValue(model, 'cd', model.metrics.sideUnits.cd), ctr, model);
         addSideArcAndLabel(targetBoard, p.D, p.A, formatSideValue(model, 'da', model.metrics.sideUnits.da), ctr, model);
-
         addAreaLabel(targetBoard, model);
       }
 
       function renderRegularPolygon(targetBoard, model) {
-        const pts = model.points.map(function (p) { return createPoint(targetBoard, p, model); });
+        const pts = model.points.map(p => createPoint(targetBoard, p, model));
         targetBoard.create('polygon', pts, {
           borders: { strokeWidth: 2, strokeColor: model.display.edge.color },
           fillColor: model.display.area.fillColor,
@@ -2343,8 +2398,8 @@
         });
 
         const ctr = centroidArray(model.points);
-        model.points.forEach(function (p, i) {
-          addPointLabelText(targetBoard, p, ctr, getPointDisplayText(vertexName(i, model.display.vertex.symbolMode), p, model.display.coordinate.showCoordLabels), model);
+        model.points.forEach((p, i) => {
+          addPointLabelText(targetBoard, p, ctr, getPointDisplayText(vertexName(i, model.display.vertex.symbolMode), p, model.display.vertex.showCoordLabels), model);
         });
 
         for (let i = 0; i < model.points.length; i++) {
@@ -2356,7 +2411,7 @@
       }
 
       function renderStar(targetBoard, model) {
-        const pts = model.points.map(function (p) { return createPoint(targetBoard, p, model); });
+        const pts = model.points.map(p => createPoint(targetBoard, p, model));
         targetBoard.create('polygon', pts, {
           borders: { strokeWidth: 2, strokeColor: model.display.edge.color },
           fillColor: model.display.area.fillColor,
@@ -2364,8 +2419,8 @@
         });
 
         const ctr = centroidArray(model.points);
-        model.points.forEach(function (p, i) {
-          addPointLabelText(targetBoard, p, ctr, getPointDisplayText(vertexName(i, model.display.vertex.symbolMode), p, model.display.coordinate.showCoordLabels), model);
+        model.points.forEach((p, i) => {
+          addPointLabelText(targetBoard, p, ctr, getPointDisplayText(vertexName(i, model.display.vertex.symbolMode), p, model.display.vertex.showCoordLabels), model);
         });
 
         for (let i = 0; i < model.points.length; i++) {
@@ -2383,7 +2438,7 @@
         });
 
         targetBoard.create('circle', [O, P], { strokeWidth: 2, strokeColor: model.display.edge.color });
-        addPointLabelText(targetBoard, model.center, model.center, getPointDisplayText('O', model.center, model.display.coordinate.showCoordLabels), model);
+        addPointLabelText(targetBoard, model.center, model.center, getPointDisplayText('O', model.center, model.display.vertex.showCoordLabels), model);
         addAreaLabel(targetBoard, model);
       }
 
@@ -2391,8 +2446,8 @@
         const center = model.center;
         const phi = degToRad(model.angle);
         targetBoard.create('curve', [
-          function (t) { return center.x + model.a * Math.cos(t) * Math.cos(phi) - model.b * Math.sin(t) * Math.sin(phi); },
-          function (t) { return center.y + model.a * Math.cos(t) * Math.sin(phi) + model.b * Math.sin(t) * Math.cos(phi); },
+          t => center.x + model.a * Math.cos(t) * Math.cos(phi) - model.b * Math.sin(t) * Math.sin(phi),
+          t => center.y + model.a * Math.cos(t) * Math.sin(phi) + model.b * Math.sin(t) * Math.cos(phi),
           0, 2 * Math.PI
         ], {
           strokeWidth: 2,
@@ -2401,14 +2456,14 @@
         });
 
         createPoint(targetBoard, center, model);
-        addPointLabelText(targetBoard, center, center, getPointDisplayText('O', center, model.display.coordinate.showCoordLabels), model);
+        addPointLabelText(targetBoard, center, center, getPointDisplayText('O', center, model.display.vertex.showCoordLabels), model);
         addAreaLabel(targetBoard, model);
       }
 
       function drawFunctionSegment(targetBoard, fn, x1, x2, dashed, color) {
         if (!(x2 > x1)) return;
         targetBoard.create('functiongraph', [
-          function (x) {
+          x => {
             try {
               const y = fn(x);
               if (!Number.isFinite(y) || Math.abs(y) > 1e6) return NaN;
@@ -2500,7 +2555,7 @@
         const cloned = JSON.parse(JSON.stringify(model));
 
         function transformPoints(objPoints, ctr) {
-          Object.keys(objPoints).forEach(function (k) {
+          Object.keys(objPoints).forEach(k => {
             objPoints[k].x = (objPoints[k].x - ctr.x) * scale;
             objPoints[k].y = (objPoints[k].y - ctr.y) * scale;
           });
@@ -2518,10 +2573,11 @@
           transformPoints(cloned.points, ctr);
         } else if (cloned.shapeType === 'regularPolygon' || cloned.shapeType === 'star') {
           const ctr = centroidArray(cloned.points);
-          cloned.points.forEach(function (p) {
+          cloned.points.forEach(p => {
             p.x = (p.x - ctr.x) * scale;
             p.y = (p.y - ctr.y) * scale;
           });
+          if (cloned.radius) cloned.radius *= scale;
         } else if (cloned.shapeType === 'circle') {
           cloned.center = { x: 0, y: 0 };
           cloned.radius *= scale;
@@ -2553,7 +2609,7 @@
           if (ready) { callback(); return; }
         } catch (e) {}
         if (remain <= 0) return;
-        setTimeout(function () { waitForPreviewWindowReady(win, callback, remain - 1); }, 100);
+        setTimeout(() => waitForPreviewWindowReady(win, callback, remain - 1), 100);
       }
 
       function openPrintPreviewWindow(model) {
@@ -2672,7 +2728,7 @@
         const jsPDF = window.jspdf.jsPDF;
         const orientation = latestModel.print.orientation === 'portrait' ? 'p' : 'l';
         const pdf = new jsPDF({
-          orientation: orientation,
+          orientation,
           unit: 'mm',
           format: latestModel.print.paperSize.toLowerCase()
         });
@@ -2695,7 +2751,7 @@
           parts.push('定義域: ' + (model.domainLeftType === 'closed' ? '[' : '(') + formatDecimal(model.domainMin) + ', ' + formatDecimal(model.domainMax) + (model.domainRightType === 'closed' ? ']' : ')'));
         } else {
           parts.push('横幅 ' + formatDecimal(model.metrics.widthCm) + 'cm / 縦幅 ' + formatDecimal(model.metrics.heightCm) + 'cm');
-          if (model.areaValue != null) parts.push('面積 ' + formatDecimal(model.areaValue));
+          if (model.areaValue != null) parts.push('面積 ' + formatAreaWithUnit(model));
         }
         if (model.conditionMessage) parts.push(model.conditionMessage);
         if (model.display.coordinate.coordMode === 'oblique') parts.push('斜交座標は準備中のため、現在は直交座標として描画しています。');
@@ -2737,7 +2793,7 @@
       }
 
       function bindEvents() {
-        document.querySelectorAll('input, select, textarea').forEach(function (el) {
+        document.querySelectorAll('input, select, textarea').forEach(el => {
           el.addEventListener('input', renderAll);
           el.addEventListener('change', renderAll);
         });
@@ -2764,9 +2820,9 @@
           catch (e) { setStatus(e && e.message ? e.message : '印刷プレビューに失敗しました。', 'error'); }
         });
 
-        document.getElementById('zoomInBtn').addEventListener('click', function () { zoomBoard('in'); });
-        document.getElementById('zoomOutBtn').addEventListener('click', function () { zoomBoard('out'); });
-        document.getElementById('resetViewBtn').addEventListener('click', function () { resetBoardView(); });
+        document.getElementById('zoomInBtn').addEventListener('click', () => zoomBoard('in'));
+        document.getElementById('zoomOutBtn').addEventListener('click', () => zoomBoard('out'));
+        document.getElementById('resetViewBtn').addEventListener('click', resetBoardView);
       }
 
       bindEvents();
