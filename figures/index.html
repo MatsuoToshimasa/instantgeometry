@@ -9,6 +9,9 @@
   <script src="https://cdn.jsdelivr.net/npm/jsxgraph/distrib/jsxgraphcore.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/assets/supabase-client.js"></script>
+  <script src="/assets/usage.js"></script>
 
   <style>
     :root {
@@ -997,15 +1000,16 @@
       <div class="section">
         <h2>保存</h2>
         <div class="buttons">
-          <select id="saveFormat">
-            <option value="png">PNG</option>
-            <option value="jpeg">JPEG</option>
-            <option value="pdf">PDF</option>
-          </select>
-          <button class="primary" id="saveBtn">保存</button>
-          <button id="printBtn">印刷</button>
-          <button id="btnRender">再描画</button>
-        </div>
+  <select id="saveFormat">
+    <option value="png">PNG</option>
+    <option value="jpeg">JPEG</option>
+    <option value="pdf">PDF</option>
+  </select>
+  <button class="primary" id="saveBtn">保存</button>
+  <button id="printBtn">印刷</button>
+  <button id="btnRender">再描画</button>
+  <button id="upgradeBtn">Proにする</button>
+</div>
       </div>
     </div>
 
@@ -1072,6 +1076,21 @@
         el.classList.remove('ok', 'error');
         el.classList.add(kind === 'error' ? 'error' : 'ok');
       }
+
+      async function refreshDownloadQuotaStatus() {
+  try {
+    if (await isProUser()) {
+      setStatus('Proプラン: 無制限で保存できます。', 'ok');
+      return;
+    }
+
+    const count = await getTodayDownloadCount();
+    const remain = Math.max(0, 3 - count);
+    setStatus('今日の無料残り回数: あと ' + remain + ' 回', 'ok');
+  } catch (err) {
+    setStatus('ログインしてください。', 'error');
+  }
+}
 
       function setShapeInfo(titleLines, detailHtml) {
         const el = document.getElementById('shapeInfo');
@@ -2713,7 +2732,71 @@
         board.update();
       }
 
+      async function handleSave(format) {
+  const box = document.getElementById('box');
+  if (!box) throw new Error('保存対象が見つかりません。');
+
+  const canvas = await html2canvas(box, {
+    backgroundColor: '#ffffff',
+    scale: 2
+  });
+
+  if (format === 'png') {
+    const url = canvas.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'instant-geometry.png';
+    a.click();
+    return;
+  }
+
+  if (format === 'jpeg') {
+    const url = canvas.toDataURL('image/jpeg', 0.95);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'instant-geometry.jpg';
+    a.click();
+    return;
+  }
+
+  if (format === 'pdf') {
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF('landscape', 'mm', 'a4');
+
+    const imgData = canvas.toDataURL('image/png');
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+
+    const imgWidth = pageWidth;
+    const imgHeight = canvas.height * imgWidth / canvas.width;
+
+    let drawWidth = imgWidth;
+    let drawHeight = imgHeight;
+
+    if (drawHeight > pageHeight) {
+      drawHeight = pageHeight;
+      drawWidth = canvas.width * drawHeight / canvas.height;
+    }
+
+    const x = (pageWidth - drawWidth) / 2;
+    const y = (pageHeight - drawHeight) / 2;
+
+    pdf.addImage(imgData, 'PNG', x, y, drawWidth, drawHeight);
+    pdf.save('instant-geometry.pdf');
+    return;
+  }
+
+  throw new Error('未対応の保存形式です: ' + format);
+}
+
       function bindEvents() {
+      document.getElementById('upgradeBtn').addEventListener('click', function () {
+  location.href = '/upgrade/';
+});
+
+document.getElementById('upgradeBtnHeader').addEventListener('click', function () {
+  location.href = '/upgrade/';
+});
         document.querySelectorAll('input, select, textarea').forEach(el => {
           el.addEventListener('input', renderAll);
           el.addEventListener('change', renderAll);
@@ -2722,20 +2805,36 @@
         document.getElementById('btnRender').addEventListener('click', renderAll);
 
         document.getElementById('saveBtn').addEventListener('click', async function () {
-          try {
-            await handleSave(document.getElementById('saveFormat').value);
-          } catch (e) {
-            setStatus('保存に失敗しました。', 'error');
-          }
-        });
+  try {
+    const ok = await canDownloadToday();
+    if (!ok) {
+      setStatus('無料版は1日3回までです。Proで無制限にできます。', 'error');
+      return;
+    }
 
-        document.getElementById('saveBtnHeader').addEventListener('click', async function () {
-          try {
-            await handleSave(document.getElementById('saveFormatHeader').value);
-          } catch (e) {
-            setStatus('保存に失敗しました。', 'error');
-          }
-        });
+    await handleSave(document.getElementById('saveFormat').value);
+    await incrementTodayDownloadCount();
+    await refreshDownloadQuotaStatus();
+  } catch (e) {
+    setStatus((e && e.message) ? e.message : '保存に失敗しました。', 'error');
+  }
+});
+
+document.getElementById('saveBtnHeader').addEventListener('click', async function () {
+  try {
+    const ok = await canDownloadToday();
+    if (!ok) {
+      setStatus('無料版は1日3回までです。Proで無制限にできます。', 'error');
+      return;
+    }
+
+    await handleSave(document.getElementById('saveFormatHeader').value);
+    await incrementTodayDownloadCount();
+    await refreshDownloadQuotaStatus();
+  } catch (e) {
+    setStatus((e && e.message) ? e.message : '保存に失敗しました。', 'error');
+  }
+});
 
         document.getElementById('printBtn').addEventListener('click', function () {
           window.print();
@@ -2747,7 +2846,22 @@
       }
 
       bindEvents();
+
+ensureLoggedIn().then((ok) => {
+  if (!ok) return;
+  renderAll();
+  refreshDownloadQuotaStatus();
+});
       renderAll();
+      async function ensureLoggedIn() {
+  const { data } = await supabaseClient.auth.getSession();
+  if (!data.session) {
+    location.href = '/login/';
+    return false;
+  }
+  return true;
+}
+      refreshDownloadQuotaStatus();
     })();
   </script>
 </body>

@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>新規登録</title>
+</head>
+<body>
+  <h1>新規登録</h1>
+
+  <input id="email" type="email" placeholder="メールアドレス">
+  <input id="password" type="password" placeholder="パスワード">
+  <button id="signupBtn">登録</button>
+
+  <p id="msg"></p>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/assets/supabase-client.js"></script>
+  <script>
+    document.getElementById('signupBtn').onclick = async () => {
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+
+      const { error } = await supabaseClient.auth.signUp({
+        email,
+        password
+      });
+
+      if (error) {
+        document.getElementById('msg').textContent = error.message;
+      } else {
+        document.getElementById('msg').textContent = '登録成功';
+      }
+    };
+  </script>
+</body>
+</html>

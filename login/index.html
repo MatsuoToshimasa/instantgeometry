@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>ログイン</title>
+</head>
+<body>
+  <h1>ログイン</h1>
+
+  <input id="email" type="email" placeholder="メールアドレス">
+  <input id="password" type="password" placeholder="パスワード">
+  <button id="loginBtn">ログイン</button>
+
+  <p id="msg"></p>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/assets/supabase-client.js"></script>
+
+  <script>
+    document.getElementById('loginBtn').onclick = async () => {
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const msg = document.getElementById('msg');
+
+      try {
+        if (typeof supabaseClient === 'undefined') {
+          msg.textContent = 'supabaseClient が未定義です';
+          return;
+        }
+
+        const { error } = await supabaseClient.auth.signInWithPassword({
+          email,
+          password
+        });
+
+        if (error) {
+          msg.textContent = 'ログイン失敗: ' + error.message;
+          return;
+        }
+
+        location.href = '/account/';
+      } catch (e) {
+        msg.textContent = '例外: ' + e.message;
+      }
+    };
+  </script>
+</body>
+</html>

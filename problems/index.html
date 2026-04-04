@@ -54,6 +54,9 @@
   <script>
     window.MathJax = {tex:{inlineMath:[['\\(','\\)'],['$','$']],displayMath:[['\\[','\\]']]},options:{skipHtmlTags:['script','noscript','style','textarea','pre']}};
   </script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/assets/supabase-client.js"></script>
+<script src="/assets/usage.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </head>
 <body>
@@ -87,9 +90,11 @@
         </div>
         <label class="option-box"><input type="checkbox" id="showAnswersToggle" /> 解答を表示</label>
       </div>
-      <div class="buttons">
-        <button type="button" id="generateBtn">問題生成</button>
-        <button type="button" class="secondary" id="pdfBtn">PDF出力</button>
+        <div class="buttons">
+  <button type="button" id="generateBtn">問題生成</button>
+  <button type="button" class="secondary" id="pdfBtn">PDF出力</button>
+  <button type="button" class="secondary" id="upgradeBtn">Proにする</button>
+</div>
       </div>
       <div class="warn" id="message"></div>
     </div>
@@ -369,6 +374,20 @@ function renderProblems(){
 }
 function setMessage(msg,ok=false){ messageEl.textContent = msg; messageEl.className = 'warn' + (ok?' ok':''); }
 
+async function refreshQuotaMessage(){
+  try{
+    if (await isProUser()) {
+      setMessage('Proプラン: 無制限でPDF出力できます。', true);
+      return;
+    }
+
+    const count = await getTodayDownloadCount();
+    const remain = Math.max(0, 3 - count);
+    setMessage(`今日の無料残り回数: あと ${remain} 回`, true);
+  }catch(e){
+    setMessage('ログインしてください。');
+  }
+}
 
 function getSelectedIds(){ return [...document.querySelectorAll('#problemPicker input[type="checkbox"]:checked')].map(el=>el.value); }
 
@@ -924,7 +943,24 @@ async function printPdf(){
 // events
 
 document.getElementById('generateBtn').addEventListener('click', generateProblems);
-document.getElementById('pdfBtn').addEventListener('click', printPdf);
+document.getElementById('upgradeBtn').addEventListener('click', () => {
+  location.href = '/upgrade/';
+});
+document.getElementById('pdfBtn').addEventListener('click', async () => {
+  try{
+    const ok = await canDownloadToday();
+    if(!ok){
+      setMessage('無料版は1日3回までです。Proで無制限にできます。');
+      return;
+    }
+
+    await printPdf();
+    await incrementTodayDownloadCount();
+    await refreshQuotaMessage();
+  }catch(e){
+    setMessage(e && e.message ? e.message : 'PDF出力に失敗しました。');
+  }
+});
 document.getElementById('showAnswersToggle').addEventListener('change', e=>worksheet.classList.toggle('show-answers', e.target.checked));
 document.getElementById('fontSizeRange').addEventListener('input', e=>syncFont(e.target.value));
 document.getElementById('fontSizeNumber').addEventListener('input', e=>syncFont(e.target.value));
@@ -932,6 +968,19 @@ document.getElementById('selectAllBtn').addEventListener('click', ()=>document.q
 document.getElementById('clearAllBtn').addEventListener('click', ()=>document.querySelectorAll('#problemPicker input[type="checkbox"]').forEach(cb=>cb.checked=false));
 
 syncFont(15);
+async function ensureLoggedIn(){
+  const { data } = await supabaseClient.auth.getSession();
+  if(!data.session){
+    location.href = '/login/';
+    return false;
+  }
+  return true;
+}
+
+ensureLoggedIn().then((ok) => {
+  if(!ok) return;
+  refreshQuotaMessage();
+});
 </script>
 </body>
 </html>

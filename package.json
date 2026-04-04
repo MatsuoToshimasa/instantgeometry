@@ -1,5 +1,26 @@
 {
   "dependencies": {
-    "@vercel/analytics": "^2.0.1"
-  }
+    "@supabase/supabase-js": "^2.101.1",
+    "@vercel/analytics": "^2.0.1",
+    "stripe": "^22.0.0"
+  },
+  "name": "instantgeometry",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MatsuoToshimasa/instantgeometry.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/MatsuoToshimasa/instantgeometry/issues"
+  },
+  "homepage": "https://github.com/MatsuoToshimasa/instantgeometry#readme"
 }
