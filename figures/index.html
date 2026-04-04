@@ -1028,6 +1028,7 @@
               <option value="pdf">PDF</option>
             </select>
             <button id="saveBtnHeader">保存</button>
+            <button id="upgradeBtnHeader">Proにする</button>
           </div>
         </div>
       </div>
@@ -2790,6 +2791,21 @@
 }
 
       function bindEvents() {
+
+const upgradeBtn = document.getElementById('upgradeBtn');
+if (upgradeBtn) {
+  upgradeBtn.addEventListener('click', function () {
+    location.href = '/upgrade/';
+  });
+}
+
+const upgradeBtnHeader = document.getElementById('upgradeBtnHeader');
+if (upgradeBtnHeader) {
+  upgradeBtnHeader.addEventListener('click', function () {
+    location.href = '/upgrade/';
+  });
+}
+
       document.getElementById('upgradeBtn').addEventListener('click', function () {
   location.href = '/upgrade/';
 });
