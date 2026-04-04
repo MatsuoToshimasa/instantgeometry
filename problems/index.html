@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>三角形問題ジェネレーター ver 0.5.0</title>
+  <style>
+    :root{
+      --bg:#f6f7fb; --panel:#fff; --line:#d9dce7; --text:#1f2430; --muted:#687086; --accent:#2a5bd7;
+      --problem-font-size:15px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;background:var(--bg);color:var(--text);line-height:1.6}
+    .wrap{max-width:1400px;margin:0 auto;padding:24px}
+    .grid{display:grid;grid-template-columns:460px 1fr;gap:20px;align-items:start}
+    .panel,.worksheet{background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,.04)}
+    .panel{padding:18px}.worksheet{padding:24px}
+    h1,h2,h3{margin:0 0 10px}.sub,.small{color:var(--muted)} .small{font-size:13px}
+    .section+.section{margin-top:18px}
+    .picker-grid{display:grid;gap:10px;max-height:620px;overflow:auto;padding-right:4px}
+    details.group{border:1px solid var(--line);border-radius:12px;background:#fafbfe;overflow:hidden}
+    details.group summary{cursor:pointer;list-style:none;padding:12px 14px;font-weight:700;background:#fff;border-bottom:1px solid #eef1f7}
+    details.group summary::-webkit-details-marker{display:none}
+    .group-body{display:grid;gap:8px;padding:10px}
+    label.item{display:grid;grid-template-columns:22px 1fr;gap:8px;align-items:start;padding:8px 10px;background:#fff;border:1px solid #e7eaf3;border-radius:10px;cursor:pointer}
+    .controls{display:grid;gap:12px}
+    .field input,.field select{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;font-size:15px}
+    .option-box{border:1px solid var(--line);border-radius:10px;background:#fff;padding:10px 12px}
+    .range-wrap{display:grid;grid-template-columns:1fr 74px;gap:10px;align-items:center}
+    .buttons{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:14px}
+    button{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:11px 12px;border-radius:10px;font-size:14px;cursor:pointer}
+    button.secondary{background:#fff;color:var(--accent)}
+    .sheet-title{display:flex;justify-content:space-between;align-items:end;gap:12px;margin-bottom:18px;border-bottom:2px solid #e9edf6;padding-bottom:10px}
+    .problems{display:grid;gap:14px;min-height:120px}
+    .problem{border:1px solid #e8ebf3;border-radius:12px;padding:10px 14px;break-inside:avoid;page-break-inside:avoid}
+    .problem-body{font-size:var(--problem-font-size);overflow-wrap:anywhere;line-height:1.45}
+    .problem-no{font-weight:700;margin-right:.3em}
+    .answer-inline{color:#0f4b20;display:none;margin-left:.8em}
+    .show-answers .answer-inline{display:inline}
+    .placeholder{color:var(--muted);padding:16px 4px;font-size:15px}
+    .warn{margin-top:8px;font-size:13px;color:#8a5a00;min-height:20px}.ok{color:#1e6b31}
+    .label-given{color:#d93a3a;font-weight:700}
+    .label-find{color:#2a5bd7;font-weight:700}
+    .label-arrow{color:#8a90a2;font-weight:700;padding:0 .25em}
+    .label-meta{color:#687086}
+    .mjx-container{font-size:1em !important}
+    @media (max-width:980px){.grid{grid-template-columns:1fr}.buttons{grid-template-columns:1fr 1fr}}
+    @media print{
+      html,body{background:#fff !important}.no-print{display:none !important}.wrap{max-width:none;padding:0;margin:0}.grid{display:block}
+      .worksheet{border:none;box-shadow:none;border-radius:0;padding:10mm 10mm 12mm;margin:0}
+      .problem{break-inside:avoid;page-break-inside:avoid}@page{margin:8mm}
+    }
+  </style>
+  <script>
+    window.MathJax = {tex:{inlineMath:[['\\(','\\)'],['$','$']],displayMath:[['\\[','\\]']]},options:{skipHtmlTags:['script','noscript','style','textarea','pre']}};
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="no-print">
+    <h1>三角形問題ジェネレーター <span class="small">ver 0.5.0</span></h1>
+    <div class="sub">LaTeX 表示・分数／ルート表記・印刷効率・周の長さのルート和表示などを改善した版です。</div>
+  </div>
+  <div class="grid">
+    <div class="panel no-print">
+      <div class="section">
+        <h2>問題選択</h2>
+        <div class="small">大分類は答えの種類ごとです。複数選択できます。</div>
+      </div>
+      <div class="section" style="display:flex; gap:8px;">
+        <button type="button" class="secondary" id="selectAllBtn">全選択</button>
+        <button type="button" class="secondary" id="clearAllBtn">全解除</button>
+      </div>
+      <div class="section picker-grid" id="problemPicker"></div>
+      <div class="section controls">
+        <div class="field">
+          <label for="countInput"><strong>問題数</strong></label>
+          <input id="countInput" type="number" min="1" max="200" value="15" />
+        </div>
+        <div class="field">
+          <label for="fontSizeRange"><strong>文字の大きさ</strong></label>
+          <div class="range-wrap">
+            <input id="fontSizeRange" type="range" min="1" max="30" step="1" value="15" />
+            <input id="fontSizeNumber" type="number" min="1" max="30" step="1" value="15" />
+          </div>
+        </div>
+        <label class="option-box"><input type="checkbox" id="showAnswersToggle" /> 解答を表示</label>
+      </div>
+      <div class="buttons">
+        <button type="button" id="generateBtn">問題生成</button>
+        <button type="button" class="secondary" id="pdfBtn">PDF出力</button>
+      </div>
+      <div class="warn" id="message"></div>
+    </div>
+
+    <div class="worksheet" id="worksheet">
+      <div class="sheet-title">
+        <h2 style="margin:0;">三角形問題プリント</h2>
+        <div class="small" style="white-space:nowrap;">名前：__________________</div>
+      </div>
+      <div class="problems" id="problems">
+        <div class="placeholder">左側で問題タイプを選び、「問題生成」を押してください。</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const pickerData = [
+  {group:'面積', items:[
+    ['triangle_area_bh_integer','[底辺・高さ, 面積(整数)]'],
+    ['triangle_area_bh_decimal','[底辺・高さ, 面積(小数)]'],
+    ['triangle_area_bh_fraction','[底辺・高さ, 面積(分数)]'],
+    ['triangle_area_bh_root','[底辺・高さ, 面積(ルート付き)]'],
+    ['triangle_area_heron_integer','[3辺, 面積(ヘロン・整数)]'],
+    ['triangle_area_heron_root','[3辺, 面積(ヘロン・ルート付き)]'],
+    ['triangle_area_two_sides_angle','[2辺・その間の角, 面積]'],
+    ['triangle_area_coords_rational','[3点の座標, 面積(整数・分数)]'],
+    ['triangle_area_coords_root','[3点の座標, 面積(ルート付き)]']
+  ]},
+  {group:'高さ', items:[
+    ['triangle_height_ba_integer','[底辺・面積(整数), 高さ(整数)]'],
+    ['triangle_height_ba_decimal','[底辺・面積(小数), 高さ(小数)]'],
+    ['triangle_height_ba_fraction','[底辺・面積(分数), 高さ(分数)]'],
+    ['triangle_height_ba_root','[底辺・面積(ルート付き), 高さ(ルート付き)]']
+  ]},
+  {group:'底辺', items:[
+    ['triangle_base_ha_integer','[高さ・面積(整数), 底辺(整数)]'],
+    ['triangle_base_ha_decimal','[高さ・面積(小数), 底辺(小数)]'],
+    ['triangle_base_ha_fraction','[高さ・面積(分数), 底辺(分数)]'],
+    ['triangle_base_ha_root','[高さ・面積(ルート付き), 底辺(ルート付き)]']
+  ]},
+  {group:'周の長さ', items:[
+    ['triangle_perimeter_three_sides','[3辺, 周の長さ]'],
+    ['triangle_semiperimeter_three_sides','[3辺, 半周長]'],
+    ['triangle_perimeter_coords','[座標3点, 周の長さ]']
+  ]},
+  {group:'成立判定', items:[
+    ['triangle_validity_three_sides','[3辺, 成立判定]'],
+    ['triangle_validity_coords','[座標3点, 三角形になるか]']
+  ]},
+  {group:'種類判定', items:[
+    ['triangle_type_by_sides','[3辺, 辺による種類判定]'],
+    ['triangle_type_by_angles','[3辺, 角による種類判定]'],
+    ['triangle_right_coords','[座標3点, 直角判定]'],
+    ['triangle_isosceles_coords','[座標3点, 二等辺判定]'],
+    ['triangle_type_coords_by_sides','[座標3点, 辺による種類判定]'],
+    ['triangle_type_coords_by_angles','[座標3点, 角による種類判定]']
+  ]},
+  {group:'角度', items:[
+    ['triangle_angle_two_angles','[2角, 残りの角]'],
+    ['triangle_angle_isosceles_apex_to_base','[二等辺・頂角, 底角]'],
+    ['triangle_angle_isosceles_base_to_apex','[二等辺・底角, 頂角]'],
+    ['triangle_angle_exterior','[外角・1内角, 残りの内角]'],
+    ['triangle_angle_two_to_exterior','[2内角, 外角]'],
+    ['triangle_angle_right','[直角・1角, 残りの角]'],
+    ['triangle_angle_from_sine','[sinの値, 角]'],
+    ['triangle_angle_from_cosine','[cosの値, 角]'],
+    ['triangle_angle_from_tangent','[tanの値, 角]']
+  ]},
+  {group:'辺の長さ', items:[
+    ['triangle_pythagorean_hypotenuse','[直角三角形の2辺, 斜辺]'],
+    ['triangle_pythagorean_leg','[直角三角形の斜辺と1辺, 他の1辺]'],
+    ['triangle_trig_opposite','[角・斜辺, 対辺]'],
+    ['triangle_trig_adjacent','[角・斜辺, 隣辺]'],
+    ['triangle_trig_tangent','[角・隣辺, 対辺]'],
+    ['triangle_cosine_third_side','[2辺・その間の角, 3辺目]']
+  ]},
+  {group:'範囲', items:[
+    ['triangle_range_third_side','[2辺, もう1辺の範囲]'],
+    ['triangle_range_third_side_integer_count','[2辺, もう1辺の整数個数]']
+  ]},
+  {group:'座標', items:[
+    ['triangle_distance_two_points','[座標2点, 距離]'],
+    ['triangle_midpoint_two_points','[2点の座標, 中点]'],
+    ['triangle_endpoint_from_midpoint','[中点・1端点, 他端点]'],
+    ['triangle_centroid_coords','[座標3点, 重心]'],
+    ['triangle_longest_side_coords','[座標3点, 最長辺]'],
+    ['triangle_shortest_side_coords','[座標3点, 最短辺]'],
+    ['triangle_equal_sides_coords','[座標3点, どの辺が等しいか]'],
+    ['triangle_right_vertex_coords','[座標3点, どの角が直角か]']
+  ]},
+  {group:'比', items:[
+    ['triangle_similarity_to_area_ratio','[相似比, 面積比]'],
+    ['triangle_area_to_similarity_ratio','[面積比, 相似比]'],
+    ['triangle_similarity_to_perimeter_ratio','[相似比, 周の長さ比]'],
+    ['triangle_area_to_perimeter_ratio','[面積比, 周の長さ比]']
+  ]}
+];
+
+const picker = document.getElementById('problemPicker');
+
+function escapeHtml(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function formatPickerLabel(raw){
+  const m = raw.match(/^\[(.+),\s*(.+)\]$/);
+  if(!m) return escapeHtml(raw);
+  const given = m[1].trim();
+  const findPart = m[2].trim();
+  const m2 = findPart.match(/^(.*?)(\([^()]+\))$/);
+  const find = m2 ? m2[1].trim() : findPart;
+  const meta = m2 ? m2[2] : '';
+  return `<span class="label-given">${escapeHtml(given)}</span><span class="label-arrow">→</span><span class="label-find">${escapeHtml(find)}</span>${meta ? ` <span class="label-meta">${escapeHtml(meta)}</span>` : ''}`;
+}
+const problemsEl = document.getElementById('problems');
+const messageEl = document.getElementById('message');
+const worksheet = document.getElementById('worksheet');
+let currentProblems = [];
+
+function buildPicker(){
+  picker.innerHTML = pickerData.map((group, idx)=>`<details class="group" ${idx<3?'open':''}><summary>${group.group}</summary><div class="group-body">${group.items.map(([id,label])=>`<label class="item"><input type="checkbox" value="${id}" /><span>${formatPickerLabel(label)}</span></label>`).join('')}</div></details>`).join('');
+}
+buildPicker();
+
+
+function gcd(a,b){a=Math.abs(a);b=Math.abs(b);while(b){[a,b]=[b,a%b]}return a||1}
+function randInt(min,max){return Math.floor(Math.random()*(max-min+1))+min}
+function choice(arr){return arr[randInt(0,arr.length-1)]}
+function shuffle(arr){for(let i=arr.length-1;i>0;i--){const j=randInt(0,i);[arr[i],arr[j]]=[arr[j],arr[i]]}return arr}
+function cleanDecimal(x,d=10){return parseFloat(Number(x).toFixed(d))}
+function reduceFrac(n,d){ if(d<0){n=-n;d=-d} const g=gcd(n,d); return {n:n/g,d:d/g}; }
+function toFraction(x){
+  if(Number.isInteger(x)) return {n:x,d:1};
+  const s = String(cleanDecimal(x,10));
+  const decimals = (s.split('.')[1]||'').length;
+  const d = Math.pow(10,decimals);
+  const n = Math.round(Number(s)*d);
+  return reduceFrac(n,d);
+}
+function fracObj(n,d){ const r=reduceFrac(n,d); return {kind:'frac',n:r.n,d:r.d}; }
+function rootObj(coeff,rad){
+  if(rad===1) return coeff;
+  if(coeff===0) return 0;
+  return {kind:'root',coeff,rad};
+}
+function rootFracObj(n,rad,d){
+  if(rad===1) return fracObj(n,d);
+  const rr = reduceFrac(n,d);
+  let m = Math.abs(rr.n), den = rr.d, sign = rr.n<0?-1:1;
+  const g1 = gcd(m, den); m/=g1; den/=g1;
+  return {kind:'rootfrac',n:sign*m,rad,d:den};
+}
+function sumObj(terms){ return {kind:'sum', terms}; }
+function perfectSquare(n){ const r=Math.floor(Math.sqrt(n)); return r*r===n; }
+function simplifyRoot(n){
+  let a=1,b=n;
+  for(let i=Math.floor(Math.sqrt(n));i>=2;i--){ if(n%(i*i)===0){ a=i; b=n/(i*i); break; } }
+  if(b===1) return {coeff:a,rad:1};
+  return {coeff:a,rad:b};
+}
+function sqrtTexOfInt(n){
+  if(n===0) return '0';
+  const s=simplifyRoot(n);
+  if(s.rad===1) return `${s.coeff}`;
+  return s.coeff===1 ? `\\sqrt{${s.rad}}` : `${s.coeff}\\sqrt{${s.rad}}`;
+}
+function texFrac(n,d){
+  const r=reduceFrac(n,d);
+  if(r.d===1) return `${r.n}`;
+  const sign=r.n<0?'-':'';
+  return `${sign}\\frac{${Math.abs(r.n)}}{${r.d}}`;
+}
+function texRootLike(obj){
+  if(typeof obj==='number') return `${obj}`;
+  if(obj.kind==='frac') return texFrac(obj.n,obj.d);
+  if(obj.kind==='root'){
+    const sign = obj.coeff<0 ? '-' : '';
+    const a = Math.abs(obj.coeff);
+    const coeff = a===1 ? '' : `${a}`;
+    return `${sign}${coeff}\\sqrt{${obj.rad}}`;
+  }
+  if(obj.kind==='rootfrac'){
+    const sign = obj.n<0 ? '-' : '';
+    const an = Math.abs(obj.n);
+    const num = an===1 ? `\\sqrt{${obj.rad}}` : `${an}\\sqrt{${obj.rad}}`;
+    if(obj.d===1) return `${sign}${num}`;
+    return `${sign}\\frac{${num}}{${obj.d}}`;
+  }
+  if(obj.kind==='sum'){
+    const parts = [];
+    obj.terms.forEach((t,idx)=>{
+      let tex = texRootLike(t);
+      if(idx===0){ parts.push(tex); }
+      else if(tex.startsWith('-')){ parts.push('- ' + tex.slice(1)); }
+      else { parts.push('+ ' + tex); }
+    });
+    return parts.join(' ');
+  }
+  return `${obj}`;
+}
+function texNumber(x){
+  if(typeof x==='number'){
+    const v = cleanDecimal(x,10);
+    if(Number.isInteger(v)) return `${v}`;
+    const f = toFraction(v);
+    return f.d===1 ? `${f.n}` : texFrac(f.n,f.d);
+  }
+  return texRootLike(x);
+}
+function texPoint(x,y){ return `\\left(${texNumber(x)},\\,${texNumber(y)}\\right)`; }
+function texAreaValue(v){ return `${texNumber(v)}\\,\\mathrm{cm}^2`; }
+function texLengthValue(v){ return `${texNumber(v)}\\,\\mathrm{cm}`; }
+function texAngleValue(v){ return `${texNumber(v)}^{\\circ}`; }
+function texCoordVal(v){ return texNumber(v); }
+function texDecimalNumber(v){
+  if(typeof v==='number') return `${cleanDecimal(v,10)}`;
+  if(v && v.kind==='frac') return `${cleanDecimal(v.n/v.d,10)}`;
+  return texNumber(v);
+}
+function texLengthValueDecimal(v){ return `${texDecimalNumber(v)}\\,\\mathrm{cm}`; }
+function texAreaValueDecimal(v){ return `${texDecimalNumber(v)}\\,\\mathrm{cm}^2`; }
+function wrap(tex){ return `\\(${tex}\\)`; }
+function formatDistanceSquared(dx,dy){ return dx*dx+dy*dy; }
+function squareValue(v){
+  if(typeof v==='number') return v*v;
+  if(v.kind==='root') return v.coeff*v.coeff*v.rad;
+  if(v.kind==='frac') return (v.n*v.n)/(v.d*v.d);
+  if(v.kind==='rootfrac') return (v.n*v.n*v.rad)/(v.d*v.d);
+  return NaN;
+}
+function distanceObjectFromSquared(n){
+  if(perfectSquare(n)) return Math.sqrt(n);
+  const s=simplifyRoot(n);
+  return s.rad===1 ? s.coeff : rootObj(s.coeff,s.rad);
+}
+function combineTerms(terms){
+  let num=0;
+  const fracMap = new Map();
+  const rootMap = new Map();
+  const rootFracMap = new Map();
+  for(const t of terms){
+    if(typeof t==='number'){ num += t; continue; }
+    if(t.kind==='frac'){
+      const key = t.d;
+      fracMap.set(key, (fracMap.get(key)||0)+t.n);
+      continue;
+    }
+    if(t.kind==='root'){
+      const key = t.rad;
+      rootMap.set(key, (rootMap.get(key)||0)+t.coeff);
+      continue;
+    }
+    if(t.kind==='rootfrac'){
+      const key = `${t.rad}/${t.d}`;
+      rootFracMap.set(key, (rootFracMap.get(key)||0)+t.n);
+      continue;
+    }
+  }
+  const out = [];
+  if(num!==0) out.push(num);
+  for(const [d,n] of fracMap){ if(n!==0) out.push(fracObj(n,Number(d))); }
+  for(const [rad,coeff] of rootMap){ if(coeff!==0) out.push(rootObj(coeff,Number(rad))); }
+  for(const [key,n] of rootFracMap){
+    const [rad,d] = key.split('/').map(Number);
+    if(n!==0) out.push(rootFracObj(n,rad,d));
+  }
+  if(out.length===0) return 0;
+  if(out.length===1) return out[0];
+  return sumObj(out);
+}
+
+function renderProblems(){
+  if(!currentProblems.length){ problemsEl.innerHTML = '<div class="placeholder">左側で問題タイプを選び、「問題生成」を押してください。</div>'; return; }
+  problemsEl.innerHTML = currentProblems.map((p,i)=>`<div class="problem"><div class="problem-body"><span class="problem-no">問題${i+1}.</span><span class="problem-text">${p.q}</span><span class="answer-inline">　解答：${p.a}</span></div></div>`).join('');
+  worksheet.classList.toggle('show-answers', document.getElementById('showAnswersToggle').checked);
+  if(window.MathJax?.typesetPromise){ MathJax.typesetPromise([problemsEl]); }
+}
+function setMessage(msg,ok=false){ messageEl.textContent = msg; messageEl.className = 'warn' + (ok?' ok':''); }
+
+
+function getSelectedIds(){ return [...document.querySelectorAll('#problemPicker input[type="checkbox"]:checked')].map(el=>el.value); }
+
+function tripleSidesScalene(){
+  for(let i=0;i<500;i++){
+    const a=randInt(3,30), b=randInt(4,32), c=randInt(5,34);
+    if(a!==b && b!==c && c!==a && a+b>c && a+c>b && b+c>a) return [a,b,c];
+  }
+  return [5,6,7];
+}
+function mixedTriangleSides(){
+  const r=Math.random();
+  if(r<0.55){ return tripleSidesScalene(); }
+  if(r<0.8){
+    for(let i=0;i<300;i++){
+      const equal=randInt(4,22), base=randInt(3,2*equal-1);
+      if(base!==equal) return [equal,equal,base];
+    }
+  }
+  const triples=[[3,4,5],[5,12,13],[8,15,17],[7,24,25],[9,12,15],[6,8,10]];
+  return choice(triples).slice();
+}
+function triangleValiditySet(validWanted){
+  if(validWanted){ const [a,b,c]=mixedTriangleSides(); return [a,b,c,true]; }
+  const a=randInt(2,20), b=randInt(2,20), c=a+b+randInt(0,6); return [a,b,c,false];
+}
+
+
+function pointIsOrigin(P){ return P[0]===0 && P[1]===0; }
+function generateIsoscelesCoords(){
+  for(let i=0;i<2000;i++){
+    const a=choice([...Array(9).keys()].map(n=>n-4).filter(v=>v!==0));
+    const b=choice([...Array(9).keys()].map(n=>n-4).filter(v=>v!==0));
+    const c=choice([...Array(9).keys()].map(n=>n-4).filter(v=>v!==0));
+    const d=choice([...Array(9).keys()].map(n=>n-4).filter(v=>v!==0));
+    const A=[a,b], B=[a+c,b+d], C=[a+d,b+c];
+    if(pointIsOrigin(A) || pointIsOrigin(B) || pointIsOrigin(C)) continue;
+    const ds=[formatDistanceSquared(A[0]-B[0],A[1]-B[1]),formatDistanceSquared(B[0]-C[0],B[1]-C[1]),formatDistanceSquared(C[0]-A[0],C[1]-A[1])];
+    const area=(B[0]-A[0])*(C[1]-A[1])-(B[1]-A[1])*(C[0]-A[0]);
+    if(ds.some(v=>v===0) || area===0) continue;
+    return [A,B,C,true];
+  }
+  return [[1,1],[4,3],[3,4],true];
+}
+function generateNonIsoscelesCoords(){
+  for(let i=0;i<2500;i++){
+    const A=[randInt(-8,8),randInt(-8,8)], B=[randInt(-8,8),randInt(-8,8)], C=[randInt(-8,8),randInt(-8,8)];
+    if(pointIsOrigin(A)||pointIsOrigin(B)||pointIsOrigin(C)) continue;
+    const ds=[formatDistanceSquared(A[0]-B[0],A[1]-B[1]),formatDistanceSquared(B[0]-C[0],B[1]-C[1]),formatDistanceSquared(C[0]-A[0],C[1]-A[1])];
+    if(ds.some(v=>v===0)) continue;
+    const area=(B[0]-A[0])*(C[1]-A[1])-(B[1]-A[1])*(C[0]-A[0]);
+    if(area===0) continue;
+    if(!(ds[0]===ds[1]||ds[1]===ds[2]||ds[2]===ds[0])) return [A,B,C,false];
+  }
+  return [[1,2],[4,3],[6,-1],false];
+}
+function generateRightCoords(){
+  for(let i=0;i<2000;i++){
+    const a=choice([...Array(11).keys()].map(n=>n-5).filter(v=>v!==0));
+    const b=choice([...Array(11).keys()].map(n=>n-5).filter(v=>v!==0));
+    const m=choice([...Array(7).keys()].map(n=>n-3).filter(v=>v!==0));
+    const e=choice([...Array(17).keys()].map(n=>n-8).filter(v=>v!==0));
+    const f=choice([...Array(17).keys()].map(n=>n-8).filter(v=>v!==0));
+    const c=-b*m, d=a*m;
+    const A=[e,f], B=[e+a,f+b], C=[e+c,f+d];
+    if(pointIsOrigin(A)||pointIsOrigin(B)||pointIsOrigin(C)) continue;
+    const ds=[formatDistanceSquared(A[0]-B[0],A[1]-B[1]),formatDistanceSquared(B[0]-C[0],B[1]-C[1]),formatDistanceSquared(C[0]-A[0],C[1]-A[1])];
+    if(ds.some(v=>v===0)) continue;
+    return [A,B,C,true];
+  }
+  return [[1,1],[4,3],[-1,4],true];
+}
+function generateNonRightCoords(){
+  for(let i=0;i<3000;i++){
+    const A=[randInt(-8,8),randInt(-8,8)];
+    const B=[randInt(-8,8),randInt(-8,8)], C=[randInt(-8,8),randInt(-8,8)];
+    if(pointIsOrigin(A)||pointIsOrigin(B)||pointIsOrigin(C)) continue;
+    const ds=[formatDistanceSquared(A[0]-B[0],A[1]-B[1]),formatDistanceSquared(B[0]-C[0],B[1]-C[1]),formatDistanceSquared(C[0]-A[0],C[1]-A[1])].sort((x,y)=>x-y);
+    if(ds[0]===0 || ds[1]===0 || ds[2]===0) continue;
+    const area=(B[0]-A[0])*(C[1]-A[1])-(B[1]-A[1])*(C[0]-A[0]);
+    if(area===0) continue;
+    if(ds[0]+ds[1]!==ds[2]) return [A,B,C,false];
+  }
+  return [[1,2],[4,3],[6,-1],false];
+}
+function angleTypeFromSides(a,b,c){
+  const s=[a,b,c].sort((x,y)=>x-y); const L=s[2]*s[2], R=s[0]*s[0]+s[1]*s[1];
+  if(L===R) return '直角三角形'; if(L<R) return '鋭角三角形'; return '鈍角三角形';
+}
+function sideTypeFromSides(a,b,c){ if(a===b&&b===c) return '正三角形'; if(a===b||b===c||c===a) return '二等辺三角形'; return '不等辺三角形'; }
+
+function texAreaValue(v){ return `${texNumber(v)}\\,\\mathrm{cm}^2`; }
+function texLengthValue(v){ return `${texNumber(v)}\\,\\mathrm{cm}`; }
+function texAngleValue(v){ return `${texNumber(v)}^{\\circ}`; }
+function texCoordVal(v){ return texNumber(v); }
+function decimalStr(x, digits=6){ return cleanDecimal(x, digits).toString(); }
+function texDecimal(x, digits=6){ return decimalStr(x, digits); }
+function texLengthValueDecimal(x){ return `${texDecimal(x)}\\,\\mathrm{cm}`; }
+function texAreaValueDecimal(x){ return `${texDecimal(x)}\\,\\mathrm{cm}^2`; }
+function texAngleValueDecimal(x){ return `${texDecimal(x)}^{\\circ}`; }
+
+function coordTripleInfo(A,B,C){
+  const AB = formatDistanceSquared(A[0]-B[0], A[1]-B[1]);
+  const BC = formatDistanceSquared(B[0]-C[0], B[1]-C[1]);
+  const CA = formatDistanceSquared(C[0]-A[0], C[1]-A[1]);
+  return {ds:[AB,BC,CA], labels:['AB','BC','CA']};
+}
+function randomNonCollinearCoords(avoidOrigin=false){
+  for(let i=0;i<5000;i++){
+    const A=[randInt(-8,8),randInt(-8,8)];
+    const B=[randInt(-8,8),randInt(-8,8)];
+    const C=[randInt(-8,8),randInt(-8,8)];
+    if(avoidOrigin && (pointIsOrigin(A)||pointIsOrigin(B)||pointIsOrigin(C))) continue;
+    const area=(B[0]-A[0])*(C[1]-A[1])-(B[1]-A[1])*(C[0]-A[0]);
+    if(area===0) continue;
+    const ds=coordTripleInfo(A,B,C).ds;
+    if(ds[0]===0 || ds[1]===0 || ds[2]===0) continue;
+    return [A,B,C];
+  }
+  return [[1,2],[4,3],[6,-1]];
+}
+function longestSideLabel(A,B,C){
+  const info = coordTripleInfo(A,B,C);
+  const maxv = Math.max(...info.ds);
+  const idxs = info.ds.map((v,i)=>v===maxv?i:-1).filter(i=>i!==-1);
+  return idxs.length===1 ? info.labels[idxs[0]] : idxs.map(i=>info.labels[i]).join('=');
+}
+function shortestSideLabel(A,B,C){
+  const info = coordTripleInfo(A,B,C);
+  const minv = Math.min(...info.ds);
+  const idxs = info.ds.map((v,i)=>v===minv?i:-1).filter(i=>i!==-1);
+  return idxs.length===1 ? info.labels[idxs[0]] : idxs.map(i=>info.labels[i]).join('=');
+}
+function equalSideLabel(A,B,C){
+  const info = coordTripleInfo(A,B,C);
+  const [AB,BC,CA] = info.ds;
+  if(AB===BC && BC===CA) return 'AB=BC=CA';
+  if(AB===BC) return 'AB=BC';
+  if(BC===CA) return 'BC=CA';
+  if(CA===AB) return 'CA=AB';
+  return 'なし';
+}
+function rightVertexLabel(A,B,C){
+  const AB = formatDistanceSquared(A[0]-B[0], A[1]-B[1]);
+  const BC = formatDistanceSquared(B[0]-C[0], B[1]-C[1]);
+  const CA = formatDistanceSquared(C[0]-A[0], C[1]-A[1]);
+  if(AB + CA === BC) return 'A';
+  if(AB + BC === CA) return 'B';
+  if(BC + CA === AB) return 'C';
+  return 'なし';
+}
+function angleTypeFromCoordTriple(A,B,C){
+  const ds = coordTripleInfo(A,B,C).ds.slice().sort((x,y)=>x-y);
+  const L = ds[2], R = ds[0] + ds[1];
+  if(L===R) return '直角三角形';
+  if(L<R) return '鋭角三角形';
+  return '鈍角三角形';
+}
+function rotateTripleToMakeEqual(target, raw){
+  const P = raw.slice(0,3);
+  if(target==='CA=AB') return [P[0], P[1], P[2]];
+  if(target==='AB=BC') return [P[1], P[2], P[0]];
+  if(target==='BC=CA') return [P[2], P[0], P[1]];
+  return [P[0], P[1], P[2]];
+}
+function rotateTripleToRightVertex(target, raw){
+  const P = raw.slice(0,3);
+  if(target==='A') return [P[0], P[1], P[2]];
+  if(target==='B') return [P[1], P[0], P[2]];
+  if(target==='C') return [P[1], P[2], P[0]];
+  return [P[0], P[1], P[2]];
+}
+function generateCosineThirdSideProblem(){
+  let a, b, ang, c2, ans;
+  let tries = 0;
+  while(true){
+    tries++;
+    ang = choice([60, 90, 120]);
+    a = randInt(2, 30);
+    b = randInt(2, 30);
+    if(ang === 60) c2 = a*a + b*b - a*b;
+    else if(ang === 90) c2 = a*a + b*b;
+    else c2 = a*a + b*b + a*b;
+    if(c2 <= 0) continue;
+    const mode = Math.random() < 0.45 ? 'int' : 'root';
+    if(mode === 'int'){
+      if(!perfectSquare(c2)) continue;
+      ans = Math.sqrt(c2);
+    }else{
+      if(perfectSquare(c2)) continue;
+      ans = distanceObjectFromSquared(c2);
+    }
+    if(tries > 3000){
+      ans = perfectSquare(c2) ? Math.sqrt(c2) : distanceObjectFromSquared(c2);
+    }
+    break;
+  }
+  return {a,b,ang,ans,c2};
+}
+function generateById(id){
+  switch(id){
+    case 'triangle_area_bh_integer': {
+      const b = randInt(2, 30);
+      const h = choice([2,4,6,8,10,12,14,16,18,20,22,24,26,28,30]);
+      const area = (b * h) / 2;
+      return {q:`底辺が ${wrap(texLengthValue(b))}、高さが ${wrap(texLengthValue(h))} の三角形の面積を求めなさい。`, a:wrap(texAreaValue(area)), key:`${id}:${b}:${h}`};
+    }
+    case 'triangle_area_bh_decimal': {
+      const b = choice([1.2,1.5,1.8,2.4,2.5,3.2,3.6,4.5,4.8,5.5,6.2,7.5,8.4,9.6,10.5,12.5]);
+      const h = choice([0.4,0.5,0.6,0.8,1.2,1.5,1.6,2.4,2.5,3.6,4.5,5.5,6.4,7.2,8.5]);
+      const area = cleanDecimal(b * h / 2, 6);
+      return {q:`底辺が ${wrap(texLengthValueDecimal(b))}、高さが ${wrap(texLengthValueDecimal(h))} の三角形の面積を求めなさい。`, a:wrap(texAreaValueDecimal(area)), key:`${id}:${b}:${h}`};
+    }
+    case 'triangle_area_bh_fraction': {
+      const b = choice([3,5,7,9,11,13,15,17]);
+      const h = choice([3,5,7,9,11,13,15]);
+      const area = fracObj(b*h, 2);
+      return {q:`底辺が ${wrap(texLengthValue(b))}、高さが ${wrap(texLengthValue(h))} の三角形の面積を求めなさい。`, a:wrap(texAreaValue(area)), key:`${id}:${b}:${h}`};
+    }
+    case 'triangle_area_bh_root': {
+      const b = randInt(3, 12); const coeff = choice([1,2,3,4,5]); const rad = choice([2,3,5,6,7]); const h = rootObj(coeff, rad); const area = rootFracObj(b * coeff, rad, 2);
+      return {q:`底辺が ${wrap(texLengthValue(b))}、高さが ${wrap(texLengthValue(h))} の三角形の面積を求めなさい。`, a:wrap(texAreaValue(area)), key:`${id}:${b}:${coeff}:${rad}`};
+    }
+    case 'triangle_height_ba_integer': {
+      const b = randInt(2, 25), h = randInt(2, 20), area = (b * h) / 2;
+      return {q:`底辺が ${wrap(texLengthValue(b))}、面積が ${wrap(texAreaValue(area))} の三角形の高さを求めなさい。`, a:wrap(texLengthValue(h)), key:`${id}:${b}:${h}`};
+    }
+    case 'triangle_height_ba_decimal': {
+      const b = choice([1.2,1.5,2.4,2.5,3.2,4.5,5.5,6.4,7.5,8.4,10.5,12.5]);
+      const h = choice([0.4,0.5,0.6,0.8,1.2,1.5,1.6,2.4,2.5,3.6,4.5,5.5]);
+      const area = cleanDecimal(b * h / 2, 6);
+      return {q:`底辺が ${wrap(texLengthValueDecimal(b))}、面積が ${wrap(texAreaValueDecimal(area))} の三角形の高さを求めなさい。`, a:wrap(texLengthValueDecimal(h)), key:`${id}:${b}:${h}`};
+    }
+    case 'triangle_height_ba_fraction': {
+      const b = choice([4,6,8,10,12]); const h = fracObj(choice([3,5,7,9,11]), 2); const area = fracObj(b * h.n, 2 * h.d);
+      return {q:`底辺が ${wrap(texLengthValue(b))}、面積が ${wrap(texAreaValue(area))} の三角形の高さを求めなさい。`, a:wrap(texLengthValue(h)), key:`${id}:${b}:${h.n}/${h.d}`};
+    }
+    case 'triangle_height_ba_root': {
+      const b = randInt(3, 11); const coeff = choice([1,2,3,4,5]); const rad = choice([2,3,5,6]); const h = rootObj(coeff, rad); const area = rootFracObj(b * coeff, rad, 2);
+      return {q:`底辺が ${wrap(texLengthValue(b))}、面積が ${wrap(texAreaValue(area))} の三角形の高さを求めなさい。`, a:wrap(texLengthValue(h)), key:`${id}:${b}:${coeff}:${rad}`};
+    }
+    case 'triangle_base_ha_integer': {
+      const h = randInt(2, 25), b = randInt(2, 20), area = (b * h) / 2;
+      return {q:`高さが ${wrap(texLengthValue(h))}、面積が ${wrap(texAreaValue(area))} の三角形の底辺を求めなさい。`, a:wrap(texLengthValue(b)), key:`${id}:${b}:${h}`};
+    }
+    case 'triangle_base_ha_decimal': {
+      const h = choice([1.2,1.5,2.4,2.5,3.2,4.5,5.5,6.4,7.5,8.4,10.5]);
+      const b = choice([0.4,0.5,0.6,0.8,1.2,1.5,1.6,2.4,2.5,3.6,4.5,5.5,6.2]);
+      const area = cleanDecimal(b * h / 2, 6);
+      return {q:`高さが ${wrap(texLengthValueDecimal(h))}、面積が ${wrap(texAreaValueDecimal(area))} の三角形の底辺を求めなさい。`, a:wrap(texLengthValueDecimal(b)), key:`${id}:${b}:${h}`};
+    }
+    case 'triangle_base_ha_fraction': {
+      const h = choice([4,6,8,10,12]); const b = fracObj(choice([3,5,7,9,11]), 2); const area = fracObj(h * b.n, 2 * b.d);
+      return {q:`高さが ${wrap(texLengthValue(h))}、面積が ${wrap(texAreaValue(area))} の三角形の底辺を求めなさい。`, a:wrap(texLengthValue(b)), key:`${id}:${b.n}/${b.d}:${h}`};
+    }
+    case 'triangle_base_ha_root': {
+      const h = randInt(3, 11); const coeff = choice([1,2,3,4,5]); const rad = choice([2,3,5,6]); const b = rootObj(coeff, rad); const area = rootFracObj(h * coeff, rad, 2);
+      return {q:`高さが ${wrap(texLengthValue(h))}、面積が ${wrap(texAreaValue(area))} の三角形の底辺を求めなさい。`, a:wrap(texLengthValue(b)), key:`${id}:${h}:${coeff}:${rad}`};
+    }
+    case 'triangle_perimeter_three_sides': {
+      const [a,b,c] = mixedTriangleSides();
+      return {q:`3辺の長さが ${wrap(texLengthValue(a))}、${wrap(texLengthValue(b))}、${wrap(texLengthValue(c))} の三角形の周の長さを求めなさい。`, a:wrap(texLengthValue(a+b+c)), key:`${id}:${a}:${b}:${c}`};
+    }
+    case 'triangle_semiperimeter_three_sides': {
+      const [a,b,c] = mixedTriangleSides();
+      const s = fracObj(a+b+c, 2);
+      return {q:`3辺の長さが ${wrap(texLengthValue(a))}、${wrap(texLengthValue(b))}、${wrap(texLengthValue(c))} の三角形の半周長を求めなさい。`, a:wrap(texLengthValue(s)), key:`${id}:${a}:${b}:${c}`};
+    }
+    case 'triangle_perimeter_coords': {
+      const triples = [
+        [[0,0],[1,1],[2,0]], [[0,0],[1,2],[4,0]], [[0,0],[1,3],[4,1]], [[0,0],[2,1],[5,3]], [[0,0],[2,3],[5,1]], [[1,1],[4,3],[6,0]], [[-1,0],[1,2],[4,-1]]
+      ];
+      const pts = choice(triples);
+      const sqs = [
+        formatDistanceSquared(pts[0][0]-pts[1][0], pts[0][1]-pts[1][1]),
+        formatDistanceSquared(pts[0][0]-pts[2][0], pts[0][1]-pts[2][1]),
+        formatDistanceSquared(pts[1][0]-pts[2][0], pts[1][1]-pts[2][1])
+      ];
+      const per = combineTerms(sqs.map(distanceObjectFromSquared));
+      return {q:`3点 ${wrap(texPoint(pts[0][0],pts[0][1]))}、${wrap(texPoint(pts[1][0],pts[1][1]))}、${wrap(texPoint(pts[2][0],pts[2][1]))} を頂点とする三角形の周の長さを求めなさい。`, a:wrap(texLengthValue(per)), key:`${id}:${JSON.stringify(pts)}`};
+    }
+    case 'triangle_validity_three_sides': {
+      const [a,b,c,valid] = triangleValiditySet(Math.random() >= 0.55);
+      return {q:`3辺の長さが ${wrap(texLengthValue(a))}、${wrap(texLengthValue(b))}、${wrap(texLengthValue(c))} の三角形は作れますか。`, a:wrap(valid ? '\\text{作れる}' : '\\text{作れない}'), key:`${id}:${a}:${b}:${c}`};
+    }
+    case 'triangle_validity_coords': {
+      const valid = Math.random() < 0.45;
+      let A,B,C;
+      if(valid){
+        A = [randInt(-4,3), randInt(-4,3)];
+        B = [A[0]+randInt(1,5), A[1]+randInt(0,4)];
+        C = [A[0]+randInt(-3,4), A[1]+randInt(1,5)];
+        if((B[0]-A[0])*(C[1]-A[1]) === (B[1]-A[1])*(C[0]-A[0])) C[1] += 1;
+      }else{
+        A = [randInt(-3,3), randInt(-3,3)];
+        const dx = randInt(1,3), dy = randInt(1,3);
+        B = [A[0]+dx, A[1]+dy];
+        C = [A[0]+2*dx, A[1]+2*dy];
+      }
+      return {q:`3点 ${wrap(texPoint(A[0],A[1]))}、${wrap(texPoint(B[0],B[1]))}、${wrap(texPoint(C[0],C[1]))} を結ぶと三角形になりますか。`, a:wrap(valid ? '\\text{なる}' : '\\text{ならない}'), key:`${id}:${A}:${B}:${C}`};
+    }
+    case 'triangle_type_by_sides': {
+      const [a,b,c] = mixedTriangleSides();
+      return {q:`3辺の長さが ${wrap(texLengthValue(a))}、${wrap(texLengthValue(b))}、${wrap(texLengthValue(c))} の三角形を、辺の長さによって分類しなさい。`, a:wrap(`\\text{${sideTypeFromSides(a,b,c)}}`), key:`${id}:${a}:${b}:${c}`};
+    }
+    case 'triangle_type_by_angles': {
+      const [a,b,c] = mixedTriangleSides();
+      return {q:`3辺の長さが ${wrap(texLengthValue(a))}、${wrap(texLengthValue(b))}、${wrap(texLengthValue(c))} の三角形を、角の大きさによって分類しなさい。`, a:wrap(`\\text{${angleTypeFromSides(a,b,c)}}`), key:`${id}:${a}:${b}:${c}`};
+    }
+    case 'triangle_angle_two_angles': {
+      const a = randInt(10, 160), b = randInt(10, 170 - a), c = 180 - a - b;
+      return {q:`三角形の2つの角が ${wrap(texAngleValue(a))}、${wrap(texAngleValue(b))} です。残りの角を求めなさい。`, a:wrap(texAngleValue(c)), key:`${id}:${a}:${b}`};
+    }
+    case 'triangle_angle_isosceles_apex_to_base': {
+      const apex0 = randInt(2, 178); const apex = apex0 % 2 === 0 ? apex0 : (apex0 + 1 <= 178 ? apex0 + 1 : apex0 - 1); const base = fracObj(180 - apex, 2);
+      return {q:`二等辺三角形の頂角が ${wrap(texAngleValue(apex))} です。底角を求めなさい。`, a:wrap(texAngleValue(base)), key:`${id}:${apex}`};
+    }
+    case 'triangle_angle_isosceles_base_to_apex': {
+      const base = randInt(1, 89), apex = 180 - 2 * base;
+      return {q:`二等辺三角形の底角が ${wrap(texAngleValue(base))} です。頂角を求めなさい。`, a:wrap(texAngleValue(apex)), key:`${id}:${base}`};
+    }
+    case 'triangle_angle_exterior': {
+      const inner = randInt(10, 160), remote = randInt(10, 170 - inner), exterior = inner + remote;
+      return {q:`三角形の1つの外角が ${wrap(texAngleValue(exterior))}、その外角に隣り合わない1つの内角が ${wrap(texAngleValue(inner))} です。もう1つの隣り合わない内角を求めなさい。`, a:wrap(texAngleValue(remote)), key:`${id}:${inner}:${exterior}`};
+    }
+    case 'triangle_angle_two_to_exterior': {
+      const a = randInt(10, 160), b = randInt(10, 170 - a), ext = a + b;
+      return {q:`三角形の2つの内角が ${wrap(texAngleValue(a))}、${wrap(texAngleValue(b))} です。残りの頂点の外角を求めなさい。`, a:wrap(texAngleValue(ext)), key:`${id}:${a}:${b}`};
+    }
+    case 'triangle_angle_right': {
+      const a = randInt(1, 89), b = 90 - a;
+      return {q:`直角三角形の1つの鋭角が ${wrap(texAngleValue(a))} です。もう1つの鋭角を求めなさい。`, a:wrap(texAngleValue(b)), key:`${id}:${a}`};
+    }
+    case 'triangle_angle_from_sine': {
+      const cases = [
+        ['\\frac{1}{2}', 30],
+        ['\\frac{\\sqrt{2}}{2}', 45],
+        ['\\frac{\\sqrt{3}}{2}', 60]
+      ];
+      const [val, ang] = choice(cases);
+      return {q:`鋭角 ${wrap('\\theta')} について、${wrap(`\\sin \\theta = ${val}`)} です。${wrap('\\theta')} を求めなさい。`, a:wrap(texAngleValue(ang)), key:`${id}:${val}`};
+    }
+    case 'triangle_angle_from_cosine': {
+      const cases = [
+        ['\\frac{\\sqrt{3}}{2}', 30],
+        ['\\frac{\\sqrt{2}}{2}', 45],
+        ['\\frac{1}{2}', 60]
+      ];
+      const [val, ang] = choice(cases);
+      return {q:`鋭角 ${wrap('\\theta')} について、${wrap(`\\cos \\theta = ${val}`)} です。${wrap('\\theta')} を求めなさい。`, a:wrap(texAngleValue(ang)), key:`${id}:${val}`};
+    }
+    case 'triangle_angle_from_tangent': {
+      const cases = [
+        ['\\frac{1}{\\sqrt{3}}', 30],
+        ['1', 45],
+        ['\\sqrt{3}', 60]
+      ];
+      const [val, ang] = choice(cases);
+      return {q:`鋭角 ${wrap('\\theta')} について、${wrap(`\\tan \\theta = ${val}`)} です。${wrap('\\theta')} を求めなさい。`, a:wrap(texAngleValue(ang)), key:`${id}:${val}`};
+    }
+    case 'triangle_pythagorean_hypotenuse': {
+      const triples = [[3,4,5],[5,12,13],[8,15,17],[7,24,25],[9,12,15],[6,8,10]]; const [a,b,c] = choice(triples);
+      return {q:`直角三角形の2辺の長さが ${wrap(texLengthValue(a))} と ${wrap(texLengthValue(b))} です。斜辺の長さを求めなさい。`, a:wrap(texLengthValue(c)), key:`${id}:${a}:${b}`};
+    }
+    case 'triangle_pythagorean_leg': {
+      const triples = [[3,4,5],[5,12,13],[8,15,17],[7,24,25],[9,12,15],[6,8,10]]; const [a,b,c] = choice(triples); const known = Math.random() < 0.5 ? a : b; const ans = known === a ? b : a;
+      return {q:`直角三角形の斜辺の長さが ${wrap(texLengthValue(c))}、他の1辺の長さが ${wrap(texLengthValue(known))} です。残りの1辺の長さを求めなさい。`, a:wrap(texLengthValue(ans)), key:`${id}:${known}:${c}`};
+    }
+    case 'triangle_trig_opposite': {
+      const angle = choice([30,45,60]); const hyp = choice([2,3,4,5,6,8,10,12]); let ans;
+      if(angle === 30) ans = fracObj(hyp, 2); else if(angle === 45) ans = rootFracObj(hyp, 2, 2); else ans = rootFracObj(hyp, 3, 2);
+      return {q:`直角三角形で、1つの鋭角が ${wrap(texAngleValue(angle))}、斜辺が ${wrap(texLengthValue(hyp))} です。この角の向かい側の辺の長さを求めなさい。`, a:wrap(texLengthValue(ans)), key:`${id}:${angle}:${hyp}`};
+    }
+    case 'triangle_trig_adjacent': {
+      const angle = choice([30,45,60]); const hyp = choice([2,3,4,5,6,8,10,12]); let ans;
+      if(angle === 30) ans = rootFracObj(hyp, 3, 2); else if(angle === 45) ans = rootFracObj(hyp, 2, 2); else ans = fracObj(hyp, 2);
+      return {q:`直角三角形で、1つの鋭角が ${wrap(texAngleValue(angle))}、斜辺が ${wrap(texLengthValue(hyp))} です。この角と直角にはさまれた辺の長さを求めなさい。`, a:wrap(texLengthValue(ans)), key:`${id}:${angle}:${hyp}`};
+    }
+    case 'triangle_trig_tangent': {
+      const angle = choice([30,45,60]); const adj = choice([2,3,4,5,6,8,10,12]); let ans;
+      if(angle === 30) ans = rootFracObj(adj, 3, 3); else if(angle === 45) ans = adj; else ans = rootObj(adj, 3);
+      return {q:`直角三角形で、1つの鋭角が ${wrap(texAngleValue(angle))}、この角と直角にはさまれた辺が ${wrap(texLengthValue(adj))} です。この角の向かい側の辺の長さを求めなさい。`, a:wrap(texLengthValue(ans)), key:`${id}:${angle}:${adj}`};
+    }
+    case 'triangle_cosine_third_side': {
+      const p = generateCosineThirdSideProblem();
+      return {q:`2辺の長さが ${wrap(texLengthValue(p.a))}、${wrap(texLengthValue(p.b))} で、その間の角が ${wrap(texAngleValue(p.ang))} の三角形について、残りの1辺の長さを求めなさい。`, a:wrap(texLengthValue(p.ans)), key:`${id}:${p.a}:${p.b}:${p.ang}:${texNumber(p.ans)}`};
+    }
+    case 'triangle_range_third_side': {
+      const a = randInt(2,20), b = randInt(2,20);
+      return {q:`2辺の長さが ${wrap(texLengthValue(a))}、${wrap(texLengthValue(b))} のとき、残りの1辺の長さを ${wrap('x\\\\,\\\\mathrm{cm}')} とすると、${wrap('x')} の範囲を求めなさい。`, a:wrap(`${Math.abs(a-b)} < x < ${a+b}`), key:`${id}:${a}:${b}`};
+    }
+    case 'triangle_range_third_side_integer_count': {
+      const a = randInt(2,20), b = randInt(2,20); const min = Math.abs(a-b) + 1; const max = a + b - 1; const cnt = Math.max(0, max - min + 1);
+      return {q:`2辺の長さが ${wrap(texLengthValue(a))}、${wrap(texLengthValue(b))} の三角形について、残りの1辺の長さを整数とするとき、その値は何通りありますか。`, a:wrap(`${cnt}`), key:`${id}:${a}:${b}`};
+    }
+    case 'triangle_distance_two_points': {
+      let A,B,dsq;
+      for(let i=0;i<500;i++){
+        A = [randInt(-8,8), randInt(-8,8)];
+        const dx = randInt(-10,10), dy = randInt(-10,10);
+        if(dx===0 && dy===0) continue;
+        B = [A[0]+dx, A[1]+dy];
+        dsq = formatDistanceSquared(dx,dy);
+        if(!perfectSquare(dsq)) break;
+      }
+      if(!A){ A=[0,0]; B=[1,2]; dsq=5; }
+      const ans = perfectSquare(dsq) ? Math.sqrt(dsq) : distanceObjectFromSquared(dsq);
+      return {q:`2点 ${wrap(texPoint(A[0],A[1]))}、${wrap(texPoint(B[0],B[1]))} の距離を求めなさい。`, a:wrap(texLengthValue(ans)), key:`${id}:${A}:${B}`};
+    }
+    case 'triangle_midpoint_two_points': {
+      const A = [randInt(-8,6), randInt(-8,6)]; const B = [randInt(-8,6), randInt(-8,6)]; const mx = fracObj(A[0]+B[0], 2); const my = fracObj(A[1]+B[1], 2);
+      return {q:`2点 ${wrap(texPoint(A[0],A[1]))}、${wrap(texPoint(B[0],B[1]))} を結ぶ線分の中点の座標を求めなさい。`, a:wrap(`\\left(${texCoordVal(mx)},\\,${texCoordVal(my)}\\right)`), key:`${id}:${A}:${B}`};
+    }
+    case 'triangle_endpoint_from_midpoint': {
+      const M = [randInt(-6,6), randInt(-6,6)], A = [randInt(-8,8), randInt(-8,8)], B = [2*M[0]-A[0], 2*M[1]-A[1]];
+      return {q:`線分の中点が ${wrap(texPoint(M[0],M[1]))} で、一方の端点が ${wrap(texPoint(A[0],A[1]))} です。もう一方の端点の座標を求めなさい。`, a:wrap(texPoint(B[0],B[1])), key:`${id}:${M}:${A}`};
+    }
+    case 'triangle_area_coords_rational': {
+      const A = [randInt(-4,4), randInt(-4,4)]; const B = [A[0]+randInt(1,6), A[1]+randInt(-3,3)]; let C = [A[0]+randInt(-3,5), A[1]+randInt(1,6)];
+      let det = (B[0]-A[0])*(C[1]-A[1]) - (C[0]-A[0])*(B[1]-A[1]);
+      if(det===0){ C[1]+=1; det = (B[0]-A[0])*(C[1]-A[1]) - (C[0]-A[0])*(B[1]-A[1]); }
+      const area = fracObj(Math.abs(det), 2);
+      return {q:`3点 ${wrap(texPoint(A[0],A[1]))}、${wrap(texPoint(B[0],B[1]))}、${wrap(texPoint(C[0],C[1]))} を頂点とする三角形の面積を求めなさい。`, a:wrap(texAreaValue(area)), key:`${id}:${A}:${B}:${C}`};
+    }
+    case 'triangle_area_coords_root': {
+      const coeff = choice([1,2,3,4,5]); const rad = choice([2,3,5,6]); const b = choice([3,4,5,6,7,9]); const Bx = rootObj(coeff, rad); const Cy = b; const finalArea = rootFracObj(coeff*b, rad, 2);
+      return {q:`3点 ${wrap(texPoint(0,0))}、${wrap(texPoint(Bx,0))}、${wrap(texPoint(0,Cy))} を頂点とする三角形の面積を求めなさい。`, a:wrap(texAreaValue(finalArea)), key:`${id}:${coeff}:${rad}:${b}`};
+    }
+    case 'triangle_area_heron_integer': {
+      const sets = [[5,5,6,12],[5,12,13,30],[6,8,10,24],[7,15,20,42],[8,15,17,60],[9,10,17,36],[10,13,13,60],[13,14,15,84]];
+      const [a,b,c,area] = choice(sets);
+      return {q:`3辺の長さが ${wrap(texLengthValue(a))}、${wrap(texLengthValue(b))}、${wrap(texLengthValue(c))} の三角形の面積を求めなさい。`, a:wrap(texAreaValue(area)), key:`${id}:${a}:${b}:${c}`};
+    }
+    case 'triangle_area_heron_root': {
+      if(!window.__heronRootSets){
+        const sets=[];
+        for(let a=2;a<=20;a++) for(let b=a;b<=20;b++) for(let c=b;c<=20;c++){
+          if(a+b<=c) continue;
+          const p=a+b+c;
+          const expr4=p*(p-2*a)*(p-2*b)*(p-2*c);
+          if(expr4<=0 || perfectSquare(expr4)) continue;
+          sets.push([a,b,c,expr4]);
+        }
+        window.__heronRootSets=sets;
+      }
+      const [a,b,c,expr4]=choice(window.__heronRootSets);
+      const r=simplifyRoot(expr4);
+      const ans = r.rad===1 ? fracObj(r.coeff,4) : rootFracObj(r.coeff,r.rad,4);
+      return {q:`3辺の長さが ${wrap(texLengthValue(a))}、${wrap(texLengthValue(b))}、${wrap(texLengthValue(c))} の三角形の面積を求めなさい。`, a:wrap(texAreaValue(ans)), key:`${id}:${a}:${b}:${c}`};
+    }
+    case 'triangle_area_two_sides_angle': {
+      const angle = choice([30,45,60,90]); const a = choice([2,4,6,8,10,12]); const b = choice([3,5,6,9,12]); let ans;
+      if(angle===30) ans = fracObj(a*b, 4); else if(angle===90) ans = fracObj(a*b, 2); else if(angle===45) ans = rootObj((a*b)/2, 2); else ans = rootObj((a*b)/4, 3);
+      return {q:`2辺の長さが ${wrap(texLengthValue(a))}、${wrap(texLengthValue(b))} で、その間の角が ${wrap(texAngleValue(angle))} の三角形の面積を求めなさい。`, a:wrap(texAreaValue(ans)), key:`${id}:${a}:${b}:${angle}`};
+    }
+    case 'triangle_right_coords': {
+      const [A,B,C,right] = Math.random()<0.55 ? generateRightCoords() : generateNonRightCoords();
+      return {q:`3点 ${wrap(texPoint(A[0],A[1]))}、${wrap(texPoint(B[0],B[1]))}、${wrap(texPoint(C[0],C[1]))} を頂点とする三角形は直角三角形ですか。`, a:wrap(right ? '\\text{はい}' : '\\text{いいえ}'), key:`${id}:${A}:${B}:${C}`};
+    }
+    case 'triangle_isosceles_coords': {
+      const raw = Math.random()<0.55 ? generateIsoscelesCoords() : generateNonIsoscelesCoords(); const A = raw[0], B = raw[1], C = raw[2], iso = raw[3];
+      return {q:`3点 ${wrap(texPoint(A[0],A[1]))}、${wrap(texPoint(B[0],B[1]))}、${wrap(texPoint(C[0],C[1]))} を頂点とする三角形は二等辺三角形ですか。`, a:wrap(iso ? '\\text{はい}' : '\\text{いいえ}'), key:`${id}:${A}:${B}:${C}`};
+    }
+    case 'triangle_centroid_coords': {
+      let A,B,C;
+      for(let i=0;i<1500;i++){
+        [A,B,C] = randomNonCollinearCoords(true);
+        if(((A[0]+B[0]+C[0])%3===0) && ((A[1]+B[1]+C[1])%3===0)) break;
+      }
+      const G = [fracObj(A[0]+B[0]+C[0],3), fracObj(A[1]+B[1]+C[1],3)];
+      return {q:`3点 ${wrap(texPoint(A[0],A[1]))}、${wrap(texPoint(B[0],B[1]))}、${wrap(texPoint(C[0],C[1]))} を頂点とする三角形の重心の座標を求めなさい。`, a:wrap(`\\left(${texCoordVal(G[0])},\\,${texCoordVal(G[1])}\\right)`), key:`${id}:${A}:${B}:${C}`};
+    }
+    case 'triangle_longest_side_coords': {
+      const [A,B,C] = randomNonCollinearCoords(false);
+      return {q:`3点A${wrap(texPoint(A[0],A[1]))}、B${wrap(texPoint(B[0],B[1]))}、C${wrap(texPoint(C[0],C[1]))} を頂点とする三角形で、最も長い辺を答えなさい。`, a:wrap(`\\text{${longestSideLabel(A,B,C)}}`), key:`${id}:${A}:${B}:${C}`};
+    }
+    case 'triangle_shortest_side_coords': {
+      const [A,B,C] = randomNonCollinearCoords(false);
+      return {q:`3点A${wrap(texPoint(A[0],A[1]))}、B${wrap(texPoint(B[0],B[1]))}、C${wrap(texPoint(C[0],C[1]))} を頂点とする三角形で、最も短い辺を答えなさい。`, a:wrap(`\\text{${shortestSideLabel(A,B,C)}}`), key:`${id}:${A}:${B}:${C}`};
+    }
+    case 'triangle_equal_sides_coords': {
+      const target = choice(['CA=AB','AB=BC','BC=CA','none']);
+      let A,B,C;
+      if(target === 'none') [A,B,C] = generateNonIsoscelesCoords().slice(0,3);
+      else [A,B,C] = rotateTripleToMakeEqual(target, generateIsoscelesCoords());
+      return {q:`3点A${wrap(texPoint(A[0],A[1]))}、B${wrap(texPoint(B[0],B[1]))}、C${wrap(texPoint(C[0],C[1]))} を頂点とする三角形で、等しい長さの辺があれば答えなさい。`, a:wrap(`\\text{${equalSideLabel(A,B,C)}}`), key:`${id}:${A}:${B}:${C}:${equalSideLabel(A,B,C)}`};
+    }
+    case 'triangle_right_vertex_coords': {
+      const target = choice(['A','B','C']); const [A,B,C] = rotateTripleToRightVertex(target, generateRightCoords());
+      return {q:`3点A${wrap(texPoint(A[0],A[1]))}、B${wrap(texPoint(B[0],B[1]))}、C${wrap(texPoint(C[0],C[1]))} を頂点とする直角三角形で、直角になっている頂点を答えなさい。`, a:wrap(`\\text{${rightVertexLabel(A,B,C)}}`), key:`${id}:${A}:${B}:${C}:${rightVertexLabel(A,B,C)}`};
+    }
+    case 'triangle_type_coords_by_sides': {
+      const [A,B,C] = randomNonCollinearCoords(false); const info = coordTripleInfo(A,B,C);
+      return {q:`3点 ${wrap(texPoint(A[0],A[1]))}、${wrap(texPoint(B[0],B[1]))}、${wrap(texPoint(C[0],C[1]))} を頂点とする三角形を、辺の長さによって分類しなさい。`, a:wrap(`\\text{${sideTypeFromSides(info.ds[0],info.ds[1],info.ds[2])}}`), key:`${id}:${A}:${B}:${C}`};
+    }
+    case 'triangle_type_coords_by_angles': {
+      const [A,B,C] = randomNonCollinearCoords(false);
+      return {q:`3点 ${wrap(texPoint(A[0],A[1]))}、${wrap(texPoint(B[0],B[1]))}、${wrap(texPoint(C[0],C[1]))} を頂点とする三角形を、角の大きさによって分類しなさい。`, a:wrap(`\\text{${angleTypeFromCoordTriple(A,B,C)}}`), key:`${id}:${A}:${B}:${C}`};
+    }
+    case 'triangle_similarity_to_area_ratio': {
+      const p = randInt(1,8), q = randInt(1,8); const simp = reduceFrac(p,q);
+      return {q:`相似な2つの三角形の相似比が ${wrap(`\\text{${simp.n}:${simp.d}}`)} です。面積比を答えなさい。`, a:wrap(`\\text{${simp.n*simp.n}:${simp.d*simp.d}}`), key:`${id}:${simp.n}:${simp.d}`};
+    }
+    case 'triangle_area_to_similarity_ratio': {
+      const pairs = [[1,4],[1,9],[4,9],[9,16],[16,25],[25,36]]; const [a,b] = choice(pairs); const ra = Math.sqrt(a), rb = Math.sqrt(b);
+      return {q:`相似な2つの三角形の面積比が ${wrap(`\\text{${a}:${b}}`)} です。相似比を答えなさい。`, a:wrap(`\\text{${ra}:${rb}}`), key:`${id}:${a}:${b}`};
+    }
+    default:
+      return null;
+  }
+}
+function generateCandidatePool(ids){
+  const pool=[]; const seen=new Set();
+  ids.forEach(id=>{
+    const local=[]; let tries=0;
+    while(local.length<200 && tries<4000){
+      tries++;
+      const p=generateById(id); if(!p) continue;
+      const key = p.key || p.q;
+      if(seen.has(key)) continue;
+      seen.add(key); local.push(p);
+    }
+    pool.push(...local);
+  });
+  return shuffle(pool);
+}
+
+function generateProblems(){
+  const ids=getSelectedIds(); const count=Math.max(1, Math.min(200, parseInt(document.getElementById('countInput').value || '15',10)));
+  if(!ids.length){ setMessage('問題タイプを1つ以上選んでください。'); return; }
+  const pool=generateCandidatePool(ids); currentProblems = pool.slice(0,count);
+  renderProblems();
+  const shortage = count - currentProblems.length;
+  if(shortage>0) setMessage(`選択した条件では ${currentProblems.length} 問まで生成できました。さらに増やすには問題タイプを増やしてください。`);
+  else setMessage(`${currentProblems.length} 問を生成しました。`, true);
+}
+
+function syncFont(v){
+  const value=Math.max(1,Math.min(30,parseInt(v,10)||15));
+  document.documentElement.style.setProperty('--problem-font-size', value+'px');
+  document.getElementById('fontSizeRange').value=value;
+  document.getElementById('fontSizeNumber').value=value;
+}
+
+
+async function printPdf(){
+  if(!currentProblems.length){ setMessage('印刷する問題がありません。'); return; }
+  window.scrollTo(0,0);
+  await (window.MathJax?.typesetPromise ? MathJax.typesetPromise([worksheet]) : Promise.resolve());
+  setTimeout(()=>window.print(),150);
+}
+
+// events
+
+document.getElementById('generateBtn').addEventListener('click', generateProblems);
+document.getElementById('pdfBtn').addEventListener('click', printPdf);
+document.getElementById('showAnswersToggle').addEventListener('change', e=>worksheet.classList.toggle('show-answers', e.target.checked));
+document.getElementById('fontSizeRange').addEventListener('input', e=>syncFont(e.target.value));
+document.getElementById('fontSizeNumber').addEventListener('input', e=>syncFont(e.target.value));
+document.getElementById('selectAllBtn').addEventListener('click', ()=>document.querySelectorAll('#problemPicker input[type="checkbox"]').forEach(cb=>cb.checked=true));
+document.getElementById('clearAllBtn').addEventListener('click', ()=>document.querySelectorAll('#problemPicker input[type="checkbox"]').forEach(cb=>cb.checked=false));
+
+syncFont(15);
+</script>
+</body>
+</html>
