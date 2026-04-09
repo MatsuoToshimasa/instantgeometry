@@ -2,109 +2,407 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>このサイトについて | Instant Geometry</title>
-
   <style>
-    body {
-      font-family: sans-serif;
-      line-height: 1.7;
-      margin: 0;
-      background: #f5f6fa;
-      color: #333;
+    :root{
+      --bg:#f6f7fb;
+      --panel:#ffffff;
+      --line:#d9dce7;
+      --text:#1f2430;
+      --muted:#687086;
+      --accent:#2a5bd7;
+      --accent-soft:#eef3ff;
+      --shadow:0 10px 28px rgba(27,39,94,.08);
+      --radius:20px;
     }
 
-    .container {
-      max-width: 800px;
-      margin: 60px auto;
-      padding: 20px;
-      background: white;
-      border-radius: 10px;
+    *{box-sizing:border-box}
+
+    body{
+      margin:0;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;
+      background:linear-gradient(180deg,#f8faff 0%,#f4f6fb 100%);
+      color:var(--text);
     }
 
-    h1 {
-      margin-bottom: 20px;
+    a{
+      color:inherit;
+      text-decoration:none;
     }
 
-    h2 {
-      margin-top: 30px;
-      font-size: 18px;
+    .wrap{
+      width:min(980px,calc(100% - 32px));
+      margin:0 auto;
     }
 
-    p {
-      margin: 10px 0;
+    .topbar{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:16px;
+      padding:20px 0;
     }
 
-    a {
-      color: #4a6cf7;
-      text-decoration: none;
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      font-weight:700;
+      letter-spacing:.01em;
     }
 
-    .top-link {
-      display: block;
-      margin-bottom: 20px;
+    .brand-mark{
+      width:42px;
+      height:42px;
+      border-radius:12px;
+      display:grid;
+      place-items:center;
+      background:var(--accent);
+      color:#fff;
+      font-size:20px;
+      box-shadow:var(--shadow);
     }
 
+    .nav{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .nav a{
+      padding:10px 14px;
+      border:1px solid var(--line);
+      border-radius:999px;
+      background:#fff;
+      font-size:14px;
+      color:var(--muted);
+      transition:.18s ease;
+    }
+
+    .nav a:hover{
+      border-color:var(--accent);
+      color:var(--accent);
+      background:var(--accent-soft);
+    }
+
+    .auth-status{
+      padding:10px 14px;
+      border:1px solid var(--line);
+      border-radius:999px;
+      background:#fff;
+      font-size:14px;
+      color:var(--muted);
+      cursor:default;
+    }
+
+    .auth-status[data-auth-state="logged-in"]{
+      color:#1f7a39;
+      background:#eefaf1;
+      border-color:#cfe8d6;
+    }
+
+    .auth-status[data-auth-state="logged-out"]{
+      color:#9a6700;
+      background:#fff8e6;
+      border-color:#f0dfb2;
+    }
+
+    .hero{
+      padding:26px 0 10px;
+    }
+
+    .crumb{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      color:var(--muted);
+      font-size:14px;
+      margin-bottom:14px;
+    }
+
+    .crumb a:hover{
+      color:var(--accent);
+    }
+
+    h1{
+      margin:0;
+      font-size:clamp(30px,4.8vw,50px);
+      line-height:1.12;
+      letter-spacing:-.02em;
+    }
+
+    .lead{
+      margin:16px 0 0;
+      color:var(--muted);
+      font-size:17px;
+      line-height:1.85;
+      width:min(820px,100%);
+    }
+
+    .content{
+      padding:28px 0 56px;
+    }
+
+    .panel{
+      background:var(--panel);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:28px;
+    }
+
+    .section + .section{
+      margin-top:34px;
+      padding-top:28px;
+      border-top:1px solid #eceff5;
+    }
+
+    .section h2{
+      margin:0 0 14px;
+      font-size:26px;
+      line-height:1.2;
+    }
+
+    .section p{
+      margin:0;
+      color:var(--text);
+      font-size:16px;
+      line-height:1.9;
+    }
+
+    .section p + p{
+      margin-top:14px;
+    }
+
+    .feature-grid{
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:16px;
+      margin-top:18px;
+    }
+
+    .feature{
+      border:1px solid #e8ebf2;
+      border-radius:16px;
+      background:#fcfdff;
+      padding:18px;
+    }
+
+    .feature-title{
+      display:inline-block;
+      margin-bottom:10px;
+      padding:6px 10px;
+      border-radius:999px;
+      background:var(--accent-soft);
+      color:var(--accent);
+      font-size:12px;
+      font-weight:700;
+      letter-spacing:.02em;
+    }
+
+    .feature h3{
+      margin:0 0 8px;
+      font-size:20px;
+      line-height:1.3;
+    }
+
+    .feature p{
+      font-size:14px;
+      line-height:1.8;
+      color:var(--muted);
+    }
+
+    .info-box{
+      margin-top:18px;
+      border:1px solid #e8ebf2;
+      border-radius:16px;
+      background:#fcfdff;
+      padding:18px;
+    }
+
+    .info-box p{
+      font-size:15px;
+    }
+
+    .footer-note{
+      margin-top:22px;
+      color:var(--muted);
+      font-size:14px;
+      line-height:1.8;
+    }
+
+    @media (max-width: 900px){
+      .feature-grid{
+        grid-template-columns:1fr;
+      }
+    }
+
+    @media (max-width: 640px){
+      .topbar{
+        flex-direction:column;
+        align-items:flex-start;
+      }
+
+      .panel{
+        padding:22px;
+      }
+
+      .section h2{
+        font-size:22px;
+      }
+
+      .lead{
+        font-size:15px;
+      }
+    }
   </style>
 </head>
 <body>
+  <div class="wrap">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">iG</div>
+        <div>Instant Geometry</div>
+      </div>
 
-  <div class="container">
+      <nav class="nav">
+        <span class="auth-status" id="authStatus">確認中...</span>
+        <a href="/">トップ</a>
+        <a href="/draw/">図形を描く</a>
+        <a href="/problems/">問題を作る</a>
+        <a href="/functions/">関数を描く</a>
+        <a href="/login/" id="loginBtn">ログイン</a>
+      </nav>
+    </header>
 
-    <a href="/" class="top-link">← トップへ戻る</a>
+    <section class="hero">
+      <div class="crumb">
+        <a href="/">トップ</a>
+        <span>›</span>
+        <span>このサイトについて</span>
+      </div>
 
-    <h1>このサイトについて</h1>
+      <h1>このサイトについて</h1>
+      <p class="lead">
+        Instant Geometry は、図形の描画、数学問題の作成、関数グラフの作成を、
+        できるだけ迷わず、すばやく始められるように設計された数学教育ツールです。
+        学習者、教員、講師、教材作成者が、目的に応じて必要な作業へすぐ入れることを重視しています。
+      </p>
+    </section>
 
-    <p>
-      Instant Geometryは、図形問題の作成と作図を効率的に行うためのオンラインツールです。
-    </p>
+    <main class="content">
+      <section class="panel">
+        <div class="section">
+          <h2>このサイトの目的</h2>
+          <p>
+            数学の図形や関数を扱うとき、実際には「何をしたいか」はかなりはっきりしています。
+            たとえば、3辺がわかっている三角形を描きたい、座標から図形を作りたい、
+            問題プリントを短時間で用意したい、一次関数や二次関数のグラフを出したい、というような目的です。
+          </p>
+          <p>
+            しかし一般的なツールでは、機能が多すぎたり、逆に操作が限定されすぎたりして、
+            目的の作業にたどり着くまでに時間がかかることがあります。
+            Instant Geometry は、そうした遠回りを減らし、目的別に入口を分けることで、
+            必要な作業をその場ですぐ始められることを目指しています。
+          </p>
+        </div>
 
-    <h2>サービスの目的</h2>
-    <p>
-      学習者や教育者が、図形問題を素早く生成し、理解を深めることを目的としています。
-      特に中学・高校数学における図形分野の演習を、より手軽に行えるよう設計されています。
-    </p>
+        <div class="section">
+          <h2>主な機能</h2>
 
-    <h2>主な機能</h2>
-    <ul>
-      <li>三角形・座標などの問題自動生成</li>
-      <li>図形の作図・編集機能</li>
-      <li>PDF形式での問題出力</li>
-    </ul>
+          <div class="feature-grid">
+            <div class="feature">
+              <div class="feature-title">01</div>
+              <h3>図形を描く</h3>
+              <p>
+                三角形、四角形、正N角形、円、楕円、星型などを、
+                条件に応じて描画できます。SSS、SAS、3点座標など、
+                入口を目的別に分けることで、必要な図形へすぐ進める構成にしています。
+              </p>
+            </div>
 
-    <h2>対象ユーザー</h2>
-    <p>
-      本サービスは以下の方を対象としています。
-    </p>
-    <ul>
-      <li>数学を学習している学生</li>
-      <li>授業や教材を作成する教員・講師</li>
-      <li>演習問題を効率よく準備したい方</li>
-    </ul>
+            <div class="feature">
+              <div class="feature-title">02</div>
+              <h3>問題を作る</h3>
+              <p>
+                面積、角度、辺の長さ、座標、種類判定など、
+                三角形を中心とした数学問題を作成できます。
+                授業用、演習用、プリント用として使いやすいように、
+                分野別の入口を用意しています。
+              </p>
+            </div>
 
-    <h2>運営について</h2>
-    <p>
-      本サービスは個人により開発・運営されています。
-      継続的な改善を行いながら、より使いやすいサービスを目指しています。
-    </p>
+            <div class="feature">
+              <div class="feature-title">03</div>
+              <h3>関数を描く</h3>
+              <p>
+                一次関数、二次関数、指数関数、対数関数、三角関数などのグラフを描画できます。
+                定義域や端点条件も含めて扱えるようにし、
+                学習や説明に使いやすい形を目指しています。
+              </p>
+            </div>
+          </div>
+        </div>
 
-    <h2>今後の展望</h2>
-    <p>
-      今後は機能の拡張や問題の種類の増加、ユーザー体験の向上を予定しています。
-      また、有料プランによる追加機能の提供も行っています。
-    </p>
+        <div class="section">
+          <h2>設計の考え方</h2>
+          <p>
+            このサイトでは、最初から複雑な統合編集機能を前面に出すのではなく、
+            「図形を描く」「問題を作る」「関数を描く」という大きな目的ごとに入口を分けています。
+            これは、初めて使う人でも直感的に選びやすくするためです。
+          </p>
+          <p>
+            まずは、必要なものをパッと作れることを優先し、
+            その上で保存、印刷、表示調整、ログイン、Pro機能などを順に整えていく方針です。
+            使いやすさと拡張性の両立を意識しながら、少しずつ改善を続けています。
+          </p>
+        </div>
 
-    <h2>お問い合わせ</h2>
-    <p>
-      ご意見・ご要望・不具合の報告などは、以下までお願いいたします。<br>
-      メール：pinenutspoi@email.com
-    </p>
+        <div class="section">
+          <h2>想定している利用者</h2>
+          <p>
+            Instant Geometry は、数学を学ぶ生徒や学生だけでなく、
+            授業準備を行う教員、塾講師、家庭教師、教材作成者なども想定して設計しています。
+            問題を解くためだけでなく、説明するため、配布資料を作るため、
+            視覚的に理解しやすい図を用意するための道具としても使えるようにしています。
+          </p>
+        </div>
 
-    <p style="margin-top:40px;">
-      最終更新日：2026年4月
-    </p>
+        <div class="section">
+          <h2>今後について</h2>
+          <p>
+            今後は、より自然なログイン導線、Pro機能の整備、保存機能の強化、
+            編集画面の改善、問題パターンの拡充、関数表示の拡張などを進めていく予定です。
+            また、使う人が迷いにくい導線を維持したまま、必要な機能を少しずつ積み上げていくことを重視しています。
+          </p>
+        </div>
 
+        <div class="section">
+          <h2>開発・運営</h2>
+          <p>
+            Instant Geometry は、教育用途での使いやすさを重視して設計・開発されている個人プロジェクトです。
+            このサイトの開発・運営は Toshimasa Matsuo が行っています。
+          </p>
+
+          <div class="info-box">
+            <p>
+              開発・運営：Toshimasa Matsuo<br>
+              サイト名：Instant Geometry<br>
+              内容：数学教育ツールの開発・提供
+            </p>
+          </div>
+
+          <p class="footer-note">
+            ご意見、ご要望、不具合報告などは、今後のお問い合わせ導線の整備にあわせて受け付ける予定です。
+          </p>
+        </div>
+      </section>
+    </main>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/assets/supabase-client.js"></script>
+  <script src="/assets/auth-ui.js"></script>
 </body>
 </html>
