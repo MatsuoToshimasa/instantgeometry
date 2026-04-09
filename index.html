@@ -1,7 +1,86 @@
-<h2>InstantGeometry</h2>
-<p>図形問題を自動生成し、プリントできる教育ツールです。</p>
-<p>Pro版では無制限ダウンロードが可能です。</p>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Instant Geometry</title>
 
-<a href="/upgrade/">料金を見る</a>
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background: #f5f6fa;
+    }
 
-<a href="/legal.html">特定商取引法に基づく表記</a>
+    /* 右上ナビ */
+    .top-nav {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+    }
+
+    .top-nav a {
+      margin-left: 12px;
+      text-decoration: none;
+      color: #333;
+      font-size: 14px;
+    }
+
+    /* 中央エリア */
+    .center {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+
+    h1 {
+      margin-bottom: 10px;
+    }
+
+    p {
+      margin-bottom: 30px;
+      color: #666;
+    }
+
+    /* ボタン */
+    .btn {
+      display: block;
+      width: 260px;
+      padding: 14px;
+      margin: 10px 0;
+      background: #4a6cf7;
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      font-size: 16px;
+      transition: 0.2s;
+    }
+
+    .btn:hover {
+      background: #2f4fe0;
+    }
+
+  </style>
+</head>
+<body>
+
+  <!-- 右上 -->
+  <div class="top-nav">
+    <a href="/about/">このサイトについて</a>
+    <a href="/legal/">プライバシーポリシー</a>
+  </div>
+
+  <!-- 中央 -->
+  <div class="center">
+    <h1>Instant Geometry</h1>
+    <p>図形問題の生成と作図ツール</p>
+
+    <a class="btn" href="/problems/">問題をつくる</a>
+    <a class="btn" href="/figures/">図形を作る</a>
+  </div>
+
+</body>
+</html>
