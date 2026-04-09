@@ -874,22 +874,31 @@
         </details>
 
                 <details class="settings-group">
-          <summary>角設定</summary>
-          <div class="grid-2">
-            <div class="field">
-              <label for="angleDisplayMode">表示形式</label>
-              <select id="angleDisplayMode">
-                <option value="none" selected>表示なし</option>
-                <option value="degree">度数法</option>
-                <option value="radian">弧度法</option>
-              </select>
-            </div>
-            <div class="field">
-              <label for="angleLabelSize">角ラベルサイズ</label>
-              <input id="angleLabelSize" type="range" min="10" max="28" step="1" value="16" />
-            </div>
-          </div>
-        </details>
+  <summary>角設定</summary>
+  <div class="grid-2">
+    <div class="field">
+      <label for="angleDisplayMode">表示形式</label>
+      <select id="angleDisplayMode">
+        <option value="none" selected>表示なし</option>
+        <option value="degree">度数法</option>
+        <option value="radian">弧度法</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="angleLabelSize">角ラベルサイズ</label>
+      <input id="angleLabelSize" type="range" min="10" max="28" step="1" value="16" />
+    </div>
+    <div class="field">
+      <label for="angleLabelPosition">角ラベル位置</label>
+      <select id="angleLabelPosition">
+        <option value="inside">内側</option>
+        <option value="outside">外側</option>
+        <option value="up">上</option>
+        <option value="down">下</option>
+      </select>
+    </div>
+  </div>
+</details>
 
         <details class="settings-group">
           <summary>面積設定</summary>
@@ -1037,11 +1046,13 @@
       </div>
 
       <div class="board-controls">
-        <button class="zoom-btn" id="zoomInBtn">＋</button>
-        <button class="zoom-btn" id="zoomOutBtn">－</button>
-        <button id="resetViewBtn">表示リセット</button>
-        <span class="muted">ドラッグで移動 / ＋で拡大 / －で縮小 / ホイール拡大縮小対応</span>
-      </div>
+  <button class="zoom-btn" id="zoomInBtn">＋</button>
+  <button class="zoom-btn" id="zoomOutBtn">－</button>
+  <button id="resetViewBtn">表示リセット</button>
+  <button id="undoBtn">元に戻す</button>
+  <button id="redoBtn">すすめる</button>
+  <span class="muted">ドラッグで移動 / ＋で拡大 / －で縮小 / ホイール拡大縮小対応</span>
+</div>
 
       <div id="box" class="jxgbox"></div>
     </div>
@@ -1056,9 +1067,19 @@
         B5: { width: 182, height: 257 }
       };
 
-      const PAPER_PREVIEW_SCALE = 3.0;
-      let board = null;
-      let latestModel = null;
+const PAPER_PREVIEW_SCALE = 3.0;
+let board = null;
+let latestModel = null;
+
+const uiState = {
+  selectedLabelId: null,
+  hiddenLabels: new Set(),
+  undoStack: [],
+  redoStack: [],
+  isRestoring: false
+};
+
+let labelRegistry = new Map();
 
       const FN = {
         sec: x => 1 / Math.cos(x),
@@ -1134,12 +1155,75 @@ async function getCurrentSessionSafe() {
 }
 
       function setShapeInfo(titleLines, detailHtml) {
-        const el = document.getElementById('shapeInfo');
-        const parts = [];
-        if (titleLines && titleLines.length) parts.push(titleLines.join(' / '));
-        if (detailHtml) parts.push(detailHtml);
-        el.innerHTML = parts.join('<br>');
-      }
+  const el = document.getElementById('shapeInfo');
+  const parts = [];
+  if (titleLines && titleLines.length) parts.push(titleLines.join(' / '));
+  if (detailHtml) parts.push(detailHtml);
+  el.innerHTML = parts.join('<br>');
+}
+
+function buildLabelCss(color, selected) {
+  return [
+    `color:${color}`,
+    'padding:2px 4px',
+    'border-radius:4px',
+    selected ? 'background:#e8f0ff' : 'background:transparent',
+    selected ? 'border:1px solid #2447a8' : 'border:1px solid transparent'
+  ].join(';');
+}
+
+function clearLabelSelection() {
+  uiState.selectedLabelId = null;
+  labelRegistry.forEach((entry) => {
+    entry.obj.setAttribute({
+      cssStyle: buildLabelCss(entry.color, false)
+    });
+  });
+}
+
+function selectLabel(labelId) {
+  uiState.selectedLabelId = labelId;
+  labelRegistry.forEach((entry, id) => {
+    entry.obj.setAttribute({
+      cssStyle: buildLabelCss(entry.color, id === labelId)
+    });
+  });
+}
+
+function registerSelectableText(obj, labelId, color) {
+  labelRegistry.set(labelId, { obj, color });
+
+  obj.setAttribute({
+    cssStyle: buildLabelCss(color, false)
+  });
+
+  obj.on('down', function () {
+    selectLabel(labelId);
+  });
+}
+
+function createSelectableText(targetBoard, x, y, text, options) {
+  const {
+    labelId,
+    fontSize,
+    color = '#000000',
+    anchorX = 'middle',
+    anchorY = 'middle'
+  } = options;
+
+  if (uiState.hiddenLabels.has(labelId)) return null;
+
+  const obj = targetBoard.create('text', [x, y, text], {
+    fontSize,
+    fixed: true,
+    anchorX,
+    anchorY,
+    cssStyle: buildLabelCss(color, false)
+  });
+
+  registerSelectableText(obj, labelId, color);
+  return obj;
+}
 
       function degToRad(deg) { return deg * Math.PI / 180; }
       function radToDeg(rad) { return rad * 180 / Math.PI; }
@@ -1414,9 +1498,10 @@ async function getCurrentSessionSafe() {
             textMode: document.getElementById('sideTextMode').value
           },
           angle: {
-            displayMode: document.getElementById('angleDisplayMode').value,
-            labelSize: Number(document.getElementById('angleLabelSize').value)
-          },
+  displayMode: document.getElementById('angleDisplayMode').value,
+  labelSize: Number(document.getElementById('angleLabelSize').value),
+  labelPosition: document.getElementById('angleLabelPosition').value
+},
           area: {
             labelMode: document.getElementById('areaLabelMode').value,
             labelSize: Number(document.getElementById('areaLabelSize').value),
@@ -1435,16 +1520,86 @@ async function getCurrentSessionSafe() {
       }
 
       function getPrintOptions() {
-        return {
-          paperSize: document.getElementById('paperSize').value,
-          orientation: document.getElementById('paperOrientation').value,
-          marginTop: parseNonNegativeExpr(document.getElementById('marginTop').value, '上余白').value,
-          marginBottom: parseNonNegativeExpr(document.getElementById('marginBottom').value, '下余白').value,
-          marginLeft: parseNonNegativeExpr(document.getElementById('marginLeft').value, '左余白').value,
-          marginRight: parseNonNegativeExpr(document.getElementById('marginRight').value, '右余白').value,
-          mode: document.querySelector('input[name="printMode"]:checked').value
-        };
-      }
+  return {
+    paperSize: document.getElementById('paperSize').value,
+    orientation: document.getElementById('paperOrientation').value,
+    marginTop: parseNonNegativeExpr(document.getElementById('marginTop').value, '上余白').value,
+    marginBottom: parseNonNegativeExpr(document.getElementById('marginBottom').value, '下余白').value,
+    marginLeft: parseNonNegativeExpr(document.getElementById('marginLeft').value, '左余白').value,
+    marginRight: parseNonNegativeExpr(document.getElementById('marginRight').value, '右余白').value,
+    mode: document.querySelector('input[name="printMode"]:checked').value
+  };
+}
+
+function serializeFormState() {
+  const data = {};
+  document.querySelectorAll('input, select, textarea').forEach(el => {
+    if (!el.id && !(el.name === 'printMode')) return;
+    if (el.type === 'radio') {
+      if (el.checked) data[`radio:${el.name}`] = el.value;
+      return;
+    }
+    if (el.type === 'checkbox') {
+      data[el.id] = el.checked;
+      return;
+    }
+    data[el.id] = el.value;
+  });
+
+  return {
+    form: data,
+    hiddenLabels: [...uiState.hiddenLabels],
+    selectedLabelId: uiState.selectedLabelId,
+    bbox: board ? board.getBoundingBox().slice() : null
+  };
+}
+
+function restoreFormState(snapshot) {
+  uiState.isRestoring = true;
+
+  Object.entries(snapshot.form || {}).forEach(([key, value]) => {
+    if (key.startsWith('radio:')) {
+      const name = key.slice(6);
+      const radio = document.querySelector(`input[name="${name}"][value="${value}"]`);
+      if (radio) radio.checked = true;
+      return;
+    }
+
+    const el = document.getElementById(key);
+    if (!el) return;
+
+    if (el.type === 'checkbox') el.checked = !!value;
+    else el.value = value;
+  });
+
+  uiState.hiddenLabels = new Set(snapshot.hiddenLabels || []);
+  uiState.selectedLabelId = snapshot.selectedLabelId || null;
+
+  renderAll(true, snapshot.bbox || null);
+
+  uiState.isRestoring = false;
+}
+
+function pushHistory() {
+  if (uiState.isRestoring) return;
+  uiState.undoStack.push(serializeFormState());
+  if (uiState.undoStack.length > 100) uiState.undoStack.shift();
+  uiState.redoStack = [];
+}
+
+function undoHistory() {
+  if (!uiState.undoStack.length) return;
+  uiState.redoStack.push(serializeFormState());
+  const snapshot = uiState.undoStack.pop();
+  restoreFormState(snapshot);
+}
+
+function redoHistory() {
+  if (!uiState.redoStack.length) return;
+  uiState.undoStack.push(serializeFormState());
+  const snapshot = uiState.redoStack.pop();
+  restoreFormState(snapshot);
+}
 
       function showModeFields() {
         const shapeType = document.getElementById('shapeType').value;
@@ -2205,18 +2360,19 @@ async function getCurrentSessionSafe() {
       }
 
       function addAreaLabel(targetBoard, model) {
-        const text = getAreaLabelText(model);
-        if (!text) return;
-        const pos = areaAnchorFromModel(model);
-        if (!pos) return;
-        targetBoard.create('text', [pos.x, pos.y, text], {
-          fontSize: model.display.area.labelSize,
-          fixed: true,
-          anchorX: 'middle',
-          anchorY: 'middle',
-          cssStyle: 'padding:0;border-radius:0;background:transparent;'
-        });
-      }
+  const text = getAreaLabelText(model);
+  if (!text) return;
+  const pos = areaAnchorFromModel(model);
+  if (!pos) return;
+
+  createSelectableText(targetBoard, pos.x, pos.y, text, {
+    labelId: 'area-main',
+    fontSize: model.display.area.labelSize,
+    color: '#000000',
+    anchorX: 'middle',
+    anchorY: 'middle'
+  });
+}
 
       function makeBoundingBoxFromArray(arr, extra) {
         const ex = typeof extra === 'number' ? extra : 0.9;
@@ -2331,16 +2487,16 @@ async function getCurrentSessionSafe() {
         return { x: vertex.x + outward.x * offset, y: vertex.y + outward.y * offset };
       }
 
-      function addPointLabelText(targetBoard, vertex, ctr, text, model) {
-        const pos = pointLabelPosition(vertex, ctr, model.display.vertex.labelPosition, model.display.vertex.labelOffset);
-        targetBoard.create('text', [pos.x, pos.y, text], {
-          fontSize: model.display.vertex.labelSize,
-          fixed: true,
-          anchorX: 'middle',
-          anchorY: 'middle',
-          cssStyle: 'color:' + model.display.vertex.labelColor + ';'
-        });
-      }
+      function addPointLabelText(targetBoard, vertex, ctr, text, model, labelId) {
+  const pos = pointLabelPosition(vertex, ctr, model.display.vertex.labelPosition, model.display.vertex.labelOffset);
+  createSelectableText(targetBoard, pos.x, pos.y, text, {
+    labelId,
+    fontSize: model.display.vertex.labelSize,
+    color: model.display.vertex.labelColor,
+    anchorX: 'middle',
+    anchorY: 'middle'
+  });
+}
 
       function unitNormalByMode(P, Q, ctr, mode) {
         const dx = Q.x - P.x;
@@ -2375,7 +2531,7 @@ async function getCurrentSessionSafe() {
         return name + '(' + formatDecimal(point.x) + ', ' + formatDecimal(point.y) + ')';
       }
 
-      function addSideArcAndLabel(targetBoard, P, Q, labelText, ctr, model) {
+      function addSideArcAndLabel(targetBoard, P, Q, labelText, ctr, model, labelId) {
         const mid = midpoint(P, Q);
         const len = Math.hypot(Q.x - P.x, Q.y - P.y) || 1;
         const n = unitNormalByMode(P, Q, ctr, model.display.edge.labelPosition);
@@ -2409,13 +2565,13 @@ async function getCurrentSessionSafe() {
         });
 
         const centerPoint = quadraticPoint(P, control, Q, 0.5);
-        targetBoard.create('text', [centerPoint.x, centerPoint.y, labelText], {
-          fontSize: model.display.edge.labelSize,
-          fixed: true,
-          anchorX: 'middle',
-          anchorY: 'middle',
-          cssStyle: 'background:transparent;padding:0;'
-        });
+        createSelectableText(targetBoard, centerPoint.x, centerPoint.y, labelText, {
+  labelId,
+  fontSize: model.display.edge.labelSize,
+  color: '#000000',
+  anchorX: 'middle',
+  anchorY: 'middle'
+});
       }
 
       function angleBetween(u, v) {
@@ -2430,21 +2586,33 @@ async function getCurrentSessionSafe() {
         return formatDecimal(radToDeg(rad), 1) + '°';
       }
 
-      function addAngleLabel(targetBoard, vertex, p1, p2, text, model) {
-        if (!text) return;
-        const u = normalize(vec(vertex, p1));
-        const v = normalize(vec(vertex, p2));
-        const bis = normalize({ x: u.x + v.x, y: u.y + v.y });
-        const radius = 0.7;
-        const pos = { x: vertex.x + bis.x * radius, y: vertex.y + bis.y * radius };
-        targetBoard.create('text', [pos.x, pos.y, text], {
-          fontSize: model.display.angle.labelSize,
-          fixed: true,
-          anchorX: 'middle',
-          anchorY: 'middle',
-          cssStyle: 'background:transparent;padding:0;'
-        });
-      }
+      function addAngleLabel(targetBoard, vertex, p1, p2, text, model, labelId) {
+  if (!text) return;
+  const u = normalize(vec(vertex, p1));
+  const v = normalize(vec(vertex, p2));
+  const bis = normalize({ x: u.x + v.x, y: u.y + v.y });
+
+  const posMode = model.display.angle.labelPosition || 'inside';
+  let dir = { x: bis.x, y: bis.y };
+  if (posMode === 'outside') {
+    dir = { x: -bis.x, y: -bis.y };
+  } else if (posMode === 'up') {
+    dir = { x: 0, y: 1 };
+  } else if (posMode === 'down') {
+    dir = { x: 0, y: -1 };
+  }
+
+  const radius = 0.7;
+  const pos = { x: vertex.x + dir.x * radius, y: vertex.y + dir.y * radius };
+
+  createSelectableText(targetBoard, pos.x, pos.y, text, {
+    labelId,
+    fontSize: model.display.angle.labelSize,
+    color: '#000000',
+    anchorX: 'middle',
+    anchorY: 'middle'
+  });
+}
 
       function addTriangleAngles(targetBoard, model) {
         const mode = model.display.angle.displayMode;
@@ -2515,15 +2683,18 @@ async function getCurrentSessionSafe() {
         addHeightLabelForBaseHeight(targetBoard, model);
 
         const ctr = centroidTriangle(p);
-        addPointLabelText(targetBoard, p.A, ctr, getPointDisplayText(vertexName(0, model.display.vertex.symbolMode), p.A, model.display.vertex.showCoordLabels), model);
-        addPointLabelText(targetBoard, p.B, ctr, getPointDisplayText(vertexName(1, model.display.vertex.symbolMode), p.B, model.display.vertex.showCoordLabels), model);
-        addPointLabelText(targetBoard, p.C, ctr, getPointDisplayText(vertexName(2, model.display.vertex.symbolMode), p.C, model.display.vertex.showCoordLabels), model);
+        addPointLabelText(targetBoard, p.A, ctr, getPointDisplayText(vertexName(0, model.display.vertex.symbolMode), p.A, model.display.vertex.showCoordLabels), model, 'point-A');
+addPointLabelText(targetBoard, p.B, ctr, getPointDisplayText(vertexName(1, model.display.vertex.symbolMode), p.B, model.display.vertex.showCoordLabels), model, 'point-B');
+addPointLabelText(targetBoard, p.C, ctr, getPointDisplayText(vertexName(2, model.display.vertex.symbolMode), p.C, model.display.vertex.showCoordLabels), model, 'point-C');
 
-        addTriangleAngles(targetBoard, model);
+addSideArcAndLabel(targetBoard, p.B, p.C, formatSideValue(model, 'a', model.metrics.sideUnits.a), ctr, model, 'side-a');
+addSideArcAndLabel(targetBoard, p.C, p.A, formatSideValue(model, 'b', model.metrics.sideUnits.b), ctr, model, 'side-b');
+addSideArcAndLabel(targetBoard, p.A, p.B, formatSideValue(model, 'c', model.metrics.sideUnits.c), ctr, model, 'side-c');
 
-        addSideArcAndLabel(targetBoard, p.B, p.C, formatSideValue(model, 'a', model.metrics.sideUnits.a), ctr, model);
-        addSideArcAndLabel(targetBoard, p.C, p.A, formatSideValue(model, 'b', model.metrics.sideUnits.b), ctr, model);
-        addSideArcAndLabel(targetBoard, p.A, p.B, formatSideValue(model, 'c', model.metrics.sideUnits.c), ctr, model);
+        addAngleLabel(targetBoard, p.A, p.B, p.C, formatAngleText(Aang, mode), model, 'angle-A');
+addAngleLabel(targetBoard, p.B, p.C, p.A, formatAngleText(Bang, mode), model, 'angle-B');
+addAngleLabel(targetBoard, p.C, p.A, p.B, formatAngleText(Cang, mode), model, 'angle-C');
+
         addAreaLabel(targetBoard, model);
       }
 
@@ -2704,25 +2875,36 @@ async function getCurrentSessionSafe() {
         return renderFunction(targetBoard, model);
       }
 
-      function renderMainBoard(model) {
-        disposeMainBoard();
-        board = JXG.JSXGraph.initBoard('box', {
-          boundingbox: getPreferredPrintBoundingBox(),
-          axis: false,
-          keepaspectratio: true,
-          zoom: {
-            wheel: getMouseWheelZoomEnabled(),
-            factorX: 1.25,
-            factorY: 1.25,
-            needShift: false
-          },
-          pan: { enabled: true, needTwoFingers: false, needShift: false },
-          showNavigation: false,
-          showCopyright: false
-        });
-        renderToBoard(board, model);
-        board.update();
-      }
+      function renderMainBoard(model, preservedBoundingBox) {
+  const currentBox = preservedBoundingBox || (board ? board.getBoundingBox().slice() : null);
+
+  disposeMainBoard();
+  labelRegistry = new Map();
+
+  board = JXG.JSXGraph.initBoard('box', {
+    boundingbox: currentBox || getPreferredPrintBoundingBox(),
+    axis: false,
+    keepaspectratio: true,
+    zoom: {
+      wheel: getMouseWheelZoomEnabled(),
+      factorX: 1.25,
+      factorY: 1.25,
+      needShift: false
+    },
+    pan: { enabled: true, needTwoFingers: false, needShift: false },
+    showNavigation: false,
+    showCopyright: false
+  });
+
+  renderToBoard(board, model);
+  board.update();
+
+  if (uiState.selectedLabelId && labelRegistry.has(uiState.selectedLabelId)) {
+    selectLabel(uiState.selectedLabelId);
+  } else {
+    uiState.selectedLabelId = null;
+  }
+}
 
       function buildShapeDetailHtml(model) {
         if (!model) return '';
@@ -2740,20 +2922,23 @@ async function getCurrentSessionSafe() {
         return parts.join('<br>');
       }
 
-      function renderAll() {
-        try {
-          showModeFields();
-          const model = computeModel();
-          latestModel = model;
-          renderMainBoard(model);
-          setShapeInfo([model.classification[0]], buildShapeDetailHtml(model));
-          setStatus('正常に描画しました。', 'ok');
-        } catch (err) {
-          latestModel = null;
-          setShapeInfo([], '詳細: ' + (err && err.message ? err.message : String(err)));
-          setStatus(err && err.message ? err.message : String(err), 'error');
-        }
-      }
+      function renderAll(preserveView = true, forcedBoundingBox = null) {
+  try {
+    showModeFields();
+    const model = computeModel();
+    latestModel = model;
+
+    const bbox = forcedBoundingBox || (preserveView && board ? board.getBoundingBox().slice() : null);
+
+    renderMainBoard(model, bbox);
+    setShapeInfo([model.classification[0]], buildShapeDetailHtml(model));
+    setStatus('正常に描画しました。', 'ok');
+  } catch (err) {
+    latestModel = null;
+    setShapeInfo([], '詳細: ' + (err && err.message ? err.message : String(err)));
+    setStatus(err && err.message ? err.message : String(err), 'error');
+  }
+}
 
       function zoomBoard(mode) {
         if (!board) return;
@@ -2831,6 +3016,25 @@ async function getCurrentSessionSafe() {
 }
 
       function bindEvents() {
+
+
+        document.querySelectorAll('input, select, textarea').forEach(el => {
+  el.addEventListener('input', () => {
+    if (uiState.isRestoring) return;
+    renderAll(true);
+  });
+
+  el.addEventListener('change', () => {
+    if (uiState.isRestoring) return;
+    pushHistory();
+    renderAll(true);
+  });
+});
+
+document.getElementById('btnRender').addEventListener('click', () => {
+  pushHistory();
+  renderAll(true);
+});
 
 document.getElementById('upgradeBtn').addEventListener('click', async function () {
   const session = await getCurrentSessionSafe();
@@ -2956,14 +3160,28 @@ document.getElementById('homeBtn').addEventListener('click', function () {
 });
 
         document.getElementById('zoomInBtn').addEventListener('click', () => zoomBoard('in'));
-        document.getElementById('zoomOutBtn').addEventListener('click', () => zoomBoard('out'));
-        document.getElementById('resetViewBtn').addEventListener('click', resetBoardView);
+document.getElementById('zoomOutBtn').addEventListener('click', () => zoomBoard('out'));
+document.getElementById('resetViewBtn').addEventListener('click', resetBoardView);
+document.getElementById('undoBtn').addEventListener('click', undoHistory);
+document.getElementById('redoBtn').addEventListener('click', redoHistory);
+        document.addEventListener('keydown', function (e) {
+  const tag = document.activeElement && document.activeElement.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+
+  if ((e.key === 'Backspace' || e.key === 'Delete') && uiState.selectedLabelId) {
+    e.preventDefault();
+    pushHistory();
+    uiState.hiddenLabels.add(uiState.selectedLabelId);
+    uiState.selectedLabelId = null;
+    renderAll(true);
+  }
+});
       }
 
-      bindEvents();
+bindEvents();
 
-
-renderAll();
+renderAll(false);
+uiState.undoStack.push(serializeFormState());
 refreshDownloadQuotaStatus();
 
 
