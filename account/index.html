@@ -1,44 +1,492 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <title>アカウント</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>アカウント | Instant Geometry</title>
+  <style>
+    :root{
+      --bg:#f6f7fb;
+      --panel:#ffffff;
+      --line:#d9dce7;
+      --text:#1f2430;
+      --muted:#687086;
+      --accent:#2a5bd7;
+      --accent-soft:#eef3ff;
+      --ok:#1f7a39;
+      --ok-soft:#eefaf1;
+      --warn:#9a6700;
+      --warn-soft:#fff8e6;
+      --shadow:0 10px 28px rgba(27,39,94,.08);
+      --radius:20px;
+    }
+
+    *{box-sizing:border-box}
+
+    body{
+      margin:0;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;
+      background:linear-gradient(180deg,#f8faff 0%,#f4f6fb 100%);
+      color:var(--text);
+      min-height:100vh;
+    }
+
+    a{
+      color:inherit;
+      text-decoration:none;
+    }
+
+    .wrap{
+      width:min(1100px,calc(100% - 32px));
+      margin:0 auto;
+    }
+
+    .topbar{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:16px;
+      padding:20px 0;
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      font-weight:700;
+      letter-spacing:.01em;
+    }
+
+    .brand-mark{
+      width:42px;
+      height:42px;
+      border-radius:12px;
+      display:grid;
+      place-items:center;
+      background:var(--accent);
+      color:#fff;
+      font-size:20px;
+      box-shadow:var(--shadow);
+    }
+
+    .nav{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .nav a{
+      padding:10px 14px;
+      border:1px solid var(--line);
+      border-radius:999px;
+      background:#fff;
+      font-size:14px;
+      color:var(--muted);
+      transition:.18s ease;
+    }
+
+    .nav a:hover{
+      border-color:var(--accent);
+      color:var(--accent);
+      background:var(--accent-soft);
+    }
+
+    .main{
+      padding:20px 0 56px;
+    }
+
+    .crumb{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      color:var(--muted);
+      font-size:14px;
+      margin-bottom:14px;
+    }
+
+    .crumb a:hover{
+      color:var(--accent);
+    }
+
+    h1{
+      margin:0 0 16px;
+      font-size:clamp(30px,4.2vw,46px);
+      line-height:1.15;
+      letter-spacing:-.02em;
+    }
+
+    .lead{
+      margin:0 0 28px;
+      color:var(--muted);
+      font-size:16px;
+      line-height:1.8;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns:1.2fr .8fr;
+      gap:20px;
+    }
+
+    .panel{
+      background:var(--panel);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:24px;
+    }
+
+    .panel h2{
+      margin:0 0 16px;
+      font-size:24px;
+      line-height:1.2;
+    }
+
+    .info-list{
+      display:grid;
+      gap:14px;
+    }
+
+    .info-row{
+      border:1px solid #e8ebf2;
+      border-radius:14px;
+      padding:14px 16px;
+      background:#fcfdff;
+    }
+
+    .info-label{
+      font-size:13px;
+      color:var(--muted);
+      margin-bottom:6px;
+    }
+
+    .info-value{
+      font-size:16px;
+      font-weight:600;
+      line-height:1.5;
+      word-break:break-word;
+    }
+
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 12px;
+      border-radius:999px;
+      font-size:14px;
+      font-weight:700;
+    }
+
+    .badge.ok{
+      color:var(--ok);
+      background:var(--ok-soft);
+    }
+
+    .badge.warn{
+      color:var(--warn);
+      background:var(--warn-soft);
+    }
+
+    .actions{
+      display:flex;
+      flex-wrap:wrap;
+      gap:12px;
+      margin-top:18px;
+    }
+
+    button, .button-link{
+      appearance:none;
+      border:none;
+      cursor:pointer;
+      padding:12px 16px;
+      border-radius:14px;
+      font-size:15px;
+      font-weight:700;
+      transition:.18s ease;
+    }
+
+    .primary{
+      background:var(--accent);
+      color:#fff;
+    }
+
+    .primary:hover{
+      filter:brightness(.97);
+    }
+
+    .secondary{
+      background:#fff;
+      color:var(--muted);
+      border:1px solid var(--line);
+    }
+
+    .secondary:hover{
+      border-color:var(--accent);
+      color:var(--accent);
+      background:var(--accent-soft);
+    }
+
+    .status{
+      margin-top:16px;
+      min-height:22px;
+      font-size:14px;
+      color:#b42318;
+    }
+
+    .status.ok{
+      color:var(--ok);
+    }
+
+    .small{
+      margin-top:14px;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.7;
+    }
+
+    .empty-box{
+      border:1px dashed #cfd7ea;
+      border-radius:16px;
+      padding:18px;
+      background:#fff;
+    }
+
+    .empty-box p{
+      margin:0;
+      color:var(--muted);
+      line-height:1.8;
+    }
+
+    @media (max-width: 820px){
+      .topbar{
+        flex-direction:column;
+        align-items:flex-start;
+      }
+
+      .grid{
+        grid-template-columns:1fr;
+      }
+    }
+  </style>
 </head>
 <body>
-  <h1>アカウント</h1>
+  <div class="wrap">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">人</div>
+        <div>Instant Geometry</div>
+      </div>
 
-  <p id="info">読み込み中...</p>
+      <nav class="nav">
+        <a href="/">トップ</a>
+        <a href="/draw/">図形を描く</a>
+        <a href="/problems/">問題を作る</a>
+        <a href="/functions/">関数を描く</a>
+      </nav>
+    </header>
 
-  <button id="logoutBtn">ログアウト</button>
+    <main class="main">
+      <div class="crumb">
+        <a href="/">トップ</a>
+        <span>›</span>
+        <span>アカウント</span>
+      </div>
+
+      <h1>アカウント</h1>
+      <p class="lead">
+        ログイン状態、メールアドレス、Proの利用状況を確認できます。
+      </p>
+
+      <div class="grid">
+        <section class="panel">
+          <h2>アカウント情報</h2>
+
+          <div id="loggedInView" style="display:none;">
+            <div class="info-list">
+              <div class="info-row">
+                <div class="info-label">ログイン状態</div>
+                <div class="info-value">
+                  <span class="badge ok">ログイン中</span>
+                </div>
+              </div>
+
+              <div class="info-row">
+                <div class="info-label">メールアドレス</div>
+                <div class="info-value" id="userEmail">-</div>
+              </div>
+
+              <div class="info-row">
+                <div class="info-label">ログイン方法</div>
+                <div class="info-value" id="providerName">-</div>
+              </div>
+            </div>
+
+            <div class="actions">
+              <a class="button-link secondary" href="/upgrade/">Proを見る</a>
+              <button type="button" class="secondary" id="logoutBtn">ログアウト</button>
+            </div>
+
+            <div class="status" id="status"></div>
+          </div>
+
+          <div id="loggedOutView" class="empty-box" style="display:none;">
+            <p>
+              まだログインしていません。<br>
+              Googleアカウントでログインすると、アカウント情報やPro状態を確認できます。
+            </p>
+
+            <div class="actions">
+              <a class="button-link primary" href="/login/?redirect=/account/">ログインする</a>
+            </div>
+          </div>
+        </section>
+
+        <aside class="panel">
+          <h2>利用プラン</h2>
+
+          <div id="planBox">
+            <div class="info-row">
+              <div class="info-label">現在のプラン</div>
+              <div class="info-value" id="planName">確認中...</div>
+            </div>
+
+            <div class="info-row">
+              <div class="info-label">説明</div>
+              <div class="info-value" id="planDescription">読み込み中です。</div>
+            </div>
+          </div>
+
+          <div class="small">
+            Proにすると、保存回数やPDF出力回数の制限なく使える設計に拡張しやすくなります。
+          </div>
+        </aside>
+      </div>
+    </main>
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/assets/supabase-client.js"></script>
-
+  <script src="/assets/usage.js"></script>
   <script>
-    async function init() {
-      const { data } = await supabaseClient.auth.getSession();
-
-      if (!data.session) {
-        location.href = '/login/';
-        return;
-      }
-
-      const user = data.session.user;
-
-      document.getElementById('info').textContent =
-        'ログイン成功\nメール: ' + user.email + '\nuser_id: ' + user.id;
-
-            setTimeout(() => {
-      location.href = '/';
-    }, 1000);
+    function setStatus(message, ok) {
+      const el = document.getElementById('status');
+      el.textContent = message || '';
+      el.classList.toggle('ok', !!ok);
     }
 
-    document.getElementById('logoutBtn').onclick = async () => {
-      await supabaseClient.auth.signOut();
-      location.href = '/';
-    };
+    function getProviderLabel(session) {
+      const provider =
+        session?.user?.app_metadata?.provider ||
+        session?.user?.identities?.[0]?.provider ||
+        '';
 
-    init();
+      if (provider === 'google') return 'Google';
+      if (provider === 'email') return 'Email';
+      return provider || '不明';
+    }
+
+    async function getPlanInfo(session) {
+      if (!session) {
+        return {
+          name: '無料プラン',
+          description: 'ログイン後にPro状態を確認できます。',
+          isPro: false
+        };
+      }
+
+      try {
+        if (typeof isProUser === 'function') {
+          const pro = await isProUser();
+          if (pro) {
+            return {
+              name: 'Proプラン',
+              description: '現在、有料プランが有効です。',
+              isPro: true
+            };
+          }
+        }
+      } catch (e) {
+      }
+
+      return {
+        name: '無料プラン',
+        description: '現在は無料プランです。',
+        isPro: false
+      };
+    }
+
+    async function renderAccountPage() {
+      const loggedInView = document.getElementById('loggedInView');
+      const loggedOutView = document.getElementById('loggedOutView');
+      const userEmail = document.getElementById('userEmail');
+      const providerName = document.getElementById('providerName');
+      const planName = document.getElementById('planName');
+      const planDescription = document.getElementById('planDescription');
+
+      try {
+        const { data, error } = await supabaseClient.auth.getSession();
+
+        if (error) {
+          loggedInView.style.display = 'none';
+          loggedOutView.style.display = 'block';
+          planName.textContent = '無料プラン';
+          planDescription.textContent = 'ログイン状態を確認できませんでした。';
+          return;
+        }
+
+        const session = data.session;
+
+        if (!session) {
+          loggedInView.style.display = 'none';
+          loggedOutView.style.display = 'block';
+          planName.textContent = '無料プラン';
+          planDescription.textContent = 'ログイン後にPro状態を確認できます。';
+          return;
+        }
+
+        loggedInView.style.display = 'block';
+        loggedOutView.style.display = 'none';
+
+        userEmail.textContent = session.user?.email || '-';
+        providerName.textContent = getProviderLabel(session);
+
+        const plan = await getPlanInfo(session);
+        planName.innerHTML = plan.isPro
+          ? '<span class="badge ok">Proプラン</span>'
+          : '<span class="badge warn">無料プラン</span>';
+        planDescription.textContent = plan.description;
+      } catch (e) {
+        loggedInView.style.display = 'none';
+        loggedOutView.style.display = 'block';
+        planName.textContent = '無料プラン';
+        planDescription.textContent = '読み込みに失敗しました。';
+      }
+    }
+
+    async function logout() {
+      try {
+        const { error } = await supabaseClient.auth.signOut();
+        if (error) {
+          setStatus(error.message || 'ログアウトに失敗しました。');
+          return;
+        }
+
+        setStatus('ログアウトしました。', true);
+        setTimeout(() => {
+          location.href = '/';
+        }, 500);
+      } catch (e) {
+        setStatus('ログアウトに失敗しました。');
+      }
+    }
+
+    document.getElementById('logoutBtn').addEventListener('click', logout);
+
+    supabaseClient.auth.onAuthStateChange(() => {
+      renderAccountPage();
+    });
+
+    renderAccountPage();
   </script>
 </body>
 </html>

@@ -86,6 +86,28 @@
       background:var(--accent-soft);
     }
 
+    .auth-status{
+  padding:10px 14px;
+  border:1px solid var(--line);
+  border-radius:999px;
+  background:#fff;
+  font-size:14px;
+  color:var(--muted);
+  cursor:default;
+}
+
+.auth-status[data-auth-state="logged-in"]{
+  color:#1f7a39;
+  background:#eefaf1;
+  border-color:#cfe8d6;
+}
+
+.auth-status[data-auth-state="logged-out"]{
+  color:#9a6700;
+  background:#fff8e6;
+  border-color:#f0dfb2;
+}
+
     .hero{
       padding:26px 0 16px;
     }
@@ -292,6 +314,8 @@
       </div>
 
       <nav class="nav">
+  <span class="auth-status" id="authStatus">確認中...</span>
+  <a href="/">トップ</a>
   <a href="/about/">このサイトについて</a>
   <a href="/legal/">プライバシーポリシー</a>
   <a href="/login/" id="loginBtn">ログイン</a>
@@ -560,24 +584,7 @@
     </section>
   </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-const SUPABASE_URL = "YOUR_SUPABASE_URL";
-const SUPABASE_KEY = "YOUR_SUPABASE_ANON_KEY";
-
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-async function updateLoginUI(){
-  const { data } = await supabaseClient.auth.getSession();
-  const btn = document.getElementById('loginBtn');
-  if(!btn) return;
-
-  if(data.session){
-    btn.textContent = "アカウント";
-    btn.href = "/account/";
-  }
-}
-
-updateLoginUI();
-</script>
+<script src="/assets/supabase-client.js"></script>
+<script src="/assets/auth-ui.js"></script>
 </body>
 </html>
