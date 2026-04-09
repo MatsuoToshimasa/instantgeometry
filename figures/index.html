@@ -2851,6 +2851,13 @@ document.getElementById('upgradeBtnHeader').addEventListener('click', async func
 });
 
 
+document.querySelectorAll('input, select, textarea').forEach(el => {
+  el.addEventListener('input', renderAll);
+  el.addEventListener('change', renderAll);
+});
+
+document.getElementById('btnRender').addEventListener('click', renderAll);
+
 document.getElementById('saveBtn').addEventListener('click', async function () {
   try {
     const session = await getCurrentSessionSafe();
@@ -2958,6 +2965,8 @@ document.getElementById('homeBtn').addEventListener('click', function () {
 
 renderAll();
 refreshDownloadQuotaStatus();
+
+
     })();
 
 
