@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>問題を作る | Instant Geometry</title>
+  <title>図形を描く | Instant Geometry</title>
   <style>
     :root{
       --bg:#f6f7fb;
@@ -223,34 +223,6 @@
       line-height:1.75;
     }
 
-    .wide-card{
-      display:block;
-      background:#fff;
-      border:1px solid var(--line);
-      border-radius:20px;
-      box-shadow:var(--shadow);
-      padding:22px;
-      transition:.18s ease;
-    }
-
-    .wide-card:hover{
-      transform:translateY(-4px);
-      border-color:rgba(42,91,215,.35);
-      box-shadow:0 14px 34px rgba(27,39,94,.12);
-    }
-
-    .wide-card h3{
-      margin:0 0 10px;
-      font-size:24px;
-    }
-
-    .wide-card p{
-      margin:0;
-      color:var(--muted);
-      line-height:1.8;
-      font-size:15px;
-    }
-
     .quick-links{
       display:grid;
       grid-template-columns:repeat(3,minmax(0,1fr));
@@ -315,190 +287,248 @@
   <div class="wrap">
     <header class="topbar">
       <div class="brand">
-        <div class="brand-mark">□</div>
+        <div class="brand-mark">△</div>
         <div>Instant Geometry</div>
       </div>
 
       <nav class="nav">
-        <a href="/">トップ</a>
-        <a href="/about/">このサイトについて</a>
-        <a href="/legal/">プライバシーポリシー</a>
-        <a href="/login/" id="loginBtn">ログイン</a>
-      </nav>
+  <a href="/about/">このサイトについて</a>
+  <a href="/legal/">プライバシーポリシー</a>
+  <a href="/login/" id="loginBtn">ログイン</a>
+</nav>
     </header>
 
     <section class="hero">
       <div class="crumb">
         <a href="/">トップ</a>
         <span>›</span>
-        <span>問題を作る</span>
+        <span>図形を描く</span>
       </div>
 
-      <h1>目的に合わせて、<br>数学問題をすばやく作る</h1>
+      <h1>条件に合わせて、<br>図形をすばやく描く</h1>
 
       <p>
-        三角形を中心とした数学問題を、分野別にまとめて作成できます。
-        面積、角度、辺の長さ、座標、種類判定など、授業や演習に合わせて入口を選んでください。
+        描きたい図形の種類と、与えられている条件に合わせて入口を選んでください。
+        たとえば、三角形なら「3辺がわかっている」「2辺とその間の角がわかっている」「3点の座標がわかっている」など、
+        目的ごとにすぐ描画を始められます。
       </p>
-    </section>
-
-    <section class="section">
-      <a class="wide-card" href="/triangle_problem_generator_complete_v059_added_problems.html">
-        <h3>総合問題ジェネレーター</h3>
-        <p>
-          すぐに問題を作りたい場合は、まずここから始めるのがおすすめです。
-          三角形に関する複数分野の問題をまとめて選び、問題数や文字サイズを指定して、一括で生成・印刷できます。
-        </p>
-      </a>
     </section>
 
     <section class="section">
       <div class="section-head">
         <div>
-          <h2>分野別に作る</h2>
-          <p>作りたい問題の種類ごとに入口を分けています。</p>
+          <h2>三角形</h2>
+          <p>与えられている条件に応じて、三角形を描画します。</p>
         </div>
       </div>
 
       <div class="cards">
-        <a class="card" href="/triangle_problem_generator_complete_v059_added_problems.html#area">
+        <a class="card" href="/figures/?shape=triangle&mode=sss">
           <div class="card-top">
-            <div class="tag">三角形問題</div>
+            <div class="tag">三角形</div>
             <div class="arrow">→</div>
           </div>
-          <h3>面積</h3>
+          <h3>三角形（SSS）</h3>
           <div class="illust" aria-hidden="true">
             <svg viewBox="0 0 280 140" width="100%" height="100%">
               <rect width="280" height="140" fill="#fbfcff"/>
-              <polygon points="52,108 214,108 126,48" fill="rgba(42,91,215,.10)" stroke="#2a5bd7" stroke-width="3"/>
-              <line x1="126" y1="48" x2="126" y2="108" stroke="#7d8db8" stroke-width="2" stroke-dasharray="5 5"/>
-              <text x="132" y="84" font-size="13" fill="#687086" font-family="sans-serif">h</text>
-              <text x="118" y="124" font-size="13" fill="#687086" font-family="sans-serif">底辺</text>
+              <polygon points="44,108 220,108 118,42" fill="rgba(42,91,215,.10)" stroke="#2a5bd7" stroke-width="3"/>
+              <text x="120" y="32" font-size="14" fill="#687086" font-family="sans-serif">a, b, c</text>
             </svg>
           </div>
-          <p class="purpose">底辺と高さ、3辺、座標などから、三角形の面積を求める問題を作ります。</p>
+          <p class="purpose">3辺の長さがわかっている三角形を描画します。</p>
         </a>
 
-        <a class="card" href="/triangle_problem_generator_complete_v059_added_problems.html#angles">
+        <a class="card" href="/figures/?shape=triangle&mode=sas">
           <div class="card-top">
-            <div class="tag">三角形問題</div>
+            <div class="tag">三角形</div>
             <div class="arrow">→</div>
           </div>
-          <h3>角度</h3>
+          <h3>三角形（SAS）</h3>
           <div class="illust" aria-hidden="true">
             <svg viewBox="0 0 280 140" width="100%" height="100%">
               <rect width="280" height="140" fill="#fbfcff"/>
-              <polygon points="58,106 220,106 138,46" fill="rgba(42,91,215,.10)" stroke="#2a5bd7" stroke-width="3"/>
-              <path d="M84 106 A24 24 0 0 1 102 89" fill="none" stroke="#7d8db8" stroke-width="2"/>
-              <text x="88" y="84" font-size="13" fill="#687086" font-family="sans-serif">θ</text>
+              <polygon points="42,108 210,108 130,48" fill="rgba(42,91,215,.10)" stroke="#2a5bd7" stroke-width="3"/>
+              <path d="M70 108 A28 28 0 0 1 91 85" fill="none" stroke="#7d8db8" stroke-width="2"/>
+              <text x="78" y="83" font-size="14" fill="#687086" font-family="sans-serif">∠</text>
             </svg>
           </div>
-          <p class="purpose">内角、外角、二等辺三角形、直角三角形などの角度問題を作ります。</p>
+          <p class="purpose">2辺の長さと、その間の角がわかっている三角形を描画します。</p>
         </a>
 
-        <a class="card" href="/triangle_problem_generator_complete_v059_added_problems.html#sides">
+        <a class="card" href="/figures/?shape=triangle&mode=points">
           <div class="card-top">
-            <div class="tag">三角形問題</div>
+            <div class="tag">三角形</div>
             <div class="arrow">→</div>
           </div>
-          <h3>辺の長さ</h3>
+          <h3>三角形（3点座標）</h3>
           <div class="illust" aria-hidden="true">
             <svg viewBox="0 0 280 140" width="100%" height="100%">
               <rect width="280" height="140" fill="#fbfcff"/>
-              <polygon points="64,110 210,110 64,52" fill="rgba(42,91,215,.10)" stroke="#2a5bd7" stroke-width="3"/>
-              <text x="116" y="102" font-size="13" fill="#687086" font-family="sans-serif">a</text>
-              <text x="66" y="82" font-size="13" fill="#687086" font-family="sans-serif">b</text>
-              <text x="132" y="78" font-size="13" fill="#687086" font-family="sans-serif">c</text>
+              <line x1="24" y1="116" x2="256" y2="116" stroke="#cfd7ea" stroke-width="2"/>
+              <line x1="44" y1="126" x2="44" y2="20" stroke="#cfd7ea" stroke-width="2"/>
+              <polygon points="76,102 196,102 126,52" fill="rgba(42,91,215,.10)" stroke="#2a5bd7" stroke-width="3"/>
             </svg>
           </div>
-          <p class="purpose">三平方の定理、三角比、余弦定理などを使う辺の長さの問題を作ります。</p>
+          <p class="purpose">3点の座標を入力して三角形を描画します。</p>
         </a>
 
-        <a class="card" href="/triangle_problem_generator_complete_v059_added_problems.html#coordinates">
+        <a class="card" href="/figures/?shape=triangle&mode=baseHeight">
           <div class="card-top">
-            <div class="tag">三角形問題</div>
+            <div class="tag">三角形</div>
             <div class="arrow">→</div>
           </div>
-          <h3>座標</h3>
+          <h3>三角形（底辺＋高さ）</h3>
           <div class="illust" aria-hidden="true">
             <svg viewBox="0 0 280 140" width="100%" height="100%">
               <rect width="280" height="140" fill="#fbfcff"/>
-              <line x1="28" y1="112" x2="252" y2="112" stroke="#cfd7ea" stroke-width="2"/>
-              <line x1="48" y1="124" x2="48" y2="20" stroke="#cfd7ea" stroke-width="2"/>
-              <polygon points="84,98 204,98 130,52" fill="rgba(42,91,215,.10)" stroke="#2a5bd7" stroke-width="3"/>
+              <polygon points="44,106 218,106 132,46" fill="rgba(42,91,215,.10)" stroke="#2a5bd7" stroke-width="3"/>
+              <line x1="132" y1="46" x2="132" y2="106" stroke="#7d8db8" stroke-width="2" stroke-dasharray="5 5"/>
             </svg>
           </div>
-          <p class="purpose">距離、中点、重心、面積、直角判定など、座標平面上の問題を作ります。</p>
+          <p class="purpose">底辺・高さ・足の位置から三角形を描画します。</p>
+        </a>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <h2>四角形</h2>
+          <p>代表的な四角形や、一般の四角形を描画します。</p>
+        </div>
+      </div>
+
+      <div class="cards">
+        <a class="card" href="/figures/?shape=quadrilateral&quadType=square">
+          <div class="card-top">
+            <div class="tag">四角形</div>
+            <div class="arrow">→</div>
+          </div>
+          <h3>正方形</h3>
+          <div class="illust" aria-hidden="true">
+            <svg viewBox="0 0 280 140" width="100%" height="100%">
+              <rect width="280" height="140" fill="#fbfcff"/>
+              <rect x="88" y="34" width="100" height="100" fill="rgba(42,91,215,.10)" stroke="#2a5bd7" stroke-width="3"/>
+            </svg>
+          </div>
+          <p class="purpose">中心、一辺、回転角から正方形を描画します。</p>
         </a>
 
-        <a class="card" href="/triangle_problem_generator_complete_v059_added_problems.html#type">
+        <a class="card" href="/figures/?shape=quadrilateral&quadType=rectangle">
           <div class="card-top">
-            <div class="tag">三角形問題</div>
+            <div class="tag">四角形</div>
             <div class="arrow">→</div>
           </div>
-          <h3>種類判定</h3>
+          <h3>長方形</h3>
           <div class="illust" aria-hidden="true">
             <svg viewBox="0 0 280 140" width="100%" height="100%">
               <rect width="280" height="140" fill="#fbfcff"/>
-              <polygon points="58,104 216,104 128,48" fill="rgba(42,91,215,.10)" stroke="#2a5bd7" stroke-width="3"/>
-              <text x="98" y="124" font-size="13" fill="#687086" font-family="sans-serif">二等辺？</text>
+              <rect x="66" y="42" width="148" height="72" fill="rgba(42,91,215,.10)" stroke="#2a5bd7" stroke-width="3"/>
             </svg>
           </div>
-          <p class="purpose">直角三角形、二等辺三角形、鋭角三角形などの種類を判定する問題を作ります。</p>
+          <p class="purpose">中心、横、縦、回転角から長方形を描画します。</p>
         </a>
 
-        <a class="card" href="/triangle_problem_generator_complete_v059_added_problems.html#range">
+        <a class="card" href="/figures/?shape=quadrilateral&quadType=rhombus">
           <div class="card-top">
-            <div class="tag">三角形問題</div>
+            <div class="tag">四角形</div>
             <div class="arrow">→</div>
           </div>
-          <h3>範囲</h3>
+          <h3>菱形</h3>
           <div class="illust" aria-hidden="true">
             <svg viewBox="0 0 280 140" width="100%" height="100%">
               <rect width="280" height="140" fill="#fbfcff"/>
-              <polygon points="62,108 214,108 132,50" fill="rgba(42,91,215,.10)" stroke="#2a5bd7" stroke-width="3"/>
-              <text x="108" y="126" font-size="13" fill="#687086" font-family="sans-serif">|a-b| &lt; x &lt; a+b</text>
+              <polygon points="140,28 216,70 140,112 64,70" fill="rgba(42,91,215,.10)" stroke="#2a5bd7" stroke-width="3"/>
             </svg>
           </div>
-          <p class="purpose">三角形が成立する条件を使って、残りの辺の長さの範囲を求める問題を作ります。</p>
+          <p class="purpose">対角線、中心、回転角から菱形を描画します。</p>
         </a>
 
-        <a class="card" href="/triangle_problem_generator_complete_v059_added_problems.html#ratio">
+        <a class="card" href="/figures/?shape=quadrilateral&quadType=trapezoid">
           <div class="card-top">
-            <div class="tag">三角形問題</div>
+            <div class="tag">四角形</div>
             <div class="arrow">→</div>
           </div>
-          <h3>比</h3>
+          <h3>台形</h3>
           <div class="illust" aria-hidden="true">
             <svg viewBox="0 0 280 140" width="100%" height="100%">
               <rect width="280" height="140" fill="#fbfcff"/>
-              <polygon points="78,106 142,106 108,58" fill="rgba(42,91,215,.10)" stroke="#2a5bd7" stroke-width="3"/>
-              <polygon points="164,106 244,106 202,42" fill="rgba(42,91,215,.10)" stroke="#2a5bd7" stroke-width="3"/>
-              <text x="108" y="124" font-size="13" fill="#687086" font-family="sans-serif">1 : 2</text>
+              <polygon points="72,102 218,102 184,50 106,50" fill="rgba(42,91,215,.10)" stroke="#2a5bd7" stroke-width="3"/>
             </svg>
           </div>
-          <p class="purpose">相似比、面積比、周の長さ比など、比に関する問題を作ります。</p>
+          <p class="purpose">上底、下底、高さ、ずれから台形を描画します。</p>
+        </a>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <h2>その他の図形</h2>
+          <p>円、楕円、正N角形、星型などを描画します。</p>
+        </div>
+      </div>
+
+      <div class="cards">
+        <a class="card" href="/figures/?shape=regularPolygon">
+          <div class="card-top">
+            <div class="tag">その他</div>
+            <div class="arrow">→</div>
+          </div>
+          <h3>正N角形</h3>
+          <div class="illust" aria-hidden="true">
+            <svg viewBox="0 0 280 140" width="100%" height="100%">
+              <rect width="280" height="140" fill="#fbfcff"/>
+              <polygon points="140,24 198,56 198,108 140,136 82,108 82,56" transform="translate(0,-10) scale(1,.82)" fill="rgba(42,91,215,.10)" stroke="#2a5bd7" stroke-width="3"/>
+            </svg>
+          </div>
+          <p class="purpose">中心、半径、頂点数から正N角形を描画します。</p>
         </a>
 
-        <a class="card" href="/triangle_problem_generator_complete_v059_added_problems.html">
+        <a class="card" href="/figures/?shape=circle">
           <div class="card-top">
-            <div class="tag">三角形問題</div>
+            <div class="tag">その他</div>
             <div class="arrow">→</div>
           </div>
-          <h3>まとめて選ぶ</h3>
+          <h3>円</h3>
           <div class="illust" aria-hidden="true">
             <svg viewBox="0 0 280 140" width="100%" height="100%">
               <rect width="280" height="140" fill="#fbfcff"/>
-              <rect x="56" y="24" width="168" height="92" rx="14" fill="#ffffff" stroke="#d9dce7" stroke-width="2"/>
-              <rect x="76" y="44" width="16" height="16" rx="4" fill="#2a5bd7"/>
-              <rect x="76" y="68" width="16" height="16" rx="4" fill="#cfd7ea"/>
-              <rect x="76" y="92" width="16" height="16" rx="4" fill="#cfd7ea"/>
-              <line x1="102" y1="52" x2="188" y2="52" stroke="#cfd7ea" stroke-width="2"/>
-              <line x1="102" y1="76" x2="188" y2="76" stroke="#cfd7ea" stroke-width="2"/>
-              <line x1="102" y1="100" x2="172" y2="100" stroke="#cfd7ea" stroke-width="2"/>
+              <circle cx="140" cy="70" r="42" fill="rgba(42,91,215,.10)" stroke="#2a5bd7" stroke-width="3"/>
             </svg>
           </div>
-          <p class="purpose">複数分野を同時に選んで、まとめて問題プリントを作ります。</p>
+          <p class="purpose">中心と半径から円を描画します。</p>
+        </a>
+
+        <a class="card" href="/figures/?shape=ellipse">
+          <div class="card-top">
+            <div class="tag">その他</div>
+            <div class="arrow">→</div>
+          </div>
+          <h3>楕円</h3>
+          <div class="illust" aria-hidden="true">
+            <svg viewBox="0 0 280 140" width="100%" height="100%">
+              <rect width="280" height="140" fill="#fbfcff"/>
+              <ellipse cx="140" cy="70" rx="58" ry="34" fill="rgba(42,91,215,.10)" stroke="#2a5bd7" stroke-width="3"/>
+            </svg>
+          </div>
+          <p class="purpose">中心、長半径、短半径、回転角から楕円を描画します。</p>
+        </a>
+
+        <a class="card" href="/figures/?shape=star">
+          <div class="card-top">
+            <div class="tag">その他</div>
+            <div class="arrow">→</div>
+          </div>
+          <h3>星型</h3>
+          <div class="illust" aria-hidden="true">
+            <svg viewBox="0 0 280 140" width="100%" height="100%">
+              <rect width="280" height="140" fill="#fbfcff"/>
+              <polygon points="140,24 156,56 192,58 166,82 174,116 140,98 106,116 114,82 88,58 124,56" fill="rgba(42,91,215,.10)" stroke="#2a5bd7" stroke-width="3"/>
+            </svg>
+          </div>
+          <p class="purpose">中心、外半径、内半径、頂点数から星型を描画します。</p>
         </a>
       </div>
     </section>
@@ -512,43 +542,42 @@
       </div>
 
       <div class="quick-links">
-        <a class="quick-link" href="/triangle_problem_generator_complete_v059_added_problems.html">
-          <strong>総合問題ジェネレーター</strong>
-          まずは一括で問題を作りたい場合はこちら。
+        <a class="quick-link" href="/figures/?shape=triangle&mode=sss">
+          <strong>三角形（SSS）</strong>
+          3辺の長さからすぐ描画します。
         </a>
 
-        <a class="quick-link" href="/triangle_problem_generator_complete_v059_added_problems.html#area">
-          <strong>面積問題</strong>
-          授業や宿題で使いやすい定番分野です。
+        <a class="quick-link" href="/figures/?shape=triangle&mode=points">
+          <strong>三角形（3点座標）</strong>
+          座標をそのまま入力して描画します。
         </a>
 
-        <a class="quick-link" href="/triangle_problem_generator_complete_v059_added_problems.html#coordinates">
-          <strong>座標問題</strong>
-          距離や面積など、座標平面の問題を作ります。
+        <a class="quick-link" href="/figures/?shape=circle">
+          <strong>円</strong>
+          中心と半径からすぐ描画します。
         </a>
       </div>
     </section>
   </div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = "YOUR_SUPABASE_URL";
+const SUPABASE_KEY = "YOUR_SUPABASE_ANON_KEY";
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script>
-    const SUPABASE_URL = "YOUR_SUPABASE_URL";
-    const SUPABASE_KEY = "YOUR_SUPABASE_ANON_KEY";
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+async function updateLoginUI(){
+  const { data } = await supabaseClient.auth.getSession();
+  const btn = document.getElementById('loginBtn');
+  if(!btn) return;
 
-    async function updateLoginUI(){
-      const { data } = await supabaseClient.auth.getSession();
-      const btn = document.getElementById('loginBtn');
-      if(!btn) return;
+  if(data.session){
+    btn.textContent = "アカウント";
+    btn.href = "/account/";
+  }
+}
 
-      if(data.session){
-        btn.textContent = "アカウント";
-        btn.href = "/account/";
-      }
-    }
-
-    updateLoginUI();
-  </script>
+updateLoginUI();
+</script>
 </body>
 </html>

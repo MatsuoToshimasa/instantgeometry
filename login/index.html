@@ -1,48 +1,317 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <title>ログイン</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ログイン | Instant Geometry</title>
+  <style>
+    :root{
+      --bg:#f6f7fb;
+      --panel:#ffffff;
+      --line:#d9dce7;
+      --text:#1f2430;
+      --muted:#687086;
+      --accent:#2a5bd7;
+      --accent-soft:#eef3ff;
+      --shadow:0 10px 28px rgba(27,39,94,.08);
+      --radius:20px;
+    }
+
+    *{box-sizing:border-box}
+
+    body{
+      margin:0;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;
+      background:linear-gradient(180deg,#f8faff 0%,#f4f6fb 100%);
+      color:var(--text);
+      min-height:100vh;
+    }
+
+    a{
+      color:inherit;
+      text-decoration:none;
+    }
+
+    .wrap{
+      width:min(1100px,calc(100% - 32px));
+      margin:0 auto;
+    }
+
+    .topbar{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:16px;
+      padding:20px 0;
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      font-weight:700;
+      letter-spacing:.01em;
+    }
+
+    .brand-mark{
+      width:42px;
+      height:42px;
+      border-radius:12px;
+      display:grid;
+      place-items:center;
+      background:var(--accent);
+      color:#fff;
+      font-size:20px;
+      box-shadow:var(--shadow);
+    }
+
+    .nav{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .nav a{
+      padding:10px 14px;
+      border:1px solid var(--line);
+      border-radius:999px;
+      background:#fff;
+      font-size:14px;
+      color:var(--muted);
+      transition:.18s ease;
+    }
+
+    .nav a:hover{
+      border-color:var(--accent);
+      color:var(--accent);
+      background:var(--accent-soft);
+    }
+
+    .main{
+      min-height:calc(100vh - 90px);
+      display:grid;
+      place-items:center;
+      padding:24px 0 48px;
+    }
+
+    .panel{
+      width:min(520px,100%);
+      background:var(--panel);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:28px;
+    }
+
+    .crumb{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      color:var(--muted);
+      font-size:14px;
+      margin-bottom:14px;
+    }
+
+    .crumb a:hover{
+      color:var(--accent);
+    }
+
+    h1{
+      margin:0 0 14px;
+      font-size:34px;
+      line-height:1.2;
+      letter-spacing:-.02em;
+    }
+
+    .lead{
+      margin:0 0 24px;
+      color:var(--muted);
+      font-size:15px;
+      line-height:1.8;
+    }
+
+    .login-btn{
+      width:100%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:12px;
+      padding:14px 16px;
+      border:1px solid var(--line);
+      border-radius:14px;
+      background:#fff;
+      font-size:16px;
+      font-weight:700;
+      color:var(--text);
+      cursor:pointer;
+      transition:.18s ease;
+    }
+
+    .login-btn:hover{
+      border-color:var(--accent);
+      background:var(--accent-soft);
+      color:var(--accent);
+    }
+
+    .small{
+      margin-top:16px;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.7;
+    }
+
+    .status{
+      margin-top:16px;
+      min-height:22px;
+      font-size:14px;
+      color:#b42318;
+    }
+
+    .status.ok{
+      color:#1e6b31;
+    }
+
+    .sub-actions{
+      margin-top:18px;
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .sub-actions a{
+      padding:10px 14px;
+      border:1px solid var(--line);
+      border-radius:999px;
+      background:#fff;
+      font-size:14px;
+      color:var(--muted);
+      transition:.18s ease;
+    }
+
+    .sub-actions a:hover{
+      border-color:var(--accent);
+      color:var(--accent);
+      background:var(--accent-soft);
+    }
+
+    @media (max-width: 640px){
+      .topbar{
+        flex-direction:column;
+        align-items:flex-start;
+      }
+
+      .panel{
+        padding:22px;
+      }
+
+      h1{
+        font-size:28px;
+      }
+    }
+  </style>
 </head>
 <body>
-  <h1>ログイン</h1>
+  <div class="wrap">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">G</div>
+        <div>Instant Geometry</div>
+      </div>
 
-  <input id="email" type="email" placeholder="メールアドレス">
-  <input id="password" type="password" placeholder="パスワード">
-  <button id="loginBtn">ログイン</button>
+      <nav class="nav">
+        <a href="/">トップ</a>
+        <a href="/draw/">図形を描く</a>
+        <a href="/problems/">問題を作る</a>
+        <a href="/functions/">関数を描く</a>
+      </nav>
+    </header>
 
-  <p id="msg"></p>
+    <main class="main">
+      <section class="panel">
+        <div class="crumb">
+          <a href="/">トップ</a>
+          <span>›</span>
+          <span>ログイン</span>
+        </div>
+
+        <h1>ログイン</h1>
+        <p class="lead">
+          Googleアカウントでログインできます。<br>
+          Proの利用状況や、今後のアカウント機能のために使用します。
+        </p>
+
+        <button type="button" class="login-btn" id="googleLoginBtn">
+          <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true">
+            <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303C33.651 32.657 29.24 36 24 36c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.959 3.041l5.657-5.657C34.054 6.053 29.277 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/>
+            <path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.959 3.041l5.657-5.657C34.054 6.053 29.277 4 24 4 16.318 4 9.656 8.337 6.306 14.691z"/>
+            <path fill="#4CAF50" d="M24 44c5.174 0 9.86-1.977 13.409-5.192l-6.19-5.238C29.166 35.091 26.701 36 24 36c-5.219 0-9.617-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"/>
+            <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-.793 2.237-2.231 4.166-4.084 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"/>
+          </svg>
+          Googleでログイン
+        </button>
+
+        <div class="status" id="status"></div>
+
+        <div class="sub-actions">
+          <a href="/">トップへ戻る</a>
+          <a href="/about/">このサイトについて</a>
+        </div>
+
+        <div class="small">
+          ログイン後は、元いたページまたは指定したページへ戻します。
+        </div>
+      </section>
+    </main>
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/assets/supabase-client.js"></script>
-
   <script>
-    document.getElementById('loginBtn').onclick = async () => {
-      const email = document.getElementById('email').value.trim();
-      const password = document.getElementById('password').value;
-      const msg = document.getElementById('msg');
+    function getRedirectTarget() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('redirect') || '/account/';
+    }
+
+    async function updateLoginState() {
+      const status = document.getElementById('status');
+      try {
+        const { data } = await supabaseClient.auth.getSession();
+        if (data.session) {
+          status.textContent = 'すでにログインしています。アカウントページへ移動します。';
+          status.classList.add('ok');
+          setTimeout(() => {
+            location.href = getRedirectTarget();
+          }, 500);
+        }
+      } catch (e) {
+      }
+    }
+
+    async function signInWithGoogle() {
+      const status = document.getElementById('status');
+      status.textContent = '';
 
       try {
-        if (typeof supabaseClient === 'undefined') {
-          msg.textContent = 'supabaseClient が未定義です';
-          return;
-        }
+        const redirectTo = window.location.origin + getRedirectTarget();
 
-        const { error } = await supabaseClient.auth.signInWithPassword({
-          email,
-          password
+        const { error } = await supabaseClient.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo
+          }
         });
 
         if (error) {
-          msg.textContent = 'ログイン失敗: ' + error.message;
-          return;
+          status.textContent = error.message || 'Googleログインを開始できませんでした。';
         }
-
-        location.href = '/account/';
       } catch (e) {
-        msg.textContent = '例外: ' + e.message;
+        status.textContent = 'Googleログインを開始できませんでした。';
       }
-    };
+    }
+
+    document.getElementById('googleLoginBtn').addEventListener('click', signInWithGoogle);
+
+    updateLoginState();
   </script>
 </body>
 </html>
