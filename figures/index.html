@@ -323,8 +323,11 @@
   </style>
 </head>
 <body>
-  <h1>Instant Geometry</h1>
-  <p class="muted">三角形 / 四角形 / 正N角形 / 円 / 楕円 / 星型 / 関数に対応します。編集画面をそのまま印刷・保存できます。</p>
+<h1>Instant Geometry</h1>
+<div class="buttons" style="margin-top:8px; margin-bottom:8px;">
+  <button type="button" id="homeBtn">トップへ</button>
+</div>
+<p class="muted">三角形 / 四角形 / 正N角形 / 円 / 楕円 / 星型 / 関数に対応します。編集画面をそのまま印刷・保存できます。</p>
 
   <div class="layout">
     <div class="panel">
@@ -1078,19 +1081,56 @@
         el.classList.add(kind === 'error' ? 'error' : 'ok');
       }
 
-      async function refreshDownloadQuotaStatus() {
-  try {
-    if (await isProUser()) {
-      setStatus('Proプラン: 無制限で保存できます。', 'ok');
-      return;
-    }
+      function getLocalDateKeyJST() {
+  const now = new Date();
+  const jst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+  const y = jst.getUTCFullYear();
+  const m = String(jst.getUTCMonth() + 1).padStart(2, '0');
+  const d = String(jst.getUTCDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
 
-    const count = await getTodayDownloadCount();
-    const remain = Math.max(0, 3 - count);
-    setStatus('今日の無料残り回数: あと ' + remain + ' 回', 'ok');
-  } catch (err) {
-    setStatus('ログインしてください。', 'error');
+function getGuestDownloadCount() {
+  const key = `ig_guest_save_count_${getLocalDateKeyJST()}`;
+  return parseInt(localStorage.getItem(key) || '0', 10);
+}
+
+function incrementGuestDownloadCount() {
+  const key = `ig_guest_save_count_${getLocalDateKeyJST()}`;
+  const next = getGuestDownloadCount() + 1;
+  localStorage.setItem(key, String(next));
+}
+
+async function getCurrentSessionSafe() {
+  try {
+    const { data } = await supabaseClient.auth.getSession();
+    return data.session || null;
+  } catch (e) {
+    return null;
   }
+}
+
+      async function refreshDownloadQuotaStatus() {
+  const session = await getCurrentSessionSafe();
+
+  if (session) {
+    try {
+      if (await isProUser()) {
+        setStatus('Proプラン: 無制限で保存できます。', 'ok');
+        return;
+      }
+
+      const count = await getTodayDownloadCount();
+      const remain = Math.max(0, 3 - count);
+      setStatus('今日の無料残り回数: あと ' + remain + ' 回', 'ok');
+      return;
+    } catch (err) {
+    }
+  }
+
+  const guestCount = getGuestDownloadCount();
+  const remain = Math.max(0, 3 - guestCount);
+  setStatus('無料版: あと ' + remain + ' 回 保存できます。', 'ok');
 }
 
       function setShapeInfo(titleLines, detailHtml) {
@@ -2792,69 +2832,121 @@
 
       function bindEvents() {
 
-const upgradeBtn = document.getElementById('upgradeBtn');
-if (upgradeBtn) {
-  upgradeBtn.addEventListener('click', function () {
-    location.href = '/upgrade/';
-  });
-}
-
-const upgradeBtnHeader = document.getElementById('upgradeBtnHeader');
-if (upgradeBtnHeader) {
-  upgradeBtnHeader.addEventListener('click', function () {
-    location.href = '/upgrade/';
-  });
-}
-
-      document.getElementById('upgradeBtn').addEventListener('click', function () {
+document.getElementById('upgradeBtn').addEventListener('click', async function () {
+  const session = await getCurrentSessionSafe();
+  if (!session) {
+    location.href = '/login/?redirect=/upgrade/';
+    return;
+  }
   location.href = '/upgrade/';
 });
 
-document.getElementById('upgradeBtnHeader').addEventListener('click', function () {
+document.getElementById('upgradeBtnHeader').addEventListener('click', async function () {
+  const session = await getCurrentSessionSafe();
+  if (!session) {
+    location.href = '/login/?redirect=/upgrade/';
+    return;
+  }
   location.href = '/upgrade/';
 });
-        document.querySelectorAll('input, select, textarea').forEach(el => {
-          el.addEventListener('input', renderAll);
-          el.addEventListener('change', renderAll);
-        });
 
-        document.getElementById('btnRender').addEventListener('click', renderAll);
 
-        document.getElementById('saveBtn').addEventListener('click', async function () {
+document.getElementById('saveBtn').addEventListener('click', async function () {
   try {
-    const ok = await canDownloadToday();
-    if (!ok) {
+    const session = await getCurrentSessionSafe();
+
+    if (session) {
+      try {
+        const pro = await isProUser();
+        if (pro) {
+          await handleSave(document.getElementById('saveFormat').value);
+          await refreshDownloadQuotaStatus();
+          return;
+        }
+
+        const ok = await canDownloadToday();
+        if (!ok) {
+          setStatus('無料版は1日3回までです。Proで無制限にできます。', 'error');
+          return;
+        }
+
+        await handleSave(document.getElementById('saveFormat').value);
+        await incrementTodayDownloadCount();
+        await refreshDownloadQuotaStatus();
+        return;
+      } catch (e) {
+      }
+    }
+
+    const guestCount = getGuestDownloadCount();
+    if (guestCount >= 3) {
       setStatus('無料版は1日3回までです。Proで無制限にできます。', 'error');
       return;
     }
 
     await handleSave(document.getElementById('saveFormat').value);
-    await incrementTodayDownloadCount();
+    incrementGuestDownloadCount();
     await refreshDownloadQuotaStatus();
   } catch (e) {
     setStatus((e && e.message) ? e.message : '保存に失敗しました。', 'error');
   }
 });
 
+
+
+
 document.getElementById('saveBtnHeader').addEventListener('click', async function () {
   try {
-    const ok = await canDownloadToday();
-    if (!ok) {
+    const session = await getCurrentSessionSafe();
+
+    if (session) {
+      try {
+        const pro = await isProUser();
+        if (pro) {
+          await handleSave(document.getElementById('saveFormatHeader').value);
+          await refreshDownloadQuotaStatus();
+          return;
+        }
+
+        const ok = await canDownloadToday();
+        if (!ok) {
+          setStatus('無料版は1日3回までです。Proで無制限にできます。', 'error');
+          return;
+        }
+
+        await handleSave(document.getElementById('saveFormatHeader').value);
+        await incrementTodayDownloadCount();
+        await refreshDownloadQuotaStatus();
+        return;
+      } catch (e) {
+      }
+    }
+
+    const guestCount = getGuestDownloadCount();
+    if (guestCount >= 3) {
       setStatus('無料版は1日3回までです。Proで無制限にできます。', 'error');
       return;
     }
 
     await handleSave(document.getElementById('saveFormatHeader').value);
-    await incrementTodayDownloadCount();
+    incrementGuestDownloadCount();
     await refreshDownloadQuotaStatus();
   } catch (e) {
     setStatus((e && e.message) ? e.message : '保存に失敗しました。', 'error');
   }
 });
 
+
+
+
+
         document.getElementById('printBtn').addEventListener('click', function () {
-          window.print();
-        });
+  window.print();
+});
+
+document.getElementById('homeBtn').addEventListener('click', function () {
+  location.href = '/';
+});
 
         document.getElementById('zoomInBtn').addEventListener('click', () => zoomBoard('in'));
         document.getElementById('zoomOutBtn').addEventListener('click', () => zoomBoard('out'));
@@ -2863,22 +2955,13 @@ document.getElementById('saveBtnHeader').addEventListener('click', async functio
 
       bindEvents();
 
-ensureLoggedIn().then((ok) => {
-  if (!ok) return;
-  renderAll();
-  refreshDownloadQuotaStatus();
-});
-      renderAll();
-      async function ensureLoggedIn() {
-  const { data } = await supabaseClient.auth.getSession();
-  if (!data.session) {
-    location.href = '/login/';
-    return false;
-  }
-  return true;
-}
-      refreshDownloadQuotaStatus();
+
+renderAll();
+refreshDownloadQuotaStatus();
     })();
+
+
+    
   </script>
 </body>
 </html>

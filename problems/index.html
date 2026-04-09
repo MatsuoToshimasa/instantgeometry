@@ -373,21 +373,57 @@ function renderProblems(){
 }
 function setMessage(msg,ok=false){ messageEl.textContent = msg; messageEl.className = 'warn' + (ok?' ok':''); }
 
-async function refreshQuotaMessage(){
-  try{
-    if (await isProUser()) {
-      setMessage('Proプラン: 無制限でPDF出力できます。', true);
-      return;
-    }
+function getLocalDateKeyJST(){
+  const now = new Date();
+  const jst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+  const y = jst.getUTCFullYear();
+  const m = String(jst.getUTCMonth() + 1).padStart(2, '0');
+  const d = String(jst.getUTCDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
 
-    const count = await getTodayDownloadCount();
-    const remain = Math.max(0, 3 - count);
-    setMessage(`今日の無料残り回数: あと ${remain} 回`, true);
+function getGuestDownloadCount(){
+  const key = `ig_guest_pdf_count_${getLocalDateKeyJST()}`;
+  return parseInt(localStorage.getItem(key) || '0', 10);
+}
+
+function incrementGuestDownloadCount(){
+  const key = `ig_guest_pdf_count_${getLocalDateKeyJST()}`;
+  const next = getGuestDownloadCount() + 1;
+  localStorage.setItem(key, String(next));
+}
+
+async function getCurrentSessionSafe(){
+  try{
+    const { data } = await supabaseClient.auth.getSession();
+    return data.session || null;
   }catch(e){
-    setMessage('ログインしてください。');
+    return null;
   }
 }
 
+async function refreshQuotaMessage(){
+  const session = await getCurrentSessionSafe();
+
+  if(session){
+    try{
+      if(await isProUser()){
+        setMessage('Proプラン: 無制限でPDF出力できます。', true);
+        return;
+      }
+
+      const count = await getTodayDownloadCount();
+      const remain = Math.max(0, 3 - count);
+      setMessage(`今日の無料残り回数: あと ${remain} 回`, true);
+      return;
+    }catch(e){
+    }
+  }
+
+  const guestCount = getGuestDownloadCount();
+  const remain = Math.max(0, 3 - guestCount);
+  setMessage(`無料版: あと ${remain} 回 PDF出力できます。`, true);
+}
 function getSelectedIds(){ return [...document.querySelectorAll('#problemPicker input[type="checkbox"]:checked')].map(el=>el.value); }
 
 function tripleSidesScalene(){
@@ -942,24 +978,58 @@ async function printPdf(){
 // events
 
 document.getElementById('generateBtn').addEventListener('click', generateProblems);
-document.getElementById('upgradeBtn').addEventListener('click', () => {
+document.getElementById('upgradeBtn').addEventListener('click', async () => {
+  const session = await getCurrentSessionSafe();
+
+  if(!session){
+    location.href = '/login/?redirect=/upgrade/';
+    return;
+  }
+
   location.href = '/upgrade/';
 });
+
 document.getElementById('pdfBtn').addEventListener('click', async () => {
   try{
-    const ok = await canDownloadToday();
-    if(!ok){
+    const session = await getCurrentSessionSafe();
+
+    if(session){
+      try{
+        const pro = await isProUser();
+        if(pro){
+          await printPdf();
+          await refreshQuotaMessage();
+          return;
+        }
+
+        const ok = await canDownloadToday();
+        if(!ok){
+          setMessage('無料版は1日3回までです。Proで無制限にできます。');
+          return;
+        }
+
+        await printPdf();
+        await incrementTodayDownloadCount();
+        await refreshQuotaMessage();
+        return;
+      }catch(e){
+      }
+    }
+
+    const guestCount = getGuestDownloadCount();
+    if(guestCount >= 3){
       setMessage('無料版は1日3回までです。Proで無制限にできます。');
       return;
     }
 
     await printPdf();
-    await incrementTodayDownloadCount();
+    incrementGuestDownloadCount();
     await refreshQuotaMessage();
   }catch(e){
     setMessage(e && e.message ? e.message : 'PDF出力に失敗しました。');
   }
 });
+
 document.getElementById('showAnswersToggle').addEventListener('change', e=>worksheet.classList.toggle('show-answers', e.target.checked));
 document.getElementById('fontSizeRange').addEventListener('input', e=>syncFont(e.target.value));
 document.getElementById('fontSizeNumber').addEventListener('input', e=>syncFont(e.target.value));
@@ -967,19 +1037,7 @@ document.getElementById('selectAllBtn').addEventListener('click', ()=>document.q
 document.getElementById('clearAllBtn').addEventListener('click', ()=>document.querySelectorAll('#problemPicker input[type="checkbox"]').forEach(cb=>cb.checked=false));
 
 syncFont(15);
-async function ensureLoggedIn(){
-  const { data } = await supabaseClient.auth.getSession();
-  if(!data.session){
-    location.href = '/login/';
-    return false;
-  }
-  return true;
-}
-
-ensureLoggedIn().then((ok) => {
-  if(!ok) return;
   refreshQuotaMessage();
-});
 </script>
 </body>
 </html>
