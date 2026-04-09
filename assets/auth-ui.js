@@ -18,14 +18,24 @@
     return provider || '不明';
   }
 
+  function getAuthDisplayMode() {
+    return document.body?.dataset?.authDisplay || 'default';
+  }
+
   function updateAuthStatusArea(session) {
     const statusEl = document.getElementById('authStatus');
     if (!statusEl) return;
 
+    const displayMode = getAuthDisplayMode();
+
     if (session) {
       const email = session.user?.email || '';
       const provider = getProviderLabel(session);
-      statusEl.textContent = email ? `ログイン中: ${email}` : `ログイン中 (${provider})`;
+      if (displayMode === 'compact') {
+        statusEl.textContent = 'ログイン中';
+      } else {
+        statusEl.textContent = email ? `ログイン中: ${email}` : `ログイン中 (${provider})`;
+      }
       statusEl.dataset.authState = 'logged-in';
     } else {
       statusEl.textContent = '未ログイン';

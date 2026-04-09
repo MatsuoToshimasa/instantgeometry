@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>問題を作る | Instant Geometry</title>
+  <link rel="stylesheet" href="/assets/base.css" />
   <style>
     :root{
       --bg:#f6f7fb;
@@ -335,20 +336,7 @@
 </head>
 <body>
   <div class="wrap">
-    <header class="topbar">
-      <div class="brand">
-        <div class="brand-mark">□</div>
-        <div>Instant Geometry</div>
-      </div>
-
-      <nav class="nav">
-  <span class="auth-status" id="authStatus">確認中...</span>
-  <a href="/">トップ</a>
-  <a href="/about/">このサイトについて</a>
-  <a href="/legal/">プライバシーポリシー</a>
-  <a href="/login/" id="loginBtn">ログイン</a>
-</nav>
-    </header>
+    <div id="site-header"></div>
 
     <section class="hero">
       <div class="crumb">
@@ -552,9 +540,10 @@
       </div>
     </section>
   </div>
-
+  <div id="site-footer"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/assets/supabase-client.js"></script>
 <script src="/assets/auth-ui.js"></script>
+<script src="/assets/components.js"></script>
 </body>
 </html>

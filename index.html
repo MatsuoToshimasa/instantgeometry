@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Instant Geometry</title>
+  <link rel="stylesheet" href="/assets/base.css" />
   <style>
     :root{
       --bg:#f6f7fb;
@@ -259,21 +260,9 @@
     }
   </style>
 </head>
-<body>
+<body data-auth-display="compact">
   <div class="wrap">
-    <header class="topbar">
-      <div class="brand">
-        <div class="brand-mark">∠</div>
-        <div>Instant Geometry</div>
-      </div>
-
-      <nav class="nav">
-  <span class="auth-status" id="authStatus">確認中...</span>
-  <a href="/about/">このサイトについて</a>
-  <a href="/legal/">プライバシーポリシー</a>
-  <a href="/login/" id="loginBtn">ログイン</a>
-</nav>
-    </header>
+    <div id="site-header"></div>
 
     <section class="hero">
       <h1>図形・問題・関数を、<br>目的別にすばやく作る</h1>
@@ -381,8 +370,10 @@
       初めて使う場合は、まず <a href="/draw/">図形を描く</a> から始めるのがおすすめです。
     </div>
   </div>
+  <div id="site-footer"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/assets/supabase-client.js"></script>
 <script src="/assets/auth-ui.js"></script>
+<script src="/assets/components.js"></script>
 </body>
 </html>

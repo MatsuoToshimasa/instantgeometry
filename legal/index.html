@@ -4,121 +4,244 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>プライバシーポリシー | Instant Geometry</title>
+  <link rel="stylesheet" href="/assets/base.css" />
 
   <style>
-    body {
-      font-family: sans-serif;
-      line-height: 1.7;
-      margin: 0;
-      background: #f5f6fa;
-      color: #333;
+    :root{
+      --bg:#f6f7fb;
+      --panel:#ffffff;
+      --line:#d9dce7;
+      --text:#1f2430;
+      --muted:#687086;
+      --accent:#2a5bd7;
+      --accent-soft:#eef3ff;
+      --shadow:0 10px 28px rgba(27,39,94,.08);
+      --radius:20px;
     }
 
-    .container {
-      max-width: 800px;
-      margin: 60px auto;
-      padding: 20px;
-      background: white;
-      border-radius: 10px;
+    *{box-sizing:border-box}
+
+    body{
+      margin:0;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;
+      background:linear-gradient(180deg,#f8faff 0%,#f4f6fb 100%);
+      color:var(--text);
     }
 
-    h1 {
-      margin-bottom: 20px;
+    a{
+      color:inherit;
+      text-decoration:none;
     }
 
-    h2 {
-      margin-top: 30px;
-      font-size: 18px;
+    .wrap{
+      width:min(980px,calc(100% - 32px));
+      margin:0 auto;
     }
 
-    p {
-      margin: 10px 0;
+    .hero{
+      padding:26px 0 10px;
     }
 
-    a {
-      color: #4a6cf7;
-      text-decoration: none;
+    .crumb{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      color:var(--muted);
+      font-size:14px;
+      margin-bottom:14px;
     }
 
-    .top-link {
-      display: block;
-      margin-bottom: 20px;
+    .crumb a:hover{
+      color:var(--accent);
     }
 
+    h1{
+      margin:0;
+      font-size:clamp(30px,4.8vw,50px);
+      line-height:1.12;
+      letter-spacing:-.02em;
+    }
+
+    .lead{
+      margin:16px 0 0;
+      color:var(--muted);
+      font-size:17px;
+      line-height:1.85;
+      width:min(820px,100%);
+    }
+
+    .content{
+      padding:28px 0 56px;
+    }
+
+    .panel{
+      background:var(--panel);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:28px;
+    }
+
+    .section + .section{
+      margin-top:34px;
+      padding-top:28px;
+      border-top:1px solid #eceff5;
+    }
+
+    .section h2{
+      margin:0 0 14px;
+      font-size:24px;
+      line-height:1.2;
+    }
+
+    .section p,
+    .section li{
+      color:var(--text);
+      font-size:16px;
+      line-height:1.9;
+    }
+
+    .section p{
+      margin:0;
+    }
+
+    .section p + p{
+      margin-top:14px;
+    }
+
+    .section ul{
+      margin:12px 0 0;
+      padding-left:1.4em;
+    }
+
+    .section li + li{
+      margin-top:6px;
+    }
+
+    .footer-note{
+      margin-top:22px;
+      color:var(--muted);
+      font-size:14px;
+      line-height:1.8;
+    }
+
+    @media (max-width: 640px){
+      .panel{
+        padding:22px;
+      }
+
+      .section h2{
+        font-size:21px;
+      }
+
+      .lead{
+        font-size:15px;
+      }
+    }
   </style>
 </head>
 <body>
+  <div class="wrap">
+    <div id="site-header"></div>
 
-  <div class="container">
+    <section class="hero">
+      <div class="crumb">
+        <a href="/">トップ</a>
+        <span>›</span>
+        <span>プライバシーポリシー</span>
+      </div>
 
-    <a href="/" class="top-link">← トップへ戻る</a>
+      <h1>プライバシーポリシー</h1>
+      <p class="lead">
+        Instant Geometry（以下「当サイト」）は、ユーザーの個人情報の保護を重要視し、
+        以下の方針に基づき適切に取り扱います。
+      </p>
+    </section>
 
-    <h1>プライバシーポリシー</h1>
+    <main class="content">
+      <section class="panel">
+        <div class="section">
+          <h2>1. 取得する情報</h2>
+          <p>当サイトでは、以下の情報を取得する場合があります。</p>
+          <ul>
+            <li>メールアドレス（ログイン・アカウント作成時）</li>
+            <li>決済情報（有料プラン利用時）</li>
+            <li>アクセス情報（IPアドレス、ブラウザ情報等）</li>
+          </ul>
+        </div>
 
-    <p>
-      Instant Geometry（以下「当サイト」）は、ユーザーの個人情報の保護を重要視し、以下の方針に基づき適切に取り扱います。
-    </p>
+        <div class="section">
+          <h2>2. 利用目的</h2>
+          <p>取得した情報は、以下の目的で利用します。</p>
+          <ul>
+            <li>サービスの提供および運営</li>
+            <li>ユーザー認証およびサポート対応</li>
+            <li>不正利用の防止</li>
+            <li>サービス改善のための分析</li>
+          </ul>
+        </div>
 
-    <h2>1. 取得する情報</h2>
-    <p>当サイトでは、以下の情報を取得する場合があります。</p>
-    <ul>
-      <li>メールアドレス（ログイン・アカウント作成時）</li>
-      <li>決済情報（有料プラン利用時）</li>
-      <li>アクセス情報（IPアドレス、ブラウザ情報等）</li>
-    </ul>
+        <div class="section">
+          <h2>3. 決済について</h2>
+          <p>
+            当サイトでは、有料サービスの決済に外部サービス（例：Stripe）を利用しています。<br>
+            クレジットカード情報などの決済情報は当サイトでは保持せず、各決済サービス提供者により安全に管理されます。
+          </p>
+        </div>
 
-    <h2>2. 利用目的</h2>
-    <p>取得した情報は、以下の目的で利用します。</p>
-    <ul>
-      <li>サービスの提供および運営</li>
-      <li>ユーザー認証およびサポート対応</li>
-      <li>不正利用の防止</li>
-      <li>サービス改善のための分析</li>
-    </ul>
+        <div class="section">
+          <h2>4. Cookieの使用</h2>
+          <p>
+            当サイトでは、利便性向上やアクセス解析のためにCookieを使用することがあります。
+            ブラウザ設定によりCookieを拒否することも可能です。
+          </p>
+        </div>
 
-    <h2>3. 決済について</h2>
-    <p>
-      当サイトでは、有料サービスの決済に外部サービス（例：Stripe）を利用しています。<br>
-      クレジットカード情報などの決済情報は当サイトでは保持せず、各決済サービス提供者により安全に管理されます。
-    </p>
+        <div class="section">
+          <h2>5. 第三者提供</h2>
+          <p>
+            取得した個人情報は、法令に基づく場合を除き、本人の同意なく第三者に提供することはありません。
+          </p>
+        </div>
 
-    <h2>4. Cookieの使用</h2>
-    <p>
-      当サイトでは、利便性向上やアクセス解析のためにCookieを使用することがあります。
-      ブラウザ設定によりCookieを拒否することも可能です。
-    </p>
+        <div class="section">
+          <h2>6. セキュリティ</h2>
+          <p>
+            当サイトは、個人情報の漏洩・改ざん・不正アクセスを防止するため、適切なセキュリティ対策を講じます。
+          </p>
+        </div>
 
-    <h2>5. 第三者提供</h2>
-    <p>
-      取得した個人情報は、法令に基づく場合を除き、本人の同意なく第三者に提供することはありません。
-    </p>
+        <div class="section">
+          <h2>7. 免責事項</h2>
+          <p>
+            当サイトの利用により生じた損害について、当サイトは一切の責任を負いません。
+          </p>
+        </div>
 
-    <h2>6. セキュリティ</h2>
-    <p>
-      当サイトは、個人情報の漏洩・改ざん・不正アクセスを防止するため、適切なセキュリティ対策を講じます。
-    </p>
+        <div class="section">
+          <h2>8. ポリシーの変更</h2>
+          <p>
+            本ポリシーは、必要に応じて変更されることがあります。変更後は本ページにて速やかに公表します。
+          </p>
+        </div>
 
-    <h2>7. 免責事項</h2>
-    <p>
-      当サイトの利用により生じた損害について、当サイトは一切の責任を負いません。
-    </p>
+        <div class="section">
+          <h2>9. お問い合わせ</h2>
+          <p>
+            本ポリシーに関するお問い合わせは、以下までお願いいたします。<br>
+            メール：pinenutspoi@email.com
+          </p>
 
-    <h2>8. ポリシーの変更</h2>
-    <p>
-      本ポリシーは、必要に応じて変更されることがあります。変更後は本ページにて速やかに公表します。
-    </p>
-
-    <h2>9. お問い合わせ</h2>
-    <p>
-      本ポリシーに関するお問い合わせは、以下までお願いいたします。<br>
-      メール：pinenutspoi@email.com
-    </p>
-
-    <p style="margin-top:40px;">
-      制定日：2026年4月
-    </p>
-
+          <p class="footer-note">制定日：2026年4月</p>
+        </div>
+      </section>
+    </main>
   </div>
+  <div id="site-footer"></div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/assets/supabase-client.js"></script>
+  <script src="/assets/auth-ui.js"></script>
+  <script src="/assets/components.js"></script>
 </body>
 </html>
