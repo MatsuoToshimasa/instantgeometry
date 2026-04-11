@@ -69,10 +69,40 @@
       previewSvg: ''
     };
   </script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="../../../assets/supabase-client.js"></script>
-  <script src="../../../assets/auth-ui.js"></script>
-  <script src="../../../assets/components.js"></script>
-  <script src="../../../assets/draw-simple-page.js"></script>
+  <script>
+    (function () {
+      'use strict';
+      const isFileProtocol = window.location.protocol === 'file:';
+      const assetBase = '../../../assets';
+
+      function loadScript(src) {
+        return new Promise(function (resolve) {
+          const script = document.createElement('script');
+          script.src = src;
+          script.onload = function () { resolve(true); };
+          script.onerror = function () { resolve(false); };
+          document.body.appendChild(script);
+        });
+      }
+
+      (async function () {
+        if (!isFileProtocol) {
+          await loadScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2');
+          await loadScript(assetBase + '/supabase-client.js');
+          await loadScript(assetBase + '/auth-ui.js');
+          await loadScript(assetBase + '/components.js');
+        }
+        await loadScript(assetBase + '/draw-simple-page.js');
+
+        // file:// 直開き時に何らかの理由で描画できない場合の最低限フォールバック
+        window.setTimeout(function () {
+          const mount = document.getElementById('drawSimplePage');
+          if (mount && !mount.hasChildNodes()) {
+            mount.innerHTML = '<main style="padding:24px;font-family:system-ui,sans-serif;"><h1 style="margin:0 0 12px;">正方形</h1><p style="margin:0;">ローカル読み込みに失敗しました。<br>ターミナルで <code>python3 -m http.server</code> を実行して、<code>http://localhost:8000/draw/quadrilateral/square/</code> で開いてください。</p></main>';
+          }
+        }, 500);
+      })();
+    })();
+  </script>
 </body>
 </html>
