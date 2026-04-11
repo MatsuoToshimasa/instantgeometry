@@ -342,6 +342,76 @@
       display:block;
     }
 
+    #labelLayer{
+      position:absolute;
+      inset:0;
+      z-index:6;
+      pointer-events:none;
+    }
+
+    .floating-label{
+      position:absolute;
+      transform:translate(-50%,-50%);
+      transform-origin:center center;
+      font-family:"Times New Roman",serif;
+      line-height:1;
+      user-select:none;
+      pointer-events:auto;
+      cursor:grab;
+      white-space:nowrap;
+    }
+
+    .floating-label:active{
+      cursor:grabbing;
+    }
+
+    .selection-box{
+      position:absolute;
+      border:1.5px solid #2a5bd7;
+      border-radius:8px;
+      pointer-events:none;
+      z-index:8;
+    }
+
+    .label-handle{
+      position:absolute;
+      width:24px;
+      height:24px;
+      border-radius:50%;
+      border:1.5px solid #2a5bd7;
+      background:#fff;
+      color:#2a5bd7;
+      display:grid;
+      place-items:center;
+      font-size:14px;
+      font-weight:700;
+      pointer-events:auto;
+      z-index:9;
+      cursor:pointer;
+      user-select:none;
+    }
+
+    .palette-pop{
+      position:absolute;
+      display:flex;
+      gap:6px;
+      padding:6px;
+      border:1px solid #cfd7ea;
+      border-radius:10px;
+      background:#fff;
+      box-shadow:var(--shadow);
+      z-index:10;
+      pointer-events:auto;
+    }
+
+    .palette-dot{
+      width:18px;
+      height:18px;
+      border-radius:50%;
+      border:1px solid #cfd7ea;
+      cursor:pointer;
+    }
+
     @media (max-width:1180px){
       .board-stage{
         inset:16px 286px 16px 356px;
@@ -450,11 +520,18 @@
             <button class="toggle-btn" type="button" data-group="angle" data-id="D">∠D</button>
           </div>
         </div>
+        <div class="toggle-group">
+          <p class="toggle-group-title">面積ラベル</p>
+          <div class="toggle-grid">
+            <button class="toggle-btn" type="button" data-group="area" data-id="main">S</button>
+          </div>
+        </div>
       </div>
     </aside>
 
     <section class="board-stage">
       <svg id="squareSvg" viewBox="0 0 1200 800" aria-label="正方形プレビュー"></svg>
+      <div id="labelLayer" aria-hidden="true"></div>
     </section>
   </main>
 
@@ -479,23 +556,56 @@
       const leftToggle = document.getElementById('dockToggleBtn');
       const rightToggle = document.getElementById('rightDockToggleBtn');
       const boardStage = document.querySelector('.board-stage');
+      const labelLayer = document.getElementById('labelLayer');
 
       const defaultLabelState = {
         vertex: { A: true, B: true, C: true, D: true },
         side: { AB: true, BC: true, CD: true, DA: true },
-        angle: { A: false, B: false, C: false, D: false }
+        angle: { A: false, B: false, C: false, D: false },
+        area: { main: false }
       };
       const labelState = {
         vertex: { A: true, B: true, C: true, D: true },
         side: { AB: true, BC: true, CD: true, DA: true },
-        angle: { A: false, B: false, C: false, D: false }
+        angle: { A: false, B: false, C: false, D: false },
+        area: { main: false }
       };
       const aspectModes = [{ label: '1:1', ratio: 1 }, { label: '1:√2', ratio: 1 / Math.SQRT2 }, { label: '√2:1', ratio: Math.SQRT2 }];
       const unitModes = ['なし', 'cm', 'm', 'km'];
+      const labelConfigs = [
+        { type: 'vertex', id: 'A' }, { type: 'vertex', id: 'B' }, { type: 'vertex', id: 'C' }, { type: 'vertex', id: 'D' },
+        { type: 'side', id: 'AB' }, { type: 'side', id: 'BC' }, { type: 'side', id: 'CD' }, { type: 'side', id: 'DA' },
+        { type: 'angle', id: 'A' }, { type: 'angle', id: 'B' }, { type: 'angle', id: 'C' }, { type: 'angle', id: 'D' },
+        { type: 'area', id: 'main' }
+      ];
+      const labelFontSize = {
+        vertex: { A: 54, B: 54, C: 54, D: 54 },
+        side: { AB: 34, BC: 34, CD: 34, DA: 34 },
+        angle: { A: 30, B: 30, C: 30, D: 30 },
+        area: { main: 52 }
+      };
+      const labelStyle = {
+        vertex: { A: { color: '#1f2430', rotation: 0 }, B: { color: '#1f2430', rotation: 0 }, C: { color: '#1f2430', rotation: 0 }, D: { color: '#1f2430', rotation: 0 } },
+        side: { AB: { color: '#2a5bd7', rotation: 0 }, BC: { color: '#2a5bd7', rotation: 0 }, CD: { color: '#2a5bd7', rotation: 0 }, DA: { color: '#2a5bd7', rotation: 0 } },
+        angle: { A: { color: '#687086', rotation: 0 }, B: { color: '#687086', rotation: 0 }, C: { color: '#687086', rotation: 0 }, D: { color: '#687086', rotation: 0 } },
+        area: { main: { color: '#25603b', rotation: 0 } }
+      };
+      const labelPositions = {
+        vertex: { A: null, B: null, C: null, D: null },
+        side: { AB: null, BC: null, CD: null, DA: null },
+        angle: { A: null, B: null, C: null, D: null },
+        area: { main: null }
+      };
+      const colorChoices = ['#1f2430', '#2a5bd7', '#687086', '#0f8b6e', '#b42318', '#b06a00'];
       let isLeftCollapsed = false;
       let isRightCollapsed = false;
       let aspectIndex = 0;
       let unitIndex = 1;
+      let angleMode = 'degrees';
+      let currentGeometry = null;
+      let selectedLabel = null;
+      let dragState = null;
+      let selectionEls = { box: null, rotate: null, palette: null, scale: null, pop: null };
 
       function evaluateExpression(raw) {
         const normalized = String(raw || '')
@@ -530,6 +640,158 @@
         return Number.isInteger(x) ? String(x) : x.toFixed(2).replace(/0+$/, '').replace(/\.$/, '');
       }
 
+      function getLabelKey(type, id) {
+        return type + ':' + id;
+      }
+
+      function getCentroid(points) {
+        return {
+          x: (points.A.x + points.B.x + points.C.x + points.D.x) / 4,
+          y: (points.A.y + points.B.y + points.C.y + points.D.y) / 4
+        };
+      }
+
+      function getExternalPoint(centroid, vertex) {
+        return {
+          x: (vertex.x * 10 - centroid.x) / 9,
+          y: (vertex.y * 10 - centroid.y) / 9
+        };
+      }
+
+      function getInternalPoint(centroid, vertex) {
+        return {
+          x: (centroid.x + vertex.x * 3) / 4,
+          y: (centroid.y + vertex.y * 3) / 4
+        };
+      }
+
+      function getSideDefault(points, centroid, id) {
+        const sideMap = {
+          AB: [points.A, points.B],
+          BC: [points.B, points.C],
+          CD: [points.C, points.D],
+          DA: [points.D, points.A]
+        };
+        const pair = sideMap[id];
+        const P = pair[0];
+        const Q = pair[1];
+        const mid = { x: (P.x + Q.x) / 2, y: (P.y + Q.y) / 2 };
+        const dx = Q.x - P.x;
+        const dy = Q.y - P.y;
+        const len = Math.hypot(dx, dy) || 1;
+        let nx = -dy / len;
+        let ny = dx / len;
+        const toCentroid = { x: centroid.x - mid.x, y: centroid.y - mid.y };
+        if ((nx * toCentroid.x + ny * toCentroid.y) > 0) {
+          nx *= -1;
+          ny *= -1;
+        }
+        return { x: mid.x + nx * 46, y: mid.y + ny * 46 };
+      }
+
+      function getLabelText(type, id, side) {
+        if (type === 'vertex') return id;
+        if (type === 'side') {
+          const unit = unitModes[unitIndex];
+          return formatNumber(side) + (unit === 'なし' ? '' : unit);
+        }
+        if (type === 'angle') {
+          return angleMode === 'degrees' ? '90°' : 'π/2';
+        }
+        if (type === 'area') {
+          const unit = unitModes[unitIndex];
+          const areaText = formatNumber(side * side);
+          if (unit === 'なし') return areaText;
+          return areaText + unit + '²';
+        }
+        return '';
+      }
+
+      function getDefaultPosition(type, id, points, centroid) {
+        if (type === 'vertex') return getExternalPoint(centroid, points[id]);
+        if (type === 'angle') return getInternalPoint(centroid, points[id]);
+        if (type === 'side') return getSideDefault(points, centroid, id);
+        if (type === 'area') return { x: centroid.x, y: centroid.y };
+        return { x: 600, y: 400 };
+      }
+
+      function getLabelPosition(type, id, points, centroid) {
+        const stored = labelPositions[type][id];
+        if (stored && Number.isFinite(stored.x) && Number.isFinite(stored.y)) return { x: stored.x, y: stored.y };
+        const fallback = getDefaultPosition(type, id, points, centroid);
+        labelPositions[type][id] = { x: fallback.x, y: fallback.y };
+        return fallback;
+      }
+
+      function renderSelection() {
+        if (selectionEls.box) selectionEls.box.remove();
+        if (selectionEls.rotate) selectionEls.rotate.remove();
+        if (selectionEls.palette) selectionEls.palette.remove();
+        if (selectionEls.scale) selectionEls.scale.remove();
+        if (selectionEls.pop) selectionEls.pop.remove();
+        selectionEls = { box: null, rotate: null, palette: null, scale: null, pop: null };
+        if (!selectedLabel) return;
+        const el = labelLayer.querySelector('[data-label-key="' + selectedLabel + '"]');
+        if (!el) return;
+        const rect = el.getBoundingClientRect();
+        const host = boardStage.getBoundingClientRect();
+        const pad = 3;
+        const x = rect.left - host.left - pad;
+        const y = rect.top - host.top - pad;
+        const w = rect.width + pad * 2;
+        const h = rect.height + pad * 2;
+
+        const box = document.createElement('div');
+        box.className = 'selection-box';
+        box.style.left = x + 'px';
+        box.style.top = y + 'px';
+        box.style.width = w + 'px';
+        box.style.height = h + 'px';
+        labelLayer.appendChild(box);
+
+        function mkHandle(symbol, cx, cy, mode) {
+          const hnd = document.createElement('div');
+          hnd.className = 'label-handle';
+          hnd.textContent = symbol;
+          hnd.style.left = (cx - 12) + 'px';
+          hnd.style.top = (cy - 12) + 'px';
+          hnd.dataset.mode = mode;
+          labelLayer.appendChild(hnd);
+          return hnd;
+        }
+
+        const rotate = mkHandle('○', x + w, y, 'rotate');
+        const palette = mkHandle('●', x, y + h, 'palette');
+        const scale = mkHandle('◯', x + w, y + h, 'scale');
+
+        selectionEls.box = box;
+        selectionEls.rotate = rotate;
+        selectionEls.palette = palette;
+        selectionEls.scale = scale;
+      }
+
+      function renderLabels(side, points, centroid) {
+        labelLayer.innerHTML = '';
+        labelConfigs.forEach(function (cfg) {
+          if (!labelState[cfg.type][cfg.id]) return;
+          const pos = getLabelPosition(cfg.type, cfg.id, points, centroid);
+          const style = labelStyle[cfg.type][cfg.id];
+          const el = document.createElement('div');
+          el.className = 'floating-label';
+          el.dataset.labelKey = getLabelKey(cfg.type, cfg.id);
+          el.dataset.type = cfg.type;
+          el.dataset.id = cfg.id;
+          el.style.left = pos.x + 'px';
+          el.style.top = pos.y + 'px';
+          el.style.fontSize = labelFontSize[cfg.type][cfg.id] + 'px';
+          el.style.color = style.color;
+          el.style.transform = 'translate(-50%,-50%) rotate(' + style.rotation + 'deg)';
+          el.textContent = getLabelText(cfg.type, cfg.id, side);
+          labelLayer.appendChild(el);
+        });
+        renderSelection();
+      }
+
       function drawSquare(side) {
         const margin = 120;
         const size = Math.min(1200 - margin * 2, 800 - margin * 2);
@@ -559,65 +821,10 @@
           svg.appendChild(dot);
         });
 
-        const labelPos = {
-          A: { x: A.x - 16, y: A.y - 10, anchor: 'end' },
-          B: { x: B.x - 16, y: B.y + 26, anchor: 'end' },
-          C: { x: C.x + 16, y: C.y + 26, anchor: 'start' },
-          D: { x: D.x + 16, y: D.y - 10, anchor: 'start' }
-        };
-
-        Object.keys(labelPos).forEach(function (key) {
-          if (!labelState.vertex[key]) return;
-          const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-          t.setAttribute('x', String(labelPos[key].x));
-          t.setAttribute('y', String(labelPos[key].y));
-          t.setAttribute('text-anchor', labelPos[key].anchor);
-          t.setAttribute('font-size', '46');
-          t.setAttribute('font-family', 'Times New Roman, serif');
-          t.setAttribute('fill', '#1f2430');
-          t.textContent = key;
-          svg.appendChild(t);
-        });
-
-        const unit = unitModes[unitIndex];
-        const sideText = formatNumber(side) + (unit === 'なし' ? '' : unit);
-        const sidePos = {
-          AB: { x: (A.x + B.x) / 2 - 30, y: (A.y + B.y) / 2, anchor: 'end' },
-          BC: { x: (B.x + C.x) / 2, y: (B.y + C.y) / 2 + 44, anchor: 'middle' },
-          CD: { x: (C.x + D.x) / 2 + 30, y: (C.y + D.y) / 2, anchor: 'start' },
-          DA: { x: (D.x + A.x) / 2, y: (D.y + A.y) / 2 - 30, anchor: 'middle' }
-        };
-        Object.keys(sidePos).forEach(function (id) {
-          if (!labelState.side[id]) return;
-          const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-          t.setAttribute('x', String(sidePos[id].x));
-          t.setAttribute('y', String(sidePos[id].y));
-          t.setAttribute('text-anchor', sidePos[id].anchor);
-          t.setAttribute('font-size', '30');
-          t.setAttribute('font-family', 'Times New Roman, serif');
-          t.setAttribute('fill', '#2a5bd7');
-          t.textContent = sideText;
-          svg.appendChild(t);
-        });
-
-        const anglePos = {
-          A: { x: A.x + 34, y: A.y + 28, anchor: 'start' },
-          B: { x: B.x + 34, y: B.y - 16, anchor: 'start' },
-          C: { x: C.x - 34, y: C.y - 16, anchor: 'end' },
-          D: { x: D.x - 34, y: D.y + 28, anchor: 'end' }
-        };
-        Object.keys(anglePos).forEach(function (id) {
-          if (!labelState.angle[id]) return;
-          const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-          t.setAttribute('x', String(anglePos[id].x));
-          t.setAttribute('y', String(anglePos[id].y));
-          t.setAttribute('text-anchor', anglePos[id].anchor);
-          t.setAttribute('font-size', '24');
-          t.setAttribute('font-family', 'Times New Roman, serif');
-          t.setAttribute('fill', '#687086');
-          t.textContent = '∠' + id;
-          svg.appendChild(t);
-        });
+        const points = { A: A, B: B, C: C, D: D };
+        const centroid = getCentroid(points);
+        currentGeometry = { points: points, centroid: centroid, side: side };
+        renderLabels(side, points, centroid);
       }
 
       function setStatus(message, isError) {
@@ -661,6 +868,134 @@
           btn.classList.toggle('is-off', !labelState[group][id]);
         });
       }
+
+      function constrainPosition(type, id, rawPos) {
+        if (!currentGeometry) return rawPos;
+        const G = currentGeometry.centroid;
+        const P = currentGeometry.points;
+        if (type === 'area') return { x: G.x, y: G.y };
+        if (type === 'vertex' || type === 'angle') {
+          const V = P[id];
+          const ux = V.x - G.x;
+          const uy = V.y - G.y;
+          const len2 = ux * ux + uy * uy || 1;
+          let t = ((rawPos.x - G.x) * ux + (rawPos.y - G.y) * uy) / len2;
+          if (type === 'vertex') t = Math.max(1, t);
+          if (type === 'angle') t = Math.max(0, Math.min(1, t));
+          return { x: G.x + ux * t, y: G.y + uy * t };
+        }
+        if (type === 'side') {
+          const map = { AB: ['A', 'B'], BC: ['B', 'C'], CD: ['C', 'D'], DA: ['D', 'A'] };
+          const pair = map[id];
+          const S = P[pair[0]];
+          const T = P[pair[1]];
+          const mid = { x: (S.x + T.x) / 2, y: (S.y + T.y) / 2 };
+          const dx = T.x - S.x;
+          const dy = T.y - S.y;
+          const nx = -dy;
+          const ny = dx;
+          const den = nx * nx + ny * ny || 1;
+          const u = ((rawPos.x - mid.x) * nx + (rawPos.y - mid.y) * ny) / den;
+          return { x: mid.x + nx * u, y: mid.y + ny * u };
+        }
+        return rawPos;
+      }
+
+      labelLayer.addEventListener('pointerdown', function (event) {
+        const target = event.target;
+        if (target.classList.contains('floating-label')) {
+          const type = target.dataset.type;
+          const id = target.dataset.id;
+          const key = target.dataset.labelKey;
+          selectedLabel = key;
+          renderSelection();
+          dragState = {
+            mode: 'move',
+            type: type,
+            id: id,
+            startX: event.clientX,
+            startY: event.clientY,
+            startPos: { x: labelPositions[type][id].x, y: labelPositions[type][id].y }
+          };
+          target.setPointerCapture(event.pointerId);
+          event.preventDefault();
+          return;
+        }
+        if (target.classList.contains('label-handle') && selectedLabel) {
+          const mode = target.dataset.mode;
+          const parts = selectedLabel.split(':');
+          const type = parts[0];
+          const id = parts[1];
+          if (mode === 'palette') {
+            if (selectionEls.pop) {
+              selectionEls.pop.remove();
+              selectionEls.pop = null;
+              return;
+            }
+            const pop = document.createElement('div');
+            pop.className = 'palette-pop';
+            colorChoices.forEach(function (color) {
+              const dot = document.createElement('button');
+              dot.className = 'palette-dot';
+              dot.style.background = color;
+              dot.addEventListener('click', function (ev) {
+                ev.stopPropagation();
+                labelStyle[type][id].color = color;
+                render();
+              });
+              pop.appendChild(dot);
+            });
+            pop.style.left = (target.offsetLeft + 24) + 'px';
+            pop.style.top = (target.offsetTop + 24) + 'px';
+            labelLayer.appendChild(pop);
+            selectionEls.pop = pop;
+            return;
+          }
+          dragState = {
+            mode: mode,
+            type: type,
+            id: id,
+            startX: event.clientX,
+            startY: event.clientY,
+            startSize: labelFontSize[type][id],
+            startRot: labelStyle[type][id].rotation
+          };
+          target.setPointerCapture(event.pointerId);
+          event.preventDefault();
+        }
+      });
+
+      labelLayer.addEventListener('pointermove', function (event) {
+        if (!dragState) return;
+        const dx = event.clientX - dragState.startX;
+        const dy = event.clientY - dragState.startY;
+        if (dragState.mode === 'move') {
+          const raw = { x: dragState.startPos.x + dx, y: dragState.startPos.y + dy };
+          labelPositions[dragState.type][dragState.id] = constrainPosition(dragState.type, dragState.id, raw);
+          render();
+          return;
+        }
+        if (dragState.mode === 'scale') {
+          const next = Math.max(10, Math.min(320, Math.round(dragState.startSize + (dx + dy) * 0.5)));
+          labelFontSize[dragState.type][dragState.id] = next;
+          render();
+          return;
+        }
+        if (dragState.mode === 'rotate') {
+          labelStyle[dragState.type][dragState.id].rotation = dragState.startRot + (dx * 0.35);
+          render();
+        }
+      });
+
+      labelLayer.addEventListener('pointerup', function () {
+        dragState = null;
+      });
+
+      boardStage.addEventListener('pointerdown', function (event) {
+        if (event.target.closest('.floating-label') || event.target.closest('.label-handle') || event.target.closest('.palette-pop')) return;
+        selectedLabel = null;
+        renderSelection();
+      });
 
       function syncDockButtons() {
         leftToggle.textContent = isLeftCollapsed ? '›' : '‹';
@@ -718,7 +1053,9 @@
       transparentBtn.addEventListener('click', function () { pendingDownload('透過'); });
 
       angleModeBtn.addEventListener('click', function () {
-        setStatus('正方形では角表示が固定のため、角度モードは準備中です。', false);
+        angleMode = angleMode === 'degrees' ? 'radians' : 'degrees';
+        angleModeBtn.textContent = angleMode === 'degrees' ? '度数法' : '弧度法';
+        render();
       });
 
       unitBtn.addEventListener('click', function () {
