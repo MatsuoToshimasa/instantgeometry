@@ -84,6 +84,7 @@
 
   let currentGeometry = null;
   let selectedLabel = null;
+  let selectedFigure = false;
   let currentLabelAnchors = [];
   let currentSelectionOverlay = null;
   let dragState = null;
@@ -96,6 +97,12 @@
   let isPaletteOpen = false;
   let lastFitSignature = '';
   const angleMarkerMode = { A: 0, B: 0, C: 0, D: 0 };
+  let figureState = {
+    color: '#2a5bd7',
+    rotation: 0,
+    scale: 1,
+    offset: { x: 0, y: 0 }
+  };
 
   function style(color) {
     return { color: color, rotation: 0 };
@@ -196,6 +203,18 @@
     return text + unit + (square ? '²' : '');
   }
 
+  function hexToRgba(hex, alpha) {
+    const normalized = String(hex || '#2a5bd7').replace('#', '');
+    const source = normalized.length === 3
+      ? normalized.split('').map(function (item) { return item + item; }).join('')
+      : normalized;
+    const value = parseInt(source, 16);
+    const r = (value >> 16) & 255;
+    const g = (value >> 8) & 255;
+    const b = value & 255;
+    return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
+  }
+
   function rotatePoint(point, center, angleDeg) {
     const rad = angleDeg * Math.PI / 180;
     const cos = Math.cos(rad);
@@ -259,13 +278,25 @@
 
   function getSquareGeometry(side) {
     const half = side / 2;
-    const points = {
+    const basePoints = {
       A: { x: -half, y: half },
       B: { x: -half, y: -half },
       C: { x: half, y: -half },
       D: { x: half, y: half }
     };
-    const centroid = { x: 0, y: 0 };
+    const centroid = { x: figureState.offset.x, y: figureState.offset.y };
+    const points = {};
+    Object.keys(basePoints).forEach(function (key) {
+      const scaled = {
+        x: basePoints[key].x * figureState.scale,
+        y: basePoints[key].y * figureState.scale
+      };
+      const rotated = rotatePoint(scaled, { x: 0, y: 0 }, figureState.rotation);
+      points[key] = {
+        x: rotated.x + figureState.offset.x,
+        y: rotated.y + figureState.offset.y
+      };
+    });
     return { side: side, points: points, centroid: centroid };
   }
 
@@ -448,6 +479,19 @@
     }) || null;
   }
 
+  function getFigureSelectionAnchor() {
+    if (!selectedFigure || !currentGeometry) return null;
+    return {
+      kind: 'figure',
+      x: currentGeometry.centroid.x,
+      y: currentGeometry.centroid.y,
+      width: currentGeometry.side * figureState.scale,
+      height: currentGeometry.side * figureState.scale,
+      color: figureState.color,
+      rotation: figureState.rotation
+    };
+  }
+
   function userToScreenPoint(point) {
     return {
       x: board.origin.scrCoords[1] + point.x * board.unitX,
@@ -467,6 +511,84 @@
 
   function findSelectionControl(point) {
     return window.InstantGeometrySharedSelection.findSelectionControl(point, currentSelectionOverlay);
+  }
+
+  function rotateLabelGroupAround(center, angleDeg) {
+    Object.keys(labelPositions).forEach(function (type) {
+      Object.keys(labelPositions[type]).forEach(function (id) {
+        const value = labelPositions[type][id];
+        if (!value) return;
+        labelPositions[type][id] = rotatePoint(value, center, angleDeg);
+      });
+    });
+  }
+
+  function translateLabelGroup(delta) {
+    Object.keys(labelPositions).forEach(function (type) {
+      Object.keys(labelPositions[type]).forEach(function (id) {
+        const value = labelPositions[type][id];
+        if (!value) return;
+        labelPositions[type][id] = { x: value.x + delta.x, y: value.y + delta.y };
+      });
+    });
+  }
+
+  function scaleLabelGroupAround(center, ratio) {
+    Object.keys(labelPositions).forEach(function (type) {
+      Object.keys(labelPositions[type]).forEach(function (id) {
+        const value = labelPositions[type][id];
+        if (!value) return;
+        labelPositions[type][id] = {
+          x: center.x + (value.x - center.x) * ratio,
+          y: center.y + (value.y - center.y) * ratio
+        };
+      });
+    });
+  }
+
+  function scaleLabelFontGroup(ratio) {
+    Object.keys(labelFontSize).forEach(function (type) {
+      Object.keys(labelFontSize[type]).forEach(function (id) {
+        labelFontSize[type][id] = Math.max(10, Math.min(320, Math.round(labelFontSize[type][id] * ratio)));
+      });
+    });
+  }
+
+  function distanceToSegment(point, P, Q) {
+    const dx = Q.x - P.x;
+    const dy = Q.y - P.y;
+    const len2 = dx * dx + dy * dy;
+    if (!len2) return Math.hypot(point.x - P.x, point.y - P.y);
+    const t = Math.max(0, Math.min(1, ((point.x - P.x) * dx + (point.y - P.y) * dy) / len2));
+    const proj = { x: P.x + dx * t, y: P.y + dy * t };
+    return Math.hypot(point.x - proj.x, point.y - proj.y);
+  }
+
+  function pointInPolygon(point, vertices) {
+    let inside = false;
+    for (let i = 0, j = vertices.length - 1; i < vertices.length; j = i, i += 1) {
+      const xi = vertices[i].x;
+      const yi = vertices[i].y;
+      const xj = vertices[j].x;
+      const yj = vertices[j].y;
+      const intersect = ((yi > point.y) !== (yj > point.y)) &&
+        (point.x < ((xj - xi) * (point.y - yi) / ((yj - yi) || 1e-9)) + xi);
+      if (intersect) inside = !inside;
+    }
+    return inside;
+  }
+
+  function isFigureZone(point) {
+    if (!currentGeometry) return false;
+    const vertices = ['A', 'B', 'C', 'D'].map(function (key) { return currentGeometry.points[key]; });
+    if (pointInPolygon(point, vertices)) return true;
+    const tolerance = 0.22 * Math.max(1, figureState.scale);
+    for (let index = 0; index < vertices.length; index += 1) {
+      const P = vertices[index];
+      const Q = vertices[(index + 1) % vertices.length];
+      if (distanceToSegment(point, P, Q) <= tolerance) return true;
+    }
+    return false;
   }
 
   function fitBoard(geometry) {
@@ -635,7 +757,7 @@
       });
     });
 
-    renderSelectionOverlay(getSelectedAnchor());
+    renderSelectionOverlay(getSelectedAnchor() || getFigureSelectionAnchor());
   }
 
   function getAngleDecorationGeometry(angleId, geometry) {
@@ -784,8 +906,8 @@
     const pointC = board.create('point', [P.C.x, P.C.y], { name: '', size: 3, fixed: true, strokeColor: '#111111', fillColor: '#111111' });
     const pointD = board.create('point', [P.D.x, P.D.y], { name: '', size: 3, fixed: true, strokeColor: '#111111', fillColor: '#111111' });
     board.create('polygon', [pointA, pointB, pointC, pointD], {
-      borders: { strokeWidth: 2, strokeColor: '#2a5bd7', fixed: true, highlight: false },
-      fillColor: 'rgba(42,91,215,0.04)',
+      borders: { strokeWidth: 2, strokeColor: figureState.color, fixed: true, highlight: false },
+      fillColor: hexToRgba(figureState.color, 0.08),
       fillOpacity: 0,
       vertices: { visible: false },
       highlight: false
@@ -858,6 +980,7 @@
     const target = event.target.closest('.floating-label');
     if (!target) return;
     selectedLabel = { type: target.dataset.type, id: target.dataset.id };
+    selectedFigure = false;
     isPaletteOpen = false;
     render();
     const position = labelPositions[target.dataset.type][target.dataset.id];
@@ -877,9 +1000,13 @@
     const point = { x: coords[0], y: coords[1] };
     const overlayControl = findSelectionControl(point);
 
-    if (selectedLabel && overlayControl) {
+    if ((selectedLabel || selectedFigure) && overlayControl) {
       if (overlayControl.mode === 'palette-color') {
-        labelStyleState[selectedLabel.type][selectedLabel.id].color = overlayControl.color;
+        if (selectedLabel) {
+          labelStyleState[selectedLabel.type][selectedLabel.id].color = overlayControl.color;
+        } else {
+          figureState.color = overlayControl.color;
+        }
         isPaletteOpen = false;
         render();
         return;
@@ -889,22 +1016,24 @@
         render();
         return;
       }
-      if (overlayControl.mode === 'rotate' && selectedLabel.type === 'angleMark') {
+      if (overlayControl.mode === 'rotate' && selectedLabel && selectedLabel.type === 'angleMark') {
         return;
       }
-      const anchor = getSelectedAnchor();
+      const anchor = selectedLabel ? getSelectedAnchor() : getFigureSelectionAnchor();
       if (!anchor) return;
-      const dragCenter = (selectedLabel.type === 'angleMark' && anchor.scaleCenter)
+      const dragCenter = (selectedLabel && selectedLabel.type === 'angleMark' && anchor.scaleCenter)
         ? { x: anchor.scaleCenter.x, y: anchor.scaleCenter.y }
         : { x: anchor.x, y: anchor.y };
       dragState = {
         mode: overlayControl.mode,
-        type: selectedLabel.type,
-        id: selectedLabel.id,
+        target: selectedLabel ? 'label' : 'figure',
+        type: selectedLabel ? selectedLabel.type : 'figure',
+        id: selectedLabel ? selectedLabel.id : 'main',
         startClient: { x: event.clientX, y: event.clientY },
         center: dragCenter,
-        fontSizeStart: labelFontSize[selectedLabel.type][selectedLabel.id],
-        rotationStart: labelStyleState[selectedLabel.type][selectedLabel.id].rotation,
+        fontSizeStart: selectedLabel ? labelFontSize[selectedLabel.type][selectedLabel.id] : null,
+        scaleStart: selectedFigure ? figureState.scale : null,
+        rotationStart: selectedLabel ? labelStyleState[selectedLabel.type][selectedLabel.id].rotation : figureState.rotation,
         distanceStart: Math.hypot(point.x - dragCenter.x, point.y - dragCenter.y),
         angleStart: Math.atan2(point.y - dragCenter.y, point.x - dragCenter.x)
       };
@@ -914,13 +1043,29 @@
     const anchorHit = findAnchorAtPoint(point);
     if (anchorHit) {
       selectedLabel = anchorHit;
+      selectedFigure = false;
       isPaletteOpen = false;
       render();
       if (anchorHit.type === 'angleMark') return;
       return;
     }
 
+    if (isFigureZone(point)) {
+      selectedLabel = null;
+      selectedFigure = true;
+      isPaletteOpen = false;
+      dragState = {
+        mode: 'figure-move',
+        target: 'figure',
+        startClient: { x: event.clientX, y: event.clientY },
+        offsetStart: { x: figureState.offset.x, y: figureState.offset.y }
+      };
+      render();
+      return;
+    }
+
     selectedLabel = null;
+    selectedFigure = false;
     isPaletteOpen = false;
     render();
   });
@@ -944,14 +1089,53 @@
 
     if (dragState.mode === 'resize') {
       const ratio = Math.max(0.3, Math.min(8, Math.hypot(point.x - dragState.center.x, point.y - dragState.center.y) / Math.max(dragState.distanceStart, 0.01)));
-      labelFontSize[dragState.type][dragState.id] = Math.max(10, Math.min(320, Math.round(dragState.fontSizeStart * ratio)));
+      if (dragState.target === 'label') {
+        labelFontSize[dragState.type][dragState.id] = Math.max(10, Math.min(320, Math.round(dragState.fontSizeStart * ratio)));
+      } else {
+        const nextScale = Math.max(0.3, Math.min(4, dragState.scaleStart * ratio));
+        const scaleRatio = nextScale / Math.max(figureState.scale, 1e-9);
+        if (Math.abs(scaleRatio - 1) > 1e-9) {
+          scaleLabelGroupAround(currentGeometry.centroid, scaleRatio);
+          scaleLabelFontGroup(scaleRatio);
+        }
+        figureState.scale = nextScale;
+      }
       scheduleRender();
       return;
     }
 
     if (dragState.mode === 'rotate') {
       const currentAngle = Math.atan2(point.y - dragState.center.y, point.x - dragState.center.x);
-      labelStyleState[dragState.type][dragState.id].rotation = dragState.rotationStart + ((currentAngle - dragState.angleStart) * 180 / Math.PI);
+      if (dragState.target === 'label') {
+        labelStyleState[dragState.type][dragState.id].rotation = dragState.rotationStart + ((currentAngle - dragState.angleStart) * 180 / Math.PI);
+      } else {
+        const nextRotation = dragState.rotationStart + ((currentAngle - dragState.angleStart) * 180 / Math.PI);
+        const deltaRotation = nextRotation - figureState.rotation;
+        if (Math.abs(deltaRotation) > 1e-9) {
+          rotateLabelGroupAround(currentGeometry.centroid, deltaRotation);
+        }
+        figureState.rotation = nextRotation;
+      }
+      scheduleRender();
+      return;
+    }
+
+    if (dragState.mode === 'figure-move') {
+      const boundingBox = board.getBoundingBox();
+      const unitsPerPixelX = (boundingBox[2] - boundingBox[0]) / Math.max(box.clientWidth, 1);
+      const unitsPerPixelY = (boundingBox[1] - boundingBox[3]) / Math.max(box.clientHeight, 1);
+      const nextOffset = {
+        x: dragState.offsetStart.x + (event.clientX - dragState.startClient.x) * unitsPerPixelX,
+        y: dragState.offsetStart.y - (event.clientY - dragState.startClient.y) * unitsPerPixelY
+      };
+      const delta = {
+        x: nextOffset.x - figureState.offset.x,
+        y: nextOffset.y - figureState.offset.y
+      };
+      if (Math.abs(delta.x) > 1e-9 || Math.abs(delta.y) > 1e-9) {
+        translateLabelGroup(delta);
+      }
+      figureState.offset = nextOffset;
       scheduleRender();
     }
   });
@@ -962,6 +1146,7 @@
 
   sideInput.addEventListener('input', function () {
     selectedLabel = null;
+    selectedFigure = false;
     isPaletteOpen = false;
     render();
   });
@@ -989,7 +1174,14 @@
     Object.keys(angleMarkerMode).forEach(function (id) {
       angleMarkerMode[id] = 0;
     });
+    figureState = {
+      color: '#2a5bd7',
+      rotation: 0,
+      scale: 1,
+      offset: { x: 0, y: 0 }
+    };
     selectedLabel = null;
+    selectedFigure = false;
     isPaletteOpen = false;
     updateRatioButton();
     updateUnitButton();
