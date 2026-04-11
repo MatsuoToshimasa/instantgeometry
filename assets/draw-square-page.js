@@ -18,6 +18,7 @@
   const box = document.getElementById('box');
   const exportBackdrop = document.getElementById('exportBackdrop');
   const exportFrame = document.getElementById('exportFrame');
+  const vertexLabelText = { A: 'A', B: 'B', C: 'C', D: 'D' };
 
   const board = JXG.JSXGraph.initBoard('box', {
     boundingbox: [0, 8, 12, 0],
@@ -93,6 +94,19 @@
 
   function style(color) {
     return { color: color, rotation: 0 };
+  }
+
+  function getVertexTokenByKey(vertexKey) {
+    const raw = String(vertexLabelText[vertexKey] || vertexKey).trim().toUpperCase();
+    return /^[A-Z]+$/.test(raw) ? raw : vertexKey;
+  }
+
+  function getAreaName() {
+    return '□' + ['A', 'B', 'C', 'D'].map(getVertexTokenByKey).join('');
+  }
+
+  function getSideName(id) {
+    return id.split('').map(getVertexTokenByKey).join('');
   }
 
   function setStatus(message, isError) {
@@ -288,7 +302,8 @@
 
   function getLabelText(type, id, geometry) {
     const side = geometry.side;
-    if (type === 'vertex' || type === 'specialVertex') return id;
+    if (type === 'vertex') return getVertexTokenByKey(id);
+    if (type === 'specialVertex') return id;
     if (type === 'side') return appendUnit(formatNumber(side), false);
     if (type === 'angle') return angleMode === 'degrees' ? '90°' : 'π/2';
     if (type === 'area') return appendUnit(formatNumber(side * side), true);
@@ -323,10 +338,11 @@
   }
 
   function getToggleLabel(config) {
-    if (config.type === 'vertex') return config.id;
-    if (config.type === 'side') return config.id;
-    if (config.type === 'angle') return '∠' + config.id;
-    if (config.type === 'area') return '□ABCD';
+    if (config.type === 'vertex') return getVertexTokenByKey(config.id);
+    if (config.type === 'side') return getSideName(config.id);
+    if (config.type === 'angle') return '∠' + getVertexTokenByKey(config.id);
+    if (config.type === 'area') return getAreaName();
+    if (config.type === 'diagonal') return getSideName(config.id);
     return config.id;
   }
 
@@ -351,6 +367,18 @@
         renderLabelToggleButtons();
         render();
       });
+      if (config.type === 'vertex') {
+        button.addEventListener('contextmenu', function (event) {
+          event.preventDefault();
+          const current = getVertexTokenByKey(config.id);
+          const next = window.prompt('頂点ラベル文字を入力してください（A-Z のみ）', current);
+          if (next === null) return;
+          const normalized = String(next).trim().toUpperCase();
+          vertexLabelText[config.id] = /^[A-Z]+$/.test(normalized) ? normalized : config.id;
+          renderLabelToggleButtons();
+          render();
+        });
+      }
       generalLabelToggleGrid.appendChild(button);
     });
     getSpecialConfigs().forEach(function (config) {
@@ -472,7 +500,7 @@
         currentLabelAnchors: currentLabelAnchors,
         getLabelStyle: getLabelStyle,
         position: getLabelPosition('vertex', id, getDefaultPosition('vertex', id, geometry)),
-        text: id,
+        text: getVertexTokenByKey(id),
         fontSize: labelFontSize.vertex[id],
         labelKey: { type: 'vertex', id: id },
         options: { color: '#1f2430' }
