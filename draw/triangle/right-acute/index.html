@@ -865,8 +865,8 @@
 
       const hiddenLabelState = {
         vertex: { A: false, B: false, C: false },
-        side: { a: false, b: false, c: false },
-        innerAngle: { A: true, B: true, C: true },
+        side: { a: true, b: false, c: true },
+        innerAngle: { A: false, B: true, C: true },
         angleMark: { A: true, B: true, C: true },
         perp: { B: false },
         area: { main: true }
@@ -3202,8 +3202,8 @@
 
       function resetVisualState() {
         hiddenLabelState.vertex = { A: false, B: false, C: false };
-        hiddenLabelState.side = { a: false, b: false, c: false };
-        hiddenLabelState.innerAngle = { A: true, B: true, C: true };
+        hiddenLabelState.side = { a: true, b: false, c: true };
+        hiddenLabelState.innerAngle = { A: false, B: true, C: true };
         hiddenLabelState.angleMark = { A: true, B: true, C: true };
         hiddenLabelState.perp = { B: false };
         hiddenLabelState.area = { main: true };
