@@ -665,6 +665,7 @@
   <script src="/assets/components.js"></script>
   <script src="/assets/draw-shared-labels.js"></script>
   <script src="/assets/draw-shared-ornaments.js"></script>
+  <script src="/assets/draw-shared-selection.js"></script>
   <script>
     (function () {
       'use strict';
@@ -1596,7 +1597,7 @@
       }
 
       function getPaletteColors() {
-        return ['#1f2430', '#2a5bd7', '#c2410c', '#0f766e', '#7c3aed', '#be123c'];
+        return window.InstantGeometrySharedSelection.getPaletteColors();
       }
 
       function renderSelectionOverlay(anchor) {
@@ -1604,172 +1605,17 @@
           currentSelectionOverlay = null;
           return;
         }
-
-        const bounds = anchor.kind === 'figure'
-          ? {
-            center: { x: anchor.x, y: anchor.y },
-            width: anchor.width,
-            height: anchor.height,
-            corners: {
-              topLeft: rotatePoint({ x: anchor.x - anchor.width / 2, y: anchor.y + anchor.height / 2 }, { x: anchor.x, y: anchor.y }, anchor.rotation),
-              topRight: rotatePoint({ x: anchor.x + anchor.width / 2, y: anchor.y + anchor.height / 2 }, { x: anchor.x, y: anchor.y }, anchor.rotation),
-              bottomRight: rotatePoint({ x: anchor.x + anchor.width / 2, y: anchor.y - anchor.height / 2 }, { x: anchor.x, y: anchor.y }, anchor.rotation),
-              bottomLeft: rotatePoint({ x: anchor.x - anchor.width / 2, y: anchor.y - anchor.height / 2 }, { x: anchor.x, y: anchor.y }, anchor.rotation)
-            }
-          }
-          : getLabelBounds(anchor);
-        const corners = bounds.corners;
-        const pxToUser = function (px) {
-          const userPerPx = (1 / Math.max(Math.abs(board.unitX), 1e-6) + 1 / Math.max(Math.abs(board.unitY), 1e-6)) / 2;
-          return px * userPerPx;
-        };
-        const boundsWidthPx = Math.max(1, Math.abs(bounds.width * board.unitX));
-        const boundsHeightPx = Math.max(1, Math.abs(bounds.height * board.unitY));
-        const iconBasePx = Math.max(9, Math.min(20, Math.min(boundsWidthPx, boundsHeightPx) * 0.23));
-        const iconGapPx = 14;
-        const iconGapUser = pxToUser(iconGapPx);
-
-        function extendFromCorner(corner) {
-          const vx = corner.x - bounds.center.x;
-          const vy = corner.y - bounds.center.y;
-          const vlen = Math.hypot(vx, vy) || 1;
-          return {
-            x: corner.x + (vx / vlen) * iconGapUser,
-            y: corner.y + (vy / vlen) * iconGapUser
-          };
-        }
-
-        const rotateHandle = extendFromCorner(corners.topRight);
-        const resizeHandle = extendFromCorner(corners.bottomRight);
-        const paletteHandle = extendFromCorner(corners.bottomLeft);
-
-        [[corners.topLeft, corners.topRight], [corners.topRight, corners.bottomRight], [corners.bottomRight, corners.bottomLeft], [corners.bottomLeft, corners.topLeft]].forEach(function (pair) {
-          board.create('segment', [[pair[0].x, pair[0].y], [pair[1].x, pair[1].y]], {
-            fixed: true,
-            strokeColor: '#2a5bd7',
-            strokeWidth: 1.6,
-            dash: 2
-          });
+        currentSelectionOverlay = window.InstantGeometrySharedSelection.renderSelectionOverlay({
+          board: board,
+          anchor: anchor,
+          rotatePoint: rotatePoint,
+          getLabelBounds: getLabelBounds,
+          isPaletteOpen: isPaletteOpen
         });
-
-        const resizeHalf = pxToUser(iconBasePx * 0.56);
-        const resizeWing = pxToUser(iconBasePx * 0.25);
-        const resizeDir = { x: -Math.SQRT1_2, y: Math.SQRT1_2 };
-        const resizeNorm = { x: -resizeDir.y, y: resizeDir.x };
-        const resizeStart = {
-          x: resizeHandle.x - resizeDir.x * resizeHalf,
-          y: resizeHandle.y - resizeDir.y * resizeHalf
-        };
-        const resizeEnd = {
-          x: resizeHandle.x + resizeDir.x * resizeHalf,
-          y: resizeHandle.y + resizeDir.y * resizeHalf
-        };
-        board.create('segment', [[resizeStart.x, resizeStart.y], [resizeEnd.x, resizeEnd.y]], {
-          fixed: true,
-          strokeWidth: 1.6,
-          strokeColor: '#2a5bd7'
-        });
-        board.create('segment', [[resizeStart.x, resizeStart.y], [resizeStart.x + resizeDir.x * resizeWing + resizeNorm.x * resizeWing, resizeStart.y + resizeDir.y * resizeWing + resizeNorm.y * resizeWing]], {
-          fixed: true,
-          strokeWidth: 1.4,
-          strokeColor: '#2a5bd7'
-        });
-        board.create('segment', [[resizeStart.x, resizeStart.y], [resizeStart.x + resizeDir.x * resizeWing - resizeNorm.x * resizeWing, resizeStart.y + resizeDir.y * resizeWing - resizeNorm.y * resizeWing]], {
-          fixed: true,
-          strokeWidth: 1.4,
-          strokeColor: '#2a5bd7'
-        });
-        board.create('segment', [[resizeEnd.x, resizeEnd.y], [resizeEnd.x - resizeDir.x * resizeWing + resizeNorm.x * resizeWing, resizeEnd.y - resizeDir.y * resizeWing + resizeNorm.y * resizeWing]], {
-          fixed: true,
-          strokeWidth: 1.4,
-          strokeColor: '#2a5bd7'
-        });
-        board.create('segment', [[resizeEnd.x, resizeEnd.y], [resizeEnd.x - resizeDir.x * resizeWing - resizeNorm.x * resizeWing, resizeEnd.y - resizeDir.y * resizeWing - resizeNorm.y * resizeWing]], {
-          fixed: true,
-          strokeWidth: 1.4,
-          strokeColor: '#2a5bd7'
-        });
-
-        board.create('point', [rotateHandle.x, rotateHandle.y], {
-          name: '',
-          fixed: true,
-          size: iconBasePx * 0.58,
-          strokeColor: '#2a5bd7',
-          fillColor: '#ffffff'
-        });
-
-        board.create('point', [paletteHandle.x, paletteHandle.y], {
-          name: '',
-          fixed: true,
-          size: iconBasePx * 0.54,
-          strokeColor: anchor.color,
-          fillColor: '#ffffff'
-        });
-
-        board.create('point', [paletteHandle.x, paletteHandle.y], {
-          name: '',
-          fixed: true,
-          size: iconBasePx * 0.28,
-          strokeColor: anchor.color,
-          fillColor: anchor.color
-        });
-
-        const palette = [];
-        if (isPaletteOpen) {
-          getPaletteColors().forEach(function (color, index) {
-            const radius = pxToUser(Math.max(30, iconBasePx * 2.8));
-            const startAngle = 210;
-            const endAngle = 330;
-            const angle = startAngle + ((endAngle - startAngle) * (index / Math.max(1, getPaletteColors().length - 1)));
-            const rad = angle * Math.PI / 180;
-            const localPoint = {
-              x: paletteHandle.x + Math.cos(rad) * radius,
-              y: paletteHandle.y + Math.sin(rad) * radius
-            };
-            const point = rotatePoint(localPoint, paletteHandle, anchor.rotation);
-            board.create('point', [point.x, point.y], {
-              name: '',
-              fixed: true,
-              size: Math.max(4.5, iconBasePx * 0.5),
-              strokeColor: color,
-              fillColor: color
-            });
-            palette.push({ color: color, x: point.x, y: point.y });
-          });
-        }
-
-        currentSelectionOverlay = {
-          kind: anchor.kind || 'label',
-          bounds: bounds,
-          resizeHandle: resizeHandle,
-          rotateHandle: rotateHandle,
-          paletteHandle: paletteHandle,
-          resizeHitRadius: pxToUser(iconBasePx * 0.9),
-          rotateHitRadius: pxToUser(iconBasePx),
-          paletteHitRadius: pxToUser(iconBasePx),
-          paletteColorHitRadius: pxToUser(iconBasePx * 0.62),
-          palette: palette
-        };
       }
 
       function findSelectionControl(point) {
-        if (!currentSelectionOverlay) return null;
-        if (Math.hypot(point.x - currentSelectionOverlay.resizeHandle.x, point.y - currentSelectionOverlay.resizeHandle.y) <= (currentSelectionOverlay.resizeHitRadius || 0.22)) {
-          return { mode: 'resize' };
-        }
-        if (Math.hypot(point.x - currentSelectionOverlay.rotateHandle.x, point.y - currentSelectionOverlay.rotateHandle.y) <= (currentSelectionOverlay.rotateHitRadius || 0.28)) {
-          return { mode: 'rotate' };
-        }
-        if (Math.hypot(point.x - currentSelectionOverlay.paletteHandle.x, point.y - currentSelectionOverlay.paletteHandle.y) <= (currentSelectionOverlay.paletteHitRadius || 0.26)) {
-          return { mode: 'palette' };
-        }
-        for (let index = 0; index < currentSelectionOverlay.palette.length; index += 1) {
-          const item = currentSelectionOverlay.palette[index];
-          if (Math.hypot(point.x - item.x, point.y - item.y) <= (currentSelectionOverlay.paletteColorHitRadius || 0.18)) {
-            return { mode: 'palette-color', color: item.color };
-          }
-        }
-        return null;
+        return window.InstantGeometrySharedSelection.findSelectionControl(point, currentSelectionOverlay);
       }
 
       function fitBoard(points) {
