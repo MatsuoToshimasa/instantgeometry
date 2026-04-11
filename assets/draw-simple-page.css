@@ -1,0 +1,385 @@
+.draw-simple-page{
+  width:100%;
+  height:100%;
+  min-height:calc(100vh - 120px);
+}
+
+.draw-simple-workspace{
+  position:relative;
+  width:100%;
+  height:100%;
+  min-height:calc(100vh - 120px);
+  overflow:hidden;
+  background:linear-gradient(180deg,#f8faff 0%,#f3f6fc 100%);
+}
+
+.page-back-btn{
+  position:absolute;
+  top:6px;
+  left:50%;
+  transform:translateX(-50%);
+  z-index:24;
+  min-width:148px;
+  padding:10px 14px;
+  border:1px solid #cfd7ea;
+  border-radius:13px;
+  background:linear-gradient(180deg,#ffffff 0%,#f6f8ff 100%);
+  color:#24304d;
+  font-size:13px;
+  font-weight:700;
+  cursor:pointer;
+  box-shadow:0 1px 0 rgba(255,255,255,.9) inset, 0 2px 8px rgba(36,71,168,.08);
+}
+
+.page-back-btn:hover{
+  border-color:#9fb3ea;
+  color:#1f3d94;
+  background:linear-gradient(180deg,#ffffff 0%,#eef3ff 100%);
+}
+
+.draw-simple-center{
+  position:absolute;
+  inset:16px;
+}
+
+.draw-simple-board{
+  height:100%;
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:20px;
+  box-shadow:var(--shadow);
+  overflow:hidden;
+}
+
+.draw-simple-board-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:16px;
+  padding:16px 20px 14px;
+  border-bottom:1px solid #eceff5;
+}
+
+.draw-simple-board-title{
+  min-width:0;
+}
+
+.draw-simple-crumb{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  color:var(--muted);
+  font-size:13px;
+  margin-bottom:10px;
+  flex-wrap:wrap;
+}
+
+.draw-simple-crumb a:hover{
+  color:var(--accent);
+}
+
+.draw-simple-board-head h1{
+  margin:0;
+  font-size:clamp(22px,2.6vw,30px);
+  line-height:1.2;
+}
+
+.draw-simple-board-head p{
+  margin:8px 0 0;
+  color:var(--muted);
+  font-size:13px;
+  line-height:1.7;
+}
+
+.draw-simple-board-status{
+  max-width:min(420px,100%);
+  margin:0;
+  padding:10px 12px;
+  border-radius:14px;
+  border:1px solid #e1e8fb;
+  background:#f8faff;
+  color:#3153a4;
+  font-size:13px;
+  line-height:1.65;
+}
+
+.draw-simple-board-status.error{
+  border-color:#f3c3bf;
+  background:#fff1f0;
+  color:#b42318;
+}
+
+.draw-simple-board-wrap{
+  padding:16px 20px 20px;
+}
+
+.draw-simple-preview{
+  display:grid;
+  place-items:center;
+  width:100%;
+  min-height:520px;
+  border:1px solid #e7eaf3;
+  border-radius:18px;
+  background:
+    radial-gradient(circle at top right, rgba(42,91,215,.06), transparent 30%),
+    linear-gradient(180deg,#fcfdff 0%,#f7f9ff 100%);
+  overflow:hidden;
+}
+
+.draw-simple-preview svg{
+  width:min(100%,720px);
+  height:auto;
+}
+
+.draw-simple-notes{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+  margin-top:14px;
+}
+
+.draw-simple-note{
+  border:1px solid #e7eaf3;
+  border-radius:14px;
+  background:#fcfdff;
+  padding:12px 14px;
+}
+
+.draw-simple-note-label{
+  display:block;
+  color:var(--muted);
+  font-size:12px;
+  margin-bottom:6px;
+}
+
+.draw-simple-note-value{
+  font-size:14px;
+  font-weight:700;
+  line-height:1.5;
+}
+
+.draw-simple-left-dock,
+.draw-simple-right-dock{
+  position:absolute;
+  top:16px;
+  bottom:16px;
+  z-index:20;
+  width:min(320px,calc(100vw - 90px));
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  transition:transform .24s ease;
+}
+
+.draw-simple-left-dock{
+  left:16px;
+}
+
+.draw-simple-right-dock{
+  right:16px;
+  width:min(280px,calc(100vw - 90px));
+}
+
+.draw-simple-left-dock.is-collapsed{
+  transform:translateX(calc(-100% + 18px));
+}
+
+.draw-simple-right-dock.is-collapsed{
+  transform:translateX(calc(100% - 18px));
+}
+
+.draw-simple-dock-topbar{
+  position:relative;
+  height:44px;
+}
+
+.draw-simple-dock-toggle{
+  position:absolute;
+  top:0;
+  right:-54px;
+  width:44px;
+  min-width:44px;
+  height:44px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:#fff;
+  color:var(--text);
+  font-size:18px;
+  cursor:pointer;
+  box-shadow:var(--shadow);
+  z-index:2;
+}
+
+.draw-simple-dock-toggle-right{
+  left:-54px;
+  right:auto;
+}
+
+.draw-simple-panel,
+.draw-simple-toggle-card{
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:20px;
+  box-shadow:var(--shadow);
+  padding:14px;
+  overflow:auto;
+}
+
+.draw-simple-panel h2{
+  margin:0;
+  font-size:22px;
+  line-height:1.2;
+}
+
+.draw-simple-intro{
+  margin:8px 0 0;
+  color:var(--muted);
+  font-size:13px;
+  line-height:1.65;
+}
+
+.draw-simple-section{
+  margin-top:12px;
+  padding-top:12px;
+  border-top:1px solid #eceff5;
+}
+
+.draw-simple-section h3{
+  margin:0 0 8px;
+  font-size:14px;
+  line-height:1.4;
+}
+
+.draw-simple-field-grid{
+  display:grid;
+  gap:10px;
+}
+
+.draw-simple-field{
+  display:grid;
+  gap:5px;
+}
+
+.draw-simple-field label{
+  font-size:12px;
+  color:var(--muted);
+}
+
+.draw-simple-field input,
+.draw-simple-field select{
+  width:100%;
+  padding:9px 10px;
+  border:1px solid var(--line);
+  border-radius:11px;
+  font-size:15px;
+  background:#fff;
+  color:var(--text);
+}
+
+.draw-simple-hint{
+  margin:0;
+  color:var(--muted);
+  font-size:12px;
+  line-height:1.6;
+}
+
+.draw-simple-toggle-card h3{
+  margin:0;
+  color:var(--muted);
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:.04em;
+}
+
+.draw-simple-toggle-list{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-top:10px;
+}
+
+.draw-simple-toggle{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:8px 10px;
+  border:1px solid #e6e9f2;
+  border-radius:12px;
+  background:#fcfdff;
+}
+
+.draw-simple-toggle input{
+  margin:0;
+  width:15px;
+  height:15px;
+  accent-color:var(--accent);
+  flex:0 0 auto;
+}
+
+.draw-simple-toggle strong{
+  display:block;
+  font-size:12px;
+  line-height:1.4;
+}
+
+.draw-simple-toggle > span{
+  display:block;
+}
+
+.draw-simple-toggle > span > span{
+  display:none;
+}
+
+.draw-simple-badge{
+  margin-top:12px;
+  padding:10px 11px;
+  border-radius:12px;
+  border:1px solid #e1e8fb;
+  background:#f8faff;
+  color:#3153a4;
+  font-size:12px;
+  line-height:1.65;
+}
+
+@media (max-width: 980px){
+  .draw-simple-left-dock{
+    width:min(300px,calc(100vw - 84px));
+    left:12px;
+    top:12px;
+    bottom:12px;
+  }
+
+  .draw-simple-right-dock{
+    width:min(260px,calc(100vw - 84px));
+    right:12px;
+    top:12px;
+    bottom:12px;
+  }
+
+  .draw-simple-center{
+    inset:12px;
+  }
+
+  .draw-simple-notes{
+    grid-template-columns:1fr;
+  }
+}
+
+@media (max-width: 640px){
+  .draw-simple-left-dock,
+  .draw-simple-right-dock{
+    width:calc(100vw - 84px);
+  }
+
+  .draw-simple-board-head{
+    padding:14px 14px 10px;
+  }
+
+  .draw-simple-board-wrap{
+    padding:12px 14px 14px;
+  }
+
+  .draw-simple-preview{
+    min-height:420px;
+  }
+}

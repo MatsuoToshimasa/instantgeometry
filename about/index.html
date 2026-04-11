@@ -393,5 +393,193 @@
   <script src="/assets/supabase-client.js"></script>
   <script src="/assets/auth-ui.js"></script>
   <script src="/assets/components.js"></script>
+  <script>
+    (function () {
+      'use strict';
+
+      const translations = {
+        ja: {
+          title: 'このサイトについて | Instant Geometry',
+          home: 'トップ',
+          crumb: 'このサイトについて',
+          heroTitle: 'このサイトについて',
+          heroLead: 'Instant Geometry は、図形の描画、数学問題の作成、関数グラフの作成を、できるだけ迷わず、すばやく始められるように設計された数学教育ツールです。学習者、教員、講師、教材作成者が、目的に応じて必要な作業へすぐ入れることを重視しています。',
+          sectionTitles: ['このサイトの目的', '主な機能', '設計の考え方', '想定している利用者', '今後について', '開発・運営'],
+          featureTitles: ['図形を描く', '問題を作る', '関数を描く'],
+          sectionParagraphs: [
+            [
+              '数学の図形や関数を扱うとき、実際には「何をしたいか」はかなりはっきりしています。たとえば、3辺がわかっている三角形を描きたい、座標から図形を作りたい、問題プリントを短時間で用意したい、一次関数や二次関数のグラフを出したい、というような目的です。',
+              'しかし一般的なツールでは、機能が多すぎたり、逆に操作が限定されすぎたりして、目的の作業にたどり着くまでに時間がかかることがあります。Instant Geometry は、そうした遠回りを減らし、目的別に入口を分けることで、必要な作業をその場ですぐ始められることを目指しています。'
+            ],
+            [],
+            [
+              'このサイトでは、最初から複雑な統合編集機能を前面に出すのではなく、「図形を描く」「問題を作る」「関数を描く」という大きな目的ごとに入口を分けています。これは、初めて使う人でも直感的に選びやすくするためです。',
+              'まずは、必要なものをパッと作れることを優先し、その上で保存、印刷、表示調整、ログイン、Pro機能などを順に整えていく方針です。使いやすさと拡張性の両立を意識しながら、少しずつ改善を続けています。'
+            ],
+            [
+              'Instant Geometry は、数学を学ぶ生徒や学生だけでなく、授業準備を行う教員、塾講師、家庭教師、教材作成者なども想定して設計しています。問題を解くためだけでなく、説明するため、配布資料を作るため、視覚的に理解しやすい図を用意するための道具としても使えるようにしています。'
+            ],
+            [
+              '今後は、より自然なログイン導線、Pro機能の整備、保存機能の強化、編集画面の改善、問題パターンの拡充、関数表示の拡張などを進めていく予定です。また、使う人が迷いにくい導線を維持したまま、必要な機能を少しずつ積み上げていくことを重視しています。'
+            ],
+            [
+              'Instant Geometry は、教育用途での使いやすさを重視して設計・開発されている個人プロジェクトです。このサイトの開発・運営は Toshimasa Matsuo が行っています。'
+            ]
+          ],
+          featureBodies: [
+            '三角形、四角形、正N角形、円、楕円、星型などを、条件に応じて描画できます。SSS、SAS、3点座標など、入口を目的別に分けることで、必要な図形へすぐ進める構成にしています。',
+            '面積、角度、辺の長さ、座標、種類判定など、三角形を中心とした数学問題を作成できます。授業用、演習用、プリント用として使いやすいように、分野別の入口を用意しています。',
+            '一次関数、二次関数、指数関数、対数関数、三角関数などのグラフを描画できます。定義域や端点条件も含めて扱えるようにし、学習や説明に使いやすい形を目指しています。'
+          ],
+          infoBox: '開発・運営：Toshimasa Matsuo<br>サイト名：Instant Geometry<br>内容：数学教育ツールの開発・提供',
+          footerNote: 'ご意見、ご要望、不具合報告などは、今後のお問い合わせ導線の整備にあわせて受け付ける予定です。'
+        },
+        en: {
+          title: 'About | Instant Geometry',
+          home: 'Home',
+          crumb: 'About',
+          heroTitle: 'About This Site',
+          heroLead: 'Instant Geometry is a math education tool designed to help users start drawing shapes, creating problems, and graphing functions as quickly and directly as possible. It is built so learners, teachers, tutors, and content creators can move straight into the task they need.',
+          sectionTitles: ['Purpose of the Site', 'Main Features', 'Design Principles', 'Who It Is For', 'What Comes Next', 'Development and Operation'],
+          featureTitles: ['Draw Shapes', 'Create Problems', 'Graph Functions'],
+          sectionParagraphs: [
+            [
+              'When working with geometric figures or functions, what people actually want to do is usually quite clear. For example, they may want to draw a triangle from three known sides, build a figure from coordinates, prepare a worksheet quickly, or graph a linear or quadratic function.',
+              'Many general tools either offer too many features or restrict operations too much, so it can take time to reach the task you really want. Instant Geometry aims to remove that detour by separating entry points by purpose, so you can start the needed work immediately.'
+            ],
+            [],
+            [
+              'Instead of putting a complex all-in-one editor front and center, this site separates entry points into the larger goals of drawing shapes, creating problems, and graphing functions. This makes the first choice intuitive even for new users.',
+              'The priority is to let people make what they need right away, and then improve saving, printing, display controls, login flows, and Pro features step by step. The project is being refined gradually with both usability and extensibility in mind.'
+            ],
+            [
+              'Instant Geometry is designed not only for students learning mathematics, but also for teachers, tutors, private instructors, and people who create teaching materials. It is meant to work not just as a problem-solving tool, but also as a way to explain ideas, prepare handouts, and create figures that are easy to understand visually.'
+            ],
+            [
+              'Going forward, the plan is to improve the login flow, organize Pro features, strengthen saving, refine editing screens, expand problem patterns, and extend function-display options. The site will keep adding features while preserving a navigation flow that is easy to understand.'
+            ],
+            [
+              'Instant Geometry is a personal project designed and developed with a strong focus on ease of use in education. The site is developed and operated by Toshimasa Matsuo.'
+            ]
+          ],
+          featureBodies: [
+            'You can draw triangles, quadrilaterals, regular polygons, circles, ellipses, stars, and more based on the conditions you know. By separating entry points such as SSS, SAS, and three-point coordinates, the site helps you reach the exact figure you need quickly.',
+            'You can create math problems centered on triangles, including area, angles, side lengths, coordinates, and classification tasks. Topic-based entry points make it easier to use for lessons, practice, and printable materials.',
+            'You can graph linear, quadratic, exponential, logarithmic, and trigonometric functions. The goal is to make function graphs easy to use in study and explanation, including domains and endpoint conditions.'
+          ],
+          infoBox: 'Developed and operated by: Toshimasa Matsuo<br>Site name: Instant Geometry<br>Focus: Development and delivery of math education tools',
+          footerNote: 'Feedback, requests, and bug reports will be accepted as the contact flow for the site is improved.'
+        },
+        zh: {
+          title: '关于本站 | Instant Geometry',
+          home: '首页',
+          crumb: '关于本站',
+          heroTitle: '关于本站',
+          heroLead: 'Instant Geometry 是一款面向数学教育的工具，旨在帮助用户尽可能直接、快速地开始绘制图形、生成题目和绘制函数图像。它面向学习者、教师、讲师和教材制作者，让他们能立即进入所需任务。',
+          sectionTitles: ['本站目的', '主要功能', '设计思路', '适用对象', '后续计划', '开发与运营'],
+          featureTitles: ['绘制图形', '生成题目', '绘制函数'],
+          sectionParagraphs: [
+            [
+              '在处理数学图形或函数时，人们真正想做的事情通常非常明确。例如，想根据已知三边画出三角形，根据坐标生成图形，快速准备习题讲义，或绘制一次函数与二次函数图像。',
+              '但很多通用工具要么功能过多，要么操作受限，导致到达目标工作之前要花不少时间。Instant Geometry 希望通过按目的划分入口来减少这些绕路，让用户可以立刻开始需要的工作。'
+            ],
+            [],
+            [
+              '本站没有一开始就把复杂的一体化编辑功能摆在最前面，而是按“绘制图形”“生成题目”“绘制函数”这几个大目标来划分入口。这样即使是第一次使用的人，也能更直观地做出选择。',
+              '我们优先保证用户可以先快速做出需要的内容，再逐步完善保存、打印、显示调整、登录流程和 Pro 功能等部分。项目会在兼顾易用性与可扩展性的前提下持续改进。'
+            ],
+            [
+              'Instant Geometry 不仅面向学习数学的学生，也面向备课教师、补习班讲师、家教老师以及教材制作者。它不仅可用于解题，也希望成为讲解概念、制作发放资料、准备更易于视觉理解图示的工具。'
+            ],
+            [
+              '今后计划继续完善更自然的登录流程、Pro 功能、保存能力、编辑界面、题型扩展以及函数显示选项。同时也会在保持清晰易懂导线的前提下逐步增加必要功能。'
+            ],
+            [
+              'Instant Geometry 是一个以教育场景易用性为重点设计和开发的个人项目。本站由 Toshimasa Matsuo 开发并运营。'
+            ]
+          ],
+          featureBodies: [
+            '可以根据已知条件绘制三角形、四边形、正 N 边形、圆、椭圆、星形等图形。通过将 SSS、SAS、三点坐标等入口按目的区分，用户可以更快到达需要的图形。',
+            '可以生成以三角形为中心的数学题，包括面积、角度、边长、坐标和类型判定等内容。按分野划分的入口使其更适合课堂、练习和讲义制作。',
+            '可以绘制一次函数、二次函数、指数函数、对数函数和三角函数图像。目标是让函数图像在学习和讲解中更容易使用，包括定义域和端点条件。'
+          ],
+          infoBox: '开发与运营：Toshimasa Matsuo<br>站点名称：Instant Geometry<br>内容：数学教育工具的开发与提供',
+          footerNote: '关于意见、需求和错误报告，未来会随着联系渠道的完善一并开放。'
+        },
+        es: {
+          title: 'Acerca del sitio | Instant Geometry',
+          home: 'Inicio',
+          crumb: 'Acerca del sitio',
+          heroTitle: 'Acerca de Este Sitio',
+          heroLead: 'Instant Geometry es una herramienta de educación matemática diseñada para que dibujar figuras, crear problemas y graficar funciones sea lo más directo y rápido posible. Está pensada para que estudiantes, docentes, tutores y creadores de materiales puedan entrar enseguida en la tarea que necesitan.',
+          sectionTitles: ['Objetivo del sitio', 'Funciones principales', 'Enfoque de diseño', 'Usuarios previstos', 'Próximos pasos', 'Desarrollo y operación'],
+          featureTitles: ['Dibujar figuras', 'Crear problemas', 'Graficar funciones'],
+          sectionParagraphs: [
+            [
+              'Cuando se trabaja con figuras geométricas o funciones, normalmente está bastante claro qué se quiere hacer. Por ejemplo, dibujar un triángulo con tres lados conocidos, crear una figura a partir de coordenadas, preparar una hoja de ejercicios rápidamente o graficar una función lineal o cuadrática.',
+              'Sin embargo, muchas herramientas generales tienen demasiadas funciones o, por el contrario, limitan demasiado las operaciones, por lo que llegar al trabajo deseado puede tomar tiempo. Instant Geometry busca reducir ese rodeo separando las entradas según el objetivo para que el usuario pueda empezar enseguida.'
+            ],
+            [],
+            [
+              'En lugar de poner desde el principio un editor integrado y complejo en primer plano, este sitio separa las entradas en grandes objetivos: dibujar figuras, crear problemas y graficar funciones. Así, incluso quien lo usa por primera vez puede elegir de manera intuitiva.',
+              'La prioridad es permitir crear rápidamente lo necesario y luego mejorar paso a paso el guardado, la impresión, los ajustes de visualización, el acceso y las funciones Pro. El proyecto sigue mejorando poco a poco con equilibrio entre facilidad de uso y capacidad de ampliación.'
+            ],
+            [
+              'Instant Geometry está pensado no solo para estudiantes que aprenden matemáticas, sino también para docentes, profesores particulares, tutores y creadores de materiales didácticos. No está diseñado solo para resolver problemas, sino también para explicar, preparar materiales y crear figuras visualmente claras.'
+            ],
+            [
+              'En adelante, se prevé mejorar el flujo de acceso, organizar mejor las funciones Pro, reforzar el guardado, mejorar las pantallas de edición, ampliar los patrones de problemas y extender las opciones de visualización de funciones. El sitio seguirá incorporando funciones manteniendo una navegación clara y fácil de entender.'
+            ],
+            [
+              'Instant Geometry es un proyecto personal diseñado y desarrollado con especial atención a la facilidad de uso en contextos educativos. El sitio está desarrollado y operado por Toshimasa Matsuo.'
+            ]
+          ],
+          featureBodies: [
+            'Puedes dibujar triángulos, cuadriláteros, polígonos regulares, círculos, elipses, estrellas y más según las condiciones conocidas. Al separar entradas como SSS, SAS y coordenadas de tres puntos, el sitio te ayuda a llegar rápido a la figura que necesitas.',
+            'Puedes crear problemas de matemáticas centrados en triángulos, como área, ángulos, longitudes, coordenadas y clasificación. Las entradas por tema facilitan su uso en clases, práctica y materiales imprimibles.',
+            'Puedes graficar funciones lineales, cuadráticas, exponenciales, logarítmicas y trigonométricas. El objetivo es que los gráficos sean fáciles de usar para estudiar y explicar, incluyendo dominio y condiciones en los extremos.'
+          ],
+          infoBox: 'Desarrollo y operación: Toshimasa Matsuo<br>Nombre del sitio: Instant Geometry<br>Contenido: Desarrollo y provisión de herramientas de educación matemática',
+          footerNote: 'Los comentarios, solicitudes y reportes de errores se aceptarán a medida que se mejore la vía de contacto del sitio.'
+        }
+      };
+
+      function applyPageTranslations() {
+        const lang = document.documentElement.lang || 'ja';
+        const t = translations[lang] || translations.ja;
+        document.title = t.title;
+        const crumbHome = document.querySelector('.crumb a');
+        const crumbLast = document.querySelector('.crumb span:last-child');
+        if (crumbHome) crumbHome.textContent = t.home;
+        if (crumbLast) crumbLast.textContent = t.crumb;
+        document.querySelector('.hero h1').textContent = t.heroTitle;
+        document.querySelector('.lead').textContent = t.heroLead;
+        const sections = document.querySelectorAll('.section');
+        sections.forEach(function (section, index) {
+          const heading = section.querySelector('h2');
+          if (heading && t.sectionTitles[index]) heading.textContent = t.sectionTitles[index];
+          const paragraphs = section.querySelectorAll(':scope > p:not(.footer-note)');
+          const texts = t.sectionParagraphs[index] || [];
+          paragraphs.forEach(function (el, pIndex) {
+            if (texts[pIndex]) el.textContent = texts[pIndex];
+          });
+        });
+        document.querySelectorAll('.feature h3').forEach(function (el, index) {
+          if (t.featureTitles[index]) el.textContent = t.featureTitles[index];
+        });
+        document.querySelectorAll('.feature p').forEach(function (el, index) {
+          if (t.featureBodies[index]) el.textContent = t.featureBodies[index];
+        });
+        const infoBox = document.querySelector('.info-box p');
+        if (infoBox) infoBox.innerHTML = t.infoBox;
+        const footerNote = document.querySelector('.footer-note');
+        if (footerNote) footerNote.textContent = t.footerNote;
+      }
+
+      document.addEventListener('site-components:ready', applyPageTranslations);
+      document.addEventListener('site-language:changed', applyPageTranslations);
+      applyPageTranslations();
+    })();
+  </script>
 </body>
 </html>

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>正方形 | Instant Geometry</title>
+  <link rel="stylesheet" href="/assets/base.css" />
+  <link rel="stylesheet" href="/assets/draw-simple-page.css" />
+</head>
+<body>
+  <div id="site-header"></div>
+  <div id="drawSimplePage"></div>
+  <div id="site-footer"></div>
+  <script>
+    window.drawSimplePageConfig = {
+      title: '正方形',
+      lead: '三角形ページと同じ左右ドック設計で、正方形を1辺の長さから描画します。',
+      leftTitle: '入力',
+      leftIntro: '左上を A とし、反時計回りに A-B-C-D を配置します。',
+      fieldsTitle: '指定条件',
+      fields: [
+        { label: '一辺', value: '5' }
+      ],
+      fieldsHint: '整数・小数・式を入力できます。',
+      toggles: [
+        { title: 'A', checked: true },
+        { title: 'B', checked: true },
+        { title: 'C', checked: true },
+        { title: 'D', checked: true },
+        { title: 'a', checked: true },
+        { title: 'b', checked: true },
+        { title: 'c', checked: true },
+        { title: 'd', checked: true },
+        { title: '∠A', checked: true },
+        { title: '∠B', checked: true },
+        { title: '∠C', checked: true },
+        { title: '∠D', checked: true }
+      ],
+      specialTogglesTitle: '特別ラベル',
+      specialToggles: [
+        { title: 'O', checked: false },
+        { title: 'AC', checked: false },
+        { title: 'BD', checked: false },
+        { title: '∠DAC', checked: false },
+        { title: '∠BAC', checked: false },
+        { title: '∠ABD', checked: false },
+        { title: '∠CBD', checked: false },
+        { title: '∠BCA', checked: false },
+        { title: '∠DCA', checked: false },
+        { title: '∠CDB', checked: false },
+        { title: '∠ADB', checked: false },
+        { title: '∠AOB', checked: false },
+        { title: '∠BOC', checked: false },
+        { title: '∠COD', checked: false },
+        { title: '∠DOA', checked: false }
+      ],
+      badge: '一般ラベルと特別ラベルを右ドックで切り替えできます。',
+      status: '正方形を描画しました。',
+      notes: [
+        { label: '図形種別', value: '正方形' },
+        { label: '入力軸', value: '一辺の長さ' },
+        { label: '状態', value: '作成中' }
+      ],
+      crumbs: [
+        { label: 'トップ', href: '/' },
+        { label: '図形を描く', href: '/draw/' },
+        { label: '正方形' }
+      ],
+      previewSvg: ''
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/assets/supabase-client.js"></script>
+  <script src="/assets/auth-ui.js"></script>
+  <script src="/assets/components.js"></script>
+  <script src="/assets/draw-simple-page.js"></script>
+</body>
+</html>

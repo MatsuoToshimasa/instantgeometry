@@ -375,5 +375,81 @@
 <script src="/assets/supabase-client.js"></script>
 <script src="/assets/auth-ui.js"></script>
 <script src="/assets/components.js"></script>
+<script>
+  (function () {
+    'use strict';
+
+    const translations = {
+      ja: {
+        title: 'Instant Geometry',
+        heroTitle: '図形・問題・関数を、<br>目的別にすばやく作る',
+        heroLead: 'Instant Geometry は、図形の描画、数学問題の作成、関数グラフの作成を、目的に応じてすぐ始められるツールです。まずは下の3つの入口から、やりたいことを選んでください。',
+        cardTitles: ['図形を描く', '問題を作る', '関数を描く'],
+        purposeLabel: '目的',
+        cardBodies: [
+          '三角形・四角形・円などを、条件に応じてすばやく描画します。たとえば「3辺がわかっている三角形」「中心と半径がわかっている円」などを作れます。',
+          '三角形を中心とした数学問題を自動で作成します。面積、角度、辺の長さ、座標、種類判定など、目的に合わせて問題プリントを作れます。',
+          '一次関数、二次関数、指数関数、対数関数、三角関数などのグラフを描画します。定義域や端点の条件も設定できます。'
+        ],
+        footerNote: '初めて使う場合は、まず <a href="/draw/">図形を描く</a> から始めるのがおすすめです。'
+      },
+      en: {
+        title: 'Instant Geometry',
+        heroTitle: 'Create Shapes, Problems, and Functions<br>faster by purpose',
+        heroLead: 'Instant Geometry helps you start drawing shapes, creating math problems, and graphing functions right away based on what you want to do. Choose one of the three entry points below.',
+        cardTitles: ['Draw Shapes', 'Create Problems', 'Graph Functions'],
+        purposeLabel: 'Purpose',
+        cardBodies: [
+          'Quickly draw triangles, quadrilaterals, circles, and more from the given conditions. For example, you can create a triangle from three sides or a circle from its center and radius.',
+          'Automatically create math problems centered on triangles. You can prepare printable exercises for area, angles, side lengths, coordinates, classification, and more.',
+          'Graph linear, quadratic, exponential, logarithmic, and trigonometric functions. You can also set domains and endpoint conditions.'
+        ],
+        footerNote: 'If this is your first time, starting with <a href="/draw/">Draw Shapes</a> is recommended.'
+      },
+      zh: {
+        title: 'Instant Geometry',
+        heroTitle: '按目的快速创建<br>图形、题目与函数',
+        heroLead: 'Instant Geometry 可让你根据目标，立即开始绘制图形、生成数学题目和绘制函数图像。请先从下面三个入口中选择你要做的事情。',
+        cardTitles: ['绘制图形', '生成题目', '绘制函数'],
+        purposeLabel: '用途',
+        cardBodies: [
+          '可根据条件快速绘制三角形、四边形、圆等图形。例如，可以根据三边绘制三角形，或根据圆心和半径绘制圆。',
+          '自动生成以三角形为中心的数学题目。可按面积、角度、边长、坐标、类型判定等用途制作练习题或讲义。',
+          '可绘制一次函数、二次函数、指数函数、对数函数、三角函数等图像，也可以设置定义域和端点条件。'
+        ],
+        footerNote: '如果是第一次使用，建议先从 <a href="/draw/">绘制图形</a> 开始。'
+      },
+      es: {
+        title: 'Instant Geometry',
+        heroTitle: 'Crea figuras, problemas y funciones<br>más rápido según tu objetivo',
+        heroLead: 'Instant Geometry te permite empezar de inmediato a dibujar figuras, crear problemas de matemáticas y graficar funciones según lo que quieras hacer. Elige una de las tres entradas de abajo.',
+        cardTitles: ['Dibujar figuras', 'Crear problemas', 'Graficar funciones'],
+        purposeLabel: 'Objetivo',
+        cardBodies: [
+          'Dibuja rápidamente triángulos, cuadriláteros, círculos y más según las condiciones dadas. Por ejemplo, puedes crear un triángulo a partir de tres lados o un círculo con centro y radio.',
+          'Crea automáticamente problemas de matemáticas centrados en triángulos. Puedes preparar ejercicios imprimibles sobre área, ángulos, longitudes, coordenadas, clasificación y más.',
+          'Grafica funciones lineales, cuadráticas, exponenciales, logarítmicas y trigonométricas. También puedes definir dominio y condiciones en los extremos.'
+        ],
+        footerNote: 'Si es tu primera vez, se recomienda empezar con <a href="/draw/">Dibujar figuras</a>.'
+      }
+    };
+
+    function applyPageTranslations() {
+      const lang = document.documentElement.lang || 'ja';
+      const t = translations[lang] || translations.ja;
+      document.title = t.title;
+      document.querySelector('.hero h1').innerHTML = t.heroTitle;
+      document.querySelector('.hero p').textContent = t.heroLead;
+      document.querySelectorAll('.card h2').forEach(function (el, index) { el.textContent = t.cardTitles[index]; });
+      document.querySelectorAll('.purpose-label').forEach(function (el) { el.textContent = t.purposeLabel; });
+      document.querySelectorAll('.purpose').forEach(function (el, index) { el.textContent = t.cardBodies[index]; });
+      document.querySelector('.footer-note').innerHTML = t.footerNote;
+    }
+
+    document.addEventListener('site-components:ready', applyPageTranslations);
+    document.addEventListener('site-language:changed', applyPageTranslations);
+    applyPageTranslations();
+  })();
+</script>
 </body>
 </html>

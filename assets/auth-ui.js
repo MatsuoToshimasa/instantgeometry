@@ -18,6 +18,13 @@
     return provider || '不明';
   }
 
+  function t(key, fallback) {
+    if (window.siteI18n && typeof window.siteI18n.translate === 'function') {
+      return window.siteI18n.translate(key, fallback);
+    }
+    return fallback;
+  }
+
   function getAuthDisplayMode() {
     return document.body?.dataset?.authDisplay || 'default';
   }
@@ -32,13 +39,13 @@
       const email = session.user?.email || '';
       const provider = getProviderLabel(session);
       if (displayMode === 'compact') {
-        statusEl.textContent = 'ログイン中';
+        statusEl.textContent = t('auth.loggedInShort', 'ログイン中');
       } else {
-        statusEl.textContent = email ? `ログイン中: ${email}` : `ログイン中 (${provider})`;
+        statusEl.textContent = email ? t('auth.loggedInPrefix', 'ログイン中: ') + email : t('auth.loggedInProviderPrefix', 'ログイン中 (') + provider + ')';
       }
       statusEl.dataset.authState = 'logged-in';
     } else {
-      statusEl.textContent = '未ログイン';
+      statusEl.textContent = t('auth.loggedOut', '未ログイン');
       statusEl.dataset.authState = 'logged-out';
     }
   }
@@ -48,10 +55,10 @@
     if (!btn) return;
 
     if (session) {
-      btn.textContent = 'アカウント';
+      btn.textContent = t('auth.account', 'アカウント');
       btn.href = '/account/';
     } else {
-      btn.textContent = 'ログイン';
+      btn.textContent = t('auth.login', 'ログイン');
       btn.href = '/login/?redirect=' + encodeURIComponent(getRedirectTarget());
     }
   }

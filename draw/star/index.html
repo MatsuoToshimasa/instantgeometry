@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>星型 | Instant Geometry</title>
+  <link rel="stylesheet" href="/assets/base.css" />
+  <link rel="stylesheet" href="/assets/draw-simple-page.css" />
+</head>
+<body>
+  <div id="site-header"></div>
+  <div id="drawSimplePage"></div>
+  <div id="site-footer"></div>
+  <script>
+    window.drawSimplePageConfig = {
+      title: '星型',
+      lead: '星型を作るための仮ページです。外半径・内半径・頂点数ベースのシンプル画面として先に独立させています。',
+      leftTitle: '入力と表示',
+      leftIntro: '星型用の専用ページ雛形です。',
+      fieldsTitle: '入力項目',
+      fields: [
+        { label: '中心', value: '(0, 0)' },
+        { label: '外半径', value: '6' },
+        { label: '内半径', value: '3' },
+        { label: '頂点数', value: '5' }
+      ],
+      fieldsHint: '将来的には頂点数と比率から星型を描くロジックをここに実装します。',
+      toggles: [
+        { title: '頂点を表示', description: '頂点を表示します。' },
+        { title: '辺の長さを表示', description: '各辺の長さを表示します。', checked: false },
+        { title: '中心を表示', description: '中心点を表示します。' }
+      ],
+      badge: '仮作成のページです。星型専用描画は後から追加します。',
+      previewTitle: '表示画面',
+      previewIntro: '星型プレビューの想定エリアです。',
+      status: 'シンプルな専用URLだけ先に作成しています。',
+      notes: [
+        { label: '図形種別', value: '星型' },
+        { label: '入力軸', value: '外半径 + 内半径 + 頂点数' },
+        { label: '状態', value: '仮ページ' }
+      ],
+      crumbs: [
+        { label: 'トップ', href: '/' },
+        { label: '図形を描く', href: '/draw/' },
+        { label: '星型' }
+      ],
+      previewSvg: '<svg viewBox="0 0 720 480" aria-hidden="true"><rect width="720" height="480" fill="#fbfcff"/><polygon points="360,100 407,197 515,210 435,284 456,390 360,338 264,390 285,284 205,210 313,197" fill="rgba(42,91,215,.12)" stroke="#2a5bd7" stroke-width="6"/></svg>'
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/assets/supabase-client.js"></script>
+  <script src="/assets/auth-ui.js"></script>
+  <script src="/assets/components.js"></script>
+  <script src="/assets/draw-simple-page.js"></script>
+</body>
+</html>

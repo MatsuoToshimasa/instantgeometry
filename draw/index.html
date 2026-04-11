@@ -335,7 +335,7 @@
       </div>
 
       <div class="cards">
-        <a class="card" href="/figures/?shape=triangle&mode=sss">
+        <a class="card" href="/draw/triangle/sss/">
           <div class="card-top">
             <div class="tag">三角形</div>
             <div class="arrow">→</div>
@@ -351,7 +351,7 @@
           <p class="purpose">3辺の長さがわかっている三角形を描画します。</p>
         </a>
 
-        <a class="card" href="/figures/?shape=triangle&mode=sas">
+        <a class="card" href="/draw/triangle/sas/">
           <div class="card-top">
             <div class="tag">三角形</div>
             <div class="arrow">→</div>
@@ -368,7 +368,59 @@
           <p class="purpose">2辺の長さと、その間の角がわかっている三角形を描画します。</p>
         </a>
 
-        <a class="card" href="/figures/?shape=triangle&mode=points">
+        <a class="card" href="/draw/triangle/asa/">
+          <div class="card-top">
+            <div class="tag">三角形</div>
+            <div class="arrow">→</div>
+          </div>
+          <h3>三角形（ASA）</h3>
+          <div class="illust" aria-hidden="true">
+            <svg viewBox="0 0 280 140" width="100%" height="100%">
+              <rect width="280" height="140" fill="#fbfcff"/>
+              <polygon points="48,108 220,108 136,50" fill="rgba(42,91,215,.10)" stroke="#2a5bd7" stroke-width="3"/>
+              <path d="M79 108 A24 24 0 0 1 98 90" fill="none" stroke="#7d8db8" stroke-width="2"/>
+              <path d="M192 108 A24 24 0 0 0 173 89" fill="none" stroke="#7d8db8" stroke-width="2"/>
+            </svg>
+          </div>
+          <p class="purpose">1辺の長さと、その両端の角がわかっている三角形を描画します。</p>
+        </a>
+
+        <a class="card" href="/draw/triangle/aas/">
+          <div class="card-top">
+            <div class="tag">三角形</div>
+            <div class="arrow">→</div>
+          </div>
+          <h3>三角形（AAS）</h3>
+          <div class="illust" aria-hidden="true">
+            <svg viewBox="0 0 280 140" width="100%" height="100%">
+              <rect width="280" height="140" fill="#fbfcff"/>
+              <polygon points="56,108 220,108 150,44" fill="rgba(42,91,215,.10)" stroke="#2a5bd7" stroke-width="3"/>
+              <path d="M84 108 A24 24 0 0 1 102 90" fill="none" stroke="#7d8db8" stroke-width="2"/>
+              <path d="M150 44 A20 20 0 0 1 170 58" fill="none" stroke="#7d8db8" stroke-width="2"/>
+            </svg>
+          </div>
+          <p class="purpose">1辺の長さと2つの角がわかっている三角形を描画します。</p>
+        </a>
+
+        <a class="card" href="/draw/triangle/aaa/">
+          <div class="card-top">
+            <div class="tag">三角形</div>
+            <div class="arrow">→</div>
+          </div>
+          <h3>三角形（AAA）</h3>
+          <div class="illust" aria-hidden="true">
+            <svg viewBox="0 0 280 140" width="100%" height="100%">
+              <rect width="280" height="140" fill="#fbfcff"/>
+              <polygon points="60,108 220,108 132,40" fill="rgba(42,91,215,.10)" stroke="#2a5bd7" stroke-width="3"/>
+              <text x="77" y="89" font-size="13" fill="#687086" font-family="sans-serif">A</text>
+              <text x="136" y="72" font-size="13" fill="#687086" font-family="sans-serif">A</text>
+              <text x="187" y="89" font-size="13" fill="#687086" font-family="sans-serif">A</text>
+            </svg>
+          </div>
+          <p class="purpose">3つの角から相似形の三角形を描画します。</p>
+        </a>
+
+        <a class="card" href="/draw/triangle/points/">
           <div class="card-top">
             <div class="tag">三角形</div>
             <div class="arrow">→</div>
@@ -385,7 +437,7 @@
           <p class="purpose">3点の座標を入力して三角形を描画します。</p>
         </a>
 
-        <a class="card" href="/figures/?shape=triangle&mode=baseHeight">
+        <a class="card" href="/draw/triangle/base-height/">
           <div class="card-top">
             <div class="tag">三角形</div>
             <div class="arrow">→</div>
@@ -400,6 +452,54 @@
           </div>
           <p class="purpose">底辺・高さ・足の位置から三角形を描画します。</p>
         </a>
+
+        <a class="card" href="/draw/triangle/right-acute/">
+          <div class="card-top">
+            <div class="tag">三角形</div>
+            <div class="arrow">→</div>
+          </div>
+          <h3>直角三角形（鋭角）</h3>
+          <div class="illust" aria-hidden="true">
+            <svg viewBox="0 0 280 140" width="100%" height="100%">
+              <rect width="280" height="140" fill="#fbfcff"/>
+              <polygon points="62,108 214,108 214,52" fill="rgba(42,91,215,.10)" stroke="#2a5bd7" stroke-width="3"/>
+              <path d="M80 108 A20 20 0 0 1 98 93" fill="none" stroke="#7d8db8" stroke-width="2"/>
+            </svg>
+          </div>
+          <p class="purpose">斜辺と鋭角を指定して直角三角形を描画します。</p>
+        </a>
+
+        <a class="card" href="/draw/triangle/right-adjacent/">
+          <div class="card-top">
+            <div class="tag">三角形</div>
+            <div class="arrow">→</div>
+          </div>
+          <h3>直角三角形（隣辺）</h3>
+          <div class="illust" aria-hidden="true">
+            <svg viewBox="0 0 280 140" width="100%" height="100%">
+              <rect width="280" height="140" fill="#fbfcff"/>
+              <polygon points="64,108 216,108 216,56" fill="rgba(42,91,215,.10)" stroke="#2a5bd7" stroke-width="3"/>
+              <line x1="64" y1="108" x2="216" y2="108" stroke="#7d8db8" stroke-width="2" stroke-dasharray="5 5"/>
+            </svg>
+          </div>
+          <p class="purpose">斜辺と隣辺を指定して直角三角形を描画します。</p>
+        </a>
+
+        <a class="card" href="/draw/triangle/right-opposite/">
+          <div class="card-top">
+            <div class="tag">三角形</div>
+            <div class="arrow">→</div>
+          </div>
+          <h3>直角三角形（対辺）</h3>
+          <div class="illust" aria-hidden="true">
+            <svg viewBox="0 0 280 140" width="100%" height="100%">
+              <rect width="280" height="140" fill="#fbfcff"/>
+              <polygon points="64,108 216,108 216,56" fill="rgba(42,91,215,.10)" stroke="#2a5bd7" stroke-width="3"/>
+              <line x1="216" y1="108" x2="216" y2="56" stroke="#7d8db8" stroke-width="2" stroke-dasharray="5 5"/>
+            </svg>
+          </div>
+          <p class="purpose">斜辺と対辺を指定して直角三角形を描画します。</p>
+        </a>
       </div>
     </section>
 
@@ -412,7 +512,7 @@
       </div>
 
       <div class="cards">
-        <a class="card" href="/figures/?shape=quadrilateral&quadType=square">
+        <a class="card" href="/draw/quadrilateral/square/">
           <div class="card-top">
             <div class="tag">四角形</div>
             <div class="arrow">→</div>
@@ -427,7 +527,7 @@
           <p class="purpose">中心、一辺、回転角から正方形を描画します。</p>
         </a>
 
-        <a class="card" href="/figures/?shape=quadrilateral&quadType=rectangle">
+        <a class="card" href="/draw/quadrilateral/rectangle/">
           <div class="card-top">
             <div class="tag">四角形</div>
             <div class="arrow">→</div>
@@ -442,7 +542,7 @@
           <p class="purpose">中心、横、縦、回転角から長方形を描画します。</p>
         </a>
 
-        <a class="card" href="/figures/?shape=quadrilateral&quadType=rhombus">
+        <a class="card" href="/draw/quadrilateral/rhombus/">
           <div class="card-top">
             <div class="tag">四角形</div>
             <div class="arrow">→</div>
@@ -457,7 +557,7 @@
           <p class="purpose">対角線、中心、回転角から菱形を描画します。</p>
         </a>
 
-        <a class="card" href="/figures/?shape=quadrilateral&quadType=trapezoid">
+        <a class="card" href="/draw/quadrilateral/trapezoid/">
           <div class="card-top">
             <div class="tag">四角形</div>
             <div class="arrow">→</div>
@@ -483,7 +583,7 @@
       </div>
 
       <div class="cards">
-        <a class="card" href="/figures/?shape=regularPolygon">
+        <a class="card" href="/draw/regular-polygon/">
           <div class="card-top">
             <div class="tag">その他</div>
             <div class="arrow">→</div>
@@ -498,7 +598,7 @@
           <p class="purpose">中心、半径、頂点数から正N角形を描画します。</p>
         </a>
 
-        <a class="card" href="/figures/?shape=circle">
+        <a class="card" href="/draw/circle/">
           <div class="card-top">
             <div class="tag">その他</div>
             <div class="arrow">→</div>
@@ -513,7 +613,7 @@
           <p class="purpose">中心と半径から円を描画します。</p>
         </a>
 
-        <a class="card" href="/figures/?shape=ellipse">
+        <a class="card" href="/draw/ellipse/">
           <div class="card-top">
             <div class="tag">その他</div>
             <div class="arrow">→</div>
@@ -528,7 +628,7 @@
           <p class="purpose">中心、長半径、短半径、回転角から楕円を描画します。</p>
         </a>
 
-        <a class="card" href="/figures/?shape=star">
+        <a class="card" href="/draw/star/">
           <div class="card-top">
             <div class="tag">その他</div>
             <div class="arrow">→</div>
@@ -554,17 +654,17 @@
       </div>
 
       <div class="quick-links">
-        <a class="quick-link" href="/figures/?shape=triangle&mode=sss">
+        <a class="quick-link" href="/draw/triangle/sss/">
           <strong>三角形（SSS）</strong>
           3辺の長さからすぐ描画します。
         </a>
 
-        <a class="quick-link" href="/figures/?shape=triangle&mode=points">
+        <a class="quick-link" href="/draw/triangle/points/">
           <strong>三角形（3点座標）</strong>
           座標をそのまま入力して描画します。
         </a>
 
-        <a class="quick-link" href="/figures/?shape=circle">
+        <a class="quick-link" href="/draw/circle/">
           <strong>円</strong>
           中心と半径からすぐ描画します。
         </a>
@@ -576,5 +676,195 @@
 <script src="/assets/supabase-client.js"></script>
 <script src="/assets/auth-ui.js"></script>
 <script src="/assets/components.js"></script>
+<script>
+  (function () {
+    'use strict';
+
+    const translations = {
+      ja: {
+        title: '図形を描く | Instant Geometry',
+        home: 'トップ',
+        crumb: '図形を描く',
+        heroTitle: '条件に合わせて、<br>図形をすばやく描く',
+        heroLead: '描きたい図形の種類と、与えられている条件に合わせて入口を選んでください。たとえば、三角形なら「3辺がわかっている」「2辺とその間の角がわかっている」「3点の座標がわかっている」など、目的ごとにすぐ描画を始められます。',
+        sections: [
+          ['三角形', '与えられている条件に応じて、三角形を描画します。'],
+          ['四角形', '代表的な四角形や、一般の四角形を描画します。'],
+          ['その他の図形', '円、楕円、正N角形、星型などを描画します。'],
+          ['よく使う入口', '迷ったらここから始めるのがおすすめです。']
+        ],
+        cardTitles: ['三角形（SSS）', '三角形（SAS）', '三角形（ASA）', '三角形（AAS）', '三角形（AAA）', '三角形（3点座標）', '三角形（底辺＋高さ）', '直角三角形（鋭角）', '直角三角形（隣辺）', '直角三角形（対辺）', '正方形', '長方形', '菱形', '台形', '正N角形', '円', '楕円', '星型'],
+        cardBodies: [
+          '3辺の長さがわかっている三角形を描画します。',
+          '2辺の長さと、その間の角がわかっている三角形を描画します。',
+          '1辺の長さと、その両端の角がわかっている三角形を描画します。',
+          '1辺の長さと2つの角がわかっている三角形を描画します。',
+          '3つの角から相似形の三角形を描画します。',
+          '3点の座標を入力して三角形を描画します。',
+          '底辺・高さ・足の位置から三角形を描画します。',
+          '斜辺と鋭角を指定して直角三角形を描画します。',
+          '斜辺と隣辺を指定して直角三角形を描画します。',
+          '斜辺と対辺を指定して直角三角形を描画します。',
+          '中心、一辺、回転角から正方形を描画します。',
+          '中心、横、縦、回転角から長方形を描画します。',
+          '対角線、中心、回転角から菱形を描画します。',
+          '上底、下底、高さ、ずれから台形を描画します。',
+          '中心、半径、頂点数から正N角形を描画します。',
+          '中心と半径から円を描画します。',
+          '中心、長半径、短半径、回転角から楕円を描画します。',
+          '中心、外半径、内半径、頂点数から星型を描画します。'
+        ],
+        quickTitles: ['三角形（SSS）', '三角形（3点座標）', '円'],
+        quickBodies: ['3辺の長さからすぐ描画します。', '座標をそのまま入力して描画します。', '中心と半径からすぐ描画します。']
+      },
+      en: {
+        title: 'Draw Shapes | Instant Geometry',
+        home: 'Home',
+        crumb: 'Draw Shapes',
+        heroTitle: 'Draw Shapes Quickly<br>from Given Conditions',
+        heroLead: 'Choose an entry based on the kind of shape you want and the conditions you already know. For triangles, for example, you can start from three sides, two sides and the included angle, or three coordinates.',
+        sections: [
+          ['Triangles', 'Draw triangles based on the conditions you know.'],
+          ['Quadrilaterals', 'Draw common quadrilaterals and other four-sided figures.'],
+          ['Other Shapes', 'Draw circles, ellipses, regular polygons, stars, and more.'],
+          ['Popular Shortcuts', 'If you are not sure where to start, these are good first choices.']
+        ],
+        cardTitles: ['Triangle (SSS)', 'Triangle (SAS)', 'Triangle (ASA)', 'Triangle (AAS)', 'Triangle (AAA)', 'Triangle (3 Points)', 'Triangle (Base + Height)', 'Right Triangle (Acute)', 'Right Triangle (Adjacent)', 'Right Triangle (Opposite)', 'Square', 'Rectangle', 'Rhombus', 'Trapezoid', 'Regular Polygon', 'Circle', 'Ellipse', 'Star'],
+        cardBodies: [
+          'Draw a triangle from three known side lengths.',
+          'Draw a triangle from two side lengths and the included angle.',
+          'Draw a triangle from one side and the two angles at its ends.',
+          'Draw a triangle from one side and two angles.',
+          'Draw a similar triangle from three angles.',
+          'Draw a triangle by entering the coordinates of three points.',
+          'Draw a triangle from its base, height, and foot position.',
+          'Draw a right triangle from hypotenuse and an acute angle.',
+          'Draw a right triangle from hypotenuse and adjacent side.',
+          'Draw a right triangle from hypotenuse and opposite side.',
+          'Draw a square from its center, side length, and rotation.',
+          'Draw a rectangle from its center, width, height, and rotation.',
+          'Draw a rhombus from its diagonals, center, and rotation.',
+          'Draw a trapezoid from its top base, bottom base, height, and offset.',
+          'Draw a regular polygon from its center, radius, and number of vertices.',
+          'Draw a circle from its center and radius.',
+          'Draw an ellipse from its center, major radius, minor radius, and rotation.',
+          'Draw a star from its center, outer radius, inner radius, and number of points.'
+        ],
+        quickTitles: ['Triangle (SSS)', 'Triangle (3 Points)', 'Circle'],
+        quickBodies: ['Start instantly from three side lengths.', 'Start by entering coordinates directly.', 'Start from the center and radius.']
+      },
+      zh: {
+        title: '绘制图形 | Instant Geometry',
+        home: '首页',
+        crumb: '绘制图形',
+        heroTitle: '根据条件<br>快速绘制图形',
+        heroLead: '请根据你想绘制的图形种类以及已知条件选择入口。例如三角形可以从“三边已知”“两边及夹角已知”“三点坐标已知”等条件开始。',
+        sections: [
+          ['三角形', '根据已知条件绘制三角形。'],
+          ['四边形', '绘制常见四边形及一般四边形。'],
+          ['其他图形', '绘制圆、椭圆、正N边形、星形等图形。'],
+          ['常用入口', '如果不确定从哪里开始，可以先用这些入口。']
+        ],
+        cardTitles: ['三角形（SSS）', '三角形（SAS）', '三角形（ASA）', '三角形（AAS）', '三角形（AAA）', '三角形（3点坐标）', '三角形（底边+高度）', '直角三角形（锐角）', '直角三角形（邻边）', '直角三角形（对边）', '正方形', '长方形', '菱形', '梯形', '正N边形', '圆', '椭圆', '星形'],
+        cardBodies: [
+          '根据三边长度绘制三角形。',
+          '根据两边长度和夹角绘制三角形。',
+          '根据一条边和其两端角绘制三角形。',
+          '根据一条边和两个角绘制三角形。',
+          '根据三个角绘制相似三角形。',
+          '输入三点坐标绘制三角形。',
+          '根据底边、高度和垂足位置绘制三角形。',
+          '根据斜边和锐角绘制直角三角形。',
+          '根据斜边和邻边绘制直角三角形。',
+          '根据斜边和对边绘制直角三角形。',
+          '根据中心、边长和旋转角绘制正方形。',
+          '根据中心、宽、高和旋转角绘制长方形。',
+          '根据对角线、中心和旋转角绘制菱形。',
+          '根据上底、下底、高度和偏移绘制梯形。',
+          '根据中心、半径和顶点数绘制正N边形。',
+          '根据圆心和半径绘制圆。',
+          '根据中心、长半轴、短半轴和旋转角绘制椭圆。',
+          '根据中心、外半径、内半径和顶点数绘制星形。'
+        ],
+        quickTitles: ['三角形（SSS）', '三角形（3点坐标）', '圆'],
+        quickBodies: ['可直接从三边开始。', '可直接输入坐标开始。', '可直接从圆心和半径开始。']
+      },
+      es: {
+        title: 'Dibujar figuras | Instant Geometry',
+        home: 'Inicio',
+        crumb: 'Dibujar figuras',
+        heroTitle: 'Dibuja figuras rápidamente<br>según las condiciones dadas',
+        heroLead: 'Elige una entrada según el tipo de figura que quieras dibujar y las condiciones que ya conoces. En triángulos, por ejemplo, puedes empezar con tres lados, dos lados y el ángulo comprendido, o tres coordenadas.',
+        sections: [
+          ['Triángulos', 'Dibuja triángulos según las condiciones conocidas.'],
+          ['Cuadriláteros', 'Dibuja cuadriláteros comunes y otras figuras de cuatro lados.'],
+          ['Otras figuras', 'Dibuja círculos, elipses, polígonos regulares, estrellas y más.'],
+          ['Entradas frecuentes', 'Si no sabes por dónde empezar, estas opciones son buenas primeras elecciones.']
+        ],
+        cardTitles: ['Triángulo (SSS)', 'Triángulo (SAS)', 'Triángulo (ASA)', 'Triángulo (AAS)', 'Triángulo (AAA)', 'Triángulo (3 puntos)', 'Triángulo (base + altura)', 'Triángulo rectángulo (agudo)', 'Triángulo rectángulo (adyacente)', 'Triángulo rectángulo (opuesto)', 'Cuadrado', 'Rectángulo', 'Rombo', 'Trapecio', 'Polígono regular', 'Círculo', 'Elipse', 'Estrella'],
+        cardBodies: [
+          'Dibuja un triángulo a partir de tres lados conocidos.',
+          'Dibuja un triángulo a partir de dos lados y el ángulo comprendido.',
+          'Dibuja un triángulo a partir de un lado y los dos ángulos en sus extremos.',
+          'Dibuja un triángulo a partir de un lado y dos ángulos.',
+          'Dibuja un triángulo semejante a partir de tres ángulos.',
+          'Dibuja un triángulo introduciendo las coordenadas de tres puntos.',
+          'Dibuja un triángulo a partir de la base, la altura y la posición del pie.',
+          'Dibuja un triángulo rectángulo con hipotenusa y ángulo agudo.',
+          'Dibuja un triángulo rectángulo con hipotenusa y cateto adyacente.',
+          'Dibuja un triángulo rectángulo con hipotenusa y cateto opuesto.',
+          'Dibuja un cuadrado con centro, lado y rotación.',
+          'Dibuja un rectángulo con centro, ancho, alto y rotación.',
+          'Dibuja un rombo con diagonales, centro y rotación.',
+          'Dibuja un trapecio con base superior, base inferior, altura y desplazamiento.',
+          'Dibuja un polígono regular con centro, radio y número de vértices.',
+          'Dibuja un círculo con centro y radio.',
+          'Dibuja una elipse con centro, semieje mayor, semieje menor y rotación.',
+          'Dibuja una estrella con centro, radio exterior, radio interior y número de puntas.'
+        ],
+        quickTitles: ['Triángulo (SSS)', 'Triángulo (3 puntos)', 'Círculo'],
+        quickBodies: ['Empieza de inmediato con tres lados.', 'Empieza introduciendo coordenadas.', 'Empieza con centro y radio.']
+      }
+    };
+
+    function applyPageTranslations() {
+      const lang = document.documentElement.lang || 'ja';
+      const t = translations[lang] || translations.ja;
+      document.title = t.title;
+      const crumbHome = document.querySelector('.crumb a');
+      const crumbLast = document.querySelector('.crumb span:last-child');
+      if (crumbHome) crumbHome.textContent = t.home;
+      if (crumbLast) crumbLast.textContent = t.crumb;
+      document.querySelector('.hero h1').innerHTML = t.heroTitle;
+      document.querySelector('.hero p').textContent = t.heroLead;
+      document.querySelectorAll('.card .tag').forEach(function (el, index) {
+        if (index <= 9) el.textContent = t.sections[0][0];
+        else if (index <= 13) el.textContent = t.sections[1][0];
+        else el.textContent = t.sections[2][0];
+      });
+      document.querySelectorAll('.section-head').forEach(function (section, index) {
+        const texts = t.sections[index];
+        if (!texts) return;
+        const h2 = section.querySelector('h2');
+        const p = section.querySelector('p');
+        if (h2) h2.textContent = texts[0];
+        if (p) p.textContent = texts[1];
+      });
+      document.querySelectorAll('.card h3').forEach(function (el, index) { el.textContent = t.cardTitles[index]; });
+      document.querySelectorAll('.card .purpose').forEach(function (el, index) { el.textContent = t.cardBodies[index]; });
+      document.querySelectorAll('.quick-link strong').forEach(function (el, index) { el.textContent = t.quickTitles[index]; });
+      document.querySelectorAll('.quick-link').forEach(function (el, index) {
+        const strong = el.querySelector('strong');
+        const textNode = el.childNodes[el.childNodes.length - 1];
+        if (strong) strong.textContent = t.quickTitles[index];
+        if (textNode && textNode.nodeType === Node.TEXT_NODE) textNode.textContent = '\n          ' + t.quickBodies[index] + '\n        ';
+      });
+    }
+
+    document.addEventListener('site-components:ready', applyPageTranslations);
+    document.addEventListener('site-language:changed', applyPageTranslations);
+    applyPageTranslations();
+  })();
+</script>
 </body>
 </html>

@@ -545,5 +545,158 @@
 <script src="/assets/supabase-client.js"></script>
 <script src="/assets/auth-ui.js"></script>
 <script src="/assets/components.js"></script>
+<script>
+  (function () {
+    'use strict';
+
+    const translations = {
+      ja: {
+        title: '問題を作る | Instant Geometry',
+        home: 'トップ',
+        crumb: '問題を作る',
+        heroTitle: '目的に合わせて、<br>数学問題をすばやく作る',
+        heroLead: '三角形を中心とした数学問題を、分野別にまとめて作成できます。面積、角度、辺の長さ、座標、種類判定など、授業や演習に合わせて入口を選んでください。',
+        sectionHeads: [
+          ['分野別に作る', '作りたい問題の種類ごとに入口を分けています。'],
+          ['よく使う入口', '迷ったらここから始めるのがおすすめです。']
+        ],
+        wideTitle: '総合問題ジェネレーター',
+        wideBody: 'すぐに問題を作りたい場合は、まずここから始めるのがおすすめです。三角形に関する複数分野の問題をまとめて選び、問題数や文字サイズを指定して、一括で生成・印刷できます。',
+        cardTitles: ['面積', '角度', '辺の長さ', '座標', '種類判定', '範囲', '比', 'まとめて選ぶ'],
+        cardBodies: [
+          '底辺と高さ、3辺、座標などから、三角形の面積を求める問題を作ります。',
+          '内角、外角、二等辺三角形、直角三角形などの角度問題を作ります。',
+          '三平方の定理、三角比、余弦定理などを使う辺の長さの問題を作ります。',
+          '距離、中点、重心、面積、直角判定など、座標平面上の問題を作ります。',
+          '直角三角形、二等辺三角形、鋭角三角形などの種類を判定する問題を作ります。',
+          '三角形が成立する条件を使って、残りの辺の長さの範囲を求める問題を作ります。',
+          '相似比、面積比、周の長さ比など、比に関する問題を作ります。',
+          '複数分野を同時に選んで、まとめて問題プリントを作ります。'
+        ],
+        quickTitles: ['総合問題ジェネレーター', '面積問題', '座標問題'],
+        quickBodies: ['まずは一括で問題を作りたい場合はこちら。', '授業や宿題で使いやすい定番分野です。', '距離や面積など、座標平面の問題を作ります。']
+      },
+      en: {
+        title: 'Create Problems | Instant Geometry',
+        home: 'Home',
+        crumb: 'Create Problems',
+        heroTitle: 'Create Math Problems Quickly<br>for Your Purpose',
+        heroLead: 'Create triangle-centered math problems organized by topic. Choose an entry based on your lesson or practice goal, such as area, angles, side lengths, coordinates, or classification.',
+        sectionHeads: [
+          ['Choose by Topic', 'Entries are organized by the kind of problem you want to create.'],
+          ['Popular Shortcuts', 'If you are unsure where to start, these are recommended.']
+        ],
+        wideTitle: 'Comprehensive Problem Generator',
+        wideBody: 'If you want to create problems right away, this is the best place to begin. You can choose multiple triangle-related topics at once and generate printable worksheets in bulk.',
+        cardTitles: ['Area', 'Angles', 'Side Lengths', 'Coordinates', 'Classification', 'Range', 'Ratios', 'Choose Multiple'],
+        cardBodies: [
+          'Create problems about triangle area from bases and heights, three sides, coordinates, and more.',
+          'Create angle problems involving interior and exterior angles, isosceles triangles, right triangles, and more.',
+          'Create side-length problems using the Pythagorean theorem, trigonometric ratios, the cosine rule, and more.',
+          'Create coordinate-plane problems about distance, midpoint, centroid, area, right-angle checks, and more.',
+          'Create problems that classify triangles such as right, isosceles, and acute triangles.',
+          'Create problems about the possible range of a missing side using triangle inequality conditions.',
+          'Create problems about similarity ratios, area ratios, perimeter ratios, and more.',
+          'Choose several topics at once and generate printable worksheets together.'
+        ],
+        quickTitles: ['Comprehensive Problem Generator', 'Area Problems', 'Coordinate Problems'],
+        quickBodies: ['Start here if you want to generate a full set of problems at once.', 'A standard category that works well for classes and homework.', 'Create coordinate-plane problems such as distance and area.']
+      },
+      zh: {
+        title: '生成题目 | Instant Geometry',
+        home: '首页',
+        crumb: '生成题目',
+        heroTitle: '按目的<br>快速生成数学题目',
+        heroLead: '你可以按分野整理并生成以三角形为中心的数学题目。请根据课堂或练习需求，从面积、角度、边长、坐标、类型判定等入口中选择。',
+        sectionHeads: [
+          ['按分野生成', '我们按题目类型划分了入口。'],
+          ['常用入口', '如果不确定从哪里开始，可以先用这些入口。']
+        ],
+        wideTitle: '综合题目生成器',
+        wideBody: '如果想马上开始生成题目，建议先从这里进入。你可以一次选择多个与三角形相关的分野，并批量生成可打印的题目。',
+        cardTitles: ['面积', '角度', '边长', '坐标', '类型判定', '范围', '比', '综合选择'],
+        cardBodies: [
+          '生成根据底边与高度、三边、坐标等求三角形面积的题目。',
+          '生成内角、外角、等腰三角形、直角三角形等角度题。',
+          '生成使用勾股定理、三角比、余弦定理等求边长的题目。',
+          '生成关于距离、中点、重心、面积、直角判定等坐标平面题目。',
+          '生成判定直角三角形、等腰三角形、锐角三角形等类型的题目。',
+          '生成利用三角形成立条件求剩余边长范围的题目。',
+          '生成相似比、面积比、周长比等与比有关的题目。',
+          '一次选择多个分野并统一生成打印题目。'
+        ],
+        quickTitles: ['综合题目生成器', '面积题', '坐标题'],
+        quickBodies: ['如果想一次生成整套题目，可先从这里开始。', '这是课堂和作业中常用的经典分野。', '生成距离、面积等坐标平面题目。']
+      },
+      es: {
+        title: 'Crear problemas | Instant Geometry',
+        home: 'Inicio',
+        crumb: 'Crear problemas',
+        heroTitle: 'Crea problemas matemáticos<br>rápidamente según tu objetivo',
+        heroLead: 'Puedes crear problemas de matemáticas centrados en triángulos y organizados por tema. Elige una entrada según el objetivo de tu clase o práctica, como área, ángulos, longitudes, coordenadas o clasificación.',
+        sectionHeads: [
+          ['Crear por tema', 'Las entradas están separadas según el tipo de problema que quieras preparar.'],
+          ['Entradas frecuentes', 'Si no sabes por dónde empezar, estas opciones son recomendables.']
+        ],
+        wideTitle: 'Generador integral de problemas',
+        wideBody: 'Si quieres crear problemas de inmediato, este es el mejor punto de partida. Puedes elegir varios temas relacionados con triángulos y generar hojas de ejercicios imprimibles en lote.',
+        cardTitles: ['Área', 'Ángulos', 'Longitudes', 'Coordenadas', 'Clasificación', 'Rango', 'Razones', 'Elegir varios'],
+        cardBodies: [
+          'Crea problemas para hallar el área de triángulos a partir de base y altura, tres lados, coordenadas y más.',
+          'Crea problemas de ángulos interiores y exteriores, triángulos isósceles, triángulos rectángulos y más.',
+          'Crea problemas de longitudes usando Pitágoras, razones trigonométricas, ley del coseno y más.',
+          'Crea problemas del plano cartesiano sobre distancia, punto medio, centroide, área y verificación de ángulo recto.',
+          'Crea problemas para clasificar triángulos como rectángulos, isósceles o acutángulos.',
+          'Crea problemas sobre el rango posible de un lado faltante usando la desigualdad triangular.',
+          'Crea problemas sobre razón de semejanza, razón de áreas, razón de perímetros y más.',
+          'Elige varios temas al mismo tiempo y genera hojas imprimibles en conjunto.'
+        ],
+        quickTitles: ['Generador integral de problemas', 'Problemas de área', 'Problemas de coordenadas'],
+        quickBodies: ['Empieza aquí si quieres generar muchos problemas de una vez.', 'Una categoría clásica y útil para clases y tareas.', 'Crea problemas del plano cartesiano como distancia y área.']
+      }
+    };
+
+    function applyPageTranslations() {
+      const lang = document.documentElement.lang || 'ja';
+      const t = translations[lang] || translations.ja;
+      document.title = t.title;
+      const crumbHome = document.querySelector('.crumb a');
+      const crumbLast = document.querySelector('.crumb span:last-child');
+      if (crumbHome) crumbHome.textContent = t.home;
+      if (crumbLast) crumbLast.textContent = t.crumb;
+      document.querySelector('.hero h1').innerHTML = t.heroTitle;
+      document.querySelector('.hero p').textContent = t.heroLead;
+      document.querySelectorAll('.card .tag').forEach(function (el) {
+        el.textContent = t.crumb;
+      });
+      const wideCard = document.querySelector('.wide-card');
+      if (wideCard) {
+        const h3 = wideCard.querySelector('h3');
+        const p = wideCard.querySelector('p');
+        if (h3) h3.textContent = t.wideTitle;
+        if (p) p.textContent = t.wideBody;
+      }
+      document.querySelectorAll('.section-head').forEach(function (section, index) {
+        const texts = t.sectionHeads[index];
+        if (!texts) return;
+        const h2 = section.querySelector('h2');
+        const p = section.querySelector('p');
+        if (h2) h2.textContent = texts[0];
+        if (p) p.textContent = texts[1];
+      });
+      document.querySelectorAll('.card h3').forEach(function (el, index) { el.textContent = t.cardTitles[index]; });
+      document.querySelectorAll('.card .purpose').forEach(function (el, index) { el.textContent = t.cardBodies[index]; });
+      document.querySelectorAll('.quick-link strong').forEach(function (el, index) { el.textContent = t.quickTitles[index]; });
+      document.querySelectorAll('.quick-link').forEach(function (el, index) {
+        const textNode = el.childNodes[el.childNodes.length - 1];
+        if (textNode && textNode.nodeType === Node.TEXT_NODE) textNode.textContent = '\n          ' + t.quickBodies[index] + '\n        ';
+      });
+    }
+
+    document.addEventListener('site-components:ready', applyPageTranslations);
+    document.addEventListener('site-language:changed', applyPageTranslations);
+    applyPageTranslations();
+  })();
+</script>
 </body>
 </html>

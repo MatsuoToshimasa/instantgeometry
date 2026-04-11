@@ -1,0 +1,3638 @@
+<!DOCTYPE html>
+  <html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>三角形（底辺＋高さ） | Instant Geometry</title>
+  <link rel="stylesheet" href="/assets/base.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jsxgraph/distrib/jsxgraph.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/jsxgraph/distrib/jsxgraphcore.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <style>
+    :root{
+      --panel:#ffffff;
+      --line:#d9dce7;
+      --text:#1f2430;
+      --muted:#687086;
+      --accent:#2a5bd7;
+      --accent-soft:#eef3ff;
+      --shadow:0 10px 28px rgba(27,39,94,.08);
+      --radius:20px;
+      --danger:#b42318;
+      --danger-bg:#fff1f0;
+      --danger-line:#f3c3bf;
+    }
+
+    *{box-sizing:border-box}
+
+    html,
+    body{
+      height:100%;
+      overflow:hidden;
+    }
+
+    body{
+      margin:0;
+      display:flex;
+      flex-direction:column;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;
+      background:linear-gradient(180deg,#f8faff 0%,#f4f6fb 100%);
+      color:var(--text);
+    }
+
+    a{
+      color:inherit;
+      text-decoration:none;
+    }
+
+    .workspace{
+      position:relative;
+      flex:1;
+      min-height:0;
+      overflow:hidden;
+    }
+
+    .dock-card{
+      background:var(--panel);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      backdrop-filter:blur(10px);
+    }
+
+    .left-dock{
+      position:absolute;
+      top:16px;
+      left:16px;
+      bottom:16px;
+      z-index:20;
+      width:min(360px,calc(100vw - 96px));
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      transition:transform .24s ease;
+      overflow:visible;
+    }
+
+    .left-dock.is-collapsed{
+      transform:translateX(calc(-100% + 20px));
+    }
+
+    .right-dock{
+      position:absolute;
+      top:16px;
+      right:16px;
+      bottom:16px;
+      z-index:20;
+      width:min(300px,calc(100vw - 96px));
+      display:flex;
+      flex-direction:column;
+      transition:transform .24s ease;
+      overflow:visible;
+    }
+
+    .right-dock.is-collapsed{
+      transform:translateX(calc(100% - 20px));
+    }
+
+    .dock-topbar{
+      position:relative;
+      display:flex;
+      align-items:center;
+      gap:0;
+    }
+
+    .dock-toggle{
+      position:absolute;
+      top:0;
+      right:-56px;
+      width:44px;
+      min-width:44px;
+      height:44px;
+      border:1px solid var(--line);
+      border-radius:14px;
+      background:#fff;
+      color:var(--text);
+      font-size:18px;
+      cursor:pointer;
+      box-shadow:var(--shadow);
+      z-index:2;
+    }
+
+    .dock-toggle-right{
+      left:-56px;
+      right:auto;
+    }
+
+    .dock-lang{
+      flex:1;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      min-width:0;
+      padding:10px 12px;
+    }
+
+    .dock-lang label{
+      font-size:12px;
+      color:var(--muted);
+      white-space:nowrap;
+    }
+
+    .dock-lang select{
+      flex:1;
+      min-width:0;
+      padding:9px 10px;
+      border:1px solid var(--line);
+      border-radius:12px;
+      background:#fff;
+      color:var(--text);
+      font-size:14px;
+    }
+
+    .panel{
+      flex:0 1 auto;
+      min-height:0;
+      padding:16px 16px 14px;
+      overflow:hidden;
+    }
+
+    .panel h1{
+      margin:0;
+      font-size:24px;
+      line-height:1.25;
+    }
+
+    .panel-intro{
+      margin:10px 0 0;
+      color:var(--muted);
+      font-size:14px;
+      line-height:1.75;
+    }
+
+    .section{
+      margin-top:14px;
+      padding-top:12px;
+      border-top:1px solid #eceff5;
+    }
+
+    .section h3{
+      margin:0 0 8px;
+      font-size:15px;
+      line-height:1.4;
+    }
+
+    .field-grid{
+      display:grid;
+      gap:8px;
+    }
+
+    .field-grid.sides-grid{
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:8px;
+    }
+
+    .field{
+      display:grid;
+      gap:4px;
+    }
+
+    .field label{
+      font-size:11px;
+      color:var(--muted);
+      line-height:1.3;
+    }
+
+    .field input{
+      width:100%;
+      padding:8px 10px;
+      border:1px solid var(--line);
+      border-radius:11px;
+      font-size:15px;
+      background:#fff;
+      color:var(--text);
+    }
+
+    .hint{
+      margin:0;
+      color:var(--muted);
+      font-size:11px;
+      line-height:1.45;
+    }
+
+    .button-row{
+      display:grid;
+      gap:10px;
+    }
+
+    .download-btn{
+      width:auto;
+      min-width:88px;
+      padding:10px 13px;
+      border:1px solid #cfd7ea;
+      border-radius:13px;
+      background:linear-gradient(180deg,#ffffff 0%,#f6f8ff 100%);
+      color:#24304d;
+      font-size:13px;
+      font-weight:700;
+      letter-spacing:.01em;
+      cursor:pointer;
+      box-shadow:0 1px 0 rgba(255,255,255,.9) inset, 0 2px 8px rgba(36,71,168,.08);
+      transition:.16s ease;
+    }
+
+    .group-title{
+      margin:0 0 8px;
+      color:var(--muted);
+      font-size:12px;
+      font-weight:700;
+      letter-spacing:.03em;
+    }
+
+    .btn-ac{
+      min-width:124px;
+    }
+
+    .btn-bd{
+      min-width:84px;
+      padding:9px 11px;
+      font-size:13px;
+    }
+
+    .download-btn:hover{
+      border-color:#9fb3ea;
+      color:#1f3d94;
+      background:linear-gradient(180deg,#ffffff 0%,#eef3ff 100%);
+      box-shadow:0 1px 0 rgba(255,255,255,.95) inset, 0 4px 12px rgba(36,71,168,.14);
+    }
+
+    .download-btn:active{
+      transform:translateY(1px);
+      box-shadow:0 1px 4px rgba(36,71,168,.12) inset;
+    }
+
+    .controls-stack{
+      flex:0 1 auto;
+      min-height:0;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+
+    .board-status{
+      margin:0;
+      padding:10px 12px;
+      border-radius:14px;
+      font-size:13px;
+      line-height:1.65;
+      background:#f8faff;
+      border:1px solid #e1e8fb;
+      color:#3153a4;
+    }
+
+    .board-status.error{
+      color:var(--danger);
+      background:var(--danger-bg);
+      border-color:var(--danger-line);
+    }
+
+    .overlay-card{
+      padding:14px;
+    }
+
+    .board-tools{
+      display:flex;
+      flex-direction:column;
+      align-items:stretch;
+      gap:10px;
+    }
+
+    .tool-row{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      flex-wrap:wrap;
+      justify-content:flex-start;
+    }
+
+    .tool-btn{
+      min-width:88px;
+      padding:10px 13px;
+      border:1px solid #cfd7ea;
+      border-radius:13px;
+      background:linear-gradient(180deg,#ffffff 0%,#f6f8ff 100%);
+      color:#24304d;
+      font-size:13px;
+      font-weight:700;
+      letter-spacing:.01em;
+      cursor:pointer;
+      box-shadow:0 1px 0 rgba(255,255,255,.9) inset, 0 2px 8px rgba(36,71,168,.08);
+      transition:.16s ease;
+    }
+
+    .tool-btn:hover{
+      border-color:#9fb3ea;
+      color:#1f3d94;
+      background:linear-gradient(180deg,#ffffff 0%,#eef3ff 100%);
+      box-shadow:0 1px 0 rgba(255,255,255,.95) inset, 0 4px 12px rgba(36,71,168,.14);
+    }
+
+    .tool-btn:active{
+      transform:translateY(1px);
+      box-shadow:0 1px 4px rgba(36,71,168,.12) inset;
+    }
+
+    #box{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      border:none;
+      border-radius:0;
+      background:#fbfcff;
+    }
+
+    #box svg,
+    #box svg *{
+      pointer-events:none !important;
+    }
+
+    #labelLayer{
+      position:absolute;
+      inset:0;
+      z-index:8;
+      pointer-events:none;
+      overflow:hidden;
+    }
+
+    .floating-label{
+      position:absolute;
+      left:0;
+      top:0;
+      transform-origin:center center;
+      white-space:nowrap;
+      line-height:1;
+      will-change:transform;
+      user-select:none;
+      pointer-events:none;
+      font-style:normal;
+      font-weight:500;
+      text-rendering:geometricPrecision;
+      -webkit-font-smoothing:antialiased;
+    }
+
+    .floating-label .math-unit{
+      font-style:normal;
+      font-size:.88em;
+      letter-spacing:0;
+      margin-left:.08em;
+    }
+
+    .floating-label .math-frac{
+      display:inline-flex;
+      flex-direction:column;
+      align-items:center;
+      vertical-align:middle;
+      line-height:1;
+      margin:0 .08em;
+      transform:translateY(.02em);
+    }
+
+    .floating-label .math-frac .num{
+      display:block;
+      font-size:.9em;
+      padding:0 .12em .08em;
+      border-bottom:1.35px solid currentColor;
+    }
+
+    .floating-label .math-frac .den{
+      display:block;
+      font-size:.82em;
+      padding:.08em .12em 0;
+    }
+
+    .floating-label .math-root{
+      display:inline-flex;
+      align-items:flex-end;
+      vertical-align:baseline;
+    }
+
+    .floating-label .math-root-sign{
+      font-style:normal;
+      transform:translateY(.02em);
+    }
+
+    .floating-label .math-radicand{
+      border-top:1.2px solid currentColor;
+      padding:0 .08em 0 .1em;
+      margin-left:-.02em;
+    }
+
+    .export-frame{
+      position:absolute;
+      left:50%;
+      top:50%;
+      transform:translate(-50%,-50%);
+      border:2px solid rgba(42,91,215,.32);
+      pointer-events:none;
+      z-index:6;
+      border-radius:18px;
+    }
+
+    .page-back-btn{
+      position:absolute;
+      top:6px;
+      left:50%;
+      transform:translateX(-50%);
+      z-index:24;
+      min-width:148px;
+      padding:10px 14px;
+      border:1px solid #cfd7ea;
+      border-radius:13px;
+      background:linear-gradient(180deg,#ffffff 0%,#f6f8ff 100%);
+      color:#24304d;
+      font-size:13px;
+      font-weight:700;
+      cursor:pointer;
+      box-shadow:0 1px 0 rgba(255,255,255,.9) inset, 0 2px 8px rgba(36,71,168,.08);
+    }
+
+    .page-back-btn:hover{
+      border-color:#9fb3ea;
+      color:#1f3d94;
+      background:linear-gradient(180deg,#ffffff 0%,#eef3ff 100%);
+    }
+
+    .export-backdrop{
+      position:absolute;
+      inset:0;
+      z-index:5;
+      pointer-events:none;
+      --frame-left:0px;
+      --frame-top:0px;
+      --frame-right:0px;
+      --frame-bottom:0px;
+      background-color:rgba(248,250,255,.88);
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='12' viewBox='0 0 90 12'%3E%3Ctext x='0' y='10' fill='rgba(31,36,48,0.12)' font-family='Arial,sans-serif' font-size='11' font-weight='800' letter-spacing='-0.12'%3EInstant Geometry%3C/text%3E%3C/svg%3E");
+      background-repeat:repeat;
+      background-size:90px 12px;
+      background-position:0 0;
+      -webkit-mask:
+        linear-gradient(#000 0 0) top / 100% var(--frame-top) no-repeat,
+        linear-gradient(#000 0 0) left / var(--frame-left) calc(var(--frame-bottom) - var(--frame-top)) no-repeat,
+        linear-gradient(#000 0 0) right / calc(100% - var(--frame-right)) calc(var(--frame-bottom) - var(--frame-top)) no-repeat,
+        linear-gradient(#000 0 0) bottom / 100% calc(100% - var(--frame-bottom)) no-repeat;
+      mask:
+        linear-gradient(#000 0 0) top / 100% var(--frame-top) no-repeat,
+        linear-gradient(#000 0 0) left / var(--frame-left) calc(var(--frame-bottom) - var(--frame-top)) no-repeat,
+        linear-gradient(#000 0 0) right / calc(100% - var(--frame-right)) calc(var(--frame-bottom) - var(--frame-top)) no-repeat,
+        linear-gradient(#000 0 0) bottom / 100% calc(100% - var(--frame-bottom)) no-repeat;
+    }
+
+    .export-backdrop-piece{
+      display:none;
+    }
+
+    .label-toggles{
+      flex:1;
+      min-height:0;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+
+    .toggle-card{
+      flex:1;
+      background:rgba(255,255,255,.92);
+      border:1px solid #e7eaf3;
+      border-radius:14px;
+      padding:12px;
+      box-shadow:var(--shadow);
+      backdrop-filter:blur(10px);
+      overflow:hidden;
+    }
+
+    .toggle-title{
+      margin:0 0 10px;
+      color:var(--muted);
+      font-size:12px;
+      font-weight:700;
+      letter-spacing:.04em;
+    }
+
+    .toggle-grid{
+      display:flex;
+      flex-wrap:wrap;
+      gap:6px;
+    }
+
+    @media (max-width: 980px){
+      .left-dock{
+        width:min(320px,calc(100vw - 88px));
+        top:12px;
+        left:12px;
+        bottom:12px;
+      }
+
+      .right-dock{
+        width:min(280px,calc(100vw - 88px));
+        top:12px;
+        right:12px;
+        bottom:12px;
+      }
+    }
+
+    @media (max-width: 640px){
+      .left-dock{
+        width:calc(100vw - 88px);
+      }
+
+      .right-dock{
+        width:calc(100vw - 88px);
+      }
+
+      .panel{
+        padding:14px;
+      }
+
+      .left-dock.is-collapsed{
+        transform:translateX(calc(-100% + 18px));
+      }
+
+      .right-dock.is-collapsed{
+        transform:translateX(calc(100% - 18px));
+      }
+
+      .tool-row{
+        justify-content:flex-start;
+      }
+
+      .download-btn{
+        padding:10px 12px;
+      }
+
+      .field-grid.sides-grid{
+        grid-template-columns:1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="workspace">
+    <div id="box" aria-label="三角形の描画エリア"></div>
+    <button class="page-back-btn" id="pageBackBtn" type="button">前の画面に戻る</button>
+    <div id="exportBackdrop" class="export-backdrop" aria-hidden="true">
+      <div class="export-backdrop-piece" data-piece="top"></div>
+      <div class="export-backdrop-piece" data-piece="left"></div>
+      <div class="export-backdrop-piece" data-piece="right"></div>
+      <div class="export-backdrop-piece" data-piece="bottom"></div>
+    </div>
+    <div id="exportFrame" class="export-frame" aria-hidden="true"></div>
+
+    <div class="left-dock" id="leftDock">
+      <div class="dock-topbar">
+        <button class="dock-toggle" id="dockToggleBtn" type="button" aria-expanded="true" data-i18n="sss.dockHide">‹</button>
+      </div>
+      <aside class="panel dock-card">
+        <h1 data-i18n="sss.title">三角形（底辺＋高さ）</h1>
+
+        <div class="section">
+          <h3 data-i18n="sss.sidesTitle">底辺・高さ・AH</h3>
+          <div class="field-grid sides-grid">
+            <div class="field">
+              <label for="sideA" data-i18n="sss.sideA">底辺 AB</label>
+              <input id="sideA" type="text" inputmode="decimal" value="8" />
+            </div>
+            <div class="field">
+              <label for="sideB" data-i18n="sss.sideB">高さ CH</label>
+              <input id="sideB" type="text" inputmode="decimal" value="5" />
+            </div>
+            <div class="field">
+              <label for="sideC" data-i18n="sss.sideC">Hの位置</label>
+              <input id="sideC" type="text" inputmode="decimal" value="3" />
+            </div>
+          </div>
+          <p class="hint" data-i18n="sss.sideHint">A=(0,0), B=(底辺,0), H=(AH,0), C=(AH,高さ) で三角形を決定します。</p>
+        </div>
+      </aside>
+
+      <div class="controls-stack">
+        <div class="board-status dock-card" id="statusBox">底辺・高さ・AH から三角形を描画しています。</div>
+        <div class="overlay-card dock-card">
+          <p class="group-title">画面</p>
+          <div class="tool-row">
+            <button class="tool-btn btn-ac" id="ratioBtn" type="button" data-i18n="sss.ratioButton">画面比 1:1</button>
+            <button class="tool-btn btn-ac" id="resetBtn" type="button" data-i18n="sss.reset">リセット</button>
+          </div>
+        </div>
+        <div class="overlay-card dock-card">
+          <p class="group-title">出力</p>
+          <div class="tool-row button-row">
+            <button class="download-btn btn-bd" type="button" data-download-format="pdf" data-i18n="sss.downloadPdf">PDF</button>
+            <button class="download-btn btn-bd" type="button" data-download-format="png" data-i18n="sss.downloadPng">PNG</button>
+            <button class="download-btn btn-bd" type="button" data-download-format="png-transparent" data-i18n="sss.downloadTransparent">透過</button>
+          </div>
+        </div>
+        <div class="overlay-card dock-card">
+          <p class="group-title">単位</p>
+          <div class="tool-row">
+            <button class="tool-btn btn-ac" id="angleModeBtn" type="button" data-i18n="sss.angleModeDegrees">度数法</button>
+            <button class="tool-btn btn-ac" id="unitBtn" type="button">長さ</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <aside class="right-dock" id="rightDock">
+      <div class="dock-topbar">
+        <button class="dock-toggle dock-toggle-right" id="rightDockToggleBtn" type="button" aria-expanded="true">›</button>
+      </div>
+      <div class="label-toggles">
+        <div class="toggle-card">
+          <p class="toggle-title">一般ラベル</p>
+          <div class="toggle-grid" id="generalLabelToggleGrid"></div>
+          <p class="toggle-title" style="margin-top:12px;">特別ラベル</p>
+          <div class="toggle-grid" id="specialLabelToggleGrid"></div>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/assets/components.js"></script>
+  <script>
+    (function () {
+      'use strict';
+
+      window.sitePageTranslations = {
+        en: {
+          'sss.title': 'Triangle (SSS)',
+          'sss.hero': 'Enter three side lengths to draw a triangle. Click the figure in the preview to add only the labels you need for vertices, sides, angles, and area.',
+          'sss.inputTitle': 'Input',
+          'sss.inputIntro': 'Adjust the three side lengths on the left. The figure on the right updates immediately.',
+          'sss.sidesTitle': 'Three side lengths',
+          'sss.sideA': 'Side a (BC)',
+          'sss.sideB': 'Side b (CA)',
+          'sss.sideC': 'Position of H',
+          'sss.sideHint': 'You can enter integers, decimals, or expressions such as sqrt(3), pi/2, or sin(30deg).',
+          'sss.downloadPdf': 'PDF',
+          'sss.downloadPng': 'PNG',
+          'sss.downloadTransparent': 'Transparent',
+          'sss.languageLabel': 'Language',
+          'sss.languageOption.ja': 'Japanese',
+          'sss.languageOption.en': 'English',
+          'sss.languageOption.zh': 'Chinese',
+          'sss.languageOption.es': 'Spanish',
+          'sss.dockHide': 'Hide',
+          'sss.dockShow': 'Show',
+          'sss.unit.none': 'No unit',
+          'sss.unit.cm': 'cm',
+          'sss.unit.m': 'm',
+          'sss.unit.km': 'km',
+          'sss.ratioButton': 'Frame 1:1',
+          'sss.undo': 'Undo',
+          'sss.redo': 'Redo',
+          'sss.reset': 'Reset',
+          'sss.angleModeDegrees': 'Degrees',
+          'sss.angleModeRadians': 'Radians',
+          'sss.previewTitle': 'Preview',
+          'sss.previewIntro': 'The triangle defined by the three side lengths is rendered here.',
+          'sss.toggleTitle': 'Label Display',
+          'sss.toggle.vertex.A': 'Point A',
+          'sss.toggle.vertex.B': 'Point B',
+          'sss.toggle.vertex.C': 'Point C',
+          'sss.toggle.side.a': 'Side a',
+          'sss.toggle.side.b': 'Side b',
+          'sss.toggle.side.c': 'Side c',
+          'sss.toggle.innerAngle.A': 'Angle A',
+          'sss.toggle.innerAngle.B': 'Angle B',
+          'sss.toggle.innerAngle.C': 'Angle C',
+          'sss.toggle.area.main': 'Area',
+          'sss.status.ready': 'The triangle is being rendered from the current inputs.',
+          'sss.status.rendered': 'The triangle has been rendered.',
+          'sss.status.saving': 'Preparing ',
+          'sss.status.saved': 'Saved ',
+          'sss.status.saveFailed': 'Download failed.',
+          'sss.areaLabel': 'Area'
+        },
+        zh: {
+          'sss.title': '三角形（底辺＋高さ）',
+          'sss.hero': '只需输入三条边的长度即可绘制三角形。你可以直接点击预览中的图形，为顶点、边、角和面积添加所需标签。',
+          'sss.inputTitle': '输入',
+          'sss.inputIntro': '在左侧调整三边长度，右侧图形会立即更新。',
+          'sss.sidesTitle': '三边长度',
+          'sss.sideA': '边 a（BC）',
+          'sss.sideB': '边 b（CA）',
+          'sss.sideC': 'H 的位置',
+          'sss.sideHint': '除了整数和小数外，也可以输入 sqrt(3)、π/2、sin(30deg) 这类表达式。',
+          'sss.downloadPdf': 'PDF',
+          'sss.downloadPng': 'PNG',
+          'sss.downloadTransparent': '透过',
+          'sss.languageLabel': '语言',
+          'sss.languageOption.ja': '日语',
+          'sss.languageOption.en': '英语',
+          'sss.languageOption.zh': '中文',
+          'sss.languageOption.es': '西班牙语',
+          'sss.dockHide': '隐藏',
+          'sss.dockShow': '展开',
+          'sss.unit.none': '无单位',
+          'sss.unit.cm': 'cm',
+          'sss.unit.m': 'm',
+          'sss.unit.km': 'km',
+          'sss.ratioButton': '画面比 1:1',
+          'sss.undo': '撤销',
+          'sss.redo': '重做',
+          'sss.reset': '重置',
+          'sss.angleModeDegrees': '角度制',
+          'sss.angleModeRadians': '弧度制',
+          'sss.previewTitle': '预览',
+          'sss.previewIntro': '这里显示由三边长度确定的三角形。',
+          'sss.toggleTitle': '标签显示',
+          'sss.toggle.vertex.A': '顶点 A',
+          'sss.toggle.vertex.B': '顶点 B',
+          'sss.toggle.vertex.C': '顶点 C',
+          'sss.toggle.side.a': '边 a',
+          'sss.toggle.side.b': '边 b',
+          'sss.toggle.side.c': '边 c',
+          'sss.toggle.innerAngle.A': '角 A',
+          'sss.toggle.innerAngle.B': '角 B',
+          'sss.toggle.innerAngle.C': '角 C',
+          'sss.toggle.area.main': '面积',
+          'sss.status.ready': '正在根据当前输入绘制三角形。',
+          'sss.status.rendered': '三角形已绘制。',
+          'sss.status.saving': '正在导出',
+          'sss.status.saved': '已保存',
+          'sss.status.saveFailed': '下载失败。',
+          'sss.areaLabel': '面积'
+        },
+        es: {
+          'sss.title': 'Triángulo (SSS)',
+          'sss.hero': 'Introduce las tres longitudes para dibujar un triángulo. Puedes hacer clic en la figura para añadir solo las etiquetas que necesites para vértices, lados, ángulos y área.',
+          'sss.inputTitle': 'Entrada',
+          'sss.inputIntro': 'Ajusta las tres longitudes a la izquierda. La figura de la derecha se actualiza al instante.',
+          'sss.sidesTitle': 'Tres longitudes',
+          'sss.sideA': 'Lado a (BC)',
+          'sss.sideB': 'Lado b (CA)',
+          'sss.sideC': 'Posición de H',
+          'sss.sideHint': 'Puedes escribir enteros, decimales o expresiones como sqrt(3), pi/2 o sin(30deg).',
+          'sss.downloadPdf': 'PDF',
+          'sss.downloadPng': 'PNG',
+          'sss.downloadTransparent': 'Transp.',
+          'sss.languageLabel': 'Idioma',
+          'sss.languageOption.ja': 'Japonés',
+          'sss.languageOption.en': 'Inglés',
+          'sss.languageOption.zh': 'Chino',
+          'sss.languageOption.es': 'Español',
+          'sss.dockHide': 'Ocultar',
+          'sss.dockShow': 'Mostrar',
+          'sss.unit.none': 'Sin unidad',
+          'sss.unit.cm': 'cm',
+          'sss.unit.m': 'm',
+          'sss.unit.km': 'km',
+          'sss.ratioButton': 'Marco 1:1',
+          'sss.undo': 'Deshacer',
+          'sss.redo': 'Rehacer',
+          'sss.reset': 'Restablecer',
+          'sss.angleModeDegrees': 'Grados',
+          'sss.angleModeRadians': 'Radianes',
+          'sss.previewTitle': 'Vista previa',
+          'sss.previewIntro': 'Aqui se muestra el triángulo definido por las tres longitudes.',
+          'sss.toggleTitle': 'Etiquetas',
+          'sss.toggle.vertex.A': 'Vértice A',
+          'sss.toggle.vertex.B': 'Vértice B',
+          'sss.toggle.vertex.C': 'Vértice C',
+          'sss.toggle.side.a': 'Lado a',
+          'sss.toggle.side.b': 'Lado b',
+          'sss.toggle.side.c': 'Lado c',
+          'sss.toggle.innerAngle.A': 'Ángulo A',
+          'sss.toggle.innerAngle.B': 'Ángulo B',
+          'sss.toggle.innerAngle.C': 'Ángulo C',
+          'sss.toggle.area.main': 'Área',
+          'sss.status.ready': 'El triángulo se está renderizando a partir de los valores actuales.',
+          'sss.status.rendered': 'El triángulo ya está dibujado.',
+          'sss.status.saving': 'Preparando ',
+          'sss.status.saved': 'Se guardó ',
+          'sss.status.saveFailed': 'La descarga falló.',
+          'sss.areaLabel': 'Área'
+        }
+      };
+
+      const sideAInput = document.getElementById('sideA');
+      const sideBInput = document.getElementById('sideB');
+      const sideCInput = document.getElementById('sideC');
+      const statusBox = document.getElementById('statusBox');
+      const generalLabelToggleGrid = document.getElementById('generalLabelToggleGrid');
+      const specialLabelToggleGrid = document.getElementById('specialLabelToggleGrid');
+      const downloadButtons = document.querySelectorAll('[data-download-format]');
+      const leftDock = document.getElementById('leftDock');
+      const dockToggleBtn = document.getElementById('dockToggleBtn');
+      const rightDock = document.getElementById('rightDock');
+      const rightDockToggleBtn = document.getElementById('rightDockToggleBtn');
+      const undoBtn = document.getElementById('undoBtn');
+      const redoBtn = document.getElementById('redoBtn');
+      const resetBtn = document.getElementById('resetBtn');
+      const ratioBtn = document.getElementById('ratioBtn');
+      const angleModeBtn = document.getElementById('angleModeBtn');
+      const unitBtn = document.getElementById('unitBtn');
+      const pageBackBtn = document.getElementById('pageBackBtn');
+      const box = document.getElementById('box');
+      const exportBackdrop = document.getElementById('exportBackdrop');
+      const exportFrame = document.getElementById('exportFrame');
+
+      const labelState = {
+        vertex: { A: true, B: true, C: true, H: true },
+        side: { BC: true, CA: true, AB: true, AH: true, BH: true, CH: true },
+        innerAngle: { A: true, B: true, C: true, CAH: true, CBH: true, ACH: true, BCH: true },
+        angleMark: { A: true, B: true, C: true, CAH: true, CBH: true, ACH: true, BCH: true },
+        perp: { BHC: true },
+        area: { main: false }
+      };
+
+      const labelFontSize = {
+        vertex: { A: 36, B: 36, C: 36, H: 32 },
+        side: { BC: 32, CA: 32, AB: 32, AH: 26, BH: 26, CH: 26 },
+        innerAngle: { A: 26, B: 26, C: 26, CAH: 26, CBH: 26, ACH: 26, BCH: 26 },
+        angleMark: { A: 26, B: 26, C: 26, CAH: 26, CBH: 26, ACH: 26, BCH: 26 },
+        perp: { BHC: 26 },
+        area: { main: 48 }
+      };
+      const angleMarkerMode = {
+        A: 0,
+        B: 0,
+        C: 0,
+        CAH: 0,
+        CBH: 0,
+        ACH: 0,
+        BCH: 0
+      };
+      const vertexLabelText = { A: 'A', B: 'B', C: 'C', H: 'H' };
+
+      function getVertexTokenByKey(vertexKey) {
+        const raw = String(vertexLabelText[vertexKey] || vertexKey).trim().toUpperCase();
+        return /^[A-Z]+$/.test(raw) ? raw : vertexKey;
+      }
+
+      function mapVertexTokens(text) {
+        return String(text || '').replace(/[ABCH]/g, function (char) {
+          return getVertexTokenByKey(char);
+        });
+      }
+
+      const hiddenLabelState = {
+        vertex: { A: false, B: false, C: false, H: false },
+        side: { BC: true, CA: true, AB: false, AH: true, BH: true, CH: false },
+        innerAngle: { A: true, B: true, C: true, CAH: true, CBH: true, ACH: true, BCH: true },
+        angleMark: { A: false, B: false, C: false, CAH: false, CBH: false, ACH: false, BCH: false },
+        perp: { BHC: false },
+        area: { main: true }
+      };
+
+      const labelPositions = {
+        vertex: { A: null, B: null, C: null, H: null },
+        side: { BC: null, CA: null, AB: null, AH: null, BH: null, CH: null },
+        innerAngle: { A: null, B: null, C: null, CAH: null, CBH: null, ACH: null, BCH: null },
+        angleMark: { A: null, B: null, C: null, CAH: null, CBH: null, ACH: null, BCH: null },
+        perp: { BHC: null },
+        area: { main: null }
+      };
+
+      function createLabelStyleState() {
+        return {
+          vertex: {
+            A: { color: '#1f2430', rotation: 0 },
+            B: { color: '#1f2430', rotation: 0 },
+            C: { color: '#1f2430', rotation: 0 },
+            H: { color: '#1f2430', rotation: 0 }
+          },
+          side: {
+            BC: { color: '#2a5bd7', rotation: 0 },
+            CA: { color: '#2a5bd7', rotation: 0 },
+            AB: { color: '#2a5bd7', rotation: 0 },
+            AH: { color: '#3558c0', rotation: 0 },
+            BH: { color: '#3558c0', rotation: 0 },
+            CH: { color: '#687086', rotation: 0 }
+          },
+          innerAngle: {
+            A: { color: '#687086', rotation: 0 },
+            B: { color: '#687086', rotation: 0 },
+            C: { color: '#687086', rotation: 0 },
+            CAH: { color: '#687086', rotation: 0 },
+            CBH: { color: '#687086', rotation: 0 },
+            ACH: { color: '#687086', rotation: 0 },
+            BCH: { color: '#687086', rotation: 0 }
+          },
+          angleMark: {
+            A: { color: '#687086', rotation: 0 },
+            B: { color: '#687086', rotation: 0 },
+            C: { color: '#687086', rotation: 0 },
+            CAH: { color: '#687086', rotation: 0 },
+            CBH: { color: '#687086', rotation: 0 },
+            ACH: { color: '#687086', rotation: 0 },
+            BCH: { color: '#687086', rotation: 0 }
+          },
+          perp: {
+            BHC: { color: '#111111', rotation: 0 }
+          },
+          area: {
+            main: { color: '#25603b', rotation: 0 }
+          }
+        };
+      }
+
+      let labelStyleState = createLabelStyleState();
+      let figureState = {
+        color: '#2a5bd7',
+        rotation: 0,
+        scale: 1,
+        offset: { x: 0, y: 0 }
+      };
+
+      const unitOptions = [
+        { key: 'sss.unit.none', fallback: 'なし', value: '' },
+        { key: 'sss.unit.cm', fallback: 'cm', value: 'cm' },
+        { key: 'sss.unit.m', fallback: 'm', value: 'm' },
+        { key: 'sss.unit.km', fallback: 'km', value: 'km' }
+      ];
+
+      let hoveredLabel = null;
+      let selectedLabel = null;
+      let selectedFigure = false;
+      let currentGeometry = null;
+      let currentLabelAnchors = [];
+      let currentSelectionOverlay = null;
+      let zoomScale = 1;
+      let dragState = null;
+      let suppressClick = false;
+      let exportAspectIndex = 0;
+      let lastFitSignature = '';
+      let pendingInputSnapshot = null;
+      let viewCenterOffset = { x: 0, y: 0 };
+      let unitIndex = 1;
+      let angleMode = 'degrees';
+      let isDockCollapsed = false;
+      let isRightDockCollapsed = false;
+      let isPaletteOpen = false;
+      let renderRafId = null;
+      const historyPast = [];
+      const historyFuture = [];
+
+      const exportAspects = [
+        { label: '1:1', value: 1 },
+        { label: '1:√2', value: 1 / Math.SQRT2 },
+        { label: '√2:1', value: Math.SQRT2 }
+      ];
+
+      function t(key, fallback) {
+        if (window.siteI18n && typeof window.siteI18n.translate === 'function') {
+          return window.siteI18n.translate(key, fallback);
+        }
+        return fallback;
+      }
+
+      function applyPageTranslations() {
+        if (!window.siteI18n || typeof window.siteI18n.applyTranslations !== 'function') return;
+        window.siteI18n.applyTranslations();
+        document.title = window.siteI18n.translate('sss.title', '三角形（底辺＋高さ）') + ' | Instant Geometry';
+        updateRatioButton();
+        updateAngleModeButton();
+        updateUnitButton();
+        updateDockToggleButton();
+        updateRightDockToggleButton();
+        renderLabelToggleButtons();
+        updateHistoryButtons();
+        if (!statusBox.classList.contains('error')) {
+          statusBox.textContent = t('sss.status.ready', '底辺・高さ・AH から三角形を描画しています。');
+        }
+      }
+
+      const board = JXG.JSXGraph.initBoard('box', {
+        boundingbox: [-2, 8, 10, -2],
+        axis: false,
+        showNavigation: false,
+        showInfobox: false,
+        showCopyright: false,
+        keepaspectratio: true
+      });
+      const labelLayer = document.createElement('div');
+      labelLayer.id = 'labelLayer';
+      labelLayer.setAttribute('aria-hidden', 'true');
+      box.appendChild(labelLayer);
+
+      function formatNumber(value) {
+        const rounded = Math.round(value * 100) / 100;
+        return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(2).replace(/0+$/, '').replace(/\.$/, '');
+      }
+
+      function formatAngleValue(degrees) {
+        if (angleMode === 'radians') {
+          const multiple = approximateFraction((degrees * Math.PI / 180) / Math.PI, 360, 1e-8);
+          if (!multiple) return formatNumber(degrees * Math.PI / 180);
+          const numerator = multiple.numerator;
+          const denominator = multiple.denominator;
+          if (numerator === 0) return '0';
+          if (denominator === 1) {
+            if (numerator === 1) return 'π';
+            return numerator + 'π';
+          }
+          if (numerator === 1) return 'π/' + denominator;
+          return numerator + 'π/' + denominator;
+        }
+        return formatNumber(degrees) + '°';
+      }
+
+      function formatAreaRadical(radicand) {
+        if (!Number.isFinite(radicand) || radicand <= 0) return '-';
+        const fraction = approximateFraction(radicand, 100000, 1e-10);
+        if (!fraction) return '√(' + formatNumber(radicand) + ')';
+
+        let numerator = fraction.numerator;
+        let denominator = fraction.denominator;
+        let outside = 1;
+        let inside = numerator * denominator;
+
+        for (let divisor = 2; divisor * divisor <= inside; divisor += 1) {
+          const square = divisor * divisor;
+          while (inside % square === 0) {
+            outside *= divisor;
+            inside /= square;
+          }
+        }
+
+        const divisor = greatestCommonDivisor(outside, denominator);
+        outside /= divisor;
+        denominator /= divisor;
+
+        if (inside === 1) {
+          return denominator === 1 ? String(outside) : outside + '/' + denominator;
+        }
+
+        const radicalPart = (outside === 1 ? '' : String(outside)) + '√' + inside;
+        return denominator === 1 ? radicalPart : radicalPart + ' / ' + denominator;
+      }
+
+      function greatestCommonDivisor(a, b) {
+        let x = Math.abs(Math.round(a));
+        let y = Math.abs(Math.round(b));
+        while (y) {
+          const temp = x % y;
+          x = y;
+          y = temp;
+        }
+        return x || 1;
+      }
+
+      function approximateFraction(value, maxDenominator, tolerance) {
+        const limit = maxDenominator || 10000;
+        const threshold = typeof tolerance === 'number' ? tolerance : 1e-9;
+        const sign = value < 0 ? -1 : 1;
+        const absolute = Math.abs(value);
+        const rounded = Math.round(absolute);
+
+        if (Math.abs(absolute - rounded) <= threshold) {
+          return { numerator: sign * rounded, denominator: 1 };
+        }
+
+        let bestNumerator = 0;
+        let bestDenominator = 1;
+        let bestError = Infinity;
+
+        for (let denominator = 1; denominator <= limit; denominator += 1) {
+          const numerator = Math.round(absolute * denominator);
+          const error = Math.abs(absolute - (numerator / denominator));
+          if (error < bestError) {
+            bestError = error;
+            bestNumerator = numerator;
+            bestDenominator = denominator;
+            if (error <= threshold) break;
+          }
+        }
+
+        if (!Number.isFinite(bestNumerator) || bestError > 1e-5) return null;
+        const divisor = greatestCommonDivisor(bestNumerator, bestDenominator);
+        return {
+          numerator: sign * (bestNumerator / divisor),
+          denominator: bestDenominator / divisor
+        };
+      }
+
+      function extractSquareFactors(value) {
+        let inside = Math.abs(Math.round(value));
+        let outside = 1;
+        for (let divisor = 2; divisor * divisor <= inside; divisor += 1) {
+          const square = divisor * divisor;
+          while (inside % square === 0) {
+            outside *= divisor;
+            inside /= square;
+          }
+        }
+        return { outside: outside, inside: inside };
+      }
+
+      function formatLengthSymbolic(value) {
+        const absValue = Math.abs(value);
+        if (!Number.isFinite(absValue)) return '-';
+        if (absValue <= 1e-12) return '0';
+        const squaredFraction = approximateFraction(absValue * absValue, 1000000, 1e-8);
+        if (!squaredFraction) return formatNumber(absValue);
+        const numerator = Math.abs(Math.round(squaredFraction.numerator));
+        const denominator = Math.abs(Math.round(squaredFraction.denominator));
+        if (numerator === 0 || denominator === 0) return formatNumber(absValue);
+        const combined = numerator * denominator;
+        if (!Number.isFinite(combined) || combined <= 0 || combined > 2e9) return formatNumber(absValue);
+
+        const reduced = extractSquareFactors(combined);
+        let outside = reduced.outside;
+        const inside = reduced.inside;
+        let finalDenominator = denominator;
+
+        const gcd = greatestCommonDivisor(outside, finalDenominator);
+        outside /= gcd;
+        finalDenominator /= gcd;
+
+        if (inside === 1) {
+          return finalDenominator === 1 ? String(outside) : outside + ' / ' + finalDenominator;
+        }
+        const radical = (outside === 1 ? '' : String(outside)) + '√' + inside;
+        return finalDenominator === 1 ? radical : radical + ' / ' + finalDenominator;
+      }
+
+      function formatHypotenuseSymbolic(leg1, leg2) {
+        const a = Math.abs(leg1);
+        const b = Math.abs(leg2);
+        if (!Number.isFinite(a) || !Number.isFinite(b)) return '-';
+        if (a <= 1e-12 && b <= 1e-12) return '0';
+
+        const a2 = approximateFraction(a * a, 1000000, 1e-8);
+        const b2 = approximateFraction(b * b, 1000000, 1e-8);
+        if (!a2 || !b2) {
+          return formatLengthSymbolic(Math.hypot(a, b));
+        }
+
+        const sumNumerator = a2.numerator * b2.denominator + b2.numerator * a2.denominator;
+        const sumDenominator = a2.denominator * b2.denominator;
+        if (!Number.isFinite(sumNumerator) || !Number.isFinite(sumDenominator) || sumDenominator === 0) {
+          return formatLengthSymbolic(Math.hypot(a, b));
+        }
+
+        const reducedDivisor = greatestCommonDivisor(sumNumerator, sumDenominator);
+        const numerator = Math.abs(Math.round(sumNumerator / reducedDivisor));
+        const denominator = Math.abs(Math.round(sumDenominator / reducedDivisor));
+        if (numerator === 0 || denominator === 0) return '0';
+
+        const combined = numerator * denominator;
+        if (!Number.isFinite(combined) || combined <= 0 || combined > 2e9) {
+          return formatLengthSymbolic(Math.hypot(a, b));
+        }
+
+        const reduced = extractSquareFactors(combined);
+        let outside = reduced.outside;
+        const inside = reduced.inside;
+        let finalDenominator = denominator;
+
+        const gcd = greatestCommonDivisor(outside, finalDenominator);
+        outside /= gcd;
+        finalDenominator /= gcd;
+
+        if (inside === 1) {
+          return finalDenominator === 1 ? String(outside) : outside + ' / ' + finalDenominator;
+        }
+        const radical = (outside === 1 ? '' : String(outside)) + '√' + inside;
+        return finalDenominator === 1 ? radical : radical + ' / ' + finalDenominator;
+      }
+
+      function toDegrees(rad) {
+        return rad * 180 / Math.PI;
+      }
+
+      function normalizeExpression(source) {
+        return source
+          .replace(/\s+/g, '')
+          .replace(/π/g, 'pi')
+          .replace(/√/g, 'sqrt')
+          .replace(/(\d+(?:\.\d+)?)deg\b/gi, 'deg($1)');
+      }
+
+      function formatExpressionLabel(source) {
+        const trimmed = (source || '').replace(/\s+/g, '');
+        if (!trimmed) return '';
+
+        return trimmed
+          .replace(/pi/gi, 'π')
+          .replace(/([0-9.]+)deg\b/gi, '$1°')
+          .replace(/deg\(([^)]+)\)/gi, '$1°')
+          .replace(/sqrt\(([^()]+)\)/gi, '√($1)')
+          .replace(/√\(([^()]+)\)/g, function (_, inner) {
+            return /^[a-zA-Z0-9.+\-/*π]+$/.test(inner) ? '√' + inner : '√(' + inner + ')';
+          });
+      }
+
+      function evaluateExpression(source, name) {
+        const normalized = normalizeExpression(source || '');
+        if (!normalized) {
+          throw new Error(name + ' を入力してください。');
+        }
+
+        if (!/^[0-9+\-*/().,a-zA-Z]+$/.test(normalized)) {
+          throw new Error(name + ' に使用できない文字が含まれています。');
+        }
+
+        const scope = {
+          pi: Math.PI,
+          e: Math.E,
+          sqrt: Math.sqrt,
+          sin: Math.sin,
+          cos: Math.cos,
+          tan: Math.tan,
+          asin: Math.asin,
+          acos: Math.acos,
+          atan: Math.atan,
+          deg: function (value) { return value * Math.PI / 180; }
+        };
+
+        let value;
+        try {
+          value = Function(
+            'scope',
+            '"use strict"; const { pi, e, sqrt, sin, cos, tan, asin, acos, atan, deg } = scope; return (' + normalized + ');'
+          )(scope);
+        } catch (error) {
+          throw new Error(name + ' の式を読み取れませんでした。');
+        }
+
+        if (!Number.isFinite(value) || value <= 0) {
+          throw new Error(name + ' は 0 より大きい数を入力してください。');
+        }
+        return {
+          value: value,
+          label: formatExpressionLabel(source || normalized)
+        };
+      }
+
+      function evaluateRealExpression(source, name) {
+        const normalized = normalizeExpression(source || '');
+        if (!normalized) {
+          throw new Error(name + ' を入力してください。');
+        }
+        if (!/^[0-9+\-*/().,a-zA-Z]+$/.test(normalized)) {
+          throw new Error(name + ' に使用できない文字が含まれています。');
+        }
+        const scope = {
+          pi: Math.PI,
+          e: Math.E,
+          sqrt: Math.sqrt,
+          sin: Math.sin,
+          cos: Math.cos,
+          tan: Math.tan,
+          asin: Math.asin,
+          acos: Math.acos,
+          atan: Math.atan,
+          deg: function (value) { return value * Math.PI / 180; }
+        };
+        let value;
+        try {
+          value = Function(
+            'scope',
+            '"use strict"; const { pi, e, sqrt, sin, cos, tan, asin, acos, atan, deg } = scope; return (' + normalized + ');'
+          )(scope);
+        } catch (error) {
+          throw new Error(name + ' の式を読み取れませんでした。');
+        }
+        if (!Number.isFinite(value)) {
+          throw new Error(name + ' は実数で入力してください。');
+        }
+        return {
+          value: value,
+          label: formatExpressionLabel(source || normalized)
+        };
+      }
+
+      function computeTriangle(baseAB, heightCH, distAH) {
+        const A = { x: 0, y: 0 };
+        const B = { x: baseAB, y: 0 };
+        const H = { x: distAH, y: 0 };
+        const C = { x: distAH, y: heightCH };
+
+        const BC = Math.hypot(B.x - C.x, B.y - C.y);
+        const CA = Math.hypot(C.x - A.x, C.y - A.y);
+        const AB = Math.hypot(B.x - A.x, B.y - A.y);
+        const BH = Math.hypot(B.x - H.x, B.y - H.y);
+        const AH = Math.hypot(A.x - H.x, A.y - H.y);
+        const CH = Math.hypot(C.x - H.x, C.y - H.y);
+
+        const angleCAH = toDegrees(Math.atan2(heightCH, distAH));
+        const angleCBH = toDegrees(Math.atan2(heightCH, baseAB - distAH));
+        const angleACB = 180 - angleCAH - angleCBH;
+        const angleACH = 90 - angleCAH;
+        const angleBCH = 90 - angleCBH;
+
+        return { A, B, C, H, BC, CA, AB, AH, BH, CH, angleCAH, angleCBH, angleACB, angleACH, angleBCH };
+      }
+
+      function labelPointNear(vertex, target, distance) {
+        const dx = target.x - vertex.x;
+        const dy = target.y - vertex.y;
+        const len = Math.hypot(dx, dy) || 1;
+        return {
+          x: vertex.x + (dx / len) * distance,
+          y: vertex.y + (dy / len) * distance
+        };
+      }
+
+      function labelPointAway(vertex, target, distance) {
+        const dx = vertex.x - target.x;
+        const dy = vertex.y - target.y;
+        const len = Math.hypot(dx, dy) || 1;
+        return {
+          x: vertex.x + (dx / len) * distance,
+          y: vertex.y + (dy / len) * distance
+        };
+      }
+
+      function labelMidpointWithNormal(P, Q, distance, towardPositiveY) {
+        const mx = (P.x + Q.x) / 2;
+        const my = (P.y + Q.y) / 2;
+        const dx = Q.x - P.x;
+        const dy = Q.y - P.y;
+        const len = Math.hypot(dx, dy) || 1;
+        let nx = -dy / len;
+        let ny = dx / len;
+
+        if ((towardPositiveY && ny < 0) || (!towardPositiveY && ny > 0)) {
+          nx *= -1;
+          ny *= -1;
+        }
+
+        return { x: mx + nx * distance, y: my + ny * distance };
+      }
+
+      function quadraticPoint(P, control, Q, t) {
+        return {
+          x: (1 - t) * (1 - t) * P.x + 2 * (1 - t) * t * control.x + t * t * Q.x,
+          y: (1 - t) * (1 - t) * P.y + 2 * (1 - t) * t * control.y + t * t * Q.y
+        };
+      }
+
+      function getSideArcData(P, Q, center) {
+        const mx = (P.x + Q.x) / 2;
+        const my = (P.y + Q.y) / 2;
+        const dx = Q.x - P.x;
+        const dy = Q.y - P.y;
+        const len = Math.hypot(dx, dy) || 1;
+        let nx = -dy / len;
+        let ny = dx / len;
+        const toCenterX = center.x - mx;
+        const toCenterY = center.y - my;
+
+        if (nx * toCenterX + ny * toCenterY > 0) {
+          nx *= -1;
+          ny *= -1;
+        }
+
+        const arcHeight = Math.max(0.35, len * 0.13);
+        const control = { x: mx + nx * arcHeight, y: my + ny * arcHeight };
+        const gapHalf = 0.14;
+        return {
+          control: control,
+          gapHalf: gapHalf,
+          centerPoint: quadraticPoint(P, control, Q, 0.5),
+          leftEnd: quadraticPoint(P, control, Q, 0.5 - gapHalf),
+          rightStart: quadraticPoint(P, control, Q, 0.5 + gapHalf)
+        };
+      }
+
+      function getLabelPosition(type, id, basePosition) {
+        if (type === 'area' && id === 'main') {
+          const fixed = { x: basePosition.x, y: basePosition.y };
+          if (labelPositions.area) {
+            labelPositions.area.main = fixed;
+          }
+          return fixed;
+        }
+        const stored = labelPositions[type] && labelPositions[type][id];
+        if (stored && Number.isFinite(stored.x) && Number.isFinite(stored.y)) {
+          return { x: stored.x, y: stored.y };
+        }
+        const fallback = { x: basePosition.x, y: basePosition.y };
+        if (labelPositions[type]) {
+          labelPositions[type][id] = fallback;
+        }
+        return fallback;
+      }
+
+      function getLabelStyle(type, id) {
+        return labelStyleState[type] && labelStyleState[type][id]
+          ? labelStyleState[type][id]
+          : { color: '#2a5bd7', rotation: 0 };
+      }
+
+      function escapeHtml(text) {
+        return String(text)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;');
+      }
+
+      function toMathLikeHtml(text) {
+        const safe = escapeHtml(String(text || ''));
+        const suffixMatch = safe.match(/^(.*?)(km²|cm²|m²|km|cm|m|°)$/);
+        const bodyRaw = suffixMatch ? suffixMatch[1] : safe;
+        const suffix = suffixMatch ? suffixMatch[2] : '';
+        let body = bodyRaw;
+
+        body = body.replace(/√([0-9]+)/g, function (_, radicand) {
+          return '<span class="math-root"><span class="math-root-sign">√</span><span class="math-radicand">' + radicand + '</span></span>';
+        });
+
+        body = body.replace(/([0-9]+(?:\.[0-9]+)?|[0-9]*<span class="math-root">[\s\S]*?<\/span>|π|[0-9]+π)\s*\/\s*([0-9]+(?:\.[0-9]+)?)/g, function (_, numerator, denominator) {
+          return '<span class="math-frac"><span class="num">' + numerator + '</span><span class="den">' + denominator + '</span></span>';
+        });
+
+        if (suffix) {
+          body += '<span class="math-unit">' + suffix + '</span>';
+        }
+        return body;
+      }
+
+      function toLatexMath(text) {
+        const raw = String(text || '').trim();
+        if (!raw) return '';
+        const suffixMatch = raw.match(/^(.*?)(km²|cm²|m²|km|cm|m|°)$/);
+        const coreRaw = suffixMatch ? suffixMatch[1].trim() : raw;
+        const suffix = suffixMatch ? suffixMatch[2] : '';
+
+        function latexCore(input) {
+          let s = String(input || '').trim();
+          s = s.replace(/\s+/g, '');
+          const slashIndex = s.indexOf('/');
+          if (slashIndex > 0 && slashIndex < s.length - 1) {
+            const numerator = s.slice(0, slashIndex);
+            const denominator = s.slice(slashIndex + 1);
+            return '\\frac{' + latexCore(numerator) + '}{' + latexCore(denominator) + '}';
+          }
+          s = s.replace(/π/g, '\\pi');
+          s = s.replace(/√([0-9]+)/g, '\\sqrt{$1}');
+          return s;
+        }
+
+        let latex = latexCore(coreRaw);
+        if (suffix === '°') {
+          latex += '^{\\circ}';
+        } else if (suffix) {
+          const unit = suffix.replace('²', '^2');
+          latex += '\\,\\mathrm{' + unit + '}';
+        }
+        return latex;
+      }
+
+      function rotatePoint(point, center, angleDeg) {
+        const rad = angleDeg * Math.PI / 180;
+        const cos = Math.cos(rad);
+        const sin = Math.sin(rad);
+        const dx = point.x - center.x;
+        const dy = point.y - center.y;
+        return {
+          x: center.x + dx * cos - dy * sin,
+          y: center.y + dx * sin + dy * cos
+        };
+      }
+
+      function rotateLabelGroupAround(center, angleDeg, type) {
+        if (!labelPositions[type]) return;
+        Object.keys(labelPositions[type]).forEach(function (id) {
+          const stored = labelPositions[type][id];
+          if (!stored || !Number.isFinite(stored.x) || !Number.isFinite(stored.y)) return;
+          labelPositions[type][id] = rotatePoint(stored, center, angleDeg);
+        });
+      }
+
+      function translateLabelGroup(delta, type) {
+        if (!labelPositions[type]) return;
+        Object.keys(labelPositions[type]).forEach(function (id) {
+          const stored = labelPositions[type][id];
+          if (!stored || !Number.isFinite(stored.x) || !Number.isFinite(stored.y)) return;
+          labelPositions[type][id] = {
+            x: stored.x + delta.x,
+            y: stored.y + delta.y
+          };
+        });
+      }
+
+      function scaleLabelGroupAround(center, ratio, type) {
+        if (!labelPositions[type]) return;
+        Object.keys(labelPositions[type]).forEach(function (id) {
+          const stored = labelPositions[type][id];
+          if (!stored || !Number.isFinite(stored.x) || !Number.isFinite(stored.y)) return;
+          labelPositions[type][id] = {
+            x: center.x + (stored.x - center.x) * ratio,
+            y: center.y + (stored.y - center.y) * ratio
+          };
+        });
+      }
+
+      function scaleLabelFontGroup(ratio, type) {
+        if (!labelFontSize[type]) return;
+        Object.keys(labelFontSize[type]).forEach(function (id) {
+          const current = labelFontSize[type][id];
+          if (!Number.isFinite(current)) return;
+          labelFontSize[type][id] = Math.max(8, Math.min(220, current * ratio));
+        });
+      }
+
+      function hexToRgba(hex, alpha) {
+        const value = (hex || '#2a5bd7').replace('#', '');
+        const normalized = value.length === 3
+          ? value.split('').map(function (char) { return char + char; }).join('')
+          : value.padEnd(6, '0');
+        const red = parseInt(normalized.slice(0, 2), 16);
+        const green = parseInt(normalized.slice(2, 4), 16);
+        const blue = parseInt(normalized.slice(4, 6), 16);
+        return 'rgba(' + red + ',' + green + ',' + blue + ',' + alpha + ')';
+      }
+
+      function getTriangleCentroid(triangle) {
+        return {
+          x: (triangle.A.x + triangle.B.x + triangle.C.x) / 3,
+          y: (triangle.A.y + triangle.B.y + triangle.C.y) / 3
+        };
+      }
+
+      function getCentroidVertexInternalPoint(centroid, vertex) {
+        return {
+          x: (centroid.x + vertex.x * 3) / 4,
+          y: (centroid.y + vertex.y * 3) / 4
+        };
+      }
+
+      function getCentroidVertexExternalPoint(centroid, vertex) {
+        return {
+          x: (vertex.x * 10 - centroid.x) / 9,
+          y: (vertex.y * 10 - centroid.y) / 9
+        };
+      }
+
+      function applyFigureTransform(triangle, includeOffset) {
+        const centroid = getTriangleCentroid(triangle);
+        const useOffset = includeOffset !== false;
+        function transformPoint(point) {
+          const scaled = {
+            x: centroid.x + (point.x - centroid.x) * figureState.scale,
+            y: centroid.y + (point.y - centroid.y) * figureState.scale
+          };
+          const rotated = rotatePoint(scaled, centroid, figureState.rotation);
+          return {
+            x: rotated.x + (useOffset ? figureState.offset.x : 0),
+            y: rotated.y + (useOffset ? figureState.offset.y : 0)
+          };
+        }
+        return {
+          A: transformPoint(triangle.A),
+          B: transformPoint(triangle.B),
+          C: transformPoint(triangle.C),
+          H: transformPoint(triangle.H),
+          angleCAH: triangle.angleCAH,
+          angleCBH: triangle.angleCBH,
+          angleACB: triangle.angleACB,
+          angleACH: triangle.angleACH,
+          angleBCH: triangle.angleBCH
+        };
+      }
+
+      function getLabelBounds(anchor) {
+        function getLabelFramePaddingPx(type) {
+          if (type === 'side' || type === 'area') return 6;
+          return 6;
+        }
+        const padPx = getLabelFramePaddingPx(anchor.type);
+        let widthPx = 0;
+        let heightPx = 0;
+
+        if (anchor.screenRect) {
+          widthPx = Math.max(10, (anchor.screenRect.right - anchor.screenRect.left) + padPx * 2);
+          heightPx = Math.max(10, (anchor.screenRect.bottom - anchor.screenRect.top) + padPx * 2);
+        } else {
+          const text = String(anchor.text || '');
+          const textWidthPx = Math.max(10, text.length * anchor.fontSize * 0.56);
+          const textHeightPx = Math.max(10, anchor.fontSize);
+          widthPx = textWidthPx + padPx * 2;
+          heightPx = textHeightPx + padPx * 2;
+        }
+        const width = widthPx / Math.max(Math.abs(board.unitX), 1e-6);
+        const height = heightPx / Math.max(Math.abs(board.unitY), 1e-6);
+        const center = { x: anchor.x, y: anchor.y };
+        const corners = {
+          topLeft: rotatePoint({ x: center.x - width / 2, y: center.y + height / 2 }, center, anchor.rotation),
+          topRight: rotatePoint({ x: center.x + width / 2, y: center.y + height / 2 }, center, anchor.rotation),
+          bottomRight: rotatePoint({ x: center.x + width / 2, y: center.y - height / 2 }, center, anchor.rotation),
+          bottomLeft: rotatePoint({ x: center.x - width / 2, y: center.y - height / 2 }, center, anchor.rotation)
+        };
+        return {
+          center: center,
+          width: width,
+          height: height,
+          corners: corners
+        };
+      }
+
+      function pointInRotatedRect(point, center, width, height, rotationDeg, padding) {
+        const rad = -(rotationDeg || 0) * Math.PI / 180;
+        const cos = Math.cos(rad);
+        const sin = Math.sin(rad);
+        const dx = point.x - center.x;
+        const dy = point.y - center.y;
+        const localX = dx * cos - dy * sin;
+        const localY = dx * sin + dy * cos;
+        const halfW = (width / 2) + (padding || 0);
+        const halfH = (height / 2) + (padding || 0);
+        return Math.abs(localX) <= halfW && Math.abs(localY) <= halfH;
+      }
+
+      function userToScreenPoint(point) {
+        return {
+          x: board.origin.scrCoords[1] + point.x * board.unitX,
+          y: board.origin.scrCoords[2] - point.y * board.unitY
+        };
+      }
+
+      function createSelectableText(position, text, fontSize, labelKey, options) {
+        const config = options || {};
+        const style = getLabelStyle(labelKey.type, labelKey.id);
+        const baseColor = style.color || config.color || '#2a5bd7';
+        const effectiveFontSize = fontSize;
+        const screen = userToScreenPoint(position);
+        const labelNode = document.createElement('div');
+        labelNode.className = 'floating-label';
+        if (window.katex && typeof window.katex.render === 'function') {
+          try {
+            window.katex.render(toLatexMath(text), labelNode, {
+              throwOnError: false,
+              output: 'html',
+              strict: 'ignore'
+            });
+          } catch (_) {
+            labelNode.innerHTML = toMathLikeHtml(text);
+          }
+        } else {
+          labelNode.innerHTML = toMathLikeHtml(text);
+        }
+        labelNode.style.left = screen.x + 'px';
+        labelNode.style.top = screen.y + 'px';
+        labelNode.style.fontSize = effectiveFontSize + 'px';
+        labelNode.style.color = baseColor;
+        labelNode.style.transform = 'translate(-50%, -50%) rotate(' + (-style.rotation) + 'deg)';
+        labelLayer.appendChild(labelNode);
+        const domRect = labelNode.getBoundingClientRect();
+
+        currentLabelAnchors.push({
+          type: labelKey.type,
+          id: labelKey.id,
+          x: position.x,
+          y: position.y,
+          threshold: config.threshold || 0.45,
+          curveThreshold: config.curveThreshold || null,
+          curveHit: config.curveHit || null,
+          visible: true,
+          hidden: false,
+          text: text,
+          fontSize: effectiveFontSize,
+          color: baseColor,
+          rotation: style.rotation,
+          screenRect: {
+            left: domRect.left,
+            top: domRect.top,
+            right: domRect.right,
+            bottom: domRect.bottom
+          }
+        });
+        return labelNode;
+      }
+
+      function getPerpMarkerGeometry(triangle, fontSize) {
+        const midAB = (triangle.A.x + triangle.B.x) / 2;
+        const horizontalTarget = triangle.H.x > midAB ? triangle.A : triangle.B;
+        const vecHB = { x: horizontalTarget.x - triangle.H.x, y: horizontalTarget.y - triangle.H.y };
+        const vecHC = { x: triangle.C.x - triangle.H.x, y: triangle.C.y - triangle.H.y };
+        const lenHB = Math.hypot(vecHB.x, vecHB.y) || 1;
+        const lenHC = Math.hypot(vecHC.x, vecHC.y) || 1;
+        const dirHB = { x: vecHB.x / lenHB, y: vecHB.y / lenHB };
+        const dirHC = { x: vecHC.x / lenHC, y: vecHC.y / lenHC };
+        const sizeScale = Math.max(0.45, Math.min(3.2, fontSize / 26));
+        const markerSize = Math.max(0.06, Math.min(Math.min(lenHB, lenHC) * 0.85, Math.min(lenHB, lenHC) * 0.11 * sizeScale));
+        const p0 = { x: triangle.H.x, y: triangle.H.y };
+        const p1 = { x: p0.x + dirHB.x * markerSize, y: p0.y + dirHB.y * markerSize };
+        const p3 = { x: p0.x + dirHC.x * markerSize, y: p0.y + dirHC.y * markerSize };
+        const p2 = { x: p1.x + dirHC.x * markerSize, y: p1.y + dirHC.y * markerSize };
+        const center = { x: (p0.x + p2.x) / 2, y: (p0.y + p2.y) / 2 };
+        return { p0: p0, p1: p1, p2: p2, p3: p3, center: center, markerSize: markerSize, dirHB: dirHB, dirHC: dirHC };
+      }
+
+      function getSideLabelGeometry(P, Q, center, sideId) {
+        const arc = getSideArcData(P, Q, center);
+        const segmentMid = { x: (P.x + Q.x) / 2, y: (P.y + Q.y) / 2 };
+        const baseDirX = arc.centerPoint.x - segmentMid.x;
+        const baseDirY = arc.centerPoint.y - segmentMid.y;
+        const baseDirLen = Math.hypot(baseDirX, baseDirY) || 1;
+        const defaultOffset = (sideId === 'a' || sideId === 'b') ? 0.14 : 0;
+        const defaultPoint = {
+          x: arc.centerPoint.x + (baseDirX / baseDirLen) * defaultOffset,
+          y: arc.centerPoint.y + (baseDirY / baseDirLen) * defaultOffset
+        };
+        const desiredMidpoint = getLabelPosition('side', sideId, defaultPoint);
+        const control = {
+          x: (desiredMidpoint.x * 2) - ((P.x + Q.x) / 2),
+          y: (desiredMidpoint.y * 2) - ((P.y + Q.y) / 2)
+        };
+        return {
+          control: control,
+          centerPoint: desiredMidpoint,
+          gapHalf: arc.gapHalf,
+          leftEnd: quadraticPoint(P, control, Q, 0.5 - arc.gapHalf),
+          rightStart: quadraticPoint(P, control, Q, 0.5 + arc.gapHalf)
+        };
+      }
+
+      function drawSideArcLabel(P, Q, center, text, sideId) {
+        const arc = getSideLabelGeometry(P, Q, center, sideId);
+        const style = getLabelStyle('side', sideId);
+        const strokeWidth = 2;
+
+        board.create('curve', [
+          function (t) { return quadraticPoint(P, arc.control, Q, t).x; },
+          function (t) { return quadraticPoint(P, arc.control, Q, t).y; },
+          0,
+          0.5 - arc.gapHalf
+        ], {
+          strokeWidth: strokeWidth,
+          dash: 2,
+          fixed: true,
+          strokeColor: style.color,
+          highlight: false
+        });
+
+        board.create('curve', [
+          function (t) { return quadraticPoint(P, arc.control, Q, t).x; },
+          function (t) { return quadraticPoint(P, arc.control, Q, t).y; },
+          0.5 + arc.gapHalf,
+          1
+        ], {
+          strokeWidth: strokeWidth,
+          dash: 2,
+          fixed: true,
+          strokeColor: style.color,
+          highlight: false
+        });
+
+        createSelectableText(
+          arc.centerPoint,
+          text,
+          labelFontSize.side[sideId],
+          { type: 'side', id: sideId },
+          {
+            color: style.color,
+            threshold: 0.55,
+            curveThreshold: 0.22,
+            curveHit: {
+              P: P,
+              Q: Q,
+              control: arc.control,
+              start: 0,
+              gapHalf: arc.gapHalf,
+              end: 1
+            }
+          }
+        );
+
+      }
+
+      function setStatus(message, isError) {
+        statusBox.textContent = message;
+        statusBox.classList.toggle('error', Boolean(isError));
+      }
+
+      function getGeneralToggleConfigs() {
+        return [
+          { type: 'vertex', id: 'A' },
+          { type: 'vertex', id: 'B' },
+          { type: 'vertex', id: 'C' },
+          { type: 'side', id: 'BC' },
+          { type: 'side', id: 'CA' },
+          { type: 'side', id: 'AB' },
+          { type: 'innerAngle', id: 'A' },
+          { type: 'innerAngle', id: 'B' },
+          { type: 'innerAngle', id: 'C' },
+          { type: 'area', id: 'main' }
+        ];
+      }
+
+      function getSpecialToggleConfigs() {
+        return [
+          { type: 'vertex', id: 'H' },
+          { type: 'side', id: 'AH' },
+          { type: 'side', id: 'BH' },
+          { type: 'side', id: 'CH' },
+          { type: 'innerAngle', id: 'CAH' },
+          { type: 'innerAngle', id: 'CBH' },
+          { type: 'innerAngle', id: 'ACH' },
+          { type: 'innerAngle', id: 'BCH' },
+          { type: 'perp', id: 'BHC' }
+        ];
+      }
+
+      function renderLabelToggleButtons() {
+        if (!generalLabelToggleGrid || !specialLabelToggleGrid) return;
+        generalLabelToggleGrid.innerHTML = '';
+        specialLabelToggleGrid.innerHTML = '';
+
+        function getAngleMarkerSymbol(mode) {
+          if (mode === 1) return '○';
+          if (mode === 2) return '|';
+          if (mode === 3) return '=';
+          if (mode === 4) return '×';
+          if (mode === 5) return '△';
+          if (mode === 6) return '塗';
+          return '';
+        }
+
+        function normalizeAngleMarkerInput(input) {
+          const value = String(input || '').trim();
+          if (!value || value === '0' || value === 'なし') return 0;
+          if (value === '1' || value === '○') return 1;
+          if (value === '2' || value === '|' || value === '｜') return 2;
+          if (value === '3' || value === '=') return 3;
+          if (value === '4' || value.toLowerCase() === 'x' || value === '×') return 4;
+          if (value === '5' || value === '△') return 5;
+          if (value === '6' || value === '塗') return 6;
+          return null;
+        }
+
+        function getToggleShortLabel(config) {
+          if (config.type === 'vertex') return getVertexTokenByKey(config.id);
+          if (config.type === 'side') {
+            if (config.id === 'BC') return 'a';
+            if (config.id === 'CA') return 'b';
+            if (config.id === 'AB') return 'c';
+            return mapVertexTokens(config.id);
+          }
+          if (config.type === 'innerAngle') {
+            if (config.id === 'A' || config.id === 'B' || config.id === 'C') {
+              return '∠' + getVertexTokenByKey(config.id);
+            }
+            return '∠' + mapVertexTokens(config.id);
+          }
+          if (config.type === 'perp') return '⊥';
+          if (config.type === 'area') return '△' + mapVertexTokens('ABC');
+          return config.type + ' ' + config.id;
+        }
+
+        function buildToggleButton(config) {
+          const button = document.createElement('button');
+          const hidden = hiddenLabelState[config.type][config.id];
+          button.type = 'button';
+          button.className = 'download-btn btn-bd';
+          button.textContent = getToggleShortLabel(config);
+          button.setAttribute('aria-pressed', String(!hidden));
+          if (hidden) button.style.opacity = '0.55';
+          button.addEventListener('click', function () {
+            pushHistorySnapshot();
+            toggleHiddenLabel(config.type, config.id);
+            renderLabelToggleButtons();
+            render();
+          });
+          if (config.type === 'vertex') {
+            button.addEventListener('contextmenu', function (event) {
+              event.preventDefault();
+              const current = vertexLabelText[config.id] || config.id;
+              const next = window.prompt('頂点ラベル文字を入力してください（A-Z のみ）', current);
+              if (next === null) return;
+              const normalized = String(next).trim().toUpperCase();
+              pushHistorySnapshot();
+              if (!normalized) {
+                vertexLabelText[config.id] = config.id;
+              } else if (/^[A-Z]+$/.test(normalized)) {
+                vertexLabelText[config.id] = normalized.slice(0, 12);
+              } else {
+                setStatus('頂点ラベルは英字大文字（A-Z）のみ入力できます。', true);
+                return;
+              }
+              renderLabelToggleButtons();
+              render();
+            });
+          } else if (config.type === 'innerAngle') {
+            button.addEventListener('contextmenu', function (event) {
+              event.preventDefault();
+              const currentMode = Number.isFinite(angleMarkerMode[config.id]) ? angleMarkerMode[config.id] : 0;
+              const next = window.prompt('角マークを選択（0:なし / 1:○ / 2:| / 3:= / 4:× / 5:△ / 6:塗）', String(currentMode));
+              if (next === null) return;
+              const mode = normalizeAngleMarkerInput(next);
+              if (mode === null) {
+                setStatus('角マークは「0 / 1 / 2 / 3 / 4 / 5 / 6」で指定してください。', true);
+                return;
+              }
+              pushHistorySnapshot();
+              angleMarkerMode[config.id] = mode;
+              hiddenLabelState.angleMark[config.id] = (mode === 0);
+              render();
+            });
+          }
+          return button;
+        }
+
+        getGeneralToggleConfigs().forEach(function (config) {
+          generalLabelToggleGrid.appendChild(buildToggleButton(config));
+        });
+        getSpecialToggleConfigs().forEach(function (config) {
+          specialLabelToggleGrid.appendChild(buildToggleButton(config));
+        });
+      }
+
+      function getSelectedAnchor() {
+        if (!selectedLabel) return null;
+        return currentLabelAnchors.find(function (item) {
+          return item.type === selectedLabel.type && item.id === selectedLabel.id && !item.hidden;
+        }) || null;
+      }
+
+      function getFigureSelectionAnchor() {
+        if (!selectedFigure || !currentGeometry) return null;
+        const centroid = getTriangleCentroid(currentGeometry);
+        const points = [currentGeometry.A, currentGeometry.B, currentGeometry.C].map(function (point) {
+          return rotatePoint(point, centroid, -figureState.rotation);
+        });
+        const A = points[0];
+        const B = points[1];
+        const C = points[2];
+        const bottomY = (A.y + B.y) / 2;
+        const topY = Math.max(A.y, B.y, C.y);
+        const width = Math.max(0.5, Math.hypot(B.x - A.x, B.y - A.y));
+        const height = Math.max(0.5, topY - bottomY);
+        const center = {
+          x: (A.x + B.x) / 2,
+          y: (topY + bottomY) / 2
+        };
+        const worldCenter = rotatePoint(center, centroid, figureState.rotation);
+        return {
+          kind: 'figure',
+          x: worldCenter.x,
+          y: worldCenter.y,
+          width: width,
+          height: height,
+          color: figureState.color,
+          rotation: figureState.rotation
+        };
+      }
+
+      function getPaletteColors() {
+        return ['#1f2430', '#2a5bd7', '#c2410c', '#0f766e', '#7c3aed', '#be123c'];
+      }
+
+      function renderSelectionOverlay(anchor) {
+        if (!anchor) {
+          currentSelectionOverlay = null;
+          return;
+        }
+
+        const bounds = anchor.kind === 'figure'
+          ? {
+            center: { x: anchor.x, y: anchor.y },
+            width: anchor.width,
+            height: anchor.height,
+            corners: {
+              topLeft: rotatePoint({ x: anchor.x - anchor.width / 2, y: anchor.y + anchor.height / 2 }, { x: anchor.x, y: anchor.y }, anchor.rotation),
+              topRight: rotatePoint({ x: anchor.x + anchor.width / 2, y: anchor.y + anchor.height / 2 }, { x: anchor.x, y: anchor.y }, anchor.rotation),
+              bottomRight: rotatePoint({ x: anchor.x + anchor.width / 2, y: anchor.y - anchor.height / 2 }, { x: anchor.x, y: anchor.y }, anchor.rotation),
+              bottomLeft: rotatePoint({ x: anchor.x - anchor.width / 2, y: anchor.y - anchor.height / 2 }, { x: anchor.x, y: anchor.y }, anchor.rotation)
+            }
+          }
+          : getLabelBounds(anchor);
+        const corners = bounds.corners;
+        const pxToUser = function (px) {
+          const userPerPx = (1 / Math.max(Math.abs(board.unitX), 1e-6) + 1 / Math.max(Math.abs(board.unitY), 1e-6)) / 2;
+          return px * userPerPx;
+        };
+        const boundsWidthPx = Math.max(1, Math.abs(bounds.width * board.unitX));
+        const boundsHeightPx = Math.max(1, Math.abs(bounds.height * board.unitY));
+        const iconBasePx = Math.max(9, Math.min(20, Math.min(boundsWidthPx, boundsHeightPx) * 0.23));
+        const iconGapPx = 14;
+        const iconGapUser = pxToUser(iconGapPx);
+
+        function extendFromCorner(corner) {
+          const vx = corner.x - bounds.center.x;
+          const vy = corner.y - bounds.center.y;
+          const vlen = Math.hypot(vx, vy) || 1;
+          return {
+            x: corner.x + (vx / vlen) * iconGapUser,
+            y: corner.y + (vy / vlen) * iconGapUser
+          };
+        }
+
+        const rotateHandle = extendFromCorner(corners.topRight);
+        const resizeHandle = extendFromCorner(corners.bottomRight);
+        const paletteHandle = extendFromCorner(corners.bottomLeft);
+
+        [[corners.topLeft, corners.topRight], [corners.topRight, corners.bottomRight], [corners.bottomRight, corners.bottomLeft], [corners.bottomLeft, corners.topLeft]].forEach(function (pair) {
+          board.create('segment', [[pair[0].x, pair[0].y], [pair[1].x, pair[1].y]], {
+            fixed: true,
+            strokeColor: '#2a5bd7',
+            strokeWidth: 1.6,
+            dash: 2
+          });
+        });
+
+        const resizeHalf = pxToUser(iconBasePx * 0.56);
+        const resizeWing = pxToUser(iconBasePx * 0.25);
+        const resizeDir = { x: -Math.SQRT1_2, y: Math.SQRT1_2 };
+        const resizeNorm = { x: -resizeDir.y, y: resizeDir.x };
+        const resizeStart = {
+          x: resizeHandle.x - resizeDir.x * resizeHalf,
+          y: resizeHandle.y - resizeDir.y * resizeHalf
+        };
+        const resizeEnd = {
+          x: resizeHandle.x + resizeDir.x * resizeHalf,
+          y: resizeHandle.y + resizeDir.y * resizeHalf
+        };
+        board.create('segment', [[resizeStart.x, resizeStart.y], [resizeEnd.x, resizeEnd.y]], {
+          fixed: true,
+          strokeWidth: 1.6,
+          strokeColor: '#2a5bd7'
+        });
+        board.create('segment', [[resizeStart.x, resizeStart.y], [resizeStart.x + resizeDir.x * resizeWing + resizeNorm.x * resizeWing, resizeStart.y + resizeDir.y * resizeWing + resizeNorm.y * resizeWing]], {
+          fixed: true,
+          strokeWidth: 1.4,
+          strokeColor: '#2a5bd7'
+        });
+        board.create('segment', [[resizeStart.x, resizeStart.y], [resizeStart.x + resizeDir.x * resizeWing - resizeNorm.x * resizeWing, resizeStart.y + resizeDir.y * resizeWing - resizeNorm.y * resizeWing]], {
+          fixed: true,
+          strokeWidth: 1.4,
+          strokeColor: '#2a5bd7'
+        });
+        board.create('segment', [[resizeEnd.x, resizeEnd.y], [resizeEnd.x - resizeDir.x * resizeWing + resizeNorm.x * resizeWing, resizeEnd.y - resizeDir.y * resizeWing + resizeNorm.y * resizeWing]], {
+          fixed: true,
+          strokeWidth: 1.4,
+          strokeColor: '#2a5bd7'
+        });
+        board.create('segment', [[resizeEnd.x, resizeEnd.y], [resizeEnd.x - resizeDir.x * resizeWing - resizeNorm.x * resizeWing, resizeEnd.y - resizeDir.y * resizeWing - resizeNorm.y * resizeWing]], {
+          fixed: true,
+          strokeWidth: 1.4,
+          strokeColor: '#2a5bd7'
+        });
+
+        board.create('point', [rotateHandle.x, rotateHandle.y], {
+          name: '',
+          fixed: true,
+          size: iconBasePx * 0.58,
+          strokeColor: '#2a5bd7',
+          fillColor: '#ffffff'
+        });
+
+        board.create('point', [paletteHandle.x, paletteHandle.y], {
+          name: '',
+          fixed: true,
+          size: iconBasePx * 0.54,
+          strokeColor: anchor.color,
+          fillColor: '#ffffff'
+        });
+
+        board.create('point', [paletteHandle.x, paletteHandle.y], {
+          name: '',
+          fixed: true,
+          size: iconBasePx * 0.28,
+          strokeColor: anchor.color,
+          fillColor: anchor.color
+        });
+
+        const palette = [];
+        if (isPaletteOpen) {
+          getPaletteColors().forEach(function (color, index) {
+            const radius = pxToUser(Math.max(30, iconBasePx * 2.8));
+            const startAngle = 210;
+            const endAngle = 330;
+            const angle = startAngle + ((endAngle - startAngle) * (index / Math.max(1, getPaletteColors().length - 1)));
+            const rad = angle * Math.PI / 180;
+            const localPoint = {
+              x: paletteHandle.x + Math.cos(rad) * radius,
+              y: paletteHandle.y + Math.sin(rad) * radius
+            };
+            const point = rotatePoint(localPoint, paletteHandle, anchor.rotation);
+            board.create('point', [point.x, point.y], {
+              name: '',
+              fixed: true,
+              size: Math.max(4.5, iconBasePx * 0.5),
+              strokeColor: color,
+              fillColor: color
+            });
+            palette.push({ color: color, x: point.x, y: point.y });
+          });
+        }
+
+        currentSelectionOverlay = {
+          kind: anchor.kind || 'label',
+          type: anchor.type || null,
+          id: anchor.id || null,
+          bounds: bounds,
+          resizeHandle: resizeHandle,
+          rotateHandle: rotateHandle,
+          paletteHandle: paletteHandle,
+          resizeHitRadius: pxToUser(iconBasePx * 0.9),
+          rotateHitRadius: pxToUser(iconBasePx),
+          paletteHitRadius: pxToUser(iconBasePx),
+          paletteColorHitRadius: pxToUser(iconBasePx * 0.62),
+          palette: palette
+        };
+      }
+
+      function findSelectionControl(point) {
+        if (!currentSelectionOverlay) return null;
+        if (Math.hypot(point.x - currentSelectionOverlay.resizeHandle.x, point.y - currentSelectionOverlay.resizeHandle.y) <= (currentSelectionOverlay.resizeHitRadius || 0.22)) {
+          return { mode: 'resize' };
+        }
+        if (Math.hypot(point.x - currentSelectionOverlay.rotateHandle.x, point.y - currentSelectionOverlay.rotateHandle.y) <= (currentSelectionOverlay.rotateHitRadius || 0.28)) {
+          if (currentSelectionOverlay.type === 'perp' || currentSelectionOverlay.type === 'angleMark') {
+            return null;
+          }
+          return { mode: 'rotate' };
+        }
+        if (Math.hypot(point.x - currentSelectionOverlay.paletteHandle.x, point.y - currentSelectionOverlay.paletteHandle.y) <= (currentSelectionOverlay.paletteHitRadius || 0.26)) {
+          return { mode: 'palette' };
+        }
+        for (let index = 0; index < currentSelectionOverlay.palette.length; index += 1) {
+          const item = currentSelectionOverlay.palette[index];
+          if (Math.hypot(point.x - item.x, point.y - item.y) <= (currentSelectionOverlay.paletteColorHitRadius || 0.18)) {
+            return { mode: 'palette-color', color: item.color };
+          }
+        }
+        return null;
+      }
+
+      function fitBoard(points) {
+        const xs = points.map(function (p) { return p.x; });
+        const ys = points.map(function (p) { return p.y; });
+        const minX = Math.min.apply(null, xs);
+        const maxX = Math.max.apply(null, xs);
+        const minY = Math.min.apply(null, ys);
+        const maxY = Math.max.apply(null, ys);
+        const width = Math.max(1, maxX - minX);
+        const height = Math.max(1, maxY - minY);
+        const padding = Math.max(width, height) * 0.28;
+        const centerX = (minX + maxX) / 2 + viewCenterOffset.x;
+        const centerY = (minY + maxY) / 2 + viewCenterOffset.y;
+        const contentWidth = width + padding * 2;
+        const contentHeight = height + padding * 2;
+        const aspect = exportAspects[exportAspectIndex].value;
+        let halfWidth = contentWidth / 2;
+        let halfHeight = contentHeight / 2;
+
+        if (contentWidth / contentHeight < aspect) {
+          halfWidth = (contentHeight * aspect) / 2;
+        } else {
+          halfHeight = (contentWidth / aspect) / 2;
+        }
+
+        halfWidth /= zoomScale;
+        halfHeight /= zoomScale;
+
+        if (box && exportFrame) {
+          const frameWidthRatio = exportFrame.clientWidth / Math.max(box.clientWidth, 1);
+          const frameHeightRatio = exportFrame.clientHeight / Math.max(box.clientHeight, 1);
+          halfWidth /= Math.max(frameWidthRatio, 1e-4);
+          halfHeight /= Math.max(frameHeightRatio, 1e-4);
+        }
+        board.setBoundingBox([centerX - halfWidth, centerY + halfHeight, centerX + halfWidth, centerY - halfHeight], true);
+      }
+
+      function scheduleRender() {
+        if (renderRafId !== null) return;
+        renderRafId = window.requestAnimationFrame(function () {
+          renderRafId = null;
+          render();
+        });
+      }
+
+      function updateRatioButton() {
+        if (!ratioBtn) return;
+        const ratioLabel = exportAspects[exportAspectIndex].label;
+        const prefix = t('sss.ratioButton', '画面比 1:1').replace(/\s*[0-9√:./]+\s*$/, '').trim() || t('sss.ratioButton', '画面比');
+        ratioBtn.textContent = prefix + ' ' + ratioLabel;
+      }
+
+      function updateUnitButton() {
+        if (!unitBtn) return;
+        const unitLabel = t(unitOptions[unitIndex].key, unitOptions[unitIndex].fallback);
+        unitBtn.textContent = '長さ' + unitLabel;
+      }
+
+      function updateAngleModeButton() {
+        if (!angleModeBtn) return;
+        angleModeBtn.textContent = angleMode === 'radians'
+          ? t('sss.angleModeRadians', '弧度法')
+          : t('sss.angleModeDegrees', '度数法');
+      }
+
+      function updateDockToggleButton() {
+        if (!dockToggleBtn) return;
+        dockToggleBtn.textContent = isDockCollapsed ? '›' : '‹';
+        dockToggleBtn.setAttribute('aria-expanded', String(!isDockCollapsed));
+        dockToggleBtn.setAttribute('title', isDockCollapsed ? t('sss.dockShow', '表示') : t('sss.dockHide', '隠す'));
+      }
+
+      function updateRightDockToggleButton() {
+        if (!rightDockToggleBtn) return;
+        rightDockToggleBtn.textContent = isRightDockCollapsed ? '‹' : '›';
+        rightDockToggleBtn.setAttribute('aria-expanded', String(!isRightDockCollapsed));
+        rightDockToggleBtn.setAttribute('title', isRightDockCollapsed ? t('sss.dockShow', '表示') : t('sss.dockHide', '隠す'));
+      }
+
+      function getCurrentUnit() {
+        return unitOptions[unitIndex].value;
+      }
+
+      function appendUnit(text, square) {
+        const unit = getCurrentUnit();
+        if (!unit) return text;
+        return text + unit + (square ? '²' : '');
+      }
+
+      function cloneStateValue(value) {
+        return JSON.parse(JSON.stringify(value));
+      }
+
+      function captureState() {
+        return {
+          sideValues: {
+            a: sideAInput.value,
+            b: sideBInput.value,
+            c: sideCInput.value
+          },
+          vertexLabelText: cloneStateValue(vertexLabelText),
+          labelState: cloneStateValue(labelState),
+          hiddenLabelState: cloneStateValue(hiddenLabelState),
+          labelPositions: cloneStateValue(labelPositions),
+          labelFontSize: cloneStateValue(labelFontSize),
+          labelStyleState: cloneStateValue(labelStyleState),
+          angleMarkerMode: cloneStateValue(angleMarkerMode),
+          figureState: cloneStateValue(figureState),
+          zoomScale: zoomScale,
+          viewCenterOffset: cloneStateValue(viewCenterOffset),
+          exportAspectIndex: exportAspectIndex,
+          unitIndex: unitIndex,
+          angleMode: angleMode
+        };
+      }
+
+      function applyCapturedState(state) {
+        sideAInput.value = state.sideValues.a;
+        sideBInput.value = state.sideValues.b;
+        sideCInput.value = state.sideValues.c;
+        Object.assign(vertexLabelText, cloneStateValue(state.vertexLabelText || vertexLabelText));
+        Object.keys(labelState).forEach(function (type) {
+          Object.assign(labelState[type], cloneStateValue(state.labelState[type]));
+          Object.assign(hiddenLabelState[type], cloneStateValue(state.hiddenLabelState[type]));
+          Object.assign(labelPositions[type], cloneStateValue(state.labelPositions[type]));
+          Object.assign(labelFontSize[type], cloneStateValue(state.labelFontSize[type]));
+          Object.assign(labelStyleState[type], cloneStateValue(state.labelStyleState[type]));
+        });
+        Object.assign(angleMarkerMode, cloneStateValue(state.angleMarkerMode || angleMarkerMode));
+        figureState = cloneStateValue(state.figureState || figureState);
+        zoomScale = state.zoomScale;
+        viewCenterOffset = cloneStateValue(state.viewCenterOffset || { x: 0, y: 0 });
+        exportAspectIndex = state.exportAspectIndex;
+        unitIndex = typeof state.unitIndex === 'number' ? state.unitIndex : 1;
+        if (!figureState.offset) {
+          figureState.offset = { x: 0, y: 0 };
+        }
+        angleMode = state.angleMode === 'radians' ? 'radians' : 'degrees';
+        hoveredLabel = null;
+        selectedLabel = null;
+        selectedFigure = false;
+        isPaletteOpen = false;
+        currentSelectionOverlay = null;
+        dragState = null;
+        lastFitSignature = '';
+        updateRatioButton();
+        updateAngleModeButton();
+        updateUnitButton();
+        renderLabelToggleButtons();
+        updateHistoryButtons();
+      }
+
+      function pushHistorySnapshot() {
+        historyPast.push(captureState());
+        if (historyPast.length > 200) historyPast.shift();
+        historyFuture.length = 0;
+        updateHistoryButtons();
+      }
+
+      function pushSpecificSnapshot(snapshot) {
+        historyPast.push(cloneStateValue(snapshot));
+        if (historyPast.length > 200) historyPast.shift();
+        historyFuture.length = 0;
+        updateHistoryButtons();
+      }
+
+      function restoreFromHistory(targetStack, oppositeStack) {
+        if (!targetStack.length) return;
+        oppositeStack.push(captureState());
+        const snapshot = targetStack.pop();
+        applyCapturedState(snapshot);
+        render();
+      }
+
+      function updateHistoryButtons() {
+        if (undoBtn) undoBtn.disabled = historyPast.length === 0;
+        if (redoBtn) redoBtn.disabled = historyFuture.length === 0;
+      }
+
+      function updateExportFrame() {
+        if (!box || !exportFrame) return;
+        const rect = box.getBoundingClientRect();
+        const aspect = exportAspects[exportAspectIndex].value;
+        const margin = Math.min(56, rect.width * 0.06, rect.height * 0.06);
+        let width = rect.width - margin * 2;
+        let height = width / aspect;
+
+        if (height > rect.height - margin * 2) {
+          height = rect.height - margin * 2;
+          width = height * aspect;
+        }
+
+        exportFrame.style.width = Math.max(120, width) + 'px';
+        exportFrame.style.height = Math.max(120, height) + 'px';
+        updateExportBackdrop();
+      }
+
+      function updateExportBackdrop() {
+        if (!box || !exportFrame || !exportBackdrop) return;
+        const boxRect = box.getBoundingClientRect();
+        const frameRect = exportFrame.getBoundingClientRect();
+        const left = Math.max(0, frameRect.left - boxRect.left);
+        const top = Math.max(0, frameRect.top - boxRect.top);
+        const width = Math.min(boxRect.width, frameRect.width);
+        const height = Math.min(boxRect.height, frameRect.height);
+        const right = Math.min(boxRect.width, left + width);
+        const bottom = Math.min(boxRect.height, top + height);
+        exportBackdrop.style.setProperty('--frame-left', left + 'px');
+        exportBackdrop.style.setProperty('--frame-top', top + 'px');
+        exportBackdrop.style.setProperty('--frame-right', right + 'px');
+        exportBackdrop.style.setProperty('--frame-bottom', bottom + 'px');
+      }
+
+      function getExportFrameRect() {
+        if (!box || !exportFrame) return null;
+        const boxRect = box.getBoundingClientRect();
+        const frameRect = exportFrame.getBoundingClientRect();
+        return {
+          x: Math.max(0, frameRect.left - boxRect.left),
+          y: Math.max(0, frameRect.top - boxRect.top),
+          width: Math.min(boxRect.width, frameRect.width),
+          height: Math.min(boxRect.height, frameRect.height)
+        };
+      }
+
+      function cropCanvasToFrame(canvas) {
+        const frame = getExportFrameRect();
+        if (!frame) return canvas;
+        const scaleX = canvas.width / box.clientWidth;
+        const scaleY = canvas.height / box.clientHeight;
+        const sx = Math.round(frame.x * scaleX);
+        const sy = Math.round(frame.y * scaleY);
+        const sw = Math.round(frame.width * scaleX);
+        const sh = Math.round(frame.height * scaleY);
+        const cropped = document.createElement('canvas');
+        cropped.width = sw;
+        cropped.height = sh;
+        const ctx = cropped.getContext('2d');
+        ctx.clearRect(0, 0, sw, sh);
+        ctx.drawImage(canvas, sx, sy, sw, sh, 0, 0, sw, sh);
+        return cropped;
+      }
+
+      function pointInTriangle(point, A, B, C) {
+        const area = function (p1, p2, p3) {
+          return (p1.x * (p2.y - p3.y) + p2.x * (p3.y - p1.y) + p3.x * (p1.y - p2.y)) / 2;
+        };
+        const total = Math.abs(area(A, B, C));
+        const a1 = Math.abs(area(point, B, C));
+        const a2 = Math.abs(area(A, point, C));
+        const a3 = Math.abs(area(A, B, point));
+        return Math.abs(total - (a1 + a2 + a3)) < Math.max(0.02, total * 0.01);
+      }
+
+      function distanceToSegment(point, P, Q) {
+        const dx = Q.x - P.x;
+        const dy = Q.y - P.y;
+        const len2 = dx * dx + dy * dy;
+        if (!len2) return { distance: Math.hypot(point.x - P.x, point.y - P.y), t: 0 };
+        const t = Math.max(0, Math.min(1, ((point.x - P.x) * dx + (point.y - P.y) * dy) / len2));
+        const proj = { x: P.x + dx * t, y: P.y + dy * t };
+        return { distance: Math.hypot(point.x - proj.x, point.y - proj.y), t: t };
+      }
+
+      function distanceToQuadraticArc(point, curveHit) {
+        if (!curveHit) return Infinity;
+        let minimum = Infinity;
+        const samples = 28;
+        let previous = quadraticPoint(curveHit.P, curveHit.control, curveHit.Q, curveHit.start);
+
+        for (let index = 1; index <= samples; index += 1) {
+          const t = curveHit.start + ((curveHit.end - curveHit.start) * index / samples);
+          if (Math.abs(t - 0.5) < curveHit.gapHalf) continue;
+          const current = quadraticPoint(curveHit.P, curveHit.control, curveHit.Q, t);
+          minimum = Math.min(minimum, distanceToSegment(point, previous, current).distance);
+          previous = current;
+        }
+
+        return minimum;
+      }
+
+      function normalizeAngle(angle) {
+        let value = angle % (Math.PI * 2);
+        if (value < 0) value += Math.PI * 2;
+        return value;
+      }
+
+      function isAngleBetween(target, start, end) {
+        const a = normalizeAngle(start);
+        const b = normalizeAngle(end);
+        const tAngle = normalizeAngle(target);
+        if (a <= b) return tAngle >= a && tAngle <= b;
+        return tAngle >= a || tAngle <= b;
+      }
+
+      function angleSectorContains(point, vertex, firstPoint, secondPoint, useInnerSector) {
+        const dx = point.x - vertex.x;
+        const dy = point.y - vertex.y;
+        const radius = Math.hypot(dx, dy);
+        const minRadius = useInnerSector ? 0.42 : 0.65;
+        const maxRadius = useInnerSector ? 1.35 : 2.5;
+        if (radius < minRadius || radius > maxRadius) return false;
+        const pointAngle = Math.atan2(dy, dx);
+        const angle1 = Math.atan2(firstPoint.y - vertex.y, firstPoint.x - vertex.x);
+        const angle2 = Math.atan2(secondPoint.y - vertex.y, secondPoint.x - vertex.x);
+        const direct = normalizeAngle(angle2 - angle1);
+        const useDirect = direct <= Math.PI;
+        const innerContains = useDirect ? isAngleBetween(pointAngle, angle1, angle2) : !isAngleBetween(pointAngle, angle2, angle1);
+        return useInnerSector ? innerContains : !innerContains;
+      }
+
+      function getAngleDecorationGeometry(angleId, triangle) {
+        if (angleId === 'A') return { vertex: triangle.A, p1: triangle.B, p2: triangle.C };
+        if (angleId === 'B') return { vertex: triangle.B, p1: triangle.A, p2: triangle.C };
+        if (angleId === 'C') return { vertex: triangle.C, p1: triangle.A, p2: triangle.B };
+        if (angleId === 'CAH') return { vertex: triangle.A, p1: triangle.C, p2: triangle.H };
+        if (angleId === 'CBH') return { vertex: triangle.B, p1: triangle.C, p2: triangle.H };
+        if (angleId === 'ACH') return { vertex: triangle.C, p1: triangle.A, p2: triangle.H };
+        if (angleId === 'BCH') return { vertex: triangle.C, p1: triangle.B, p2: triangle.H };
+        return null;
+      }
+
+      function drawAngleDecoration(angleId, triangle) {
+        const mode = Number.isFinite(angleMarkerMode[angleId]) ? angleMarkerMode[angleId] : 0;
+        if (mode === 0) return;
+        const geometry = getAngleDecorationGeometry(angleId, triangle);
+        if (!geometry) return;
+
+        const vertex = geometry.vertex;
+        const p1 = geometry.p1;
+        const p2 = geometry.p2;
+        const dAB = Math.hypot(triangle.A.x - triangle.B.x, triangle.A.y - triangle.B.y);
+        const dBC = Math.hypot(triangle.B.x - triangle.C.x, triangle.B.y - triangle.C.y);
+        const dCA = Math.hypot(triangle.C.x - triangle.A.x, triangle.C.y - triangle.A.y);
+        const baseRadius = Math.max(0.06, (dAB + dBC + dCA) / 30);
+        const sizeScale = Math.max(0.35, Math.min(8, labelFontSize.angleMark[angleId] / 26));
+        const radius = baseRadius * sizeScale;
+        const a1 = Math.atan2(p1.y - vertex.y, p1.x - vertex.x);
+        const a2 = Math.atan2(p2.y - vertex.y, p2.x - vertex.x);
+        let delta = a2 - a1;
+        while (delta <= -Math.PI) delta += Math.PI * 2;
+        while (delta > Math.PI) delta -= Math.PI * 2;
+        if (Math.abs(delta) < 1e-4) return;
+
+        const start = {
+          x: vertex.x + radius * Math.cos(a1),
+          y: vertex.y + radius * Math.sin(a1)
+        };
+        const end = {
+          x: vertex.x + radius * Math.cos(a1 + delta),
+          y: vertex.y + radius * Math.sin(a1 + delta)
+        };
+        const style = getLabelStyle('angleMark', angleId);
+        const color = style.color || '#687086';
+
+        board.create('segment', [[vertex.x, vertex.y], [start.x, start.y]], {
+          fixed: true,
+          strokeWidth: 1.4,
+          strokeColor: color,
+          highlight: false
+        });
+        board.create('segment', [[vertex.x, vertex.y], [end.x, end.y]], {
+          fixed: true,
+          strokeWidth: 1.4,
+          strokeColor: color,
+          highlight: false
+        });
+        board.create('curve', [
+          function (t) {
+            const angle = a1 + delta * t;
+            return vertex.x + radius * Math.cos(angle);
+          },
+          function (t) {
+            const angle = a1 + delta * t;
+            return vertex.y + radius * Math.sin(angle);
+          },
+          0,
+          1
+        ], {
+          fixed: true,
+          strokeWidth: 1.8,
+          strokeColor: color,
+          highlight: false
+        });
+
+        const midAngle = a1 + delta / 2;
+        const symbolCenter = {
+          x: vertex.x + radius * Math.cos(midAngle),
+          y: vertex.y + radius * Math.sin(midAngle)
+        };
+        const towardCenter = {
+          x: vertex.x - symbolCenter.x,
+          y: vertex.y - symbolCenter.y
+        };
+        const towardLen = Math.hypot(towardCenter.x, towardCenter.y) || 1;
+        const dir = { x: towardCenter.x / towardLen, y: towardCenter.y / towardLen };
+        const normal = { x: -dir.y, y: dir.x };
+        const symbolSize = Math.max(0.03, radius * 0.34);
+
+        if (mode === 1) {
+          const circleSize = symbolSize * 0.5;
+          board.create('curve', [
+            function (t) { return symbolCenter.x + circleSize * Math.cos(t); },
+            function (t) { return symbolCenter.y + circleSize * Math.sin(t); },
+            0,
+            Math.PI * 2
+          ], {
+            fixed: true,
+            strokeWidth: 1.6,
+            strokeColor: color,
+            highlight: false
+          });
+        } else if (mode === 2) {
+          const barSize = symbolSize * 0.5;
+          board.create('segment', [
+            [symbolCenter.x - dir.x * barSize, symbolCenter.y - dir.y * barSize],
+            [symbolCenter.x + dir.x * barSize, symbolCenter.y + dir.y * barSize]
+          ], {
+            fixed: true,
+            strokeWidth: 1.8,
+            strokeColor: color,
+            highlight: false
+          });
+        } else if (mode === 3) {
+          const barSize = symbolSize * 0.5;
+          const sep = barSize * 0.46;
+          board.create('segment', [
+            [symbolCenter.x - dir.x * barSize + normal.x * sep, symbolCenter.y - dir.y * barSize + normal.y * sep],
+            [symbolCenter.x + dir.x * barSize + normal.x * sep, symbolCenter.y + dir.y * barSize + normal.y * sep]
+          ], {
+            fixed: true,
+            strokeWidth: 1.8,
+            strokeColor: color,
+            highlight: false
+          });
+          board.create('segment', [
+            [symbolCenter.x - dir.x * barSize - normal.x * sep, symbolCenter.y - dir.y * barSize - normal.y * sep],
+            [symbolCenter.x + dir.x * barSize - normal.x * sep, symbolCenter.y + dir.y * barSize - normal.y * sep]
+          ], {
+            fixed: true,
+            strokeWidth: 1.8,
+            strokeColor: color,
+            highlight: false
+          });
+        } else if (mode === 4) {
+          const crossSize = symbolSize * 0.5;
+          board.create('segment', [
+            [symbolCenter.x - dir.x * crossSize - normal.x * crossSize, symbolCenter.y - dir.y * crossSize - normal.y * crossSize],
+            [symbolCenter.x + dir.x * crossSize + normal.x * crossSize, symbolCenter.y + dir.y * crossSize + normal.y * crossSize]
+          ], {
+            fixed: true,
+            strokeWidth: 1.8,
+            strokeColor: color,
+            highlight: false
+          });
+          board.create('segment', [
+            [symbolCenter.x - dir.x * crossSize + normal.x * crossSize, symbolCenter.y - dir.y * crossSize + normal.y * crossSize],
+            [symbolCenter.x + dir.x * crossSize - normal.x * crossSize, symbolCenter.y + dir.y * crossSize - normal.y * crossSize]
+          ], {
+            fixed: true,
+            strokeWidth: 1.8,
+            strokeColor: color,
+            highlight: false
+          });
+        } else if (mode === 5) {
+          const triSize = symbolSize * 0.5;
+          const tip = {
+            x: symbolCenter.x - dir.x * triSize * 1.15,
+            y: symbolCenter.y - dir.y * triSize * 1.15
+          };
+          const baseL = {
+            x: symbolCenter.x + dir.x * triSize * 0.85 + normal.x * triSize * 0.9,
+            y: symbolCenter.y + dir.y * triSize * 0.85 + normal.y * triSize * 0.9
+          };
+          const baseR = {
+            x: symbolCenter.x + dir.x * triSize * 0.85 - normal.x * triSize * 0.9,
+            y: symbolCenter.y + dir.y * triSize * 0.85 - normal.y * triSize * 0.9
+          };
+          board.create('segment', [[tip.x, tip.y], [baseL.x, baseL.y]], {
+            fixed: true,
+            strokeWidth: 1.8,
+            strokeColor: color,
+            highlight: false
+          });
+          board.create('segment', [[baseL.x, baseL.y], [baseR.x, baseR.y]], {
+            fixed: true,
+            strokeWidth: 1.8,
+            strokeColor: color,
+            highlight: false
+          });
+          board.create('segment', [[baseR.x, baseR.y], [tip.x, tip.y]], {
+            fixed: true,
+            strokeWidth: 1.8,
+            strokeColor: color,
+            highlight: false
+          });
+        } else if (mode === 6) {
+          const sectorPoints = [{ x: vertex.x, y: vertex.y }];
+          const steps = 18;
+          for (let i = 0; i <= steps; i += 1) {
+            const t = i / steps;
+            const angle = a1 + delta * t;
+            sectorPoints.push({
+              x: vertex.x + radius * Math.cos(angle),
+              y: vertex.y + radius * Math.sin(angle)
+            });
+          }
+          board.create('polygon', sectorPoints.map(function (p) { return [p.x, p.y]; }), {
+            fixed: true,
+            borders: {
+              visible: false,
+              highlight: false
+            },
+            vertices: {
+              visible: false
+            },
+            fillColor: color,
+            fillOpacity: 1,
+            highlight: false
+          });
+        }
+
+        const sampleAngles = [0, 0.25, 0.5, 0.75, 1].map(function (t) {
+          const angle = a1 + delta * t;
+          return {
+            x: vertex.x + radius * Math.cos(angle),
+            y: vertex.y + radius * Math.sin(angle)
+          };
+        });
+        const boundsPoints = sampleAngles.concat(
+          mode === 6
+            ? [{ x: vertex.x, y: vertex.y }]
+            : [
+              { x: symbolCenter.x + normal.x * symbolSize, y: symbolCenter.y + normal.y * symbolSize },
+              { x: symbolCenter.x - normal.x * symbolSize, y: symbolCenter.y - normal.y * symbolSize },
+              { x: symbolCenter.x + dir.x * symbolSize, y: symbolCenter.y + dir.y * symbolSize },
+              { x: symbolCenter.x - dir.x * symbolSize, y: symbolCenter.y - dir.y * symbolSize }
+            ]
+        );
+        const screenPoints = boundsPoints.map(userToScreenPoint);
+        const xs = screenPoints.map(function (pt) { return pt.x; });
+        const ys = screenPoints.map(function (pt) { return pt.y; });
+        currentLabelAnchors.push({
+          type: 'angleMark',
+          id: angleId,
+          x: symbolCenter.x,
+          y: symbolCenter.y,
+          scaleCenter: { x: vertex.x, y: vertex.y },
+          threshold: 0.52,
+          curveThreshold: null,
+          curveHit: null,
+          visible: true,
+          hidden: false,
+          text: mode === 1 ? '○' : mode === 2 ? '|' : mode === 3 ? '=' : mode === 4 ? '×' : mode === 5 ? '△' : '塗',
+          fontSize: labelFontSize.angleMark[angleId],
+          color: color,
+          rotation: 0,
+          screenRect: {
+            left: Math.min.apply(null, xs),
+            top: Math.min.apply(null, ys),
+            right: Math.max.apply(null, xs),
+            bottom: Math.max.apply(null, ys)
+          }
+        });
+      }
+
+      function getAngleLabelPosition(vertex, firstPoint, secondPoint, isExterior, distance) {
+        const u1 = {
+          x: firstPoint.x - vertex.x,
+          y: firstPoint.y - vertex.y
+        };
+        const u2 = {
+          x: secondPoint.x - vertex.x,
+          y: secondPoint.y - vertex.y
+        };
+        const len1 = Math.hypot(u1.x, u1.y) || 1;
+        const len2 = Math.hypot(u2.x, u2.y) || 1;
+        const n1 = { x: u1.x / len1, y: u1.y / len1 };
+        const n2 = { x: u2.x / len2, y: u2.y / len2 };
+        let dir = { x: n1.x + n2.x, y: n1.y + n2.y };
+        const dirLen = Math.hypot(dir.x, dir.y) || 1;
+        dir = { x: dir.x / dirLen, y: dir.y / dirLen };
+        if (isExterior) {
+          dir.x *= -1;
+          dir.y *= -1;
+        }
+        return { x: vertex.x + dir.x * distance, y: vertex.y + dir.y * distance };
+      }
+
+      function getBisectorDirection(vertex, firstPoint, secondPoint) {
+        const u1 = {
+          x: firstPoint.x - vertex.x,
+          y: firstPoint.y - vertex.y
+        };
+        const u2 = {
+          x: secondPoint.x - vertex.x,
+          y: secondPoint.y - vertex.y
+        };
+        const len1 = Math.hypot(u1.x, u1.y) || 1;
+        const len2 = Math.hypot(u2.x, u2.y) || 1;
+        let dir = {
+          x: (u1.x / len1) + (u2.x / len2),
+          y: (u1.y / len1) + (u2.y / len2)
+        };
+        const dirLen = Math.hypot(dir.x, dir.y);
+        if (dirLen < 1e-6) {
+          dir = { x: u1.y / len1, y: -(u1.x / len1) };
+        } else {
+          dir.x /= dirLen;
+          dir.y /= dirLen;
+        }
+        return dir;
+      }
+
+      function getSidePerpendicularDirection(P, Q) {
+        const dx = Q.x - P.x;
+        const dy = Q.y - P.y;
+        const len = Math.hypot(dx, dy) || 1;
+        return { x: -dy / len, y: dx / len };
+      }
+
+      function projectPointToLine(point, origin, direction) {
+        const denom = direction.x * direction.x + direction.y * direction.y;
+        if (denom < 1e-9) {
+          return { x: origin.x, y: origin.y };
+        }
+        const t = ((point.x - origin.x) * direction.x + (point.y - origin.y) * direction.y) / denom;
+        return {
+          x: origin.x + direction.x * t,
+          y: origin.y + direction.y * t
+        };
+      }
+
+      function getLabelMovementConstraint(type, id, triangle) {
+        return null;
+      }
+
+      function toggleHiddenLabel(type, id) {
+        if (!labelState[type] || typeof labelState[type][id] === 'undefined') return;
+
+        function getDefaultFontSize(typeKey, idKey) {
+          const defaults = {
+            vertex: { A: 36, B: 36, C: 36, H: 32 },
+            side: { BC: 32, CA: 32, AB: 32, AH: 26, BH: 26, CH: 26 },
+            innerAngle: { A: 26, B: 26, C: 26, CAH: 26, CBH: 26, ACH: 26, BCH: 26 },
+            angleMark: { A: 26, B: 26, C: 26, CAH: 26, CBH: 26, ACH: 26, BCH: 26 },
+            perp: { BHC: 26 },
+            area: { main: 48 }
+          };
+          return defaults[typeKey] && Number.isFinite(defaults[typeKey][idKey]) ? defaults[typeKey][idKey] : 32;
+        }
+
+        function resetLabelVisual(typeKey, idKey) {
+          if (labelPositions[typeKey]) labelPositions[typeKey][idKey] = null;
+          if (labelFontSize[typeKey]) labelFontSize[typeKey][idKey] = getDefaultFontSize(typeKey, idKey);
+          const styleDefaults = createLabelStyleState();
+          if (labelStyleState[typeKey] && styleDefaults[typeKey] && styleDefaults[typeKey][idKey]) {
+            labelStyleState[typeKey][idKey] = {
+              color: styleDefaults[typeKey][idKey].color,
+              rotation: styleDefaults[typeKey][idKey].rotation
+            };
+          }
+        }
+
+        if (!labelState[type][id]) {
+          labelState[type][id] = true;
+          hiddenLabelState[type][id] = false;
+          resetLabelVisual(type, id);
+          return;
+        }
+        hiddenLabelState[type][id] = !hiddenLabelState[type][id];
+        if (!hiddenLabelState[type][id]) {
+          resetLabelVisual(type, id);
+        }
+        if (selectedLabel && selectedLabel.type === type && selectedLabel.id === id && hiddenLabelState[type][id]) {
+          selectedLabel = null;
+        }
+      }
+
+      function findNearestLabel(point) {
+        function getScreenPaddingByType(type) {
+          if (type === 'side') return 0;
+          if (type === 'vertex') return 2;
+          if (type === 'innerAngle') return 12;
+          if (type === 'area') return 14;
+          return 4;
+        }
+        const pointScreen = userToScreenPoint(point);
+        for (let index = 0; index < currentLabelAnchors.length; index += 1) {
+          const label = currentLabelAnchors[index];
+          if (label.hidden) continue;
+          if (label.screenRect) {
+            const pad = getScreenPaddingByType(label.type);
+            if (
+              pointScreen.x >= label.screenRect.left - pad &&
+              pointScreen.x <= label.screenRect.right + pad &&
+              pointScreen.y >= label.screenRect.top - pad &&
+              pointScreen.y <= label.screenRect.bottom + pad
+            ) {
+              return { type: label.type, id: label.id };
+            }
+            continue;
+          }
+          const bounds = getLabelBounds(label);
+          if (pointInRotatedRect(point, bounds.center, bounds.width, bounds.height, label.rotation, 0)) {
+            return { type: label.type, id: label.id };
+          }
+        }
+        return null;
+      }
+
+      function detectInteractiveTarget(coords) {
+        if (!currentGeometry) return null;
+        const A = currentGeometry.A;
+        const B = currentGeometry.B;
+        const C = currentGeometry.C;
+        const vertexTolerance = 0.34;
+
+        if (Math.hypot(coords.x - A.x, coords.y - A.y) <= vertexTolerance) return { type: 'vertex', id: 'A' };
+        if (Math.hypot(coords.x - B.x, coords.y - B.y) <= vertexTolerance) return { type: 'vertex', id: 'B' };
+        if (Math.hypot(coords.x - C.x, coords.y - C.y) <= vertexTolerance) return { type: 'vertex', id: 'C' };
+
+        const sideHits = [
+          { id: 'a', segment: distanceToSegment(coords, B, C) },
+          { id: 'b', segment: distanceToSegment(coords, C, A) },
+          { id: 'c', segment: distanceToSegment(coords, A, B) }
+        ];
+        for (let i = 0; i < sideHits.length; i += 1) {
+          const hit = sideHits[i];
+          if (hit.segment.distance <= 0.22 && hit.segment.t >= 0.12 && hit.segment.t <= 0.88) {
+            return { type: 'side', id: hit.id };
+          }
+        }
+
+        const angleAreas = [
+          { id: 'A', vertex: A, first: B, second: C },
+          { id: 'B', vertex: B, first: C, second: A },
+          { id: 'C', vertex: C, first: A, second: B }
+        ];
+
+        for (let j = 0; j < angleAreas.length; j += 1) {
+          const area = angleAreas[j];
+          if (angleSectorContains(coords, area.vertex, area.first, area.second, true)) {
+            return { type: 'innerAngle', id: area.id };
+          }
+        }
+
+        if (pointInTriangle(coords, A, B, C)) return { type: 'area', id: 'main' };
+        return null;
+      }
+
+      function isFigureZone(coords) {
+        if (!currentGeometry) return false;
+        const A = currentGeometry.A;
+        const B = currentGeometry.B;
+        const C = currentGeometry.C;
+        return (
+          pointInTriangle(coords, A, B, C) ||
+          distanceToSegment(coords, A, B).distance <= 0.22 ||
+          distanceToSegment(coords, B, C).distance <= 0.22 ||
+          distanceToSegment(coords, C, A).distance <= 0.22
+        );
+      }
+
+      function handleBoardInteraction(coords) {
+        if (!currentGeometry) return;
+        const selected = findNearestLabel(coords);
+        if (selected) {
+          selectedLabel = selected;
+          selectedFigure = false;
+          isPaletteOpen = false;
+          render();
+          return;
+        }
+        const overlayControl = findSelectionControl(coords);
+        if (overlayControl && overlayControl.mode === 'palette-color' && selectedLabel) {
+          pushHistorySnapshot();
+          labelStyleState[selectedLabel.type][selectedLabel.id].color = overlayControl.color;
+          isPaletteOpen = false;
+          render();
+          return;
+        }
+        if (overlayControl && overlayControl.mode === 'palette-color' && selectedFigure) {
+          pushHistorySnapshot();
+          figureState.color = overlayControl.color;
+          isPaletteOpen = false;
+          render();
+          return;
+        }
+        if (overlayControl && overlayControl.mode === 'palette' && selectedLabel) {
+          isPaletteOpen = !isPaletteOpen;
+          render();
+          return;
+        }
+        if (overlayControl && overlayControl.mode === 'palette' && selectedFigure) {
+          isPaletteOpen = !isPaletteOpen;
+          render();
+          return;
+        }
+        if (isFigureZone(coords)) {
+          hoveredLabel = null;
+          selectedLabel = null;
+          selectedFigure = true;
+          isPaletteOpen = false;
+          render();
+          return;
+        }
+        if (selectedLabel || selectedFigure || isPaletteOpen) {
+          hoveredLabel = null;
+          selectedLabel = null;
+          selectedFigure = false;
+          isPaletteOpen = false;
+          render();
+        }
+      }
+
+      async function handleDownload(format) {
+        if (!box) throw new Error('保存対象が見つかりません。');
+
+        const canvas = await html2canvas(box, {
+          backgroundColor: format === 'png-transparent' ? null : '#ffffff',
+          scale: 2
+        });
+        const cropped = cropCanvasToFrame(canvas);
+
+        if (format === 'png') {
+          const url = cropped.toDataURL('image/png');
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = 'triangle-base-height.png';
+          link.click();
+          return;
+        }
+
+        if (format === 'png-transparent') {
+          const url = cropped.toDataURL('image/png');
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = 'triangle-base-height-transparent.png';
+          link.click();
+          return;
+        }
+
+        if (format === 'pdf') {
+          const jsPDF = window.jspdf && window.jspdf.jsPDF;
+          if (!jsPDF) throw new Error('PDF 出力の読み込みに失敗しました。');
+
+          const orientation = exportAspects[exportAspectIndex].value > 1 ? 'landscape' : 'portrait';
+          const pdf = new jsPDF(orientation, 'mm', 'a4');
+          const imageData = cropped.toDataURL('image/png');
+          const pageWidth = pdf.internal.pageSize.getWidth();
+          const pageHeight = pdf.internal.pageSize.getHeight();
+          let drawWidth = pageWidth;
+          let drawHeight = cropped.height * drawWidth / cropped.width;
+
+          if (drawHeight > pageHeight) {
+            drawHeight = pageHeight;
+            drawWidth = cropped.width * drawHeight / cropped.height;
+          }
+
+          const x = (pageWidth - drawWidth) / 2;
+          const y = (pageHeight - drawHeight) / 2;
+          pdf.addImage(imageData, 'PNG', x, y, drawWidth, drawHeight);
+          pdf.save('triangle-base-height.pdf');
+          return;
+        }
+
+        throw new Error('未対応の保存形式です。');
+      }
+
+      function render() {
+        if (renderRafId !== null) {
+          window.cancelAnimationFrame(renderRafId);
+          renderRafId = null;
+        }
+        board.suspendUpdate();
+        board.removeObject(board.objectsList.slice());
+        labelLayer.innerHTML = '';
+        currentLabelAnchors = [];
+        currentSelectionOverlay = null;
+
+        try {
+          const abExpr = evaluateExpression(sideAInput.value, '底辺 AB');
+          const chExpr = evaluateExpression(sideBInput.value, '高さ CH');
+          const ahExpr = evaluateRealExpression(sideCInput.value, 'AH');
+          const baseTriangle = computeTriangle(abExpr.value, chExpr.value, ahExpr.value);
+          const triangle = applyFigureTransform(baseTriangle, true);
+          const points = [baseTriangle.A, baseTriangle.B, baseTriangle.C, baseTriangle.H];
+          currentGeometry = triangle;
+
+          updateExportFrame();
+          const fitSignature = JSON.stringify({
+            points: points,
+            zoomScale: zoomScale,
+            aspectIndex: exportAspectIndex,
+            boxWidth: box.clientWidth,
+            boxHeight: box.clientHeight
+          });
+          if (fitSignature !== lastFitSignature) {
+            fitBoard(points);
+            lastFitSignature = fitSignature;
+          }
+
+          const pointA = board.create('point', [triangle.A.x, triangle.A.y], { name: '', size: 3, fixed: true, strokeColor: '#111111', fillColor: '#111111' });
+          const pointB = board.create('point', [triangle.B.x, triangle.B.y], { name: '', size: 3, fixed: true, strokeColor: '#111111', fillColor: '#111111' });
+          const pointC = board.create('point', [triangle.C.x, triangle.C.y], { name: '', size: 3, fixed: true, strokeColor: '#111111', fillColor: '#111111' });
+          const pointH = board.create('point', [triangle.H.x, triangle.H.y], { name: '', size: 3, fixed: true, strokeColor: '#111111', fillColor: '#111111' });
+          const chStyle = getLabelStyle('side', 'CH');
+          const chLineStyle = { strokeWidth: 2, strokeColor: chStyle.color || '#111111', dash: 2, fixed: true, highlight: false };
+          board.create('segment', [pointC, pointH], chLineStyle);
+          if (triangle.H.x < triangle.A.x) {
+            board.create('segment', [pointA, pointH], chLineStyle);
+          } else if (triangle.H.x > triangle.B.x) {
+            board.create('segment', [pointB, pointH], chLineStyle);
+          }
+
+          const polygon = board.create('polygon', [pointA, pointB, pointC], {
+            borders: { strokeWidth: 2, strokeColor: figureState.color, fixed: true, highlight: false },
+            fillColor: 'rgba(0,0,0,0)',
+            fillOpacity: 0,
+            vertices: { visible: false },
+            highlight: false
+          });
+
+          const centroid = {
+            x: (triangle.A.x + triangle.B.x + triangle.C.x) / 3,
+            y: (triangle.A.y + triangle.B.y + triangle.C.y) / 3
+          };
+
+          if (labelState.vertex.A && !hiddenLabelState.vertex.A) {
+            createSelectableText(getLabelPosition('vertex', 'A', getCentroidVertexExternalPoint(centroid, triangle.A)), vertexLabelText.A || 'A', labelFontSize.vertex.A, { type: 'vertex', id: 'A' }, { color: '#1f2430' });
+          }
+          if (labelState.vertex.B && !hiddenLabelState.vertex.B) {
+            createSelectableText(getLabelPosition('vertex', 'B', getCentroidVertexExternalPoint(centroid, triangle.B)), vertexLabelText.B || 'B', labelFontSize.vertex.B, { type: 'vertex', id: 'B' }, { color: '#1f2430' });
+          }
+          if (labelState.vertex.C && !hiddenLabelState.vertex.C) {
+            createSelectableText(getLabelPosition('vertex', 'C', getCentroidVertexExternalPoint(centroid, triangle.C)), vertexLabelText.C || 'C', labelFontSize.vertex.C, { type: 'vertex', id: 'C' }, { color: '#1f2430' });
+          }
+          if (labelState.vertex.H && !hiddenLabelState.vertex.H) {
+            createSelectableText(getLabelPosition('vertex', 'H', labelPointAway(triangle.H, centroid, 0.9)), vertexLabelText.H || 'H', labelFontSize.vertex.H, { type: 'vertex', id: 'H' }, { color: '#1f2430' });
+          }
+
+          if (labelState.side.BC && !hiddenLabelState.side.BC) {
+            drawSideArcLabel(triangle.B, triangle.C, centroid, appendUnit(formatHypotenuseSymbolic(baseTriangle.CH, baseTriangle.BH), false), 'BC');
+          }
+          if (labelState.side.CA && !hiddenLabelState.side.CA) {
+            drawSideArcLabel(triangle.C, triangle.A, centroid, appendUnit(formatHypotenuseSymbolic(baseTriangle.CH, baseTriangle.AH), false), 'CA');
+          }
+          if (labelState.side.AB && !hiddenLabelState.side.AB) {
+            drawSideArcLabel(triangle.A, triangle.B, centroid, appendUnit(formatLengthSymbolic(baseTriangle.AB), false), 'AB');
+          }
+          if (labelState.side.AH && !hiddenLabelState.side.AH) {
+            drawSideArcLabel(triangle.A, triangle.H, centroid, appendUnit(formatLengthSymbolic(baseTriangle.AH), false), 'AH');
+          }
+          if (labelState.side.BH && !hiddenLabelState.side.BH) {
+            drawSideArcLabel(triangle.B, triangle.H, centroid, appendUnit(formatLengthSymbolic(baseTriangle.BH), false), 'BH');
+          }
+          if (labelState.side.CH && !hiddenLabelState.side.CH) {
+            drawSideArcLabel(triangle.C, triangle.H, centroid, appendUnit(formatLengthSymbolic(baseTriangle.CH), false), 'CH');
+          }
+
+          const innerLabelColor = '#687086';
+          if (labelState.innerAngle.A && !hiddenLabelState.innerAngle.A) {
+            createSelectableText(getLabelPosition('innerAngle', 'A', labelPointNear(triangle.A, triangle.C, 1.0)), formatAngleValue(baseTriangle.angleCAH), labelFontSize.innerAngle.A, { type: 'innerAngle', id: 'A' }, { color: innerLabelColor });
+          }
+          if (labelState.innerAngle.B && !hiddenLabelState.innerAngle.B) {
+            createSelectableText(getLabelPosition('innerAngle', 'B', labelPointNear(triangle.B, triangle.C, 1.0)), formatAngleValue(baseTriangle.angleCBH), labelFontSize.innerAngle.B, { type: 'innerAngle', id: 'B' }, { color: innerLabelColor });
+          }
+          if (labelState.innerAngle.C && !hiddenLabelState.innerAngle.C) {
+            createSelectableText(getLabelPosition('innerAngle', 'C', getCentroidVertexInternalPoint(centroid, triangle.C)), formatAngleValue(baseTriangle.angleACB), labelFontSize.innerAngle.C, { type: 'innerAngle', id: 'C' }, { color: innerLabelColor });
+          }
+          if (labelState.innerAngle.CAH && !hiddenLabelState.innerAngle.CAH) {
+            createSelectableText(getLabelPosition('innerAngle', 'CAH', labelPointNear(triangle.A, triangle.C, 1.16)), formatAngleValue(baseTriangle.angleCAH), labelFontSize.innerAngle.CAH, { type: 'innerAngle', id: 'CAH' }, { color: innerLabelColor });
+          }
+          if (labelState.innerAngle.CBH && !hiddenLabelState.innerAngle.CBH) {
+            createSelectableText(getLabelPosition('innerAngle', 'CBH', labelPointNear(triangle.B, triangle.C, 1.16)), formatAngleValue(baseTriangle.angleCBH), labelFontSize.innerAngle.CBH, { type: 'innerAngle', id: 'CBH' }, { color: innerLabelColor });
+          }
+          if (labelState.innerAngle.ACH && !hiddenLabelState.innerAngle.ACH) {
+            createSelectableText(getLabelPosition('innerAngle', 'ACH', labelPointNear(triangle.C, triangle.A, 0.95)), formatAngleValue(baseTriangle.angleACH), labelFontSize.innerAngle.ACH, { type: 'innerAngle', id: 'ACH' }, { color: innerLabelColor });
+          }
+          if (labelState.innerAngle.BCH && !hiddenLabelState.innerAngle.BCH) {
+            createSelectableText(getLabelPosition('innerAngle', 'BCH', labelPointNear(triangle.C, triangle.B, 0.95)), formatAngleValue(baseTriangle.angleBCH), labelFontSize.innerAngle.BCH, { type: 'innerAngle', id: 'BCH' }, { color: innerLabelColor });
+          }
+
+          ['A', 'B', 'C', 'CAH', 'CBH', 'ACH', 'BCH'].forEach(function (angleId) {
+            if (labelState.angleMark[angleId] && !hiddenLabelState.angleMark[angleId]) {
+              drawAngleDecoration(angleId, triangle);
+            }
+          });
+          if (labelState.perp.BHC && !hiddenLabelState.perp.BHC) {
+            const perpGeom = getPerpMarkerGeometry(triangle, labelFontSize.perp.BHC);
+            const p0 = perpGeom.p0;
+            const p1 = perpGeom.p1;
+            const p2 = perpGeom.p2;
+            const p3 = perpGeom.p3;
+            const perpStyle = getLabelStyle('perp', 'BHC');
+            const markStyle = { strokeWidth: 2, strokeColor: perpStyle.color || '#111111', fixed: true, highlight: false };
+            board.create('segment', [[p0.x, p0.y], [p1.x, p1.y]], markStyle);
+            board.create('segment', [[p1.x, p1.y], [p2.x, p2.y]], markStyle);
+            board.create('segment', [[p2.x, p2.y], [p3.x, p3.y]], markStyle);
+            board.create('segment', [[p3.x, p3.y], [p0.x, p0.y]], markStyle);
+
+            const screenPoints = [p0, p1, p2, p3].map(userToScreenPoint);
+            const xs = screenPoints.map(function (pt) { return pt.x; });
+            const ys = screenPoints.map(function (pt) { return pt.y; });
+            const center = { x: (p0.x + p2.x) / 2, y: (p0.y + p2.y) / 2 };
+            currentLabelAnchors.push({
+              type: 'perp',
+              id: 'BHC',
+              x: perpGeom.center.x,
+              y: perpGeom.center.y,
+              threshold: 0.45,
+              curveThreshold: null,
+              curveHit: null,
+              visible: true,
+              hidden: false,
+              text: '⊥',
+              fontSize: labelFontSize.perp.BHC,
+              color: perpStyle.color || '#111111',
+              rotation: getLabelStyle('perp', 'BHC').rotation || 0,
+              screenRect: {
+                left: Math.min.apply(null, xs),
+                top: Math.min.apply(null, ys),
+                right: Math.max.apply(null, xs),
+                bottom: Math.max.apply(null, ys)
+              }
+            });
+          }
+
+          if (labelState.area.main && !hiddenLabelState.area.main) {
+            const s = (baseTriangle.AB + baseTriangle.BC + baseTriangle.CA) / 2;
+            const areaRadicand = s * (s - baseTriangle.AB) * (s - baseTriangle.BC) * (s - baseTriangle.CA);
+            const areaText = formatAreaRadical(areaRadicand);
+            createSelectableText(
+              getLabelPosition('area', 'main', { x: centroid.x, y: centroid.y }),
+              '△' + mapVertexTokens('ABC') + ' = ' + appendUnit(areaText, true),
+              labelFontSize.area.main,
+              { type: 'area', id: 'main' },
+              { color: '#25603b', threshold: 0.8 }
+            );
+          }
+
+          renderSelectionOverlay(getSelectedAnchor() || getFigureSelectionAnchor());
+          setStatus(t('sss.status.rendered', '底辺＋高さの三角形を描画しました。'), false);
+        } catch (error) {
+          currentGeometry = null;
+          currentSelectionOverlay = null;
+          setStatus(error.message || '描画に失敗しました。', true);
+        } finally {
+          board.unsuspendUpdate();
+        }
+      }
+
+      [sideAInput, sideBInput, sideCInput].forEach(function (input) {
+        input.addEventListener('focus', function () {
+          pendingInputSnapshot = captureState();
+        });
+        input.addEventListener('input', render);
+      });
+
+      [sideAInput, sideBInput, sideCInput].forEach(function (input) {
+        input.addEventListener('change', function () {
+          if (pendingInputSnapshot) {
+            pushSpecificSnapshot(pendingInputSnapshot);
+            pendingInputSnapshot = null;
+          }
+          resetVisualState();
+          render();
+        });
+      });
+
+      downloadButtons.forEach(function (button) {
+        button.addEventListener('click', async function () {
+          const format = button.dataset.downloadFormat;
+
+          try {
+            const label = (button.textContent || '').trim() || (format || '').toUpperCase();
+            setStatus(t('sss.status.saving', '') + label + '...', false);
+            await handleDownload(format);
+            setStatus(t('sss.status.saved', '') + label + '。', false);
+          } catch (error) {
+            setStatus(error.message || t('sss.status.saveFailed', 'ダウンロードに失敗しました。'), true);
+          }
+        });
+      });
+
+      box.addEventListener('click', function (event) {
+        if (suppressClick) {
+          suppressClick = false;
+          return;
+        }
+        if (!currentGeometry) return;
+        const coords = board.getUsrCoordsOfMouse(event);
+        handleBoardInteraction({ x: coords[0], y: coords[1] });
+      });
+
+      box.addEventListener('mousedown', function (event) {
+        if (!currentGeometry) return;
+        const coords = board.getUsrCoordsOfMouse(event);
+        const overlayControl = findSelectionControl({ x: coords[0], y: coords[1] });
+        if ((selectedLabel || selectedFigure) && overlayControl) {
+          if (overlayControl.mode === 'palette-color') {
+            pushHistorySnapshot();
+            if (selectedLabel) {
+              labelStyleState[selectedLabel.type][selectedLabel.id].color = overlayControl.color;
+            } else if (selectedFigure) {
+              figureState.color = overlayControl.color;
+            }
+            isPaletteOpen = false;
+            render();
+            return;
+          }
+          if (overlayControl.mode === 'palette') {
+            isPaletteOpen = !isPaletteOpen;
+            render();
+            return;
+          }
+          if (overlayControl.mode === 'rotate' && selectedLabel && selectedLabel.type === 'perp') {
+            return;
+          }
+          const anchorForSelection = selectedLabel ? getSelectedAnchor() : getFigureSelectionAnchor();
+          if (!anchorForSelection) return;
+          pushHistorySnapshot();
+          const perpStartGeom = (selectedLabel && selectedLabel.type === 'perp' && overlayControl.mode === 'resize')
+            ? getPerpMarkerGeometry(currentGeometry, labelFontSize.perp.BHC)
+            : null;
+          const dragCenter = (selectedLabel && selectedLabel.type === 'angleMark' && anchorForSelection.scaleCenter)
+            ? { x: anchorForSelection.scaleCenter.x, y: anchorForSelection.scaleCenter.y }
+            : { x: anchorForSelection.x, y: anchorForSelection.y };
+          dragState = {
+            mode: overlayControl.mode,
+            target: selectedLabel ? 'label' : 'figure',
+            type: selectedLabel ? selectedLabel.type : 'figure',
+            id: selectedLabel ? selectedLabel.id : 'main',
+            startClient: { x: event.clientX, y: event.clientY },
+            fontSizeStart: selectedLabel ? labelFontSize[selectedLabel.type][selectedLabel.id] : null,
+            scaleStart: selectedFigure ? figureState.scale : null,
+            rotationStart: selectedLabel ? labelStyleState[selectedLabel.type][selectedLabel.id].rotation : figureState.rotation,
+            center: dragCenter,
+            distanceStart: Math.hypot(coords[0] - dragCenter.x, coords[1] - dragCenter.y),
+            angleStart: Math.atan2(coords[1] - dragCenter.y, coords[0] - dragCenter.x),
+            perpCornerStart: perpStartGeom ? { x: perpStartGeom.p0.x, y: perpStartGeom.p0.y } : null,
+            perpDirSum: perpStartGeom ? { x: perpStartGeom.dirHB.x + perpStartGeom.dirHC.x, y: perpStartGeom.dirHB.y + perpStartGeom.dirHC.y } : null,
+            perpMarkerSizeStart: perpStartGeom ? perpStartGeom.markerSize : null
+          };
+          return;
+        }
+
+        const selected = findNearestLabel({ x: coords[0], y: coords[1] });
+        if (selected) {
+          const anchor = currentLabelAnchors.find(function (item) {
+            return item.type === selected.type && item.id === selected.id;
+          });
+          if (!anchor) return;
+          if (selected.type === 'perp' || selected.type === 'angleMark') {
+            hoveredLabel = null;
+            selectedLabel = selected;
+            selectedFigure = false;
+            isPaletteOpen = false;
+            render();
+            return;
+          }
+          pushHistorySnapshot();
+          hoveredLabel = null;
+          selectedLabel = selected;
+          selectedFigure = false;
+          isPaletteOpen = false;
+          const existingPosition = labelPositions[selected.type][selected.id] || { x: anchor.x, y: anchor.y };
+          dragState = {
+            mode: 'label',
+            type: selected.type,
+            id: selected.id,
+            moved: false,
+            startClient: { x: event.clientX, y: event.clientY },
+            labelStart: { x: existingPosition.x, y: existingPosition.y }
+          };
+          return;
+        }
+
+        if (isFigureZone({ x: coords[0], y: coords[1] })) {
+          pushHistorySnapshot();
+          hoveredLabel = null;
+          selectedLabel = null;
+          selectedFigure = true;
+          isPaletteOpen = false;
+          dragState = {
+            mode: 'figure-move',
+            moved: false,
+            startClient: { x: event.clientX, y: event.clientY },
+            offsetStart: { x: figureState.offset.x, y: figureState.offset.y }
+          };
+        }
+      });
+
+      box.addEventListener('mousemove', function (event) {
+        const coords = board.getUsrCoordsOfMouse(event);
+        const currentPoint = { x: coords[0], y: coords[1] };
+
+        if (!dragState || !currentGeometry) {
+          return;
+        }
+
+        if (dragState.mode === 'label') {
+          const boundingBox = board.getBoundingBox();
+          const unitsPerPixelX = (boundingBox[2] - boundingBox[0]) / Math.max(box.clientWidth, 1);
+          const unitsPerPixelY = (boundingBox[1] - boundingBox[3]) / Math.max(box.clientHeight, 1);
+          const deltaX = event.clientX - dragState.startClient.x;
+          const deltaY = event.clientY - dragState.startClient.y;
+          const candidate = {
+            x: dragState.labelStart.x + (deltaX * unitsPerPixelX),
+            y: dragState.labelStart.y - (deltaY * unitsPerPixelY)
+          };
+          const constraint = getLabelMovementConstraint(dragState.type, dragState.id, currentGeometry);
+          labelPositions[dragState.type][dragState.id] = constraint
+            ? projectPointToLine(candidate, constraint.origin, constraint.direction)
+            : candidate;
+          dragState.moved = true;
+          suppressClick = true;
+          scheduleRender();
+          return;
+        }
+
+        if (dragState.mode === 'resize') {
+          if (dragState.target === 'label') {
+            if (dragState.type === 'perp' && dragState.id === 'BHC' && dragState.perpCornerStart && dragState.perpDirSum) {
+              const diagDirRaw = dragState.perpDirSum;
+              const diagLen = Math.hypot(diagDirRaw.x, diagDirRaw.y) || 1;
+              const diagDir = { x: diagDirRaw.x / diagLen, y: diagDirRaw.y / diagLen };
+              const v = { x: currentPoint.x - dragState.perpCornerStart.x, y: currentPoint.y - dragState.perpCornerStart.y };
+              const diagonal = Math.max(0.02, v.x * diagDir.x + v.y * diagDir.y);
+              const nextMarkerSize = Math.max(0.05, diagonal / Math.SQRT2);
+              const startMarker = Math.max(dragState.perpMarkerSizeStart || 0.05, 1e-6);
+              const ratio = Math.max(0.3, Math.min(8, nextMarkerSize / startMarker));
+              labelFontSize.perp.BHC = Math.max(10, Math.min(320, Math.round(dragState.fontSizeStart * ratio)));
+            } else {
+              const currentDistance = Math.hypot(currentPoint.x - dragState.center.x, currentPoint.y - dragState.center.y);
+              const ratio = Math.max(0.3, Math.min(8, currentDistance / Math.max(dragState.distanceStart, 0.01)));
+              labelFontSize[dragState.type][dragState.id] = Math.max(10, Math.min(320, Math.round(dragState.fontSizeStart * ratio)));
+            }
+          } else {
+            const currentDistance = Math.hypot(currentPoint.x - dragState.center.x, currentPoint.y - dragState.center.y);
+            const ratio = Math.max(0.45, Math.min(3.2, currentDistance / Math.max(dragState.distanceStart, 0.01)));
+            const nextScale = Math.max(0.3, Math.min(4, dragState.scaleStart * ratio));
+            const scaleRatio = nextScale / Math.max(figureState.scale, 1e-9);
+            if (Math.abs(scaleRatio - 1) > 1e-9 && currentGeometry) {
+              const center = getTriangleCentroid(currentGeometry);
+              scaleLabelGroupAround(center, scaleRatio, 'vertex');
+              scaleLabelGroupAround(center, scaleRatio, 'side');
+              scaleLabelGroupAround(center, scaleRatio, 'innerAngle');
+              scaleLabelGroupAround(center, scaleRatio, 'angleMark');
+              scaleLabelGroupAround(center, scaleRatio, 'perp');
+              scaleLabelGroupAround(center, scaleRatio, 'area');
+              scaleLabelFontGroup(scaleRatio, 'vertex');
+              scaleLabelFontGroup(scaleRatio, 'side');
+              scaleLabelFontGroup(scaleRatio, 'innerAngle');
+              scaleLabelFontGroup(scaleRatio, 'angleMark');
+              scaleLabelFontGroup(scaleRatio, 'perp');
+              scaleLabelFontGroup(scaleRatio, 'area');
+            }
+            figureState.scale = nextScale;
+          }
+          suppressClick = true;
+          scheduleRender();
+          return;
+        }
+
+        if (dragState.mode === 'rotate') {
+          const currentAngle = Math.atan2(currentPoint.y - dragState.center.y, currentPoint.x - dragState.center.x);
+          if (dragState.target === 'label') {
+            if (dragState.type === 'perp' || dragState.type === 'angleMark') {
+              return;
+            }
+            labelStyleState[dragState.type][dragState.id].rotation = dragState.rotationStart + ((currentAngle - dragState.angleStart) * 180 / Math.PI);
+          } else {
+            const nextRotation = dragState.rotationStart + ((currentAngle - dragState.angleStart) * 180 / Math.PI);
+            const deltaRotation = nextRotation - figureState.rotation;
+            if (Math.abs(deltaRotation) > 1e-9 && currentGeometry) {
+              const center = getTriangleCentroid(currentGeometry);
+              rotateLabelGroupAround(center, deltaRotation, 'vertex');
+              rotateLabelGroupAround(center, deltaRotation, 'side');
+              rotateLabelGroupAround(center, deltaRotation, 'innerAngle');
+              rotateLabelGroupAround(center, deltaRotation, 'angleMark');
+              rotateLabelGroupAround(center, deltaRotation, 'perp');
+              rotateLabelGroupAround(center, deltaRotation, 'area');
+            }
+            figureState.rotation = nextRotation;
+          }
+          suppressClick = true;
+          scheduleRender();
+          return;
+        }
+
+        if (dragState.mode === 'figure-move') {
+          const boundingBox = board.getBoundingBox();
+          const unitsPerPixelX = (boundingBox[2] - boundingBox[0]) / Math.max(box.clientWidth, 1);
+          const unitsPerPixelY = (boundingBox[1] - boundingBox[3]) / Math.max(box.clientHeight, 1);
+          const deltaX = event.clientX - dragState.startClient.x;
+          const deltaY = event.clientY - dragState.startClient.y;
+          const nextOffset = {
+            x: dragState.offsetStart.x + (deltaX * unitsPerPixelX),
+            y: dragState.offsetStart.y - (deltaY * unitsPerPixelY)
+          };
+          const offsetDelta = {
+            x: nextOffset.x - figureState.offset.x,
+            y: nextOffset.y - figureState.offset.y
+          };
+          if (Math.abs(offsetDelta.x) > 1e-9 || Math.abs(offsetDelta.y) > 1e-9) {
+            translateLabelGroup(offsetDelta, 'vertex');
+            translateLabelGroup(offsetDelta, 'side');
+            translateLabelGroup(offsetDelta, 'innerAngle');
+            translateLabelGroup(offsetDelta, 'angleMark');
+            translateLabelGroup(offsetDelta, 'perp');
+            translateLabelGroup(offsetDelta, 'area');
+          }
+          figureState.offset = nextOffset;
+          dragState.moved = true;
+          suppressClick = true;
+          scheduleRender();
+        }
+      });
+
+      window.addEventListener('mouseup', function () {
+        dragState = null;
+      });
+
+      box.addEventListener('wheel', function (event) {
+        event.preventDefault();
+        pushHistorySnapshot();
+        zoomScale = Math.max(0.45, Math.min(4, zoomScale * (event.deltaY < 0 ? 1.08 : 1 / 1.08)));
+        lastFitSignature = '';
+        render();
+      }, { passive: false });
+
+      ratioBtn.addEventListener('click', function () {
+        pushHistorySnapshot();
+        exportAspectIndex = (exportAspectIndex + 1) % exportAspects.length;
+        updateExportFrame();
+        updateRatioButton();
+        lastFitSignature = '';
+        render();
+      });
+
+      unitBtn.addEventListener('click', function () {
+        pushHistorySnapshot();
+        unitIndex = (unitIndex + 1) % unitOptions.length;
+        updateUnitButton();
+        renderLabelToggleButtons();
+        render();
+      });
+
+      angleModeBtn.addEventListener('click', function () {
+        pushHistorySnapshot();
+        angleMode = angleMode === 'degrees' ? 'radians' : 'degrees';
+        updateAngleModeButton();
+        renderLabelToggleButtons();
+        render();
+      });
+
+      function resetVisualState() {
+        hiddenLabelState.vertex = { A: false, B: false, C: false, H: false };
+        hiddenLabelState.side = { BC: true, CA: true, AB: false, AH: true, BH: true, CH: false };
+        hiddenLabelState.innerAngle = { A: true, B: true, C: true, CAH: true, CBH: true, ACH: true, BCH: true };
+        hiddenLabelState.angleMark = { A: false, B: false, C: false, CAH: false, CBH: false, ACH: false, BCH: false };
+        hiddenLabelState.perp = { BHC: false };
+        hiddenLabelState.area = { main: true };
+        labelFontSize.vertex = { A: 36, B: 36, C: 36, H: 32 };
+        labelFontSize.side = { BC: 32, CA: 32, AB: 32, AH: 26, BH: 26, CH: 26 };
+        labelFontSize.innerAngle = { A: 26, B: 26, C: 26, CAH: 26, CBH: 26, ACH: 26, BCH: 26 };
+        labelFontSize.angleMark = { A: 26, B: 26, C: 26, CAH: 26, CBH: 26, ACH: 26, BCH: 26 };
+        labelFontSize.perp = { BHC: 26 };
+        labelFontSize.area = { main: 48 };
+        vertexLabelText.A = 'A';
+        vertexLabelText.B = 'B';
+        vertexLabelText.C = 'C';
+        vertexLabelText.H = 'H';
+        angleMarkerMode.A = 0;
+        angleMarkerMode.B = 0;
+        angleMarkerMode.C = 0;
+        angleMarkerMode.CAH = 0;
+        angleMarkerMode.CBH = 0;
+        angleMarkerMode.ACH = 0;
+        angleMarkerMode.BCH = 0;
+        labelStyleState = createLabelStyleState();
+        figureState = {
+          color: '#2a5bd7',
+          rotation: 0,
+          scale: 1,
+          offset: { x: 0, y: 0 }
+        };
+        labelPositions.vertex = { A: null, B: null, C: null, H: null };
+        labelPositions.side = { BC: null, CA: null, AB: null, AH: null, BH: null, CH: null };
+        labelPositions.innerAngle = { A: null, B: null, C: null, CAH: null, CBH: null, ACH: null, BCH: null };
+        labelPositions.angleMark = { A: null, B: null, C: null, CAH: null, CBH: null, ACH: null, BCH: null };
+        labelPositions.perp = { BHC: null };
+        labelPositions.area = { main: null };
+        zoomScale = 1;
+        viewCenterOffset = { x: 0, y: 0 };
+        angleMode = 'degrees';
+        unitIndex = 1;
+        hoveredLabel = null;
+        selectedLabel = null;
+        selectedFigure = false;
+        isPaletteOpen = false;
+        dragState = null;
+        suppressClick = false;
+        updateAngleModeButton();
+        updateUnitButton();
+        renderLabelToggleButtons();
+        lastFitSignature = '';
+      }
+
+      resetBtn.addEventListener('click', function () {
+        pushHistorySnapshot();
+        resetVisualState();
+        render();
+      });
+
+      if (dockToggleBtn && leftDock) {
+        dockToggleBtn.addEventListener('click', function () {
+          isDockCollapsed = !isDockCollapsed;
+          leftDock.classList.toggle('is-collapsed', isDockCollapsed);
+          updateDockToggleButton();
+        });
+      }
+
+      if (rightDockToggleBtn && rightDock) {
+        rightDockToggleBtn.addEventListener('click', function () {
+          isRightDockCollapsed = !isRightDockCollapsed;
+          rightDock.classList.toggle('is-collapsed', isRightDockCollapsed);
+          updateRightDockToggleButton();
+        });
+      }
+
+      if (pageBackBtn) {
+        pageBackBtn.addEventListener('click', function () {
+          window.history.back();
+        });
+      }
+
+      if (undoBtn) {
+        undoBtn.addEventListener('click', function () {
+          restoreFromHistory(historyPast, historyFuture);
+        });
+      }
+
+      if (redoBtn) {
+        redoBtn.addEventListener('click', function () {
+          restoreFromHistory(historyFuture, historyPast);
+        });
+      }
+
+      window.addEventListener('resize', function () {
+        updateExportFrame();
+        lastFitSignature = '';
+        render();
+      });
+
+      if (window.siteI18n && typeof window.siteI18n.setLanguage === 'function') {
+        window.siteI18n.setLanguage('ja');
+      }
+      document.addEventListener('site-components:ready', applyPageTranslations);
+      applyPageTranslations();
+      updateDockToggleButton();
+      updateRightDockToggleButton();
+      updateAngleModeButton();
+      updateUnitButton();
+      renderLabelToggleButtons();
+      render();
+    })();
+  </script>
+</body>
+</html>
