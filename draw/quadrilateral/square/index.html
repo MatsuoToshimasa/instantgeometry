@@ -277,6 +277,14 @@
       box-shadow:0 1px 0 rgba(255,255,255,.9) inset, 0 2px 8px rgba(36,71,168,.08);
     }
 
+    .label-toggles{
+      flex:1;
+      min-height:0;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+
     .toggle-title{
       margin:0 0 10px;
       color:var(--muted);
@@ -285,30 +293,15 @@
       letter-spacing:.03em;
     }
 
-    .toggle-group{
-      margin-top:10px;
-    }
-
-    .toggle-group:first-of-type{
-      margin-top:0;
-    }
-
-    .toggle-group-title{
-      margin:0 0 8px;
-      color:var(--muted);
-      font-size:11px;
-      font-weight:700;
-      letter-spacing:.03em;
-    }
-
     .toggle-grid{
-      display:grid;
-      grid-template-columns:repeat(4,minmax(0,1fr));
+      display:flex;
+      flex-wrap:wrap;
       gap:6px;
     }
 
     .toggle-btn{
-      padding:7px 4px;
+      min-width:58px;
+      padding:7px 8px;
       border:1px solid #cfd7ea;
       border-radius:12px;
       background:linear-gradient(180deg,#ffffff 0%,#f6f8ff 100%);
@@ -491,40 +484,12 @@
       <div class="dock-topbar">
         <button class="dock-toggle dock-toggle-right" id="rightDockToggleBtn" type="button" aria-expanded="true">›</button>
       </div>
-      <div class="toggle-card">
-        <p class="toggle-title">一般ラベル</p>
-        <div class="toggle-group">
-          <p class="toggle-group-title">頂点ラベル</p>
-          <div class="toggle-grid">
-            <button class="toggle-btn" type="button" data-group="vertex" data-id="A">A</button>
-            <button class="toggle-btn" type="button" data-group="vertex" data-id="B">B</button>
-            <button class="toggle-btn" type="button" data-group="vertex" data-id="C">C</button>
-            <button class="toggle-btn" type="button" data-group="vertex" data-id="D">D</button>
-          </div>
-        </div>
-        <div class="toggle-group">
-          <p class="toggle-group-title">辺ラベル</p>
-          <div class="toggle-grid">
-            <button class="toggle-btn" type="button" data-group="side" data-id="AB">AB</button>
-            <button class="toggle-btn" type="button" data-group="side" data-id="BC">BC</button>
-            <button class="toggle-btn" type="button" data-group="side" data-id="CD">CD</button>
-            <button class="toggle-btn" type="button" data-group="side" data-id="DA">DA</button>
-          </div>
-        </div>
-        <div class="toggle-group">
-          <p class="toggle-group-title">角ラベル</p>
-          <div class="toggle-grid">
-            <button class="toggle-btn" type="button" data-group="angle" data-id="A">∠A</button>
-            <button class="toggle-btn" type="button" data-group="angle" data-id="B">∠B</button>
-            <button class="toggle-btn" type="button" data-group="angle" data-id="C">∠C</button>
-            <button class="toggle-btn" type="button" data-group="angle" data-id="D">∠D</button>
-          </div>
-        </div>
-        <div class="toggle-group">
-          <p class="toggle-group-title">面積ラベル</p>
-          <div class="toggle-grid">
-            <button class="toggle-btn" type="button" data-group="area" data-id="main">S</button>
-          </div>
+      <div class="label-toggles">
+        <div class="toggle-card">
+          <p class="toggle-title">一般ラベル</p>
+          <div class="toggle-grid" id="generalLabelToggleGrid"></div>
+          <p class="toggle-title" style="margin-top:12px;">特別ラベル</p>
+          <div class="toggle-grid" id="specialLabelToggleGrid"></div>
         </div>
       </div>
     </aside>
@@ -542,7 +507,8 @@
       const sideInput = document.getElementById('sideLen');
       const statusBox = document.getElementById('statusBox');
       const svg = document.getElementById('squareSvg');
-      const labelButtons = Array.from(document.querySelectorAll('.toggle-btn'));
+      const generalLabelToggleGrid = document.getElementById('generalLabelToggleGrid');
+      const specialLabelToggleGrid = document.getElementById('specialLabelToggleGrid');
       const pageBackBtn = document.getElementById('pageBackBtn');
       const ratioBtn = document.getElementById('ratioBtn');
       const resetBtn = document.getElementById('resetBtn');
@@ -565,13 +531,17 @@
         vertex: { A: true, B: true, C: true, D: true },
         side: { AB: true, BC: true, CD: true, DA: true },
         angle: { A: false, B: false, C: false, D: false },
-        area: { main: false }
+        area: { main: false },
+        specialVertex: { O: false },
+        diagonal: { AC: false, BD: false }
       };
       const labelState = {
         vertex: { A: true, B: true, C: true, D: true },
         side: { AB: true, BC: true, CD: true, DA: true },
         angle: { A: false, B: false, C: false, D: false },
-        area: { main: false }
+        area: { main: false },
+        specialVertex: { O: false },
+        diagonal: { AC: false, BD: false }
       };
       const aspectModes = [{ label: '1:1', ratio: 1 }, { label: '1:√2', ratio: 1 / Math.SQRT2 }, { label: '√2:1', ratio: Math.SQRT2 }];
       const unitModes = ['なし', 'cm', 'm', 'km'];
@@ -579,37 +549,49 @@
         { type: 'vertex', id: 'A' }, { type: 'vertex', id: 'B' }, { type: 'vertex', id: 'C' }, { type: 'vertex', id: 'D' },
         { type: 'side', id: 'AB' }, { type: 'side', id: 'BC' }, { type: 'side', id: 'CD' }, { type: 'side', id: 'DA' },
         { type: 'angle', id: 'A' }, { type: 'angle', id: 'B' }, { type: 'angle', id: 'C' }, { type: 'angle', id: 'D' },
-        { type: 'area', id: 'main' }
+        { type: 'area', id: 'main' },
+        { type: 'specialVertex', id: 'O' },
+        { type: 'diagonal', id: 'AC' }, { type: 'diagonal', id: 'BD' }
       ];
       const labelFontDefaults = {
         vertex: { A: 54, B: 54, C: 54, D: 54 },
         side: { AB: 34, BC: 34, CD: 34, DA: 34 },
         angle: { A: 30, B: 30, C: 30, D: 30 },
-        area: { main: 52 }
+        area: { main: 52 },
+        specialVertex: { O: 44 },
+        diagonal: { AC: 30, BD: 30 }
       };
       const labelFontSize = {
         vertex: { A: 54, B: 54, C: 54, D: 54 },
         side: { AB: 34, BC: 34, CD: 34, DA: 34 },
         angle: { A: 30, B: 30, C: 30, D: 30 },
-        area: { main: 52 }
+        area: { main: 52 },
+        specialVertex: { O: 44 },
+        diagonal: { AC: 30, BD: 30 }
       };
       const styleDefaults = {
         vertex: { A: { color: '#1f2430', rotation: 0 }, B: { color: '#1f2430', rotation: 0 }, C: { color: '#1f2430', rotation: 0 }, D: { color: '#1f2430', rotation: 0 } },
         side: { AB: { color: '#2a5bd7', rotation: 0 }, BC: { color: '#2a5bd7', rotation: 0 }, CD: { color: '#2a5bd7', rotation: 0 }, DA: { color: '#2a5bd7', rotation: 0 } },
         angle: { A: { color: '#687086', rotation: 0 }, B: { color: '#687086', rotation: 0 }, C: { color: '#687086', rotation: 0 }, D: { color: '#687086', rotation: 0 } },
-        area: { main: { color: '#25603b', rotation: 0 } }
+        area: { main: { color: '#25603b', rotation: 0 } },
+        specialVertex: { O: { color: '#1f2430', rotation: 0 } },
+        diagonal: { AC: { color: '#7d8db8', rotation: 0 }, BD: { color: '#7d8db8', rotation: 0 } }
       };
       const labelStyle = {
         vertex: { A: { color: '#1f2430', rotation: 0 }, B: { color: '#1f2430', rotation: 0 }, C: { color: '#1f2430', rotation: 0 }, D: { color: '#1f2430', rotation: 0 } },
         side: { AB: { color: '#2a5bd7', rotation: 0 }, BC: { color: '#2a5bd7', rotation: 0 }, CD: { color: '#2a5bd7', rotation: 0 }, DA: { color: '#2a5bd7', rotation: 0 } },
         angle: { A: { color: '#687086', rotation: 0 }, B: { color: '#687086', rotation: 0 }, C: { color: '#687086', rotation: 0 }, D: { color: '#687086', rotation: 0 } },
-        area: { main: { color: '#25603b', rotation: 0 } }
+        area: { main: { color: '#25603b', rotation: 0 } },
+        specialVertex: { O: { color: '#1f2430', rotation: 0 } },
+        diagonal: { AC: { color: '#7d8db8', rotation: 0 }, BD: { color: '#7d8db8', rotation: 0 } }
       };
       const labelPositions = {
         vertex: { A: null, B: null, C: null, D: null },
         side: { AB: null, BC: null, CD: null, DA: null },
         angle: { A: null, B: null, C: null, D: null },
-        area: { main: null }
+        area: { main: null },
+        specialVertex: { O: null },
+        diagonal: { AC: null, BD: null }
       };
       const colorChoices = ['#1f2430', '#2a5bd7', '#687086', '#0f8b6e', '#b42318', '#b06a00'];
       let isLeftCollapsed = false;
@@ -709,7 +691,9 @@
           AB: [points.A, points.B],
           BC: [points.B, points.C],
           CD: [points.C, points.D],
-          DA: [points.D, points.A]
+          DA: [points.D, points.A],
+          AC: [points.A, points.C],
+          BD: [points.B, points.D]
         };
         const pair = sideMap[id];
         const P = pair[0];
@@ -730,9 +714,15 @@
 
       function getLabelText(type, id, side) {
         if (type === 'vertex') return id;
+        if (type === 'specialVertex') return id;
         if (type === 'side') {
           const unit = unitModes[unitIndex];
           return formatNumber(side) + (unit === 'なし' ? '' : unit);
+        }
+        if (type === 'diagonal') {
+          const unit = unitModes[unitIndex];
+          const value = side * Math.SQRT2;
+          return formatNumber(value) + (unit === 'なし' ? '' : unit);
         }
         if (type === 'angle') {
           return angleMode === 'degrees' ? '90°' : 'π/2';
@@ -740,8 +730,9 @@
         if (type === 'area') {
           const unit = unitModes[unitIndex];
           const areaText = formatNumber(side * side);
-          if (unit === 'なし') return areaText;
-          return areaText + unit + '²';
+          const label = '□ABCD = ' + areaText;
+          if (unit === 'なし') return label;
+          return label + unit + '²';
         }
         return '';
       }
@@ -750,8 +741,74 @@
         if (type === 'vertex') return getExternalPoint(centroid, points[id]);
         if (type === 'angle') return getInternalPoint(centroid, points[id]);
         if (type === 'side') return getSideDefault(points, centroid, id);
+        if (type === 'diagonal') return getSideDefault(points, centroid, id);
+        if (type === 'specialVertex') return { x: centroid.x, y: centroid.y };
         if (type === 'area') return { x: centroid.x, y: centroid.y };
         return { x: VIEW_WIDTH / 2, y: VIEW_HEIGHT / 2 };
+      }
+
+      function getGeneralToggleConfigs() {
+        return [
+          { type: 'vertex', id: 'A' }, { type: 'vertex', id: 'B' }, { type: 'vertex', id: 'C' }, { type: 'vertex', id: 'D' },
+          { type: 'side', id: 'AB' }, { type: 'side', id: 'BC' }, { type: 'side', id: 'CD' }, { type: 'side', id: 'DA' },
+          { type: 'angle', id: 'A' }, { type: 'angle', id: 'B' }, { type: 'angle', id: 'C' }, { type: 'angle', id: 'D' },
+          { type: 'area', id: 'main' }
+        ];
+      }
+
+      function getSpecialToggleConfigs() {
+        return [
+          { type: 'specialVertex', id: 'O' },
+          { type: 'diagonal', id: 'AC' },
+          { type: 'diagonal', id: 'BD' }
+        ];
+      }
+
+      function getToggleShortLabel(config) {
+        if (config.type === 'vertex') return config.id;
+        if (config.type === 'side') return config.id;
+        if (config.type === 'angle') return '∠' + config.id;
+        if (config.type === 'area') return '□ABCD';
+        if (config.type === 'specialVertex') return config.id;
+        if (config.type === 'diagonal') return config.id;
+        return config.id;
+      }
+
+      function buildToggleButton(config) {
+        const btn = document.createElement('button');
+        btn.className = 'toggle-btn';
+        btn.type = 'button';
+        btn.dataset.group = config.type;
+        btn.dataset.id = config.id;
+        btn.textContent = getToggleShortLabel(config);
+        btn.classList.toggle('is-off', !labelState[config.type][config.id]);
+        btn.addEventListener('click', function () {
+          const nextState = !labelState[config.type][config.id];
+          labelState[config.type][config.id] = nextState;
+          if (nextState) {
+            labelPositions[config.type][config.id] = null;
+            labelFontSize[config.type][config.id] = labelFontDefaults[config.type][config.id];
+            labelStyle[config.type][config.id] = {
+              color: styleDefaults[config.type][config.id].color,
+              rotation: styleDefaults[config.type][config.id].rotation
+            };
+          }
+          renderLabelToggleButtons();
+          render();
+        });
+        return btn;
+      }
+
+      function renderLabelToggleButtons() {
+        if (!generalLabelToggleGrid || !specialLabelToggleGrid) return;
+        generalLabelToggleGrid.innerHTML = '';
+        specialLabelToggleGrid.innerHTML = '';
+        getGeneralToggleConfigs().forEach(function (config) {
+          generalLabelToggleGrid.appendChild(buildToggleButton(config));
+        });
+        getSpecialToggleConfigs().forEach(function (config) {
+          specialLabelToggleGrid.appendChild(buildToggleButton(config));
+        });
       }
 
       function getLabelPosition(type, id, points, centroid) {
@@ -861,6 +918,30 @@
           svg.appendChild(dot);
         });
 
+        if (labelState.diagonal.AC) {
+          const d1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          d1.setAttribute('x1', String(A.x));
+          d1.setAttribute('y1', String(A.y));
+          d1.setAttribute('x2', String(C.x));
+          d1.setAttribute('y2', String(C.y));
+          d1.setAttribute('stroke', '#9aa7c7');
+          d1.setAttribute('stroke-width', '2');
+          d1.setAttribute('stroke-dasharray', '6 6');
+          svg.appendChild(d1);
+        }
+
+        if (labelState.diagonal.BD) {
+          const d2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          d2.setAttribute('x1', String(B.x));
+          d2.setAttribute('y1', String(B.y));
+          d2.setAttribute('x2', String(D.x));
+          d2.setAttribute('y2', String(D.y));
+          d2.setAttribute('stroke', '#9aa7c7');
+          d2.setAttribute('stroke-width', '2');
+          d2.setAttribute('stroke-dasharray', '6 6');
+          svg.appendChild(d2);
+        }
+
         const points = { A: A, B: B, C: C, D: D };
         const centroid = getCentroid(points);
         currentGeometry = { points: points, centroid: centroid, side: side };
@@ -892,38 +973,12 @@
         }
       }
 
-      labelButtons.forEach(function (btn) {
-        const group = btn.dataset.group;
-        const id = btn.dataset.id;
-        btn.addEventListener('click', function () {
-          const nextState = !labelState[group][id];
-          labelState[group][id] = nextState;
-          if (nextState) {
-            labelPositions[group][id] = null;
-            labelFontSize[group][id] = labelFontDefaults[group][id];
-            labelStyle[group][id] = {
-              color: styleDefaults[group][id].color,
-              rotation: styleDefaults[group][id].rotation
-            };
-          }
-          btn.classList.toggle('is-off', !labelState[group][id]);
-          render();
-        });
-      });
-
-      function syncLabelButtons() {
-        labelButtons.forEach(function (btn) {
-          const group = btn.dataset.group;
-          const id = btn.dataset.id;
-          btn.classList.toggle('is-off', !labelState[group][id]);
-        });
-      }
-
       function constrainPosition(type, id, rawPos) {
         if (!currentGeometry) return rawPos;
         const G = currentGeometry.centroid;
         const P = currentGeometry.points;
         if (type === 'area') return { x: G.x, y: G.y };
+        if (type === 'specialVertex') return { x: G.x, y: G.y };
         if (type === 'vertex' || type === 'angle') {
           const V = P[id];
           const ux = V.x - G.x;
@@ -947,6 +1002,9 @@
           const den = nx * nx + ny * ny || 1;
           const u = ((rawPos.x - mid.x) * nx + (rawPos.y - mid.y) * ny) / den;
           return { x: mid.x + nx * u, y: mid.y + ny * u };
+        }
+        if (type === 'diagonal') {
+          return getSideDefault(P, G, id);
         }
         return rawPos;
       }
@@ -1106,7 +1164,7 @@
             labelState[group][id] = defaultLabelState[group][id];
           });
         });
-        syncLabelButtons();
+        renderLabelToggleButtons();
         render();
       });
 
@@ -1135,7 +1193,7 @@
       sideInput.addEventListener('change', render);
 
       syncDockButtons();
-      syncLabelButtons();
+      renderLabelToggleButtons();
       render();
     })();
   </script>
