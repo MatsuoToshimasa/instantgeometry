@@ -1666,7 +1666,7 @@
           if (config.type === 'vertex') return getVertexTokenByKey(config.id);
           if (config.type === 'side') return getVertexTokenByKey(config.id.toUpperCase()).toLowerCase();
           if (config.type === 'innerAngle') return '∠' + getVertexTokenByKey(config.id);
-          if (config.type === 'area') return 'S';
+          if (config.type === 'area') return '△ABC';
           return config.type + ' ' + config.id;
         }
 
