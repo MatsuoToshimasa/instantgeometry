@@ -94,11 +94,63 @@
         }
         await loadScript(assetBase + '/draw-simple-page.js');
 
-        // file:// 直開き時に何らかの理由で描画できない場合の最低限フォールバック
+        function renderLocalSquareFallback() {
+          const mount = document.getElementById('drawSimplePage');
+          if (!mount) return;
+          mount.innerHTML = '' +
+            '<main style="min-height:100vh;background:#f4f6fb;padding:24px;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,\\'Segoe UI\\',sans-serif;">' +
+              '<div style="max-width:980px;margin:0 auto;background:#fff;border:1px solid #d7deef;border-radius:16px;padding:20px;">' +
+                '<h1 style="margin:0 0 10px;font-size:28px;color:#1e2638;">正方形</h1>' +
+                '<p style="margin:0 0 16px;color:#5b647a;">ローカル表示モードで描画しています。</p>' +
+                '<label style="display:block;font-weight:600;color:#28314a;margin-bottom:8px;">一辺</label>' +
+                '<input id="localSquareSide" type="text" value="5" style="width:220px;padding:10px 12px;border:1px solid #cfd7ea;border-radius:10px;font-size:16px;" />' +
+                '<div id="localSquareError" style="margin-top:8px;color:#c13737;min-height:20px;font-size:14px;"></div>' +
+                '<div style="margin-top:14px;border:1px solid #d7deef;border-radius:14px;background:#fafcff;padding:14px;">' +
+                  '<svg id="localSquareSvg" viewBox="0 0 600 420" width="100%" height="420" aria-label="square preview"></svg>' +
+                '</div>' +
+              '</div>' +
+            '</main>';
+
+          const sideInput = document.getElementById('localSquareSide');
+          const err = document.getElementById('localSquareError');
+          const svg = document.getElementById('localSquareSvg');
+
+          function draw() {
+            const raw = (sideInput.value || '').trim();
+            const v = Number(raw);
+            if (!Number.isFinite(v) || v <= 0) {
+              err.textContent = '0より大きい数値を入力してください。';
+              return;
+            }
+            err.textContent = '';
+            const size = Math.min(280, Math.max(40, v * 28));
+            const cx = 300;
+            const cy = 210;
+            const h = size / 2;
+            const A = [cx - h, cy - h];
+            const B = [cx - h, cy + h];
+            const C = [cx + h, cy + h];
+            const D = [cx + h, cy - h];
+            const pts = [A, B, C, D].map(function (p) { return p[0] + ',' + p[1]; }).join(' ');
+            svg.innerHTML =
+              '<rect x="0" y="0" width="600" height="420" fill="#f7f9ff"></rect>' +
+              '<polygon points="' + pts + '" fill="rgba(42,91,215,.08)" stroke="#2a5bd7" stroke-width="3"></polygon>' +
+              '<text x="' + (A[0] - 18) + '" y="' + (A[1] - 8) + '" font-size="26" fill="#1f2638" font-family="serif">A</text>' +
+              '<text x="' + (B[0] - 18) + '" y="' + (B[1] + 26) + '" font-size="26" fill="#1f2638" font-family="serif">B</text>' +
+              '<text x="' + (C[0] + 8) + '" y="' + (C[1] + 26) + '" font-size="26" fill="#1f2638" font-family="serif">C</text>' +
+              '<text x="' + (D[0] + 8) + '" y="' + (D[1] - 8) + '" font-size="26" fill="#1f2638" font-family="serif">D</text>' +
+              '<text x="' + cx + '" y="' + (cy + h + 34) + '" text-anchor="middle" font-size="30" fill="#2a5bd7" font-family="serif">' + raw + '</text>';
+          }
+
+          sideInput.addEventListener('input', draw);
+          draw();
+        }
+
+        // file:// 直開き時に何らかの理由で描画できない場合のフォールバック
         window.setTimeout(function () {
           const mount = document.getElementById('drawSimplePage');
           if (mount && !mount.hasChildNodes()) {
-            mount.innerHTML = '<main style="padding:24px;font-family:system-ui,sans-serif;"><h1 style="margin:0 0 12px;">正方形</h1><p style="margin:0;">ローカル読み込みに失敗しました。<br>ターミナルで <code>python3 -m http.server</code> を実行して、<code>http://localhost:8000/draw/quadrilateral/square/</code> で開いてください。</p></main>';
+            renderLocalSquareFallback();
           }
         }, 500);
       })();
