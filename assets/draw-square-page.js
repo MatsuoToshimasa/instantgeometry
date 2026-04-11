@@ -410,6 +410,10 @@
       button.setAttribute('aria-pressed', String(!!labelState[config.type][config.id]));
       button.addEventListener('click', function () {
         labelState[config.type][config.id] = !labelState[config.type][config.id];
+        if (!labelState[config.type][config.id] && selectedLabel && selectedLabel.type === config.type && selectedLabel.id === config.id) {
+          selectedLabel = null;
+          isPaletteOpen = false;
+        }
         if (labelState[config.type][config.id]) resetSingleLabel(config.type, config.id);
         renderLabelToggleButtons();
         render();
@@ -445,6 +449,10 @@
           }
           angleMarkerMode[config.id] = mode;
           labelState.angleMark[config.id] = (mode !== 0);
+          if (!labelState.angleMark[config.id] && selectedLabel && selectedLabel.type === 'angleMark' && selectedLabel.id === config.id) {
+            selectedLabel = null;
+            isPaletteOpen = false;
+          }
           if (mode !== 0) resetSingleLabel('angleMark', config.id);
           renderLabelToggleButtons();
           render();
@@ -461,6 +469,10 @@
       button.setAttribute('aria-pressed', String(!!labelState[config.type][config.id]));
       button.addEventListener('click', function () {
         labelState[config.type][config.id] = !labelState[config.type][config.id];
+        if (!labelState[config.type][config.id] && selectedLabel && selectedLabel.type === config.type && selectedLabel.id === config.id) {
+          selectedLabel = null;
+          isPaletteOpen = false;
+        }
         if (labelState[config.type][config.id]) resetSingleLabel(config.type, config.id);
         renderLabelToggleButtons();
         render();
@@ -702,7 +714,7 @@
         text: getLabelText('angle', id, geometry),
         fontSize: labelFontSize.angle[id],
         labelKey: { type: 'angle', id: id },
-        options: { color: '#687086' }
+        options: { color: '#687086', threshold: 0.6 }
       });
     });
 
@@ -721,7 +733,7 @@
         text: getLabelText('area', 'main', geometry),
         fontSize: labelFontSize.area.main,
         labelKey: { type: 'area', id: 'main' },
-        options: { color: '#25603b' }
+        options: { color: '#25603b', threshold: 0.8 }
       });
     }
 
@@ -735,7 +747,7 @@
         text: 'O',
         fontSize: labelFontSize.specialVertex.O,
         labelKey: { type: 'specialVertex', id: 'O' },
-        options: { color: '#1f2430' }
+        options: { color: '#1f2430', threshold: 0.58 }
       });
     }
 
@@ -751,7 +763,7 @@
         text: getLabelText('diagonal', id, geometry),
         fontSize: labelFontSize.diagonal[id],
         labelKey: { type: 'diagonal', id: id },
-        options: { color: '#7d8db8' }
+        options: { color: '#7d8db8', threshold: 0.62 }
       });
       board.create('segment', [[pair[0].x, pair[0].y], [pair[1].x, pair[1].y]], {
         fixed: true,
