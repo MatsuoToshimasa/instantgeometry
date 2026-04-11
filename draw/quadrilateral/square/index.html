@@ -558,6 +558,9 @@
       const boardStage = document.querySelector('.board-stage');
       const labelLayer = document.getElementById('labelLayer');
 
+      const VIEW_WIDTH = 1200;
+      const VIEW_HEIGHT = 800;
+
       const defaultLabelState = {
         vertex: { A: true, B: true, C: true, D: true },
         side: { AB: true, BC: true, CD: true, DA: true },
@@ -578,11 +581,23 @@
         { type: 'angle', id: 'A' }, { type: 'angle', id: 'B' }, { type: 'angle', id: 'C' }, { type: 'angle', id: 'D' },
         { type: 'area', id: 'main' }
       ];
+      const labelFontDefaults = {
+        vertex: { A: 54, B: 54, C: 54, D: 54 },
+        side: { AB: 34, BC: 34, CD: 34, DA: 34 },
+        angle: { A: 30, B: 30, C: 30, D: 30 },
+        area: { main: 52 }
+      };
       const labelFontSize = {
         vertex: { A: 54, B: 54, C: 54, D: 54 },
         side: { AB: 34, BC: 34, CD: 34, DA: 34 },
         angle: { A: 30, B: 30, C: 30, D: 30 },
         area: { main: 52 }
+      };
+      const styleDefaults = {
+        vertex: { A: { color: '#1f2430', rotation: 0 }, B: { color: '#1f2430', rotation: 0 }, C: { color: '#1f2430', rotation: 0 }, D: { color: '#1f2430', rotation: 0 } },
+        side: { AB: { color: '#2a5bd7', rotation: 0 }, BC: { color: '#2a5bd7', rotation: 0 }, CD: { color: '#2a5bd7', rotation: 0 }, DA: { color: '#2a5bd7', rotation: 0 } },
+        angle: { A: { color: '#687086', rotation: 0 }, B: { color: '#687086', rotation: 0 }, C: { color: '#687086', rotation: 0 }, D: { color: '#687086', rotation: 0 } },
+        area: { main: { color: '#25603b', rotation: 0 } }
       };
       const labelStyle = {
         vertex: { A: { color: '#1f2430', rotation: 0 }, B: { color: '#1f2430', rotation: 0 }, C: { color: '#1f2430', rotation: 0 }, D: { color: '#1f2430', rotation: 0 } },
@@ -606,6 +621,30 @@
       let selectedLabel = null;
       let dragState = null;
       let selectionEls = { box: null, rotate: null, palette: null, scale: null, pop: null };
+
+      function getStageRect() {
+        const rect = boardStage.getBoundingClientRect();
+        return {
+          width: Math.max(1, rect.width),
+          height: Math.max(1, rect.height)
+        };
+      }
+
+      function unitToScreen(pos) {
+        const rect = getStageRect();
+        return {
+          x: (pos.x / VIEW_WIDTH) * rect.width,
+          y: (pos.y / VIEW_HEIGHT) * rect.height
+        };
+      }
+
+      function screenToUnit(pos) {
+        const rect = getStageRect();
+        return {
+          x: (pos.x / rect.width) * VIEW_WIDTH,
+          y: (pos.y / rect.height) * VIEW_HEIGHT
+        };
+      }
 
       function evaluateExpression(raw) {
         const normalized = String(raw || '')
@@ -712,7 +751,7 @@
         if (type === 'angle') return getInternalPoint(centroid, points[id]);
         if (type === 'side') return getSideDefault(points, centroid, id);
         if (type === 'area') return { x: centroid.x, y: centroid.y };
-        return { x: 600, y: 400 };
+        return { x: VIEW_WIDTH / 2, y: VIEW_HEIGHT / 2 };
       }
 
       function getLabelPosition(type, id, points, centroid) {
@@ -775,14 +814,15 @@
         labelConfigs.forEach(function (cfg) {
           if (!labelState[cfg.type][cfg.id]) return;
           const pos = getLabelPosition(cfg.type, cfg.id, points, centroid);
+          const screen = unitToScreen(pos);
           const style = labelStyle[cfg.type][cfg.id];
           const el = document.createElement('div');
           el.className = 'floating-label';
           el.dataset.labelKey = getLabelKey(cfg.type, cfg.id);
           el.dataset.type = cfg.type;
           el.dataset.id = cfg.id;
-          el.style.left = pos.x + 'px';
-          el.style.top = pos.y + 'px';
+          el.style.left = screen.x + 'px';
+          el.style.top = screen.y + 'px';
           el.style.fontSize = labelFontSize[cfg.type][cfg.id] + 'px';
           el.style.color = style.color;
           el.style.transform = 'translate(-50%,-50%) rotate(' + style.rotation + 'deg)';
@@ -794,9 +834,9 @@
 
       function drawSquare(side) {
         const margin = 120;
-        const size = Math.min(1200 - margin * 2, 800 - margin * 2);
-        const x0 = (1200 - size) / 2;
-        const y0 = (800 - size) / 2;
+        const size = Math.min(VIEW_WIDTH - margin * 2, VIEW_HEIGHT - margin * 2);
+        const x0 = (VIEW_WIDTH - size) / 2;
+        const y0 = (VIEW_HEIGHT - size) / 2;
 
         const A = { x: x0, y: y0 };
         const B = { x: x0, y: y0 + size };
@@ -848,6 +888,7 @@
         } catch (error) {
           setStatus(error.message || '描画に失敗しました。', true);
           svg.innerHTML = '';
+          labelLayer.innerHTML = '';
         }
       }
 
@@ -855,7 +896,16 @@
         const group = btn.dataset.group;
         const id = btn.dataset.id;
         btn.addEventListener('click', function () {
-          labelState[group][id] = !labelState[group][id];
+          const nextState = !labelState[group][id];
+          labelState[group][id] = nextState;
+          if (nextState) {
+            labelPositions[group][id] = null;
+            labelFontSize[group][id] = labelFontDefaults[group][id];
+            labelStyle[group][id] = {
+              color: styleDefaults[group][id].color,
+              rotation: styleDefaults[group][id].rotation
+            };
+          }
           btn.classList.toggle('is-off', !labelState[group][id]);
           render();
         });
@@ -909,13 +959,14 @@
           const key = target.dataset.labelKey;
           selectedLabel = key;
           renderSelection();
+          const startUnit = labelPositions[type][id];
           dragState = {
             mode: 'move',
             type: type,
             id: id,
             startX: event.clientX,
             startY: event.clientY,
-            startPos: { x: labelPositions[type][id].x, y: labelPositions[type][id].y }
+            startPos: { x: startUnit.x, y: startUnit.y }
           };
           target.setPointerCapture(event.pointerId);
           event.preventDefault();
@@ -970,7 +1021,12 @@
         const dx = event.clientX - dragState.startX;
         const dy = event.clientY - dragState.startY;
         if (dragState.mode === 'move') {
-          const raw = { x: dragState.startPos.x + dx, y: dragState.startPos.y + dy };
+          const deltaUnit = screenToUnit({ x: dx, y: dy });
+          const zeroUnit = screenToUnit({ x: 0, y: 0 });
+          const raw = {
+            x: dragState.startPos.x + (deltaUnit.x - zeroUnit.x),
+            y: dragState.startPos.y + (deltaUnit.y - zeroUnit.y)
+          };
           labelPositions[dragState.type][dragState.id] = constrainPosition(dragState.type, dragState.id, raw);
           render();
           return;
@@ -1035,6 +1091,16 @@
         boardStage.style.removeProperty('aspect-ratio');
         unitIndex = 1;
         unitBtn.textContent = '長さcm';
+        Object.keys(labelPositions).forEach(function (group) {
+          Object.keys(labelPositions[group]).forEach(function (id) {
+            labelPositions[group][id] = null;
+            labelFontSize[group][id] = labelFontDefaults[group][id];
+            labelStyle[group][id] = {
+              color: styleDefaults[group][id].color,
+              rotation: styleDefaults[group][id].rotation
+            };
+          });
+        });
         Object.keys(labelState).forEach(function (group) {
           Object.keys(labelState[group]).forEach(function (id) {
             labelState[group][id] = defaultLabelState[group][id];
