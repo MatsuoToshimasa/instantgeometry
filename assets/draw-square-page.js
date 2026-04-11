@@ -38,6 +38,7 @@
     vertex: { A: true, B: true, C: true, D: true },
     side: { AB: true, BC: true, CD: true, DA: true },
     angle: { A: false, B: false, C: false, D: false },
+    angleMark: { A: false, B: false, C: false, D: false },
     area: { main: false },
     specialVertex: { O: false },
     diagonal: { AC: false, BD: false }
@@ -48,6 +49,7 @@
     vertex: { A: 36, B: 36, C: 36, D: 36 },
     side: { AB: 32, BC: 32, CD: 32, DA: 32 },
     angle: { A: 30, B: 30, C: 30, D: 30 },
+    angleMark: { A: 26, B: 26, C: 26, D: 26 },
     area: { main: 48 },
     specialVertex: { O: 34 },
     diagonal: { AC: 28, BD: 28 }
@@ -57,6 +59,7 @@
     vertex: { A: style('#1f2430'), B: style('#1f2430'), C: style('#1f2430'), D: style('#1f2430') },
     side: { AB: style('#2a5bd7'), BC: style('#2a5bd7'), CD: style('#2a5bd7'), DA: style('#2a5bd7') },
     angle: { A: style('#687086'), B: style('#687086'), C: style('#687086'), D: style('#687086') },
+    angleMark: { A: style('#687086'), B: style('#687086'), C: style('#687086'), D: style('#687086') },
     area: { main: style('#25603b') },
     specialVertex: { O: style('#1f2430') },
     diagonal: { AC: style('#7d8db8'), BD: style('#7d8db8') }
@@ -66,6 +69,7 @@
     vertex: { A: null, B: null, C: null, D: null },
     side: { AB: null, BC: null, CD: null, DA: null },
     angle: { A: null, B: null, C: null, D: null },
+    angleMark: { A: null, B: null, C: null, D: null },
     area: { main: null },
     specialVertex: { O: null },
     diagonal: { AC: null, BD: null }
@@ -91,6 +95,7 @@
   let isRightDockCollapsed = false;
   let isPaletteOpen = false;
   let lastFitSignature = '';
+  const angleMarkerMode = { A: 0, B: 0, C: 0, D: 0 };
 
   function style(color) {
     return { color: color, rotation: 0 };
@@ -107,6 +112,19 @@
 
   function getSideName(id) {
     return id.split('').map(getVertexTokenByKey).join('');
+  }
+
+  function normalizeAngleMarkerInput(input) {
+    const value = String(input || '').trim();
+    if (!value || value === '0' || value === 'なし') return 0;
+    if (value === '1' || value === '記号なし' || value === '弧') return 1;
+    if (value === '2' || value === '○') return 2;
+    if (value === '3' || value === '|' || value === '｜') return 3;
+    if (value === '4' || value === '=') return 4;
+    if (value === '5' || value.toLowerCase() === 'x' || value === '×') return 5;
+    if (value === '6' || value === '△') return 6;
+    if (value === '7' || value === '塗') return 7;
+    return null;
   }
 
   function setStatus(message, isError) {
@@ -378,6 +396,21 @@
           renderLabelToggleButtons();
           render();
         });
+      } else if (config.type === 'angle') {
+        button.addEventListener('contextmenu', function (event) {
+          event.preventDefault();
+          const currentMode = Number.isFinite(angleMarkerMode[config.id]) ? angleMarkerMode[config.id] : 0;
+          const next = window.prompt('角マークを選択（0:なし / 1:記号なし / 2:○ / 3:| / 4:= / 5:× / 6:△ / 7:塗）', String(currentMode));
+          if (next === null) return;
+          const mode = normalizeAngleMarkerInput(next);
+          if (mode === null) {
+            setStatus('角マークは「0 / 1 / 2 / 3 / 4 / 5 / 6 / 7」で指定してください。', true);
+            return;
+          }
+          angleMarkerMode[config.id] = mode;
+          labelState.angleMark[config.id] = (mode !== 0);
+          render();
+        });
       }
       generalLabelToggleGrid.appendChild(button);
     });
@@ -402,6 +435,13 @@
     return currentLabelAnchors.find(function (item) {
       return item.type === selectedLabel.type && item.id === selectedLabel.id;
     }) || null;
+  }
+
+  function userToScreenPoint(point) {
+    return {
+      x: board.origin.scrCoords[1] + point.x * board.unitX,
+      y: board.origin.scrCoords[2] - point.y * board.unitY
+    };
   }
 
   function renderSelectionOverlay(anchor) {
@@ -528,6 +568,11 @@
       });
     });
 
+    ['A', 'B', 'C', 'D'].forEach(function (id) {
+      if (!labelState.angleMark[id]) return;
+      drawAngleDecoration(id, geometry);
+    });
+
     if (labelState.area.main) {
       window.InstantGeometrySharedLabels.createSelectableText({
         board: board,
@@ -580,6 +625,144 @@
     });
 
     renderSelectionOverlay(getSelectedAnchor());
+  }
+
+  function getAngleDecorationGeometry(angleId, geometry) {
+    const P = geometry.points;
+    if (angleId === 'A') return { vertex: P.A, p1: P.B, p2: P.D };
+    if (angleId === 'B') return { vertex: P.B, p1: P.A, p2: P.C };
+    if (angleId === 'C') return { vertex: P.C, p1: P.B, p2: P.D };
+    if (angleId === 'D') return { vertex: P.D, p1: P.A, p2: P.C };
+    return null;
+  }
+
+  function drawAngleDecoration(angleId, geometry) {
+    const mode = Number.isFinite(angleMarkerMode[angleId]) ? angleMarkerMode[angleId] : 0;
+    if (mode === 0) return;
+    const data = getAngleDecorationGeometry(angleId, geometry);
+    if (!data) return;
+    const vertex = data.vertex;
+    const p1 = data.p1;
+    const p2 = data.p2;
+    const side = geometry.side;
+    const radius = Math.max(0.08, (side / 10) * Math.max(0.35, Math.min(8, labelFontSize.angleMark[angleId] / 26)));
+    const a1 = Math.atan2(p1.y - vertex.y, p1.x - vertex.x);
+    const a2 = Math.atan2(p2.y - vertex.y, p2.x - vertex.x);
+    let delta = a2 - a1;
+    while (delta <= -Math.PI) delta += Math.PI * 2;
+    while (delta > Math.PI) delta -= Math.PI * 2;
+    if (Math.abs(delta) < 1e-4) return;
+
+    const style = getLabelStyle('angleMark', angleId);
+    const color = style.color || '#687086';
+    const start = { x: vertex.x + radius * Math.cos(a1), y: vertex.y + radius * Math.sin(a1) };
+    const end = { x: vertex.x + radius * Math.cos(a1 + delta), y: vertex.y + radius * Math.sin(a1 + delta) };
+    board.create('segment', [[vertex.x, vertex.y], [start.x, start.y]], { fixed: true, strokeWidth: 1.4, strokeColor: color, highlight: false });
+    board.create('segment', [[vertex.x, vertex.y], [end.x, end.y]], { fixed: true, strokeWidth: 1.4, strokeColor: color, highlight: false });
+    board.create('curve', [
+      function (t) { const angle = a1 + delta * t; return vertex.x + radius * Math.cos(angle); },
+      function (t) { const angle = a1 + delta * t; return vertex.y + radius * Math.sin(angle); },
+      0,
+      1
+    ], { fixed: true, strokeWidth: 1.8, strokeColor: color, highlight: false });
+
+    const midAngle = a1 + delta / 2;
+    const symbolCenter = { x: vertex.x + radius * Math.cos(midAngle), y: vertex.y + radius * Math.sin(midAngle) };
+    const towardCenter = { x: vertex.x - symbolCenter.x, y: vertex.y - symbolCenter.y };
+    const towardLen = Math.hypot(towardCenter.x, towardCenter.y) || 1;
+    const dir = { x: towardCenter.x / towardLen, y: towardCenter.y / towardLen };
+    const normal = { x: -dir.y, y: dir.x };
+    const symbolSize = Math.max(0.03, radius * 0.34);
+
+    if (mode === 2) {
+      const circleSize = symbolSize * 0.5;
+      board.create('curve', [
+        function (t) { return symbolCenter.x + circleSize * Math.cos(t); },
+        function (t) { return symbolCenter.y + circleSize * Math.sin(t); },
+        0,
+        Math.PI * 2
+      ], { fixed: true, strokeWidth: 1.6, strokeColor: color, highlight: false });
+    } else if (mode === 3) {
+      const barSize = symbolSize * 0.5;
+      board.create('segment', [[symbolCenter.x - dir.x * barSize, symbolCenter.y - dir.y * barSize], [symbolCenter.x + dir.x * barSize, symbolCenter.y + dir.y * barSize]], { fixed: true, strokeWidth: 1.8, strokeColor: color, highlight: false });
+    } else if (mode === 4) {
+      const barSize = symbolSize * 0.5;
+      const sep = barSize * 0.46;
+      board.create('segment', [[symbolCenter.x - dir.x * barSize + normal.x * sep, symbolCenter.y - dir.y * barSize + normal.y * sep], [symbolCenter.x + dir.x * barSize + normal.x * sep, symbolCenter.y + dir.y * barSize + normal.y * sep]], { fixed: true, strokeWidth: 1.8, strokeColor: color, highlight: false });
+      board.create('segment', [[symbolCenter.x - dir.x * barSize - normal.x * sep, symbolCenter.y - dir.y * barSize - normal.y * sep], [symbolCenter.x + dir.x * barSize - normal.x * sep, symbolCenter.y + dir.y * barSize - normal.y * sep]], { fixed: true, strokeWidth: 1.8, strokeColor: color, highlight: false });
+    } else if (mode === 5) {
+      const crossSize = symbolSize * 0.5;
+      board.create('segment', [[symbolCenter.x - dir.x * crossSize - normal.x * crossSize, symbolCenter.y - dir.y * crossSize - normal.y * crossSize], [symbolCenter.x + dir.x * crossSize + normal.x * crossSize, symbolCenter.y + dir.y * crossSize + normal.y * crossSize]], { fixed: true, strokeWidth: 1.8, strokeColor: color, highlight: false });
+      board.create('segment', [[symbolCenter.x - dir.x * crossSize + normal.x * crossSize, symbolCenter.y - dir.y * crossSize + normal.y * crossSize], [symbolCenter.x + dir.x * crossSize - normal.x * crossSize, symbolCenter.y + dir.y * crossSize - normal.y * crossSize]], { fixed: true, strokeWidth: 1.8, strokeColor: color, highlight: false });
+    } else if (mode === 6) {
+      const triSize = symbolSize * 0.5;
+      const tip = { x: symbolCenter.x - dir.x * triSize * 1.15, y: symbolCenter.y - dir.y * triSize * 1.15 };
+      const baseL = { x: symbolCenter.x + dir.x * triSize * 0.85 + normal.x * triSize * 0.9, y: symbolCenter.y + dir.y * triSize * 0.85 + normal.y * triSize * 0.9 };
+      const baseR = { x: symbolCenter.x + dir.x * triSize * 0.85 - normal.x * triSize * 0.9, y: symbolCenter.y + dir.y * triSize * 0.85 - normal.y * triSize * 0.9 };
+      board.create('segment', [[tip.x, tip.y], [baseL.x, baseL.y]], { fixed: true, strokeWidth: 1.8, strokeColor: color, highlight: false });
+      board.create('segment', [[baseL.x, baseL.y], [baseR.x, baseR.y]], { fixed: true, strokeWidth: 1.8, strokeColor: color, highlight: false });
+      board.create('segment', [[baseR.x, baseR.y], [tip.x, tip.y]], { fixed: true, strokeWidth: 1.8, strokeColor: color, highlight: false });
+    } else if (mode === 7) {
+      const sectorPoints = [{ x: vertex.x, y: vertex.y }];
+      for (let i = 0; i <= 18; i += 1) {
+        const t = i / 18;
+        const angle = a1 + delta * t;
+        sectorPoints.push({ x: vertex.x + radius * Math.cos(angle), y: vertex.y + radius * Math.sin(angle) });
+      }
+      board.create('polygon', sectorPoints.map(function (p) { return [p.x, p.y]; }), {
+        fixed: true,
+        borders: { visible: false, highlight: false },
+        vertices: { visible: false },
+        fillColor: color,
+        fillOpacity: 1,
+        highlight: false
+      });
+    }
+
+    const sampleAngles = [0, 0.25, 0.5, 0.75, 1].map(function (t) {
+      const angle = a1 + delta * t;
+      return { x: vertex.x + radius * Math.cos(angle), y: vertex.y + radius * Math.sin(angle) };
+    });
+    const boundsPoints = sampleAngles.concat(
+      mode === 7
+        ? [{ x: vertex.x, y: vertex.y }]
+        : [
+          { x: symbolCenter.x + normal.x * symbolSize, y: symbolCenter.y + normal.y * symbolSize },
+          { x: symbolCenter.x - normal.x * symbolSize, y: symbolCenter.y - normal.y * symbolSize },
+          { x: symbolCenter.x + dir.x * symbolSize, y: symbolCenter.y + dir.y * symbolSize },
+          { x: symbolCenter.x - dir.x * symbolSize, y: symbolCenter.y - dir.y * symbolSize }
+        ]
+    );
+    const screenPoints = boundsPoints.map(userToScreenPoint);
+    const xs = screenPoints.map(function (pt) { return pt.x; });
+    const ys = screenPoints.map(function (pt) { return pt.y; });
+    currentLabelAnchors.push({
+      type: 'angleMark',
+      id: angleId,
+      x: symbolCenter.x,
+      y: symbolCenter.y,
+      screenRect: {
+        left: Math.min.apply(null, xs),
+        right: Math.max.apply(null, xs),
+        top: Math.min.apply(null, ys),
+        bottom: Math.max.apply(null, ys)
+      },
+      fontSize: labelFontSize.angleMark[angleId],
+      rotation: 0,
+      color: color
+    });
+  }
+
+  function findAnchorAtPoint(point) {
+    for (let index = currentLabelAnchors.length - 1; index >= 0; index -= 1) {
+      const anchor = currentLabelAnchors[index];
+      if (!anchor.screenRect) continue;
+      const screen = userToScreenPoint(point);
+      if (screen.x >= anchor.screenRect.left && screen.x <= anchor.screenRect.right && screen.y >= anchor.screenRect.top && screen.y <= anchor.screenRect.bottom) {
+        return { type: anchor.type, id: anchor.id };
+      }
+    }
+    return null;
   }
 
   function renderFigure(geometry) {
@@ -694,6 +877,9 @@
         render();
         return;
       }
+      if (overlayControl.mode === 'rotate' && selectedLabel.type === 'angleMark') {
+        return;
+      }
       const anchor = getSelectedAnchor();
       if (!anchor) return;
       dragState = {
@@ -707,6 +893,14 @@
         distanceStart: Math.hypot(point.x - anchor.x, point.y - anchor.y),
         angleStart: Math.atan2(point.y - anchor.y, point.x - anchor.x)
       };
+      return;
+    }
+
+    const anchorHit = findAnchorAtPoint(point);
+    if (anchorHit) {
+      selectedLabel = anchorHit;
+      isPaletteOpen = false;
+      render();
       return;
     }
 
@@ -775,6 +969,9 @@
         labelFontSize[group][id] = labelFontDefaults[group][id];
         labelState[group][id] = defaultLabelState[group][id];
       });
+    });
+    Object.keys(angleMarkerMode).forEach(function (id) {
+      angleMarkerMode[id] = 0;
     });
     selectedLabel = null;
     isPaletteOpen = false;
