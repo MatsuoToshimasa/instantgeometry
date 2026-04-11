@@ -611,7 +611,7 @@
     return markup;
   }
 
-  function getRendererType() {
+  function getRendererTypeFromPath() {
     const path = window.location.pathname;
     if (path.indexOf('/draw/triangle/sas/') === 0) return 'triangle-sas';
     if (path.indexOf('/draw/triangle/asa/') === 0) return 'triangle-asa';
@@ -628,6 +628,12 @@
     if (path.indexOf('/draw/ellipse/') === 0) return 'ellipse';
     if (path.indexOf('/draw/star/') === 0) return 'star';
     return 'unknown';
+  }
+
+  function resolveRendererType() {
+    const explicit = config && typeof config.rendererType === 'string' ? config.rendererType.trim() : '';
+    if (explicit) return explicit;
+    return getRendererTypeFromPath();
   }
 
   function currentToggleValues(toggleInputs) {
@@ -1164,7 +1170,7 @@
     const leftDockToggle = document.getElementById('drawSimpleLeftDockToggle');
     const rightDock = document.getElementById('drawSimpleRightDock');
     const rightDockToggle = document.getElementById('drawSimpleRightDockToggle');
-    const rendererType = getRendererType();
+    const rendererType = resolveRendererType();
     let isLeftCollapsed = false;
     let isRightCollapsed = false;
 
@@ -1193,6 +1199,11 @@
       } catch (error) {
         status.textContent = error.message || '描画に失敗しました。';
         status.classList.add('error');
+        preview.innerHTML =
+          '<div style="padding:20px;color:#b42318;font-size:14px;line-height:1.7;">' +
+            '描画処理でエラーが発生しました。入力値または描画設定を確認してください。' +
+          '</div>';
+        notes.innerHTML = buildNotes(config.notes || []);
       }
     }
 
@@ -1231,9 +1242,31 @@
     renderResult();
   }
 
-  renderPage();
+  try {
+    renderPage();
+  } catch (error) {
+    mount.innerHTML =
+      '<main class="draw-simple-page">' +
+        '<section class="draw-simple-workspace" style="display:grid;place-items:center;">' +
+          '<div class="draw-simple-board" style="width:min(860px,calc(100vw - 48px));height:auto;">' +
+            '<div class="draw-simple-board-head">' +
+              '<div class="draw-simple-board-title">' +
+                '<h1>' + escapeHtml(tt(config.title || '図形')) + '</h1>' +
+                '<p>初期化中にエラーが発生しました。</p>' +
+              '</div>' +
+              '<p class="draw-simple-board-status error">' + escapeHtml(error.message || 'Unknown error') + '</p>' +
+            '</div>' +
+          '</div>' +
+        '</section>' +
+      '</main>';
+  }
 
   document.addEventListener('site-language:changed', function () {
-    renderPage(getState());
+    try {
+      renderPage(getState());
+    } catch (error) {
+      // keep previous UI as-is if rerender fails
+      console.error('draw-simple-page rerender failed', error);
+    }
   });
 })();
