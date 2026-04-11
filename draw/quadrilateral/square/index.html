@@ -4,99 +4,522 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>正方形 | Instant Geometry</title>
-  <link rel="stylesheet" href="/assets/base.css" />
-  <link rel="stylesheet" href="/assets/draw-simple-page.css" />
+  <style>
+    :root{
+      --panel:#ffffff;
+      --line:#d9dce7;
+      --text:#1f2430;
+      --muted:#687086;
+      --accent:#2a5bd7;
+      --shadow:0 10px 28px rgba(27,39,94,.08);
+      --radius:20px;
+    }
+
+    *{ box-sizing:border-box; }
+
+    html, body{
+      height:100%;
+      overflow:hidden;
+    }
+
+    body{
+      margin:0;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;
+      background:linear-gradient(180deg,#f8faff 0%,#f4f6fb 100%);
+      color:var(--text);
+    }
+
+    .workspace{
+      position:relative;
+      width:100%;
+      height:100%;
+      overflow:hidden;
+    }
+
+    #box{
+      position:absolute;
+      inset:0;
+      z-index:1;
+      background-color:rgba(248,250,255,.88);
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='12' viewBox='0 0 90 12'%3E%3Ctext x='0' y='10' fill='rgba(31,36,48,0.12)' font-family='Arial,sans-serif' font-size='11' font-weight='800' letter-spacing='-0.12'%3EInstant Geometry%3C/text%3E%3C/svg%3E");
+      background-repeat:repeat;
+      background-size:90px 12px;
+      background-position:0 0;
+    }
+
+    .page-back-btn{
+      position:absolute;
+      top:6px;
+      left:50%;
+      transform:translateX(-50%);
+      z-index:24;
+      min-width:148px;
+      padding:10px 14px;
+      border:1px solid #cfd7ea;
+      border-radius:13px;
+      background:linear-gradient(180deg,#ffffff 0%,#f6f8ff 100%);
+      color:#24304d;
+      font-size:13px;
+      font-weight:700;
+      cursor:pointer;
+      box-shadow:0 1px 0 rgba(255,255,255,.9) inset, 0 2px 8px rgba(36,71,168,.08);
+    }
+
+    .page-back-btn:hover{
+      border-color:#9fb3ea;
+      color:#1f3d94;
+      background:linear-gradient(180deg,#ffffff 0%,#eef3ff 100%);
+    }
+
+    .dock-card{
+      background:var(--panel);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      backdrop-filter:blur(10px);
+    }
+
+    .left-dock{
+      position:absolute;
+      top:16px;
+      left:16px;
+      bottom:16px;
+      z-index:20;
+      width:min(360px,calc(100vw - 96px));
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      transition:transform .24s ease;
+    }
+
+    .left-dock.is-collapsed{
+      transform:translateX(calc(-100% + 20px));
+    }
+
+    .right-dock{
+      position:absolute;
+      top:16px;
+      right:16px;
+      bottom:16px;
+      z-index:20;
+      width:min(300px,calc(100vw - 96px));
+      display:flex;
+      flex-direction:column;
+      transition:transform .24s ease;
+    }
+
+    .right-dock.is-collapsed{
+      transform:translateX(calc(100% - 20px));
+    }
+
+    .dock-topbar{
+      position:relative;
+      height:44px;
+    }
+
+    .dock-toggle{
+      position:absolute;
+      top:0;
+      right:-56px;
+      width:44px;
+      min-width:44px;
+      height:44px;
+      border:1px solid var(--line);
+      border-radius:14px;
+      background:#fff;
+      color:var(--text);
+      font-size:18px;
+      cursor:pointer;
+      box-shadow:var(--shadow);
+      z-index:2;
+    }
+
+    .dock-toggle-right{
+      left:-56px;
+      right:auto;
+    }
+
+    .panel{
+      flex:0 1 auto;
+      min-height:0;
+      padding:16px 16px 14px;
+      overflow:hidden;
+    }
+
+    .panel h1{
+      margin:0;
+      font-size:24px;
+      line-height:1.25;
+    }
+
+    .panel-intro{
+      margin:10px 0 0;
+      color:var(--muted);
+      font-size:14px;
+      line-height:1.75;
+    }
+
+    .section{
+      margin-top:14px;
+      padding-top:12px;
+      border-top:1px solid #eceff5;
+    }
+
+    .section h3{
+      margin:0 0 8px;
+      font-size:15px;
+      line-height:1.4;
+    }
+
+    .field-grid{
+      display:grid;
+      gap:8px;
+    }
+
+    .field{
+      display:grid;
+      gap:4px;
+    }
+
+    .field label{
+      font-size:11px;
+      color:var(--muted);
+      line-height:1.3;
+    }
+
+    .field input{
+      width:100%;
+      padding:8px 10px;
+      border:1px solid var(--line);
+      border-radius:11px;
+      font-size:15px;
+      background:#fff;
+      color:var(--text);
+    }
+
+    .hint{
+      margin:0;
+      color:var(--muted);
+      font-size:11px;
+      line-height:1.45;
+    }
+
+    .controls-stack{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      min-height:0;
+    }
+
+    .board-status{
+      padding:11px 12px;
+      font-size:13px;
+      color:#3153a4;
+      background:#f8faff;
+      border:1px solid #e1e8fb;
+      border-radius:14px;
+      line-height:1.6;
+    }
+
+    .toggle-card{
+      flex:1;
+      background:rgba(255,255,255,.92);
+      border:1px solid #e7eaf3;
+      border-radius:14px;
+      padding:12px;
+      box-shadow:var(--shadow);
+      overflow:auto;
+    }
+
+    .toggle-title{
+      margin:0 0 10px;
+      color:var(--muted);
+      font-size:12px;
+      font-weight:700;
+      letter-spacing:.03em;
+    }
+
+    .toggle-grid{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:8px;
+    }
+
+    .toggle-btn{
+      padding:8px 10px;
+      border:1px solid #cfd7ea;
+      border-radius:12px;
+      background:linear-gradient(180deg,#ffffff 0%,#f6f8ff 100%);
+      color:#24304d;
+      font-size:13px;
+      font-weight:700;
+      cursor:pointer;
+      transition:.15s ease;
+    }
+
+    .toggle-btn.is-off{
+      opacity:.45;
+      background:#f4f6fb;
+      color:#6f7891;
+    }
+
+    .board-stage{
+      position:absolute;
+      inset:16px 332px 16px 392px;
+      z-index:10;
+      border:1px solid #d8dff2;
+      border-radius:20px;
+      background:linear-gradient(180deg,#fcfdff 0%,#f7f9ff 100%);
+      box-shadow:0 10px 30px rgba(30,56,135,.08);
+      overflow:hidden;
+    }
+
+    #squareSvg{
+      width:100%;
+      height:100%;
+      display:block;
+    }
+
+    @media (max-width:1180px){
+      .board-stage{
+        inset:16px 286px 16px 356px;
+      }
+      .left-dock{ width:min(324px,calc(100vw - 92px)); }
+      .right-dock{ width:min(254px,calc(100vw - 92px)); }
+    }
+
+    @media (max-width:960px){
+      .left-dock{
+        top:12px; left:12px; bottom:auto;
+        width:min(320px,calc(100vw - 80px));
+      }
+      .right-dock{
+        top:12px; right:12px; bottom:auto;
+        width:min(220px,calc(100vw - 80px));
+      }
+      .board-stage{
+        top:220px;
+        left:12px;
+        right:12px;
+        bottom:12px;
+      }
+    }
+  </style>
 </head>
 <body>
-  <div id="site-header"></div>
-  <div id="drawSimplePage">
-    <main style="min-height:calc(100vh - 120px);display:grid;place-items:center;padding:24px;background:linear-gradient(180deg,#f8faff 0%,#f3f6fc 100%);">
-      <div style="width:min(760px,100%);background:#fff;border:1px solid #e1e8fb;border-radius:16px;padding:18px 20px;color:#24304d;">
-        正方形ページを読み込み中です…
+  <main class="workspace">
+    <div id="box" aria-label="正方形の描画エリア"></div>
+    <button class="page-back-btn" id="pageBackBtn" type="button">前の画面に戻る</button>
+
+    <div class="left-dock" id="leftDock">
+      <div class="dock-topbar">
+        <button class="dock-toggle" id="dockToggleBtn" type="button" aria-expanded="true">‹</button>
       </div>
-    </main>
-  </div>
-  <div id="site-footer"></div>
-  <script>
-    window.drawSimplePageConfig = {
-      rendererType: 'quadrilateral-square',
-      title: '正方形',
-      lead: '三角形ページと同じUI設計で、正方形を1辺の長さから描画します。',
-      leftTitle: '指定条件',
-      leftIntro: '左上を A とし、反時計回りに B, C, D を配置します。',
-      fieldsTitle: '指定条件',
-      fields: [
-        { label: '一辺', value: '5' }
-      ],
-      fieldsHint: '整数・小数・式を入力できます。',
-      toggles: [
-        { title: 'A', checked: true },
-        { title: 'B', checked: true },
-        { title: 'C', checked: true },
-        { title: 'D', checked: true },
-        { title: 'a', checked: true },
-        { title: 'b', checked: true },
-        { title: 'c', checked: true },
-        { title: 'd', checked: true },
-        { title: '∠A', checked: true },
-        { title: '∠B', checked: true },
-        { title: '∠C', checked: true },
-        { title: '∠D', checked: true }
-      ],
-      specialTogglesTitle: '特別ラベル',
-      specialToggles: [
-        { title: 'O', checked: false },
-        { title: 'AC', checked: false },
-        { title: 'BD', checked: false },
-        { title: '∠DAC', checked: false },
-        { title: '∠BAC', checked: false },
-        { title: '∠ABD', checked: false },
-        { title: '∠CBD', checked: false },
-        { title: '∠BCA', checked: false },
-        { title: '∠DCA', checked: false },
-        { title: '∠CDB', checked: false },
-        { title: '∠ADB', checked: false },
-        { title: '∠AOB', checked: false },
-        { title: '∠BOC', checked: false },
-        { title: '∠COD', checked: false },
-        { title: '∠DOA', checked: false }
-      ],
-      badge: '一般ラベル・特別ラベルを右ドックで切り替えて表示できます。',
-      status: '正方形を描画できます。',
-      notes: [
-        { label: '図形種別', value: '正方形' },
-        { label: '入力軸', value: '一辺の長さ' },
-        { label: '状態', value: '利用可能' }
-      ],
-      crumbs: [
-        { label: 'トップ', href: '/' },
-        { label: '図形を描く', href: '/draw/' },
-        { label: '正方形' }
-      ],
-      previewSvg: ''
-    };
-  </script>
+      <aside class="panel dock-card">
+        <h1>正方形</h1>
+        <p class="panel-intro">左上を A とし、反時計回りに B, C, D を配置します。</p>
+        <div class="section">
+          <h3>1辺の長さ</h3>
+          <div class="field-grid">
+            <div class="field">
+              <label for="sideLen">辺の長さ</label>
+              <input id="sideLen" type="text" inputmode="decimal" value="5" />
+            </div>
+          </div>
+          <p class="hint">整数・小数・式（例: 3+2, sqrt(9), 2*pi）で入力できます。</p>
+        </div>
+      </aside>
+      <div class="controls-stack">
+        <div class="board-status dock-card" id="statusBox">正方形を描画しています。</div>
+      </div>
+    </div>
+
+    <aside class="right-dock" id="rightDock">
+      <div class="dock-topbar">
+        <button class="dock-toggle dock-toggle-right" id="rightDockToggleBtn" type="button" aria-expanded="true">›</button>
+      </div>
+      <div class="toggle-card">
+        <p class="toggle-title">一般ラベル</p>
+        <div class="toggle-grid">
+          <button class="toggle-btn" type="button" data-label="A">A</button>
+          <button class="toggle-btn" type="button" data-label="B">B</button>
+          <button class="toggle-btn" type="button" data-label="C">C</button>
+          <button class="toggle-btn" type="button" data-label="D">D</button>
+        </div>
+      </div>
+    </aside>
+
+    <section class="board-stage">
+      <svg id="squareSvg" viewBox="0 0 1200 800" aria-label="正方形プレビュー"></svg>
+    </section>
+  </main>
+
   <script>
     (function () {
       'use strict';
-      window.setTimeout(function () {
-        var mount = document.getElementById('drawSimplePage');
-        if (!mount) return;
-        if (mount.querySelector('.draw-simple-page')) return;
-        mount.innerHTML =
-          '<main style="min-height:calc(100vh - 120px);display:grid;place-items:center;padding:24px;background:linear-gradient(180deg,#f8faff 0%,#f3f6fc 100%);">' +
-            '<div style="width:min(860px,100%);background:#fff;border:1px solid #f0c9c6;border-radius:16px;padding:18px 20px;color:#b42318;line-height:1.7;">' +
-              '<strong>正方形ページの初期化に失敗しました。</strong><br>' +
-              '再読み込みで改善しない場合は、ブラウザキャッシュを削除して再度お試しください。' +
-            '</div>' +
-          '</main>';
-      }, 2500);
+
+      const sideInput = document.getElementById('sideLen');
+      const statusBox = document.getElementById('statusBox');
+      const svg = document.getElementById('squareSvg');
+      const labelButtons = Array.from(document.querySelectorAll('.toggle-btn'));
+      const pageBackBtn = document.getElementById('pageBackBtn');
+      const leftDock = document.getElementById('leftDock');
+      const rightDock = document.getElementById('rightDock');
+      const leftToggle = document.getElementById('dockToggleBtn');
+      const rightToggle = document.getElementById('rightDockToggleBtn');
+
+      const labelState = { A: true, B: true, C: true, D: true };
+      let isLeftCollapsed = false;
+      let isRightCollapsed = false;
+
+      function evaluateExpression(raw) {
+        const normalized = String(raw || '')
+          .trim()
+          .replace(/\s+/g, '')
+          .replace(/π/g, 'pi')
+          .replace(/√/g, 'sqrt');
+
+        if (!normalized) throw new Error('辺の長さを入力してください。');
+        if (!/^[0-9+\-*/().,a-zA-Z]+$/.test(normalized)) throw new Error('使用できない文字が含まれています。');
+
+        const scope = {
+          pi: Math.PI,
+          e: Math.E,
+          sqrt: Math.sqrt,
+          sin: Math.sin,
+          cos: Math.cos,
+          tan: Math.tan
+        };
+        let value;
+        try {
+          value = Function('s', '"use strict";const {pi,e,sqrt,sin,cos,tan}=s;return (' + normalized + ');')(scope);
+        } catch (error) {
+          throw new Error('式を読み取れませんでした。');
+        }
+        if (!Number.isFinite(value) || value <= 0) throw new Error('0より大きい値を入力してください。');
+        return value;
+      }
+
+      function formatNumber(n) {
+        const x = Math.round(n * 100) / 100;
+        return Number.isInteger(x) ? String(x) : x.toFixed(2).replace(/0+$/, '').replace(/\.$/, '');
+      }
+
+      function drawSquare(side) {
+        const margin = 120;
+        const size = Math.min(1200 - margin * 2, 800 - margin * 2);
+        const x0 = (1200 - size) / 2;
+        const y0 = (800 - size) / 2;
+
+        const A = { x: x0, y: y0 };
+        const B = { x: x0, y: y0 + size };
+        const C = { x: x0 + size, y: y0 + size };
+        const D = { x: x0 + size, y: y0 };
+
+        svg.innerHTML = '';
+
+        const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+        poly.setAttribute('points', [A, B, C, D].map(function (p) { return p.x + ',' + p.y; }).join(' '));
+        poly.setAttribute('fill', 'rgba(42,91,215,.08)');
+        poly.setAttribute('stroke', '#2a5bd7');
+        poly.setAttribute('stroke-width', '4');
+        svg.appendChild(poly);
+
+        [A, B, C, D].forEach(function (p) {
+          const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+          dot.setAttribute('cx', String(p.x));
+          dot.setAttribute('cy', String(p.y));
+          dot.setAttribute('r', '5');
+          dot.setAttribute('fill', '#111');
+          svg.appendChild(dot);
+        });
+
+        const labelPos = {
+          A: { x: A.x - 16, y: A.y - 10, anchor: 'end' },
+          B: { x: B.x - 16, y: B.y + 26, anchor: 'end' },
+          C: { x: C.x + 16, y: C.y + 26, anchor: 'start' },
+          D: { x: D.x + 16, y: D.y - 10, anchor: 'start' }
+        };
+
+        Object.keys(labelPos).forEach(function (key) {
+          if (!labelState[key]) return;
+          const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          t.setAttribute('x', String(labelPos[key].x));
+          t.setAttribute('y', String(labelPos[key].y));
+          t.setAttribute('text-anchor', labelPos[key].anchor);
+          t.setAttribute('font-size', '46');
+          t.setAttribute('font-family', 'Times New Roman, serif');
+          t.setAttribute('fill', '#1f2430');
+          t.textContent = key;
+          svg.appendChild(t);
+        });
+
+        const lenText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        lenText.setAttribute('x', '600');
+        lenText.setAttribute('y', String(B.y + 62));
+        lenText.setAttribute('text-anchor', 'middle');
+        lenText.setAttribute('font-size', '40');
+        lenText.setAttribute('font-family', 'Times New Roman, serif');
+        lenText.setAttribute('fill', '#2a5bd7');
+        lenText.textContent = formatNumber(side);
+        svg.appendChild(lenText);
+      }
+
+      function render() {
+        try {
+          const side = evaluateExpression(sideInput.value);
+          drawSquare(side);
+          statusBox.textContent = '正方形を描画しています。';
+          statusBox.style.color = '#3153a4';
+          statusBox.style.borderColor = '#e1e8fb';
+          statusBox.style.background = '#f8faff';
+        } catch (error) {
+          statusBox.textContent = error.message || '描画に失敗しました。';
+          statusBox.style.color = '#b42318';
+          statusBox.style.borderColor = '#f3c3bf';
+          statusBox.style.background = '#fff1f0';
+          svg.innerHTML = '';
+        }
+      }
+
+      labelButtons.forEach(function (btn) {
+        const id = btn.dataset.label;
+        btn.addEventListener('click', function () {
+          labelState[id] = !labelState[id];
+          btn.classList.toggle('is-off', !labelState[id]);
+          render();
+        });
+      });
+
+      function syncDockButtons() {
+        leftToggle.textContent = isLeftCollapsed ? '›' : '‹';
+        leftToggle.setAttribute('aria-expanded', String(!isLeftCollapsed));
+        rightToggle.textContent = isRightCollapsed ? '‹' : '›';
+        rightToggle.setAttribute('aria-expanded', String(!isRightCollapsed));
+      }
+
+      leftToggle.addEventListener('click', function () {
+        isLeftCollapsed = !isLeftCollapsed;
+        leftDock.classList.toggle('is-collapsed', isLeftCollapsed);
+        syncDockButtons();
+      });
+
+      rightToggle.addEventListener('click', function () {
+        isRightCollapsed = !isRightCollapsed;
+        rightDock.classList.toggle('is-collapsed', isRightCollapsed);
+        syncDockButtons();
+      });
+
+      pageBackBtn.addEventListener('click', function () {
+        window.history.back();
+      });
+
+      sideInput.addEventListener('input', render);
+      sideInput.addEventListener('change', render);
+
+      syncDockButtons();
+      render();
     })();
   </script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="/assets/supabase-client.js"></script>
-  <script src="/assets/auth-ui.js"></script>
-  <script src="/assets/components.js"></script>
-  <script src="/assets/draw-simple-page.js?v=20260411c"></script>
 </body>
 </html>
