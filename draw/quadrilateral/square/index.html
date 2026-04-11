@@ -480,10 +480,15 @@
       const rightToggle = document.getElementById('rightDockToggleBtn');
       const boardStage = document.querySelector('.board-stage');
 
+      const defaultLabelState = {
+        vertex: { A: true, B: true, C: true, D: true },
+        side: { AB: true, BC: true, CD: true, DA: true },
+        angle: { A: false, B: false, C: false, D: false }
+      };
       const labelState = {
         vertex: { A: true, B: true, C: true, D: true },
         side: { AB: true, BC: true, CD: true, DA: true },
-        angle: { A: true, B: true, C: true, D: true }
+        angle: { A: false, B: false, C: false, D: false }
       };
       const aspectModes = [{ label: '1:1', ratio: 1 }, { label: '1:√2', ratio: 1 / Math.SQRT2 }, { label: '√2:1', ratio: Math.SQRT2 }];
       const unitModes = ['なし', 'cm', 'm', 'km'];
@@ -649,6 +654,14 @@
         });
       });
 
+      function syncLabelButtons() {
+        labelButtons.forEach(function (btn) {
+          const group = btn.dataset.group;
+          const id = btn.dataset.id;
+          btn.classList.toggle('is-off', !labelState[group][id]);
+        });
+      }
+
       function syncDockButtons() {
         leftToggle.textContent = isLeftCollapsed ? '›' : '‹';
         leftToggle.setAttribute('aria-expanded', String(!isLeftCollapsed));
@@ -689,10 +702,10 @@
         unitBtn.textContent = '長さcm';
         Object.keys(labelState).forEach(function (group) {
           Object.keys(labelState[group]).forEach(function (id) {
-            labelState[group][id] = true;
+            labelState[group][id] = defaultLabelState[group][id];
           });
         });
-        labelButtons.forEach(function (btn) { btn.classList.remove('is-off'); });
+        syncLabelButtons();
         render();
       });
 
@@ -719,6 +732,7 @@
       sideInput.addEventListener('change', render);
 
       syncDockButtons();
+      syncLabelButtons();
       render();
     })();
   </script>
