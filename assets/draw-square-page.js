@@ -379,6 +379,7 @@
       button.className = 'download-btn btn-bd';
       if (!labelState[config.type][config.id]) button.style.opacity = '0.55';
       button.textContent = getToggleLabel(config);
+      button.setAttribute('aria-pressed', String(!!labelState[config.type][config.id]));
       button.addEventListener('click', function () {
         labelState[config.type][config.id] = !labelState[config.type][config.id];
         if (labelState[config.type][config.id]) resetSingleLabel(config.type, config.id);
@@ -392,7 +393,14 @@
           const next = window.prompt('頂点ラベル文字を入力してください（A-Z のみ）', current);
           if (next === null) return;
           const normalized = String(next).trim().toUpperCase();
-          vertexLabelText[config.id] = /^[A-Z]+$/.test(normalized) ? normalized : config.id;
+          if (!normalized) {
+            vertexLabelText[config.id] = config.id;
+          } else if (/^[A-Z]+$/.test(normalized)) {
+            vertexLabelText[config.id] = normalized.slice(0, 12);
+          } else {
+            setStatus('頂点ラベルは英字大文字（A-Z）のみ入力できます。', true);
+            return;
+          }
           renderLabelToggleButtons();
           render();
         });
@@ -409,6 +417,8 @@
           }
           angleMarkerMode[config.id] = mode;
           labelState.angleMark[config.id] = (mode !== 0);
+          if (mode !== 0) resetSingleLabel('angleMark', config.id);
+          renderLabelToggleButtons();
           render();
         });
       }
@@ -420,6 +430,7 @@
       button.className = 'download-btn btn-bd';
       if (!labelState[config.type][config.id]) button.style.opacity = '0.55';
       button.textContent = getToggleLabel(config);
+      button.setAttribute('aria-pressed', String(!!labelState[config.type][config.id]));
       button.addEventListener('click', function () {
         labelState[config.type][config.id] = !labelState[config.type][config.id];
         if (labelState[config.type][config.id]) resetSingleLabel(config.type, config.id);
@@ -741,6 +752,7 @@
       id: angleId,
       x: symbolCenter.x,
       y: symbolCenter.y,
+      scaleCenter: { x: vertex.x, y: vertex.y },
       screenRect: {
         left: Math.min.apply(null, xs),
         right: Math.max.apply(null, xs),
@@ -882,16 +894,19 @@
       }
       const anchor = getSelectedAnchor();
       if (!anchor) return;
+      const dragCenter = (selectedLabel.type === 'angleMark' && anchor.scaleCenter)
+        ? { x: anchor.scaleCenter.x, y: anchor.scaleCenter.y }
+        : { x: anchor.x, y: anchor.y };
       dragState = {
         mode: overlayControl.mode,
         type: selectedLabel.type,
         id: selectedLabel.id,
         startClient: { x: event.clientX, y: event.clientY },
-        center: { x: anchor.x, y: anchor.y },
+        center: dragCenter,
         fontSizeStart: labelFontSize[selectedLabel.type][selectedLabel.id],
         rotationStart: labelStyleState[selectedLabel.type][selectedLabel.id].rotation,
-        distanceStart: Math.hypot(point.x - anchor.x, point.y - anchor.y),
-        angleStart: Math.atan2(point.y - anchor.y, point.x - anchor.x)
+        distanceStart: Math.hypot(point.x - dragCenter.x, point.y - dragCenter.y),
+        angleStart: Math.atan2(point.y - dragCenter.y, point.x - dragCenter.x)
       };
       return;
     }
@@ -901,6 +916,7 @@
       selectedLabel = anchorHit;
       isPaletteOpen = false;
       render();
+      if (anchorHit.type === 'angleMark') return;
       return;
     }
 
