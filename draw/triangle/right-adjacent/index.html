@@ -2846,10 +2846,8 @@
             const p3 = perpGeom.p3;
             const perpStyle = getLabelStyle('perp', 'B');
             const markStyle = { strokeWidth: 2, strokeColor: perpStyle.color || '#111111', fixed: true, highlight: false };
-            board.create('segment', [[p0.x, p0.y], [p1.x, p1.y]], markStyle);
             board.create('segment', [[p1.x, p1.y], [p2.x, p2.y]], markStyle);
             board.create('segment', [[p2.x, p2.y], [p3.x, p3.y]], markStyle);
-            board.create('segment', [[p3.x, p3.y], [p0.x, p0.y]], markStyle);
 
             const screenPoints = [p0, p1, p2, p3].map(userToScreenPoint);
             const xs = screenPoints.map(function (pt) { return pt.x; });
