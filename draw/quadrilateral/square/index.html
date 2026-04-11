@@ -152,13 +152,6 @@
       line-height:1.25;
     }
 
-    .panel-intro{
-      margin:10px 0 0;
-      color:var(--muted);
-      font-size:14px;
-      line-height:1.75;
-    }
-
     .section{
       margin-top:14px;
       padding-top:12px;
@@ -208,7 +201,10 @@
       display:flex;
       flex-direction:column;
       gap:10px;
+      flex:1;
       min-height:0;
+      overflow:auto;
+      padding-right:2px;
     }
 
     .board-status{
@@ -229,6 +225,60 @@
       padding:12px;
       box-shadow:var(--shadow);
       overflow:auto;
+    }
+
+    .overlay-card{
+      padding:12px;
+      border-radius:14px;
+      border:1px solid #e7eaf3;
+      background:rgba(255,255,255,.92);
+      box-shadow:var(--shadow);
+    }
+
+    .group-title{
+      margin:0 0 8px;
+      color:var(--muted);
+      font-size:12px;
+      font-weight:700;
+      letter-spacing:.03em;
+    }
+
+    .tool-row{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+    }
+
+    .tool-btn{
+      min-width:108px;
+      padding:10px 12px;
+      border:1px solid #cfd7ea;
+      border-radius:13px;
+      background:linear-gradient(180deg,#ffffff 0%,#f6f8ff 100%);
+      color:#24304d;
+      font-size:13px;
+      font-weight:700;
+      cursor:pointer;
+      box-shadow:0 1px 0 rgba(255,255,255,.9) inset, 0 2px 8px rgba(36,71,168,.08);
+    }
+
+    .tool-btn:hover{
+      border-color:#9fb3ea;
+      color:#1f3d94;
+      background:linear-gradient(180deg,#ffffff 0%,#eef3ff 100%);
+    }
+
+    .download-btn{
+      min-width:88px;
+      padding:10px 13px;
+      border:1px solid #cfd7ea;
+      border-radius:13px;
+      background:linear-gradient(180deg,#ffffff 0%,#f6f8ff 100%);
+      color:#24304d;
+      font-size:13px;
+      font-weight:700;
+      cursor:pointer;
+      box-shadow:0 1px 0 rgba(255,255,255,.9) inset, 0 2px 8px rgba(36,71,168,.08);
     }
 
     .toggle-title{
@@ -268,7 +318,7 @@
       inset:16px 332px 16px 392px;
       z-index:10;
       border:1px solid #d8dff2;
-      border-radius:20px;
+      border-radius:18px;
       background:linear-gradient(180deg,#fcfdff 0%,#f7f9ff 100%);
       box-shadow:0 10px 30px rgba(30,56,135,.08);
       overflow:hidden;
@@ -317,7 +367,6 @@
       </div>
       <aside class="panel dock-card">
         <h1>正方形</h1>
-        <p class="panel-intro">左上を A とし、反時計回りに B, C, D を配置します。</p>
         <div class="section">
           <h3>1辺の長さ</h3>
           <div class="field-grid">
@@ -331,6 +380,28 @@
       </aside>
       <div class="controls-stack">
         <div class="board-status dock-card" id="statusBox">正方形を描画しています。</div>
+        <div class="overlay-card">
+          <p class="group-title">画面</p>
+          <div class="tool-row">
+            <button class="tool-btn" id="ratioBtn" type="button">画面比 1:1</button>
+            <button class="tool-btn" id="resetBtn" type="button">リセット</button>
+          </div>
+        </div>
+        <div class="overlay-card">
+          <p class="group-title">出力</p>
+          <div class="tool-row">
+            <button class="download-btn" id="pdfBtn" type="button">PDF</button>
+            <button class="download-btn" id="pngBtn" type="button">PNG</button>
+            <button class="download-btn" id="transparentBtn" type="button">透過</button>
+          </div>
+        </div>
+        <div class="overlay-card">
+          <p class="group-title">単位</p>
+          <div class="tool-row">
+            <button class="tool-btn" id="angleModeBtn" type="button">度数法</button>
+            <button class="tool-btn" id="unitBtn" type="button">長さcm</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -363,14 +434,26 @@
       const svg = document.getElementById('squareSvg');
       const labelButtons = Array.from(document.querySelectorAll('.toggle-btn'));
       const pageBackBtn = document.getElementById('pageBackBtn');
+      const ratioBtn = document.getElementById('ratioBtn');
+      const resetBtn = document.getElementById('resetBtn');
+      const pdfBtn = document.getElementById('pdfBtn');
+      const pngBtn = document.getElementById('pngBtn');
+      const transparentBtn = document.getElementById('transparentBtn');
+      const angleModeBtn = document.getElementById('angleModeBtn');
+      const unitBtn = document.getElementById('unitBtn');
       const leftDock = document.getElementById('leftDock');
       const rightDock = document.getElementById('rightDock');
       const leftToggle = document.getElementById('dockToggleBtn');
       const rightToggle = document.getElementById('rightDockToggleBtn');
+      const boardStage = document.querySelector('.board-stage');
 
       const labelState = { A: true, B: true, C: true, D: true };
+      const aspectModes = [{ label: '1:1', ratio: 1 }, { label: '1:√2', ratio: 1 / Math.SQRT2 }, { label: '√2:1', ratio: Math.SQRT2 }];
+      const unitModes = ['なし', 'cm', 'm', 'km'];
       let isLeftCollapsed = false;
       let isRightCollapsed = false;
+      let aspectIndex = 0;
+      let unitIndex = 1;
 
       function evaluateExpression(raw) {
         const normalized = String(raw || '')
@@ -461,23 +544,31 @@
         lenText.setAttribute('font-size', '40');
         lenText.setAttribute('font-family', 'Times New Roman, serif');
         lenText.setAttribute('fill', '#2a5bd7');
-        lenText.textContent = formatNumber(side);
+        const unit = unitModes[unitIndex];
+        lenText.textContent = formatNumber(side) + (unit === 'なし' ? '' : unit);
         svg.appendChild(lenText);
+      }
+
+      function setStatus(message, isError) {
+        statusBox.textContent = message;
+        if (isError) {
+          statusBox.style.color = '#b42318';
+          statusBox.style.borderColor = '#f3c3bf';
+          statusBox.style.background = '#fff1f0';
+        } else {
+          statusBox.style.color = '#3153a4';
+          statusBox.style.borderColor = '#e1e8fb';
+          statusBox.style.background = '#f8faff';
+        }
       }
 
       function render() {
         try {
           const side = evaluateExpression(sideInput.value);
           drawSquare(side);
-          statusBox.textContent = '正方形を描画しています。';
-          statusBox.style.color = '#3153a4';
-          statusBox.style.borderColor = '#e1e8fb';
-          statusBox.style.background = '#f8faff';
+          setStatus('正方形を描画しています。', false);
         } catch (error) {
-          statusBox.textContent = error.message || '描画に失敗しました。';
-          statusBox.style.color = '#b42318';
-          statusBox.style.borderColor = '#f3c3bf';
-          statusBox.style.background = '#fff1f0';
+          setStatus(error.message || '描画に失敗しました。', true);
           svg.innerHTML = '';
         }
       }
@@ -512,6 +603,45 @@
 
       pageBackBtn.addEventListener('click', function () {
         window.history.back();
+      });
+
+      ratioBtn.addEventListener('click', function () {
+        aspectIndex = (aspectIndex + 1) % aspectModes.length;
+        const mode = aspectModes[aspectIndex];
+        ratioBtn.textContent = '画面比 ' + mode.label;
+        boardStage.style.aspectRatio = String(mode.ratio);
+        setStatus('画面比を ' + mode.label + ' に変更しました。', false);
+      });
+
+      resetBtn.addEventListener('click', function () {
+        sideInput.value = '5';
+        aspectIndex = 0;
+        ratioBtn.textContent = '画面比 1:1';
+        boardStage.style.removeProperty('aspect-ratio');
+        unitIndex = 1;
+        unitBtn.textContent = '長さcm';
+        Object.keys(labelState).forEach(function (k) { labelState[k] = true; });
+        labelButtons.forEach(function (btn) { btn.classList.remove('is-off'); });
+        render();
+      });
+
+      function pendingDownload(kind) {
+        setStatus(kind + ' 出力は次のステップで有効化します。', false);
+      }
+
+      pdfBtn.addEventListener('click', function () { pendingDownload('PDF'); });
+      pngBtn.addEventListener('click', function () { pendingDownload('PNG'); });
+      transparentBtn.addEventListener('click', function () { pendingDownload('透過'); });
+
+      angleModeBtn.addEventListener('click', function () {
+        setStatus('正方形では角表示が固定のため、角度モードは準備中です。', false);
+      });
+
+      unitBtn.addEventListener('click', function () {
+        unitIndex = (unitIndex + 1) % unitModes.length;
+        const unit = unitModes[unitIndex];
+        unitBtn.textContent = '長さ' + (unit === 'なし' ? 'なし' : unit);
+        render();
       });
 
       sideInput.addEventListener('input', render);
