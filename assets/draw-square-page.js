@@ -426,15 +426,14 @@
     }
     exportFrame.style.width = Math.max(120, width) + 'px';
     exportFrame.style.height = Math.max(120, height) + 'px';
-    exportBackdrop.classList.add('is-visible');
     const left = (rect.width - width) / 2;
     const top = (rect.height - height) / 2;
-    const right = rect.width - left - width;
-    const bottom = rect.height - top - height;
-    exportBackdrop.querySelector('[data-piece="top"]').style.cssText = 'left:0;top:0;width:100%;height:' + top + 'px;';
-    exportBackdrop.querySelector('[data-piece="left"]').style.cssText = 'left:0;top:' + top + 'px;width:' + left + 'px;height:' + height + 'px;';
-    exportBackdrop.querySelector('[data-piece="right"]').style.cssText = 'right:0;top:' + top + 'px;width:' + right + 'px;height:' + height + 'px;';
-    exportBackdrop.querySelector('[data-piece="bottom"]').style.cssText = 'left:0;bottom:0;width:100%;height:' + bottom + 'px;';
+    const right = left + width;
+    const bottom = top + height;
+    exportBackdrop.style.setProperty('--frame-left', left + 'px');
+    exportBackdrop.style.setProperty('--frame-top', top + 'px');
+    exportBackdrop.style.setProperty('--frame-right', right + 'px');
+    exportBackdrop.style.setProperty('--frame-bottom', bottom + 'px');
   }
 
   function cropCanvasToFrame(canvas) {
@@ -458,21 +457,6 @@
     renderRafId = requestAnimationFrame(function () {
       renderRafId = null;
       render();
-    });
-  }
-
-  function drawFramePolygon() {
-    board.create('polygon', [[-5.35, 3.45], [-5.35, -3.45], [5.35, -3.45], [5.35, 3.45]], {
-      borders: {
-        strokeWidth: 1.6,
-        strokeColor: '#c9d6fb',
-        fixed: true,
-        highlight: false
-      },
-      fillColor: '#fbfcff',
-      fillOpacity: 1,
-      vertices: { visible: false },
-      highlight: false
     });
   }
 
@@ -571,7 +555,6 @@
   }
 
   function renderFigure(geometry) {
-    drawFramePolygon();
     const P = geometry.points;
     const pointA = board.create('point', [P.A.x, P.A.y], { name: '', size: 3, fixed: true, strokeColor: '#111111', fillColor: '#111111' });
     const pointB = board.create('point', [P.B.x, P.B.y], { name: '', size: 3, fixed: true, strokeColor: '#111111', fillColor: '#111111' });
@@ -580,7 +563,7 @@
     board.create('polygon', [pointA, pointB, pointC, pointD], {
       borders: { strokeWidth: 2, strokeColor: '#2a5bd7', fixed: true, highlight: false },
       fillColor: 'rgba(42,91,215,0.04)',
-      fillOpacity: 0.12,
+      fillOpacity: 0,
       vertices: { visible: false },
       highlight: false
     });

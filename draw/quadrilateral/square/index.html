@@ -179,10 +179,61 @@
     }
 
     .hint{
-      margin:8px 0 0;
+      margin:0;
       color:var(--muted);
       font-size:11px;
       line-height:1.45;
+    }
+
+    .button-row{
+      display:grid;
+      gap:10px;
+    }
+
+    .download-btn{
+      width:auto;
+      min-width:88px;
+      padding:10px 13px;
+      border:1px solid #cfd7ea;
+      border-radius:13px;
+      background:linear-gradient(180deg,#ffffff 0%,#f6f8ff 100%);
+      color:#24304d;
+      font-size:13px;
+      font-weight:700;
+      letter-spacing:.01em;
+      cursor:pointer;
+      box-shadow:0 1px 0 rgba(255,255,255,.9) inset, 0 2px 8px rgba(36,71,168,.08);
+      transition:.16s ease;
+    }
+
+    .group-title{
+      margin:0 0 8px;
+      color:var(--muted);
+      font-size:12px;
+      font-weight:700;
+      letter-spacing:.03em;
+    }
+
+    .btn-ac{
+      min-width:124px;
+    }
+
+    .btn-bd{
+      min-width:84px;
+      padding:9px 11px;
+      font-size:13px;
+    }
+
+    .download-btn:hover{
+      border-color:#9fb3ea;
+      color:#1f3d94;
+      background:linear-gradient(180deg,#ffffff 0%,#eef3ff 100%);
+      box-shadow:0 1px 0 rgba(255,255,255,.95) inset, 0 4px 12px rgba(36,71,168,.14);
+    }
+
+    .download-btn:active{
+      transform:translateY(1px);
+      box-shadow:0 1px 4px rgba(36,71,168,.12) inset;
     }
 
     .controls-stack{
@@ -193,6 +244,7 @@
     }
 
     .board-status{
+      margin:0;
       padding:11px 12px;
       font-size:13px;
       color:#3153a4;
@@ -209,34 +261,20 @@
     }
 
     .overlay-card{
-      padding:12px;
-      border-radius:14px;
-      border:1px solid #e7eaf3;
-      background:rgba(255,255,255,.92);
-      box-shadow:var(--shadow);
-    }
-
-    .group-title{
-      margin:0 0 8px;
-      color:var(--muted);
-      font-size:12px;
-      font-weight:700;
-      letter-spacing:.03em;
+      padding:14px;
     }
 
     .tool-row{
       display:flex;
+      align-items:center;
       flex-wrap:wrap;
       gap:8px;
+      justify-content:flex-start;
     }
 
-    .button-row{
-      gap:8px;
-    }
-
-    .tool-btn,
-    .download-btn,
-    .toggle-btn{
+    .tool-btn{
+      min-width:88px;
+      padding:10px 13px;
       border:1px solid #cfd7ea;
       border-radius:13px;
       background:linear-gradient(180deg,#ffffff 0%,#f6f8ff 100%);
@@ -249,19 +287,16 @@
       transition:.16s ease;
     }
 
-    .tool-btn,
-    .download-btn{
-      min-width:88px;
-      padding:10px 13px;
-    }
-
-    .tool-btn:hover,
-    .download-btn:hover,
-    .toggle-btn:hover{
+    .tool-btn:hover{
       border-color:#9fb3ea;
       color:#1f3d94;
       background:linear-gradient(180deg,#ffffff 0%,#eef3ff 100%);
       box-shadow:0 1px 0 rgba(255,255,255,.95) inset, 0 4px 12px rgba(36,71,168,.14);
+    }
+
+    .tool-btn:active{
+      transform:translateY(1px);
+      box-shadow:0 1px 4px rgba(36,71,168,.12) inset;
     }
 
     #box{
@@ -271,10 +306,7 @@
       height:100%;
       border:none;
       border-radius:0;
-      background-color:#f6f8ff;
-      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='132' height='18' viewBox='0 0 132 18'%3E%3Cg transform='rotate(0 66 9)'%3E%3Ctext x='0' y='13' fill='rgba(31,36,48,0.12)' font-family='Arial,sans-serif' font-size='12' font-weight='800' letter-spacing='-0.2'%3EInstant Geometry%3C/text%3E%3C/g%3E%3C/svg%3E");
-      background-repeat:repeat;
-      background-size:132px 18px;
+      background:#fbfcff;
     }
 
     #box svg,
@@ -352,17 +384,29 @@
       inset:0;
       pointer-events:none;
       z-index:5;
-      display:none;
-    }
-
-    .export-backdrop.is-visible{
-      display:block;
+      --frame-left:0px;
+      --frame-top:0px;
+      --frame-right:0px;
+      --frame-bottom:0px;
+      background-color:rgba(248,250,255,.88);
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='12' viewBox='0 0 90 12'%3E%3Ctext x='0' y='10' fill='rgba(31,36,48,0.12)' font-family='Arial,sans-serif' font-size='11' font-weight='800' letter-spacing='-0.12'%3EInstant Geometry%3C/text%3E%3C/svg%3E");
+      background-repeat:repeat;
+      background-size:90px 12px;
+      background-position:0 0;
+      -webkit-mask:
+        linear-gradient(#000 0 0) top / 100% var(--frame-top) no-repeat,
+        linear-gradient(#000 0 0) left / var(--frame-left) calc(var(--frame-bottom) - var(--frame-top)) no-repeat,
+        linear-gradient(#000 0 0) right / calc(100% - var(--frame-right)) calc(var(--frame-bottom) - var(--frame-top)) no-repeat,
+        linear-gradient(#000 0 0) bottom / 100% calc(100% - var(--frame-bottom)) no-repeat;
+      mask:
+        linear-gradient(#000 0 0) top / 100% var(--frame-top) no-repeat,
+        linear-gradient(#000 0 0) left / var(--frame-left) calc(var(--frame-bottom) - var(--frame-top)) no-repeat,
+        linear-gradient(#000 0 0) right / calc(100% - var(--frame-right)) calc(var(--frame-bottom) - var(--frame-top)) no-repeat,
+        linear-gradient(#000 0 0) bottom / 100% calc(100% - var(--frame-bottom)) no-repeat;
     }
 
     .export-backdrop-piece{
-      position:absolute;
-      background:rgba(248,250,255,.82);
-      backdrop-filter:blur(1px);
+      display:none;
     }
 
     .label-toggles{
@@ -374,11 +418,13 @@
     }
 
     .toggle-card{
+      flex:1;
       background:rgba(255,255,255,.92);
       border:1px solid #e7eaf3;
       border-radius:14px;
       padding:12px;
       box-shadow:var(--shadow);
+      backdrop-filter:blur(10px);
       overflow:hidden;
     }
 
@@ -394,19 +440,6 @@
       display:flex;
       flex-wrap:wrap;
       gap:6px;
-    }
-
-    .toggle-btn{
-      min-width:58px;
-      padding:7px 8px;
-      font-size:12px;
-    }
-
-    .toggle-btn.is-off{
-      opacity:.45;
-      background:#f4f6fb;
-      color:#6f7891;
-      box-shadow:none;
     }
 
     @media (max-width: 980px){
@@ -492,23 +525,23 @@
         <div class="overlay-card dock-card">
           <p class="group-title">画面</p>
           <div class="tool-row">
-            <button class="tool-btn" id="ratioBtn" type="button">画面比 1:1</button>
-            <button class="tool-btn" id="resetBtn" type="button">リセット</button>
+            <button class="tool-btn btn-ac" id="ratioBtn" type="button">画面比 1:1</button>
+            <button class="tool-btn btn-ac" id="resetBtn" type="button">リセット</button>
           </div>
         </div>
         <div class="overlay-card dock-card">
           <p class="group-title">出力</p>
           <div class="tool-row button-row">
-            <button class="download-btn" type="button" data-download-format="pdf">PDF</button>
-            <button class="download-btn" type="button" data-download-format="png">PNG</button>
-            <button class="download-btn" type="button" data-download-format="png-transparent">透過</button>
+            <button class="download-btn btn-bd" type="button" data-download-format="pdf">PDF</button>
+            <button class="download-btn btn-bd" type="button" data-download-format="png">PNG</button>
+            <button class="download-btn btn-bd" type="button" data-download-format="png-transparent">透過</button>
           </div>
         </div>
         <div class="overlay-card dock-card">
           <p class="group-title">単位</p>
           <div class="tool-row">
-            <button class="tool-btn" id="angleModeBtn" type="button">度数法</button>
-            <button class="tool-btn" id="unitBtn" type="button">長さcm</button>
+            <button class="tool-btn btn-ac" id="angleModeBtn" type="button">度数法</button>
+            <button class="tool-btn btn-ac" id="unitBtn" type="button">長さcm</button>
           </div>
         </div>
       </div>
