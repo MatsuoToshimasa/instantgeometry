@@ -988,15 +988,22 @@
   labelLayer.addEventListener('pointerdown', function (event) {
     const target = event.target.closest('.floating-label');
     if (!target) return;
-    selectedLabel = { type: target.dataset.type, id: target.dataset.id };
+    const type = target.dataset.type;
+    const id = target.dataset.id;
+    if (!type || !id) return;
+    selectedLabel = { type: type, id: id };
     selectedFigure = false;
     isPaletteOpen = false;
     render();
-    const position = labelPositions[target.dataset.type][target.dataset.id];
+    const anchor = currentLabelAnchors.find(function (item) {
+      return item.type === type && item.id === id && !item.hidden;
+    });
+    const position = (labelPositions[type] && labelPositions[type][id]) || (anchor ? { x: anchor.x, y: anchor.y } : null);
+    if (!position) return;
     dragState = {
       mode: 'move',
-      type: target.dataset.type,
-      id: target.dataset.id,
+      type: type,
+      id: id,
       startClient: { x: event.clientX, y: event.clientY },
       labelStart: { x: position.x, y: position.y }
     };

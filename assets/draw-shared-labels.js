@@ -83,6 +83,8 @@
     const screen = userToScreenPoint(board, position);
     const labelNode = document.createElement('div');
     labelNode.className = 'floating-label';
+    labelNode.dataset.type = labelKey.type;
+    labelNode.dataset.id = labelKey.id;
     if (window.katex && typeof window.katex.render === 'function') {
       try {
         window.katex.render(toLatexMath(text), labelNode, {
