@@ -1,12 +1,6 @@
 (function () {
   'use strict';
 
-  const NS = 'http://www.w3.org/2000/svg';
-  const VIEW_WIDTH = 1200;
-  const VIEW_HEIGHT = 800;
-  const HANDLE_OFFSET = 18;
-  const colorChoices = ['#1f2430', '#2a5bd7', '#687086', '#0f8b6e', '#b42318', '#b06a00'];
-
   const sideInput = document.getElementById('sideLen');
   const statusBox = document.getElementById('statusBox');
   const generalLabelToggleGrid = document.getElementById('generalLabelToggleGrid');
@@ -25,15 +19,14 @@
   const exportBackdrop = document.getElementById('exportBackdrop');
   const exportFrame = document.getElementById('exportFrame');
 
-  const svg = document.createElementNS(NS, 'svg');
-  svg.setAttribute('viewBox', '0 0 ' + VIEW_WIDTH + ' ' + VIEW_HEIGHT);
-  svg.setAttribute('aria-label', '正方形のプレビュー');
-  svg.style.position = 'absolute';
-  svg.style.inset = '0';
-  svg.style.width = '100%';
-  svg.style.height = '100%';
-  svg.style.display = 'block';
-  box.appendChild(svg);
+  const board = JXG.JSXGraph.initBoard('box', {
+    boundingbox: [0, 8, 12, 0],
+    axis: false,
+    showNavigation: false,
+    showInfobox: false,
+    showCopyright: false,
+    keepaspectratio: true
+  });
 
   const labelLayer = document.createElement('div');
   labelLayer.id = 'labelLayer';
@@ -49,17 +42,16 @@
     diagonal: { AC: false, BD: false }
   };
 
-  const labelState = cloneState(defaultLabelState);
-
+  const labelState = JSON.parse(JSON.stringify(defaultLabelState));
   const labelFontDefaults = {
-    vertex: { A: 54, B: 54, C: 54, D: 54 },
-    side: { AB: 34, BC: 34, CD: 34, DA: 34 },
+    vertex: { A: 36, B: 36, C: 36, D: 36 },
+    side: { AB: 32, BC: 32, CD: 32, DA: 32 },
     angle: { A: 30, B: 30, C: 30, D: 30 },
-    area: { main: 52 },
-    specialVertex: { O: 44 },
-    diagonal: { AC: 30, BD: 30 }
+    area: { main: 48 },
+    specialVertex: { O: 34 },
+    diagonal: { AC: 28, BD: 28 }
   };
-
+  const labelFontSize = JSON.parse(JSON.stringify(labelFontDefaults));
   const styleDefaults = {
     vertex: { A: style('#1f2430'), B: style('#1f2430'), C: style('#1f2430'), D: style('#1f2430') },
     side: { AB: style('#2a5bd7'), BC: style('#2a5bd7'), CD: style('#2a5bd7'), DA: style('#2a5bd7') },
@@ -68,9 +60,7 @@
     specialVertex: { O: style('#1f2430') },
     diagonal: { AC: style('#7d8db8'), BD: style('#7d8db8') }
   };
-
-  const labelFontSize = cloneState(labelFontDefaults);
-  const labelStyle = cloneState(styleDefaults);
+  let labelStyleState = JSON.parse(JSON.stringify(styleDefaults));
   const labelPositions = {
     vertex: { A: null, B: null, C: null, D: null },
     side: { AB: null, BC: null, CD: null, DA: null },
@@ -80,29 +70,29 @@
     diagonal: { AC: null, BD: null }
   };
 
-  const aspectModes = [
-    { label: '1:1', ratio: 1 },
-    { label: '1:√2', ratio: 1 / Math.SQRT2 },
-    { label: '√2:1', ratio: Math.SQRT2 }
+  const exportAspects = [
+    { label: '1:1', value: 1 },
+    { label: '1:√2', value: 1 / Math.SQRT2 },
+    { label: '√2:1', value: Math.SQRT2 }
   ];
-  const unitModes = ['', 'cm', 'm', 'km'];
+  const unitOptions = ['', 'cm', 'm', 'km'];
 
-  let isLeftCollapsed = false;
-  let isRightCollapsed = false;
-  let aspectIndex = 0;
-  let unitIndex = 1;
-  let angleMode = 'degrees';
   let currentGeometry = null;
   let selectedLabel = null;
+  let currentLabelAnchors = [];
+  let currentSelectionOverlay = null;
   let dragState = null;
-  let selectionEls = { box: null, rotate: null, palette: null, scale: null, pop: null };
+  let renderRafId = null;
+  let exportAspectIndex = 0;
+  let angleMode = 'degrees';
+  let unitIndex = 1;
+  let isDockCollapsed = false;
+  let isRightDockCollapsed = false;
+  let isPaletteOpen = false;
+  let lastFitSignature = '';
 
   function style(color) {
     return { color: color, rotation: 0 };
-  }
-
-  function cloneState(source) {
-    return JSON.parse(JSON.stringify(source));
   }
 
   function setStatus(message, isError) {
@@ -111,48 +101,22 @@
   }
 
   function updateRatioButton() {
-    ratioBtn.textContent = '画面比 ' + aspectModes[aspectIndex].label;
+    ratioBtn.textContent = '画面比 ' + exportAspects[exportAspectIndex].label;
   }
 
   function updateUnitButton() {
-    unitBtn.textContent = unitModes[unitIndex] ? '長さ' + unitModes[unitIndex] : '単位なし';
+    unitBtn.textContent = unitOptions[unitIndex] ? '長さ' + unitOptions[unitIndex] : '単位なし';
   }
 
   function updateAngleModeButton() {
     angleModeBtn.textContent = angleMode === 'degrees' ? '度数法' : '弧度法';
   }
 
-  function syncDockButtons() {
-    leftToggle.textContent = isLeftCollapsed ? '›' : '‹';
-    leftToggle.setAttribute('aria-expanded', String(!isLeftCollapsed));
-    rightToggle.textContent = isRightCollapsed ? '‹' : '›';
-    rightToggle.setAttribute('aria-expanded', String(!isRightCollapsed));
-  }
-
-  function getBoxRect() {
-    const rect = box.getBoundingClientRect();
-    return {
-      left: rect.left,
-      top: rect.top,
-      width: Math.max(1, rect.width),
-      height: Math.max(1, rect.height)
-    };
-  }
-
-  function unitToScreen(pos) {
-    const rect = getBoxRect();
-    return {
-      x: (pos.x / VIEW_WIDTH) * rect.width,
-      y: (pos.y / VIEW_HEIGHT) * rect.height
-    };
-  }
-
-  function screenDeltaToUnit(dx, dy) {
-    const rect = getBoxRect();
-    return {
-      x: (dx / rect.width) * VIEW_WIDTH,
-      y: (dy / rect.height) * VIEW_HEIGHT
-    };
+  function updateDockToggleButtons() {
+    leftToggle.textContent = isDockCollapsed ? '›' : '‹';
+    leftToggle.setAttribute('aria-expanded', String(!isDockCollapsed));
+    rightToggle.textContent = isRightDockCollapsed ? '‹' : '›';
+    rightToggle.setAttribute('aria-expanded', String(!isRightDockCollapsed));
   }
 
   function evaluateExpression(raw) {
@@ -176,14 +140,13 @@
       deg: function (value) { return value * Math.PI / 180; }
     };
 
-    let value;
     try {
-      value = Function('s', '"use strict";const {pi,e,sqrt,sin,cos,tan,deg}=s;return (' + normalized + ');')(scope);
-    } catch (error) {
+      const value = Function('s', '"use strict";const {pi,e,sqrt,sin,cos,tan,deg}=s;return (' + normalized + ');')(scope);
+      if (!Number.isFinite(value) || value <= 0) throw new Error('0より大きい値を入力してください。');
+      return value;
+    } catch (_) {
       throw new Error('式を読み取れませんでした。');
     }
-    if (!Number.isFinite(value) || value <= 0) throw new Error('0より大きい値を入力してください。');
-    return value;
   }
 
   function formatNumber(value) {
@@ -191,69 +154,104 @@
     return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(2).replace(/0+$/, '').replace(/\.$/, '');
   }
 
-  function getAreaText(side) {
-    const base = formatNumber(side * side);
-    const unit = unitModes[unitIndex];
-    return unit ? '□ABCD = ' + base + unit + '²' : '□ABCD = ' + base;
+  function getCurrentUnit() {
+    return unitOptions[unitIndex];
   }
 
-  function getDiagonalText(side) {
-    const unit = unitModes[unitIndex];
-    const prefix = formatNumber(side) === '1' ? '' : formatNumber(side);
-    return prefix + '√2' + unit;
+  function appendUnit(text, square) {
+    const unit = getCurrentUnit();
+    if (!unit) return text;
+    return text + unit + (square ? '²' : '');
   }
 
-  function getSideText(side) {
-    const unit = unitModes[unitIndex];
-    return formatNumber(side) + unit;
+  function rotatePoint(point, center, angleDeg) {
+    const rad = angleDeg * Math.PI / 180;
+    const cos = Math.cos(rad);
+    const sin = Math.sin(rad);
+    const dx = point.x - center.x;
+    const dy = point.y - center.y;
+    return {
+      x: center.x + dx * cos - dy * sin,
+      y: center.y + dx * sin + dy * cos
+    };
   }
 
-  function getAngleText() {
-    return angleMode === 'degrees' ? '90°' : 'π/2';
+  function getLabelStyle(type, id) {
+    return labelStyleState[type] && labelStyleState[type][id]
+      ? labelStyleState[type][id]
+      : { color: '#2a5bd7', rotation: 0 };
   }
 
-  function createSvgElement(name, attrs) {
-    const node = document.createElementNS(NS, name);
-    Object.keys(attrs || {}).forEach(function (key) {
-      node.setAttribute(key, String(attrs[key]));
-    });
-    return node;
+  function getLabelPosition(type, id, basePosition) {
+    if (type === 'area' && id === 'main') {
+      labelPositions.area.main = { x: basePosition.x, y: basePosition.y };
+      return labelPositions.area.main;
+    }
+    const stored = labelPositions[type] && labelPositions[type][id];
+    if (stored && Number.isFinite(stored.x) && Number.isFinite(stored.y)) {
+      return { x: stored.x, y: stored.y };
+    }
+    labelPositions[type][id] = { x: basePosition.x, y: basePosition.y };
+    return labelPositions[type][id];
   }
 
-  function computeGeometry() {
-    const margin = 160;
-    const sidePx = Math.min(VIEW_WIDTH - margin * 2, VIEW_HEIGHT - margin * 2);
-    const x0 = (VIEW_WIDTH - sidePx) / 2;
-    const y0 = (VIEW_HEIGHT - sidePx) / 2;
+  function getLabelBounds(anchor) {
+    const padPx = 6;
+    let widthPx = 0;
+    let heightPx = 0;
 
+    if (anchor.screenRect) {
+      widthPx = Math.max(10, (anchor.screenRect.right - anchor.screenRect.left) + padPx * 2);
+      heightPx = Math.max(10, (anchor.screenRect.bottom - anchor.screenRect.top) + padPx * 2);
+    } else {
+      const text = String(anchor.text || '');
+      widthPx = Math.max(10, text.length * anchor.fontSize * 0.56) + padPx * 2;
+      heightPx = Math.max(10, anchor.fontSize) + padPx * 2;
+    }
+
+    const width = widthPx / Math.max(Math.abs(board.unitX), 1e-6);
+    const height = heightPx / Math.max(Math.abs(board.unitY), 1e-6);
+    const center = { x: anchor.x, y: anchor.y };
+    return {
+      center: center,
+      width: width,
+      height: height,
+      corners: {
+        topLeft: rotatePoint({ x: center.x - width / 2, y: center.y + height / 2 }, center, anchor.rotation),
+        topRight: rotatePoint({ x: center.x + width / 2, y: center.y + height / 2 }, center, anchor.rotation),
+        bottomRight: rotatePoint({ x: center.x + width / 2, y: center.y - height / 2 }, center, anchor.rotation),
+        bottomLeft: rotatePoint({ x: center.x - width / 2, y: center.y - height / 2 }, center, anchor.rotation)
+      }
+    };
+  }
+
+  function getSquareGeometry(side) {
+    const half = side / 2;
     const points = {
-      A: { x: x0, y: y0 },
-      B: { x: x0, y: y0 + sidePx },
-      C: { x: x0 + sidePx, y: y0 + sidePx },
-      D: { x: x0 + sidePx, y: y0 }
+      A: { x: -half, y: half },
+      B: { x: -half, y: -half },
+      C: { x: half, y: -half },
+      D: { x: half, y: half }
     };
-    const centroid = {
-      x: (points.A.x + points.B.x + points.C.x + points.D.x) / 4,
-      y: (points.A.y + points.B.y + points.C.y + points.D.y) / 4
-    };
-    return { points: points, centroid: centroid, sidePx: sidePx };
+    const centroid = { x: 0, y: 0 };
+    return { side: side, points: points, centroid: centroid };
   }
 
-  function getExternalPoint(centroid, vertex) {
+  function getVertexDefault(centroid, vertex) {
     return {
       x: (vertex.x * 10 - centroid.x) / 9,
       y: (vertex.y * 10 - centroid.y) / 9
     };
   }
 
-  function getInternalPoint(centroid, vertex) {
+  function getAngleDefault(centroid, vertex) {
     return {
       x: (centroid.x + vertex.x * 3) / 4,
       y: (centroid.y + vertex.y * 3) / 4
     };
   }
 
-  function getLineDefault(P, Q, centroid, offset) {
+  function getPerpendicularDefault(P, Q, centroid, offset) {
     const mid = { x: (P.x + Q.x) / 2, y: (P.y + Q.y) / 2 };
     const dx = Q.x - P.x;
     const dy = Q.y - P.y;
@@ -269,41 +267,32 @@
   }
 
   function getDefaultPosition(type, id, geometry) {
-    const points = geometry.points;
-    const centroid = geometry.centroid;
-    if (type === 'vertex') return getExternalPoint(centroid, points[id]);
-    if (type === 'angle') return getInternalPoint(centroid, points[id]);
-    if (type === 'area') return { x: centroid.x, y: centroid.y };
-    if (type === 'specialVertex') return { x: centroid.x, y: centroid.y };
+    const P = geometry.points;
+    const G = geometry.centroid;
+    if (type === 'vertex') return getVertexDefault(G, P[id]);
+    if (type === 'angle') return getAngleDefault(G, P[id]);
+    if (type === 'area' || type === 'specialVertex') return { x: G.x, y: G.y };
     if (type === 'diagonal') {
-      const pair = id === 'AC' ? [points.A, points.C] : [points.B, points.D];
-      return getLineDefault(pair[0], pair[1], centroid, 34);
+      return id === 'AC'
+        ? getPerpendicularDefault(P.A, P.C, G, 0.5)
+        : getPerpendicularDefault(P.B, P.D, G, 0.5);
     }
-
-    const map = {
-      AB: [points.A, points.B],
-      BC: [points.B, points.C],
-      CD: [points.C, points.D],
-      DA: [points.D, points.A]
+    const sideMap = {
+      AB: [P.A, P.B],
+      BC: [P.B, P.C],
+      CD: [P.C, P.D],
+      DA: [P.D, P.A]
     };
-    const pair = map[id];
-    return getLineDefault(pair[0], pair[1], centroid, 54);
+    return getPerpendicularDefault(sideMap[id][0], sideMap[id][1], G, 0.9);
   }
 
-  function getLabelPosition(type, id, geometry) {
-    const stored = labelPositions[type][id];
-    if (stored && Number.isFinite(stored.x) && Number.isFinite(stored.y)) return stored;
-    const fallback = getDefaultPosition(type, id, geometry);
-    labelPositions[type][id] = { x: fallback.x, y: fallback.y };
-    return labelPositions[type][id];
-  }
-
-  function getLabelText(type, id, sideValue) {
+  function getLabelText(type, id, geometry) {
+    const side = geometry.side;
     if (type === 'vertex' || type === 'specialVertex') return id;
-    if (type === 'side') return getSideText(sideValue);
-    if (type === 'angle') return getAngleText();
-    if (type === 'area') return getAreaText(sideValue);
-    if (type === 'diagonal') return getDiagonalText(sideValue);
+    if (type === 'side') return appendUnit(formatNumber(side), false);
+    if (type === 'angle') return angleMode === 'degrees' ? '90°' : 'π/2';
+    if (type === 'area') return appendUnit(formatNumber(side * side), true);
+    if (type === 'diagonal') return appendUnit((formatNumber(side) === '1' ? '' : formatNumber(side)) + '√2', false);
     return '';
   }
 
@@ -338,343 +327,114 @@
     if (config.type === 'side') return config.id;
     if (config.type === 'angle') return '∠' + config.id;
     if (config.type === 'area') return '□ABCD';
-    if (config.type === 'specialVertex') return config.id;
-    if (config.type === 'diagonal') return config.id;
     return config.id;
   }
 
-  function buildToggleButton(config) {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'toggle-btn';
-    button.textContent = getToggleLabel(config);
-    button.classList.toggle('is-off', !labelState[config.type][config.id]);
-    button.addEventListener('click', function () {
-      const nextState = !labelState[config.type][config.id];
-      labelState[config.type][config.id] = nextState;
-      if (nextState) resetSingleLabel(config.type, config.id);
-      renderLabelToggleButtons();
-      render();
-    });
-    return button;
+  function resetSingleLabel(type, id) {
+    labelPositions[type][id] = null;
+    labelFontSize[type][id] = labelFontDefaults[type][id];
+    labelStyleState[type][id] = JSON.parse(JSON.stringify(styleDefaults[type][id]));
   }
 
   function renderLabelToggleButtons() {
     generalLabelToggleGrid.innerHTML = '';
     specialLabelToggleGrid.innerHTML = '';
     getGeneralConfigs().forEach(function (config) {
-      generalLabelToggleGrid.appendChild(buildToggleButton(config));
-    });
-    getSpecialConfigs().forEach(function (config) {
-      specialLabelToggleGrid.appendChild(buildToggleButton(config));
-    });
-  }
-
-  function clearSelectionElements() {
-    Object.keys(selectionEls).forEach(function (key) {
-      if (selectionEls[key]) selectionEls[key].remove();
-      selectionEls[key] = null;
-    });
-  }
-
-  function createHandle(x, y, content) {
-    const node = document.createElement('div');
-    node.textContent = content;
-    node.style.position = 'absolute';
-    node.style.left = (x - 12) + 'px';
-    node.style.top = (y - 12) + 'px';
-    node.style.width = '24px';
-    node.style.height = '24px';
-    node.style.borderRadius = '50%';
-    node.style.border = '1.5px solid #2a5bd7';
-    node.style.background = '#fff';
-    node.style.color = '#2a5bd7';
-    node.style.display = 'grid';
-    node.style.placeItems = 'center';
-    node.style.fontSize = '13px';
-    node.style.fontWeight = '700';
-    node.style.pointerEvents = 'auto';
-    node.style.cursor = 'pointer';
-    node.style.userSelect = 'none';
-    node.style.zIndex = '11';
-    node.className = 'label-handle';
-    return node;
-  }
-
-  function renderSelection() {
-    clearSelectionElements();
-    if (!selectedLabel) return;
-    const target = labelLayer.querySelector('[data-label-key="' + selectedLabel + '"]');
-    if (!target) return;
-
-    const hostRect = box.getBoundingClientRect();
-    const rect = target.getBoundingClientRect();
-    const padX = 3;
-    const padY = 3;
-    const x = rect.left - hostRect.left - padX;
-    const y = rect.top - hostRect.top - padY;
-    const w = rect.width + padX * 2;
-    const h = rect.height + padY * 2;
-
-    const frame = document.createElement('div');
-    frame.style.position = 'absolute';
-    frame.style.left = x + 'px';
-    frame.style.top = y + 'px';
-    frame.style.width = w + 'px';
-    frame.style.height = h + 'px';
-    frame.style.border = '1.5px solid #2a5bd7';
-    frame.style.borderRadius = '8px';
-    frame.style.pointerEvents = 'none';
-    frame.style.zIndex = '10';
-    labelLayer.appendChild(frame);
-    selectionEls.box = frame;
-
-    const rotate = createHandle(x + w + HANDLE_OFFSET, y - HANDLE_OFFSET, '○');
-    rotate.dataset.mode = 'rotate';
-    labelLayer.appendChild(rotate);
-    selectionEls.rotate = rotate;
-
-    const palette = createHandle(x - HANDLE_OFFSET, y + h + HANDLE_OFFSET, '●');
-    palette.dataset.mode = 'palette';
-    labelLayer.appendChild(palette);
-    selectionEls.palette = palette;
-
-    const scale = createHandle(x + w + HANDLE_OFFSET, y + h + HANDLE_OFFSET, '◯');
-    scale.dataset.mode = 'scale';
-    labelLayer.appendChild(scale);
-    selectionEls.scale = scale;
-  }
-
-  function buildPalette(anchor) {
-    if (selectionEls.pop) {
-      selectionEls.pop.remove();
-      selectionEls.pop = null;
-    }
-    const pop = document.createElement('div');
-    pop.className = 'palette-pop';
-    pop.style.position = 'absolute';
-    pop.style.left = (anchor.offsetLeft + 24) + 'px';
-    pop.style.top = (anchor.offsetTop + 24) + 'px';
-    pop.style.display = 'flex';
-    pop.style.gap = '6px';
-    pop.style.padding = '6px';
-    pop.style.border = '1px solid #cfd7ea';
-    pop.style.borderRadius = '10px';
-    pop.style.background = '#fff';
-    pop.style.boxShadow = '0 10px 28px rgba(27,39,94,.08)';
-    pop.style.pointerEvents = 'auto';
-    pop.style.zIndex = '12';
-    colorChoices.forEach(function (color) {
-      const dot = document.createElement('button');
-      dot.type = 'button';
-      dot.style.width = '18px';
-      dot.style.height = '18px';
-      dot.style.borderRadius = '50%';
-      dot.style.border = '1px solid #cfd7ea';
-      dot.style.background = color;
-      dot.style.cursor = 'pointer';
-      dot.addEventListener('click', function (event) {
-        event.stopPropagation();
-        const parts = selectedLabel.split(':');
-        labelStyle[parts[0]][parts[1]].color = color;
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'download-btn btn-bd';
+      if (!labelState[config.type][config.id]) button.style.opacity = '0.55';
+      button.textContent = getToggleLabel(config);
+      button.addEventListener('click', function () {
+        labelState[config.type][config.id] = !labelState[config.type][config.id];
+        if (labelState[config.type][config.id]) resetSingleLabel(config.type, config.id);
+        renderLabelToggleButtons();
         render();
       });
-      pop.appendChild(dot);
+      generalLabelToggleGrid.appendChild(button);
     });
-    labelLayer.appendChild(pop);
-    selectionEls.pop = pop;
-  }
-
-  function renderLabels(sideValue, geometry) {
-    labelLayer.innerHTML = '';
-    const configs = getGeneralConfigs().concat(getSpecialConfigs());
-    configs.forEach(function (config) {
-      if (!labelState[config.type][config.id]) return;
-      const pos = getLabelPosition(config.type, config.id, geometry);
-      const screen = unitToScreen(pos);
-      const labelNode = document.createElement('div');
-      const labelKey = config.type + ':' + config.id;
-      const currentStyle = labelStyle[config.type][config.id];
-      labelNode.className = 'floating-label';
-      labelNode.dataset.labelKey = labelKey;
-      labelNode.dataset.type = config.type;
-      labelNode.dataset.id = config.id;
-      labelNode.textContent = getLabelText(config.type, config.id, sideValue);
-      labelNode.style.left = screen.x + 'px';
-      labelNode.style.top = screen.y + 'px';
-      labelNode.style.fontSize = labelFontSize[config.type][config.id] + 'px';
-      labelNode.style.color = currentStyle.color;
-      labelNode.style.transform = 'translate(-50%, -50%) rotate(' + currentStyle.rotation + 'deg)';
-      labelLayer.appendChild(labelNode);
-    });
-    renderSelection();
-  }
-
-  function drawSquare(sideValue) {
-    svg.innerHTML = '';
-    const geometry = computeGeometry();
-    const points = geometry.points;
-
-    svg.appendChild(createSvgElement('rect', {
-      x: 120,
-      y: 92,
-      width: 960,
-      height: 616,
-      rx: 22,
-      ry: 22,
-      fill: '#fbfcff',
-      stroke: '#c9d6fb',
-      'stroke-width': 2
-    }));
-
-    svg.appendChild(createSvgElement('polygon', {
-      points: [points.A, points.B, points.C, points.D].map(function (point) {
-        return point.x + ',' + point.y;
-      }).join(' '),
-      fill: 'rgba(42,91,215,0.04)',
-      stroke: '#2a5bd7',
-      'stroke-width': 3
-    }));
-
-    if (labelState.diagonal.AC) {
-      svg.appendChild(createSvgElement('line', {
-        x1: points.A.x,
-        y1: points.A.y,
-        x2: points.C.x,
-        y2: points.C.y,
-        stroke: '#9aa7c7',
-        'stroke-width': 2,
-        'stroke-dasharray': '6 6'
-      }));
-    }
-
-    if (labelState.diagonal.BD) {
-      svg.appendChild(createSvgElement('line', {
-        x1: points.B.x,
-        y1: points.B.y,
-        x2: points.D.x,
-        y2: points.D.y,
-        stroke: '#9aa7c7',
-        'stroke-width': 2,
-        'stroke-dasharray': '6 6'
-      }));
-    }
-
-    [points.A, points.B, points.C, points.D].forEach(function (point) {
-      svg.appendChild(createSvgElement('circle', {
-        cx: point.x,
-        cy: point.y,
-        r: 4.5,
-        fill: '#111'
-      }));
-    });
-
-    currentGeometry = geometry;
-    renderLabels(sideValue, geometry);
-  }
-
-  function constrainPosition(type, id, rawPos) {
-    if (!currentGeometry) return rawPos;
-    const G = currentGeometry.centroid;
-    const P = currentGeometry.points;
-
-    if (type === 'area' || type === 'specialVertex') return { x: G.x, y: G.y };
-
-    if (type === 'vertex' || type === 'angle') {
-      const V = P[id];
-      const ux = V.x - G.x;
-      const uy = V.y - G.y;
-      const len2 = ux * ux + uy * uy || 1;
-      let t = ((rawPos.x - G.x) * ux + (rawPos.y - G.y) * uy) / len2;
-      if (type === 'vertex') t = Math.max(1, t);
-      if (type === 'angle') t = Math.max(0, Math.min(1, t));
-      return { x: G.x + ux * t, y: G.y + uy * t };
-    }
-
-    const map = {
-      AB: ['A', 'B'],
-      BC: ['B', 'C'],
-      CD: ['C', 'D'],
-      DA: ['D', 'A'],
-      AC: ['A', 'C'],
-      BD: ['B', 'D']
-    };
-    const pair = map[id];
-    if (pair) {
-      const S = P[pair[0]];
-      const T = P[pair[1]];
-      const mid = { x: (S.x + T.x) / 2, y: (S.y + T.y) / 2 };
-      const dx = T.x - S.x;
-      const dy = T.y - S.y;
-      const nx = -dy;
-      const ny = dx;
-      const den = nx * nx + ny * ny || 1;
-      const u = ((rawPos.x - mid.x) * nx + (rawPos.y - mid.y) * ny) / den;
-      return { x: mid.x + nx * u, y: mid.y + ny * u };
-    }
-
-    return rawPos;
-  }
-
-  function resetSingleLabel(type, id) {
-    labelPositions[type][id] = null;
-    labelFontSize[type][id] = labelFontDefaults[type][id];
-    labelStyle[type][id] = cloneState(styleDefaults[type][id]);
-  }
-
-  function resetAllLabels() {
-    Object.keys(labelPositions).forEach(function (group) {
-      Object.keys(labelPositions[group]).forEach(function (id) {
-        labelPositions[group][id] = null;
-        labelFontSize[group][id] = labelFontDefaults[group][id];
-        labelStyle[group][id] = cloneState(styleDefaults[group][id]);
-        labelState[group][id] = defaultLabelState[group][id];
+    getSpecialConfigs().forEach(function (config) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'download-btn btn-bd';
+      if (!labelState[config.type][config.id]) button.style.opacity = '0.55';
+      button.textContent = getToggleLabel(config);
+      button.addEventListener('click', function () {
+        labelState[config.type][config.id] = !labelState[config.type][config.id];
+        if (labelState[config.type][config.id]) resetSingleLabel(config.type, config.id);
+        renderLabelToggleButtons();
+        render();
       });
+      specialLabelToggleGrid.appendChild(button);
     });
-    selectedLabel = null;
   }
 
-  function render() {
-    try {
-      const sideValue = evaluateExpression(sideInput.value);
-      drawSquare(sideValue);
-      setStatus('正方形を描画しました。', false);
-    } catch (error) {
-      setStatus(error.message || '描画に失敗しました。', true);
-      svg.innerHTML = '';
-      labelLayer.innerHTML = '';
-      clearSelectionElements();
+  function getSelectedAnchor() {
+    if (!selectedLabel) return null;
+    return currentLabelAnchors.find(function (item) {
+      return item.type === selectedLabel.type && item.id === selectedLabel.id;
+    }) || null;
+  }
+
+  function renderSelectionOverlay(anchor) {
+    currentSelectionOverlay = anchor ? window.InstantGeometrySharedSelection.renderSelectionOverlay({
+      board: board,
+      anchor: anchor,
+      rotatePoint: rotatePoint,
+      getLabelBounds: getLabelBounds,
+      isPaletteOpen: isPaletteOpen
+    }) : null;
+  }
+
+  function findSelectionControl(point) {
+    return window.InstantGeometrySharedSelection.findSelectionControl(point, currentSelectionOverlay);
+  }
+
+  function fitBoard(geometry) {
+    const points = Object.keys(geometry.points).map(function (key) { return geometry.points[key]; });
+    const xs = points.map(function (p) { return p.x; });
+    const ys = points.map(function (p) { return p.y; });
+    const minX = Math.min.apply(null, xs);
+    const maxX = Math.max.apply(null, xs);
+    const minY = Math.min.apply(null, ys);
+    const maxY = Math.max.apply(null, ys);
+    const width = Math.max(1, maxX - minX);
+    const height = Math.max(1, maxY - minY);
+    const padding = Math.max(width, height) * 0.42;
+    const contentWidth = width + padding * 2;
+    const contentHeight = height + padding * 2;
+    const aspect = exportAspects[exportAspectIndex].value;
+    let halfWidth = contentWidth / 2;
+    let halfHeight = contentHeight / 2;
+    if (contentWidth / contentHeight < aspect) {
+      halfWidth = (contentHeight * aspect) / 2;
+    } else {
+      halfHeight = (contentWidth / aspect) / 2;
     }
+    board.setBoundingBox([geometry.centroid.x - halfWidth, geometry.centroid.y + halfHeight, geometry.centroid.x + halfWidth, geometry.centroid.y - halfHeight], true);
   }
 
   function updateExportFrame() {
-    const rect = getBoxRect();
-    const ratio = aspectModes[aspectIndex].ratio;
-    const maxWidth = rect.width * 0.76;
-    const maxHeight = rect.height * 0.78;
-    let width = maxWidth;
-    let height = width / ratio;
-    if (height > maxHeight) {
-      height = maxHeight;
-      width = height * ratio;
+    const rect = box.getBoundingClientRect();
+    const aspect = exportAspects[exportAspectIndex].value;
+    const margin = Math.min(56, rect.width * 0.06, rect.height * 0.06);
+    let width = rect.width - margin * 2;
+    let height = width / aspect;
+    if (height > rect.height - margin * 2) {
+      height = rect.height - margin * 2;
+      width = height * aspect;
     }
-    exportFrame.style.width = width + 'px';
-    exportFrame.style.height = height + 'px';
-
+    exportFrame.style.width = Math.max(120, width) + 'px';
+    exportFrame.style.height = Math.max(120, height) + 'px';
+    exportBackdrop.classList.add('is-visible');
     const left = (rect.width - width) / 2;
     const top = (rect.height - height) / 2;
     const right = rect.width - left - width;
     const bottom = rect.height - top - height;
-
-    exportBackdrop.classList.add('is-visible');
-    exportBackdrop.querySelector('[data-piece="top"]').style.cssText =
-      'left:0;top:0;width:100%;height:' + top + 'px;';
-    exportBackdrop.querySelector('[data-piece="left"]').style.cssText =
-      'left:0;top:' + top + 'px;width:' + left + 'px;height:' + height + 'px;';
-    exportBackdrop.querySelector('[data-piece="right"]').style.cssText =
-      'right:0;top:' + top + 'px;width:' + right + 'px;height:' + height + 'px;';
-    exportBackdrop.querySelector('[data-piece="bottom"]').style.cssText =
-      'left:0;bottom:0;width:100%;height:' + bottom + 'px;';
+    exportBackdrop.querySelector('[data-piece="top"]').style.cssText = 'left:0;top:0;width:100%;height:' + top + 'px;';
+    exportBackdrop.querySelector('[data-piece="left"]').style.cssText = 'left:0;top:' + top + 'px;width:' + left + 'px;height:' + height + 'px;';
+    exportBackdrop.querySelector('[data-piece="right"]').style.cssText = 'right:0;top:' + top + 'px;width:' + right + 'px;height:' + height + 'px;';
+    exportBackdrop.querySelector('[data-piece="bottom"]').style.cssText = 'left:0;bottom:0;width:100%;height:' + bottom + 'px;';
   }
 
   function cropCanvasToFrame(canvas) {
@@ -689,25 +449,181 @@
     const cropped = document.createElement('canvas');
     cropped.width = sw;
     cropped.height = sh;
-    const ctx = cropped.getContext('2d');
-    ctx.drawImage(canvas, sx, sy, sw, sh, 0, 0, sw, sh);
+    cropped.getContext('2d').drawImage(canvas, sx, sy, sw, sh, 0, 0, sw, sh);
     return cropped;
   }
 
-  function toggleSelectionVisibility(hidden) {
-    [selectionEls.box, selectionEls.rotate, selectionEls.palette, selectionEls.scale, selectionEls.pop].forEach(function (node) {
-      if (!node) return;
-      node.style.display = hidden ? 'none' : '';
+  function scheduleRender() {
+    if (renderRafId !== null) return;
+    renderRafId = requestAnimationFrame(function () {
+      renderRafId = null;
+      render();
     });
+  }
+
+  function drawFramePolygon() {
+    board.create('polygon', [[-5.35, 3.45], [-5.35, -3.45], [5.35, -3.45], [5.35, 3.45]], {
+      borders: {
+        strokeWidth: 1.6,
+        strokeColor: '#c9d6fb',
+        fixed: true,
+        highlight: false
+      },
+      fillColor: '#fbfcff',
+      fillOpacity: 1,
+      vertices: { visible: false },
+      highlight: false
+    });
+  }
+
+  function renderLabels(geometry) {
+    labelLayer.innerHTML = '';
+    currentLabelAnchors = [];
+
+    ['A', 'B', 'C', 'D'].forEach(function (id) {
+      if (!labelState.vertex[id]) return;
+      window.InstantGeometrySharedLabels.createSelectableText({
+        board: board,
+        labelLayer: labelLayer,
+        currentLabelAnchors: currentLabelAnchors,
+        getLabelStyle: getLabelStyle,
+        position: getLabelPosition('vertex', id, getDefaultPosition('vertex', id, geometry)),
+        text: id,
+        fontSize: labelFontSize.vertex[id],
+        labelKey: { type: 'vertex', id: id },
+        options: { color: '#1f2430' }
+      });
+    });
+
+    const P = geometry.points;
+    if (labelState.side.AB) window.InstantGeometrySharedOrnaments.drawSideArcLabel({ board: board, P: P.A, Q: P.B, center: geometry.centroid, text: getLabelText('side', 'AB', geometry), sideId: 'AB', getLabelPosition: getLabelPosition, getLabelStyle: getLabelStyle, createSelectableText: function (position, text, fontSize, labelKey, options) { return window.InstantGeometrySharedLabels.createSelectableText({ board: board, labelLayer: labelLayer, currentLabelAnchors: currentLabelAnchors, getLabelStyle: getLabelStyle, position: position, text: text, fontSize: fontSize, labelKey: labelKey, options: options }); }, labelFontSize: labelFontSize });
+    if (labelState.side.BC) window.InstantGeometrySharedOrnaments.drawSideArcLabel({ board: board, P: P.B, Q: P.C, center: geometry.centroid, text: getLabelText('side', 'BC', geometry), sideId: 'BC', getLabelPosition: getLabelPosition, getLabelStyle: getLabelStyle, createSelectableText: function (position, text, fontSize, labelKey, options) { return window.InstantGeometrySharedLabels.createSelectableText({ board: board, labelLayer: labelLayer, currentLabelAnchors: currentLabelAnchors, getLabelStyle: getLabelStyle, position: position, text: text, fontSize: fontSize, labelKey: labelKey, options: options }); }, labelFontSize: labelFontSize });
+    if (labelState.side.CD) window.InstantGeometrySharedOrnaments.drawSideArcLabel({ board: board, P: P.C, Q: P.D, center: geometry.centroid, text: getLabelText('side', 'CD', geometry), sideId: 'CD', getLabelPosition: getLabelPosition, getLabelStyle: getLabelStyle, createSelectableText: function (position, text, fontSize, labelKey, options) { return window.InstantGeometrySharedLabels.createSelectableText({ board: board, labelLayer: labelLayer, currentLabelAnchors: currentLabelAnchors, getLabelStyle: getLabelStyle, position: position, text: text, fontSize: fontSize, labelKey: labelKey, options: options }); }, labelFontSize: labelFontSize });
+    if (labelState.side.DA) window.InstantGeometrySharedOrnaments.drawSideArcLabel({ board: board, P: P.D, Q: P.A, center: geometry.centroid, text: getLabelText('side', 'DA', geometry), sideId: 'DA', getLabelPosition: getLabelPosition, getLabelStyle: getLabelStyle, createSelectableText: function (position, text, fontSize, labelKey, options) { return window.InstantGeometrySharedLabels.createSelectableText({ board: board, labelLayer: labelLayer, currentLabelAnchors: currentLabelAnchors, getLabelStyle: getLabelStyle, position: position, text: text, fontSize: fontSize, labelKey: labelKey, options: options }); }, labelFontSize: labelFontSize });
+
+    ['A', 'B', 'C', 'D'].forEach(function (id) {
+      if (!labelState.angle[id]) return;
+      window.InstantGeometrySharedLabels.createSelectableText({
+        board: board,
+        labelLayer: labelLayer,
+        currentLabelAnchors: currentLabelAnchors,
+        getLabelStyle: getLabelStyle,
+        position: getLabelPosition('angle', id, getDefaultPosition('angle', id, geometry)),
+        text: getLabelText('angle', id, geometry),
+        fontSize: labelFontSize.angle[id],
+        labelKey: { type: 'angle', id: id },
+        options: { color: '#687086' }
+      });
+    });
+
+    if (labelState.area.main) {
+      window.InstantGeometrySharedLabels.createSelectableText({
+        board: board,
+        labelLayer: labelLayer,
+        currentLabelAnchors: currentLabelAnchors,
+        getLabelStyle: getLabelStyle,
+        position: getLabelPosition('area', 'main', getDefaultPosition('area', 'main', geometry)),
+        text: getLabelText('area', 'main', geometry),
+        fontSize: labelFontSize.area.main,
+        labelKey: { type: 'area', id: 'main' },
+        options: { color: '#25603b' }
+      });
+    }
+
+    if (labelState.specialVertex.O) {
+      window.InstantGeometrySharedLabels.createSelectableText({
+        board: board,
+        labelLayer: labelLayer,
+        currentLabelAnchors: currentLabelAnchors,
+        getLabelStyle: getLabelStyle,
+        position: { x: 0, y: 0 },
+        text: 'O',
+        fontSize: labelFontSize.specialVertex.O,
+        labelKey: { type: 'specialVertex', id: 'O' },
+        options: { color: '#1f2430' }
+      });
+    }
+
+    ['AC', 'BD'].forEach(function (id) {
+      if (!labelState.diagonal[id]) return;
+      const pair = id === 'AC' ? [P.A, P.C] : [P.B, P.D];
+      window.InstantGeometrySharedLabels.createSelectableText({
+        board: board,
+        labelLayer: labelLayer,
+        currentLabelAnchors: currentLabelAnchors,
+        getLabelStyle: getLabelStyle,
+        position: getLabelPosition('diagonal', id, getDefaultPosition('diagonal', id, geometry)),
+        text: getLabelText('diagonal', id, geometry),
+        fontSize: labelFontSize.diagonal[id],
+        labelKey: { type: 'diagonal', id: id },
+        options: { color: '#7d8db8' }
+      });
+      board.create('segment', [[pair[0].x, pair[0].y], [pair[1].x, pair[1].y]], {
+        fixed: true,
+        strokeColor: '#9aa7c7',
+        strokeWidth: 1.6,
+        dash: 2,
+        highlight: false
+      });
+    });
+
+    renderSelectionOverlay(getSelectedAnchor());
+  }
+
+  function renderFigure(geometry) {
+    drawFramePolygon();
+    const P = geometry.points;
+    const pointA = board.create('point', [P.A.x, P.A.y], { name: '', size: 3, fixed: true, strokeColor: '#111111', fillColor: '#111111' });
+    const pointB = board.create('point', [P.B.x, P.B.y], { name: '', size: 3, fixed: true, strokeColor: '#111111', fillColor: '#111111' });
+    const pointC = board.create('point', [P.C.x, P.C.y], { name: '', size: 3, fixed: true, strokeColor: '#111111', fillColor: '#111111' });
+    const pointD = board.create('point', [P.D.x, P.D.y], { name: '', size: 3, fixed: true, strokeColor: '#111111', fillColor: '#111111' });
+    board.create('polygon', [pointA, pointB, pointC, pointD], {
+      borders: { strokeWidth: 2, strokeColor: '#2a5bd7', fixed: true, highlight: false },
+      fillColor: 'rgba(42,91,215,0.04)',
+      fillOpacity: 0.12,
+      vertices: { visible: false },
+      highlight: false
+    });
+  }
+
+  function render() {
+    if (renderRafId !== null) {
+      cancelAnimationFrame(renderRafId);
+      renderRafId = null;
+    }
+    board.suspendUpdate();
+    board.removeObject(board.objectsList.slice());
+    labelLayer.innerHTML = '';
+    currentLabelAnchors = [];
+    currentSelectionOverlay = null;
+
+    try {
+      const side = evaluateExpression(sideInput.value);
+      currentGeometry = getSquareGeometry(side);
+      updateExportFrame();
+      const fitSignature = JSON.stringify({ side: side, aspect: exportAspectIndex, boxW: box.clientWidth, boxH: box.clientHeight });
+      if (fitSignature !== lastFitSignature) {
+        fitBoard(currentGeometry);
+        lastFitSignature = fitSignature;
+      }
+      renderFigure(currentGeometry);
+      renderLabels(currentGeometry);
+      setStatus('正方形を描画しました。', false);
+    } catch (error) {
+      currentGeometry = null;
+      currentSelectionOverlay = null;
+      setStatus(error.message || '描画に失敗しました。', true);
+    } finally {
+      board.unsuspendUpdate();
+    }
   }
 
   async function handleDownload(format) {
     updateExportFrame();
-    toggleSelectionVisibility(true);
     setStatus((format === 'pdf' ? 'PDF' : '画像') + ' を出力しています。', false);
     try {
-      const canvas = await window.html2canvas(box, {
-        backgroundColor: format === 'png-transparent' ? null : '#fbfcff',
+      const canvas = await html2canvas(box, {
+        backgroundColor: format === 'png-transparent' ? null : '#ffffff',
         scale: 2,
         useCORS: true
       });
@@ -727,126 +643,141 @@
         link.click();
       }
       setStatus('保存しました。', false);
-    } catch (error) {
+    } catch (_) {
       setStatus('ダウンロードに失敗しました。', true);
-    } finally {
-      toggleSelectionVisibility(false);
     }
   }
 
   labelLayer.addEventListener('pointerdown', function (event) {
-    const target = event.target;
-    if (target.classList.contains('floating-label')) {
-      selectedLabel = target.dataset.labelKey;
-      renderSelection();
-      const position = labelPositions[target.dataset.type][target.dataset.id];
-      dragState = {
-        mode: 'move',
-        type: target.dataset.type,
-        id: target.dataset.id,
-        startX: event.clientX,
-        startY: event.clientY,
-        startPos: { x: position.x, y: position.y }
-      };
-      target.setPointerCapture(event.pointerId);
-      event.preventDefault();
-      return;
-    }
-
-    if (target.classList.contains('label-handle') && selectedLabel) {
-      const parts = selectedLabel.split(':');
-      const type = parts[0];
-      const id = parts[1];
-      const mode = target.dataset.mode;
-      if (mode === 'palette') {
-        buildPalette(target);
-        event.preventDefault();
-        return;
-      }
-      dragState = {
-        mode: mode,
-        type: type,
-        id: id,
-        startX: event.clientX,
-        startY: event.clientY,
-        startSize: labelFontSize[type][id],
-        startRotation: labelStyle[type][id].rotation
-      };
-      target.setPointerCapture(event.pointerId);
-      event.preventDefault();
-    }
+    const target = event.target.closest('.floating-label');
+    if (!target) return;
+    selectedLabel = { type: target.dataset.type, id: target.dataset.id };
+    isPaletteOpen = false;
+    render();
+    const position = labelPositions[target.dataset.type][target.dataset.id];
+    dragState = {
+      mode: 'move',
+      type: target.dataset.type,
+      id: target.dataset.id,
+      startClient: { x: event.clientX, y: event.clientY },
+      labelStart: { x: position.x, y: position.y }
+    };
   });
 
-  labelLayer.addEventListener('pointermove', function (event) {
-    if (!dragState) return;
-    const dx = event.clientX - dragState.startX;
-    const dy = event.clientY - dragState.startY;
+  box.addEventListener('mousedown', function (event) {
+    if (!currentGeometry) return;
+    if (event.target.closest('.floating-label')) return;
+    const coords = board.getUsrCoordsOfMouse(event);
+    const point = { x: coords[0], y: coords[1] };
+    const overlayControl = findSelectionControl(point);
 
-    if (dragState.mode === 'move') {
-      const delta = screenDeltaToUnit(dx, dy);
-      const rawPos = {
-        x: dragState.startPos.x + delta.x,
-        y: dragState.startPos.y + delta.y
+    if (selectedLabel && overlayControl) {
+      if (overlayControl.mode === 'palette-color') {
+        labelStyleState[selectedLabel.type][selectedLabel.id].color = overlayControl.color;
+        isPaletteOpen = false;
+        render();
+        return;
+      }
+      if (overlayControl.mode === 'palette') {
+        isPaletteOpen = !isPaletteOpen;
+        render();
+        return;
+      }
+      const anchor = getSelectedAnchor();
+      if (!anchor) return;
+      dragState = {
+        mode: overlayControl.mode,
+        type: selectedLabel.type,
+        id: selectedLabel.id,
+        startClient: { x: event.clientX, y: event.clientY },
+        center: { x: anchor.x, y: anchor.y },
+        fontSizeStart: labelFontSize[selectedLabel.type][selectedLabel.id],
+        rotationStart: labelStyleState[selectedLabel.type][selectedLabel.id].rotation,
+        distanceStart: Math.hypot(point.x - anchor.x, point.y - anchor.y),
+        angleStart: Math.atan2(point.y - anchor.y, point.x - anchor.x)
       };
-      labelPositions[dragState.type][dragState.id] = constrainPosition(dragState.type, dragState.id, rawPos);
-      render();
       return;
     }
 
-    if (dragState.mode === 'scale') {
-      labelFontSize[dragState.type][dragState.id] = Math.max(12, Math.min(320, Math.round(dragState.startSize + (dx + dy) * 0.45)));
-      render();
+    selectedLabel = null;
+    isPaletteOpen = false;
+    render();
+  });
+
+  box.addEventListener('mousemove', function (event) {
+    if (!dragState || !currentGeometry) return;
+    const coords = board.getUsrCoordsOfMouse(event);
+    const point = { x: coords[0], y: coords[1] };
+
+    if (dragState.mode === 'move') {
+      const boundingBox = board.getBoundingBox();
+      const unitsPerPixelX = (boundingBox[2] - boundingBox[0]) / Math.max(box.clientWidth, 1);
+      const unitsPerPixelY = (boundingBox[1] - boundingBox[3]) / Math.max(box.clientHeight, 1);
+      labelPositions[dragState.type][dragState.id] = {
+        x: dragState.labelStart.x + (event.clientX - dragState.startClient.x) * unitsPerPixelX,
+        y: dragState.labelStart.y - (event.clientY - dragState.startClient.y) * unitsPerPixelY
+      };
+      scheduleRender();
+      return;
+    }
+
+    if (dragState.mode === 'resize') {
+      const ratio = Math.max(0.3, Math.min(8, Math.hypot(point.x - dragState.center.x, point.y - dragState.center.y) / Math.max(dragState.distanceStart, 0.01)));
+      labelFontSize[dragState.type][dragState.id] = Math.max(10, Math.min(320, Math.round(dragState.fontSizeStart * ratio)));
+      scheduleRender();
       return;
     }
 
     if (dragState.mode === 'rotate') {
-      labelStyle[dragState.type][dragState.id].rotation = dragState.startRotation + dx * 0.35;
-      render();
+      const currentAngle = Math.atan2(point.y - dragState.center.y, point.x - dragState.center.x);
+      labelStyleState[dragState.type][dragState.id].rotation = dragState.rotationStart + ((currentAngle - dragState.angleStart) * 180 / Math.PI);
+      scheduleRender();
     }
   });
 
-  labelLayer.addEventListener('pointerup', function () {
+  window.addEventListener('mouseup', function () {
     dragState = null;
   });
 
-  box.addEventListener('pointerdown', function (event) {
-    if (event.target.closest('.floating-label') || event.target.closest('.label-handle') || event.target.closest('.palette-pop')) return;
+  sideInput.addEventListener('input', function () {
     selectedLabel = null;
-    clearSelectionElements();
-  });
-
-  leftToggle.addEventListener('click', function () {
-    isLeftCollapsed = !isLeftCollapsed;
-    leftDock.classList.toggle('is-collapsed', isLeftCollapsed);
-    syncDockButtons();
-  });
-
-  rightToggle.addEventListener('click', function () {
-    isRightCollapsed = !isRightCollapsed;
-    rightDock.classList.toggle('is-collapsed', isRightCollapsed);
-    syncDockButtons();
-  });
-
-  pageBackBtn.addEventListener('click', function () {
-    window.history.back();
+    isPaletteOpen = false;
+    render();
   });
 
   ratioBtn.addEventListener('click', function () {
-    aspectIndex = (aspectIndex + 1) % aspectModes.length;
+    exportAspectIndex = (exportAspectIndex + 1) % exportAspects.length;
     updateRatioButton();
-    updateExportFrame();
+    lastFitSignature = '';
+    render();
   });
 
   resetBtn.addEventListener('click', function () {
     sideInput.value = '5';
-    aspectIndex = 0;
+    exportAspectIndex = 0;
     unitIndex = 1;
     angleMode = 'degrees';
+    labelStyleState = JSON.parse(JSON.stringify(styleDefaults));
+    Object.keys(labelPositions).forEach(function (group) {
+      Object.keys(labelPositions[group]).forEach(function (id) {
+        labelPositions[group][id] = null;
+        labelFontSize[group][id] = labelFontDefaults[group][id];
+        labelState[group][id] = defaultLabelState[group][id];
+      });
+    });
+    selectedLabel = null;
+    isPaletteOpen = false;
     updateRatioButton();
     updateUnitButton();
     updateAngleModeButton();
-    resetAllLabels();
     renderLabelToggleButtons();
+    lastFitSignature = '';
+    render();
+  });
+
+  unitBtn.addEventListener('click', function () {
+    unitIndex = (unitIndex + 1) % unitOptions.length;
+    updateUnitButton();
     render();
   });
 
@@ -856,10 +787,20 @@
     render();
   });
 
-  unitBtn.addEventListener('click', function () {
-    unitIndex = (unitIndex + 1) % unitModes.length;
-    updateUnitButton();
-    render();
+  leftToggle.addEventListener('click', function () {
+    isDockCollapsed = !isDockCollapsed;
+    leftDock.classList.toggle('is-collapsed', isDockCollapsed);
+    updateDockToggleButtons();
+  });
+
+  rightToggle.addEventListener('click', function () {
+    isRightDockCollapsed = !isRightDockCollapsed;
+    rightDock.classList.toggle('is-collapsed', isRightDockCollapsed);
+    updateDockToggleButtons();
+  });
+
+  pageBackBtn.addEventListener('click', function () {
+    window.history.back();
   });
 
   downloadButtons.forEach(function (button) {
@@ -868,17 +809,16 @@
     });
   });
 
-  sideInput.addEventListener('input', render);
   window.addEventListener('resize', function () {
     updateExportFrame();
+    lastFitSignature = '';
     render();
   });
 
   updateRatioButton();
   updateUnitButton();
   updateAngleModeButton();
-  syncDockButtons();
+  updateDockToggleButtons();
   renderLabelToggleButtons();
-  updateExportFrame();
   render();
 })();
