@@ -848,7 +848,7 @@
         side: { a: true, b: true, c: true },
         innerAngle: { A: true, B: true, C: true },
         angleMark: { A: true, B: true, C: true },
-        rightAngle: { B: true },
+        perp: { B: true },
         area: { main: true }
       };
 
@@ -857,7 +857,7 @@
         side: { a: 32, b: 32, c: 32 },
         innerAngle: { A: 30, B: 30, C: 30 },
         angleMark: { A: 26, B: 26, C: 26 },
-        rightAngle: { B: 26 },
+        perp: { B: 26 },
         area: { main: 48 }
       };
       const angleMarkerMode = { A: 0, B: 0, C: 0 };
@@ -868,7 +868,7 @@
         side: { a: false, b: false, c: false },
         innerAngle: { A: true, B: true, C: true },
         angleMark: { A: true, B: true, C: true },
-        rightAngle: { B: false },
+        perp: { B: false },
         area: { main: true }
       };
 
@@ -877,7 +877,7 @@
         side: { a: null, b: null, c: null },
         innerAngle: { A: null, B: null, C: null },
         angleMark: { A: null, B: null, C: null },
-        rightAngle: { B: null },
+        perp: { B: null },
         area: { main: null }
       };
 
@@ -903,7 +903,7 @@
             B: { color: '#687086', rotation: 0 },
             C: { color: '#687086', rotation: 0 }
           },
-          rightAngle: {
+          perp: {
             B: { color: '#111111', rotation: 0 }
           },
           area: {
@@ -1654,7 +1654,7 @@
 
       function getSpecialToggleConfigs() {
         return [
-          { type: 'rightAngle', id: 'B' }
+          { type: 'perp', id: 'B' }
         ];
       }
 
@@ -1684,7 +1684,7 @@
           if (config.type === 'vertex') return getVertexTokenByKey(config.id);
           if (config.type === 'side') return getVertexTokenByKey(config.id.toUpperCase()).toLowerCase();
           if (config.type === 'innerAngle') return '∠' + getVertexTokenByKey(config.id);
-          if (config.type === 'rightAngle') return '⊥';
+          if (config.type === 'perp') return '⊥';
           if (config.type === 'area') return 'S';
           return config.type + ' ' + config.id;
         }
@@ -2051,28 +2051,21 @@
         return text + unit + (square ? '²' : '');
       }
 
-      function drawRightAngleMarker(vertex, armPoint1, armPoint2, fontSize, color) {
-        const v1 = normalize({ x: armPoint1.x - vertex.x, y: armPoint1.y - vertex.y });
-        const v2 = normalize({ x: armPoint2.x - vertex.x, y: armPoint2.y - vertex.y });
-        const len1 = distanceBetween(vertex, armPoint1);
-        const len2 = distanceBetween(vertex, armPoint2);
-        const sizeScale = Math.max(0.35, Math.min(8, fontSize / 26));
-        const markerSize = Math.max(0.06, Math.min(Math.min(len1, len2) * 0.85, Math.min(len1, len2) * 0.11 * sizeScale));
-        const p0 = { x: vertex.x, y: vertex.y };
-        const p1 = { x: p0.x + v1.x * markerSize, y: p0.y + v1.y * markerSize };
-        const p3 = { x: p0.x + v2.x * markerSize, y: p0.y + v2.y * markerSize };
-        const p2 = { x: p1.x + v2.x * markerSize, y: p1.y + v2.y * markerSize };
-
-        const style = {
-          strokeWidth: 2,
-          strokeColor: color || '#111111',
-          fixed: true,
-          highlight: false
-        };
-        board.create('segment', [[p0.x, p0.y], [p1.x, p1.y]], style);
-        board.create('segment', [[p1.x, p1.y], [p2.x, p2.y]], style);
-        board.create('segment', [[p2.x, p2.y], [p3.x, p3.y]], style);
-        board.create('segment', [[p3.x, p3.y], [p0.x, p0.y]], style);
+      function getPerpMarkerGeometry(triangle, fontSize) {
+        const p0 = { x: triangle.B.x, y: triangle.B.y };
+        const vecBA = { x: triangle.A.x - triangle.B.x, y: triangle.A.y - triangle.B.y };
+        const vecBC = { x: triangle.C.x - triangle.B.x, y: triangle.C.y - triangle.B.y };
+        const lenBA = Math.hypot(vecBA.x, vecBA.y) || 1;
+        const lenBC = Math.hypot(vecBC.x, vecBC.y) || 1;
+        const dirBA = { x: vecBA.x / lenBA, y: vecBA.y / lenBA };
+        const dirBC = { x: vecBC.x / lenBC, y: vecBC.y / lenBC };
+        const sizeScale = Math.max(0.45, Math.min(3.2, fontSize / 26));
+        const markerSize = Math.max(0.06, Math.min(Math.min(lenBA, lenBC) * 0.85, Math.min(lenBA, lenBC) * 0.11 * sizeScale));
+        const p1 = { x: p0.x + dirBA.x * markerSize, y: p0.y + dirBA.y * markerSize };
+        const p3 = { x: p0.x + dirBC.x * markerSize, y: p0.y + dirBC.y * markerSize };
+        const p2 = { x: p1.x + dirBC.x * markerSize, y: p1.y + dirBC.y * markerSize };
+        const center = { x: (p0.x + p2.x) / 2, y: (p0.y + p2.y) / 2 };
+        return { p0: p0, p1: p1, p2: p2, p3: p3, center: center, markerSize: markerSize, dirBA: dirBA, dirBC: dirBC };
       }
 
       function cloneStateValue(value) {
@@ -2568,6 +2561,7 @@
           if (type === 'vertex') return 2;
           if (type === 'innerAngle') return 12;
           if (type === 'angleMark') return 12;
+          if (type === 'perp') return 12;
           if (type === 'area') return 14;
           return 4;
         }
@@ -2843,9 +2837,43 @@
             }
           });
 
-          if (labelState.rightAngle.B && !hiddenLabelState.rightAngle.B) {
-            const style = getLabelStyle('rightAngle', 'B');
-            drawRightAngleMarker(triangle.B, triangle.A, triangle.C, labelFontSize.rightAngle.B, style.color);
+          if (labelState.perp.B && !hiddenLabelState.perp.B) {
+            const perpGeom = getPerpMarkerGeometry(triangle, labelFontSize.perp.B);
+            const p0 = perpGeom.p0;
+            const p1 = perpGeom.p1;
+            const p2 = perpGeom.p2;
+            const p3 = perpGeom.p3;
+            const perpStyle = getLabelStyle('perp', 'B');
+            const markStyle = { strokeWidth: 2, strokeColor: perpStyle.color || '#111111', fixed: true, highlight: false };
+            board.create('segment', [[p0.x, p0.y], [p1.x, p1.y]], markStyle);
+            board.create('segment', [[p1.x, p1.y], [p2.x, p2.y]], markStyle);
+            board.create('segment', [[p2.x, p2.y], [p3.x, p3.y]], markStyle);
+            board.create('segment', [[p3.x, p3.y], [p0.x, p0.y]], markStyle);
+
+            const screenPoints = [p0, p1, p2, p3].map(userToScreenPoint);
+            const xs = screenPoints.map(function (pt) { return pt.x; });
+            const ys = screenPoints.map(function (pt) { return pt.y; });
+            currentLabelAnchors.push({
+              type: 'perp',
+              id: 'B',
+              x: perpGeom.center.x,
+              y: perpGeom.center.y,
+              threshold: 0.45,
+              curveThreshold: null,
+              curveHit: null,
+              visible: true,
+              hidden: false,
+              text: '⊥',
+              fontSize: labelFontSize.perp.B,
+              color: perpStyle.color || '#111111',
+              rotation: getLabelStyle('perp', 'B').rotation || 0,
+              screenRect: {
+                left: Math.min.apply(null, xs),
+                top: Math.min.apply(null, ys),
+                right: Math.max.apply(null, xs),
+                bottom: Math.max.apply(null, ys)
+              }
+            });
           }
 
           if (labelState.area.main && !hiddenLabelState.area.main) {
@@ -2933,9 +2961,16 @@
             render();
             return;
           }
+          if (overlayControl.mode === 'rotate' && selectedLabel && selectedLabel.type === 'perp') {
+            return;
+          }
           const anchorForSelection = selectedLabel ? getSelectedAnchor() : getFigureSelectionAnchor();
           if (!anchorForSelection) return;
           pushHistorySnapshot();
+          const perpStartGeom = (selectedLabel && selectedLabel.type === 'perp' && overlayControl.mode === 'resize')
+            ? getPerpMarkerGeometry(currentGeometry, labelFontSize.perp.B)
+            : null;
+          const dragCenter = { x: anchorForSelection.x, y: anchorForSelection.y };
           dragState = {
             mode: overlayControl.mode,
             target: selectedLabel ? 'label' : 'figure',
@@ -2945,9 +2980,12 @@
             fontSizeStart: selectedLabel ? labelFontSize[selectedLabel.type][selectedLabel.id] : null,
             scaleStart: selectedFigure ? figureState.scale : null,
             rotationStart: selectedLabel ? labelStyleState[selectedLabel.type][selectedLabel.id].rotation : figureState.rotation,
-            center: { x: anchorForSelection.x, y: anchorForSelection.y },
-            distanceStart: Math.hypot(coords[0] - anchorForSelection.x, coords[1] - anchorForSelection.y),
-            angleStart: Math.atan2(coords[1] - anchorForSelection.y, coords[0] - anchorForSelection.x)
+            center: dragCenter,
+            distanceStart: Math.hypot(coords[0] - dragCenter.x, coords[1] - dragCenter.y),
+            angleStart: Math.atan2(coords[1] - dragCenter.y, coords[0] - dragCenter.x),
+            perpCornerStart: perpStartGeom ? { x: perpStartGeom.p0.x, y: perpStartGeom.p0.y } : null,
+            perpDirSum: perpStartGeom ? { x: perpStartGeom.dirBA.x + perpStartGeom.dirBC.x, y: perpStartGeom.dirBA.y + perpStartGeom.dirBC.y } : null,
+            perpMarkerSizeStart: perpStartGeom ? perpStartGeom.markerSize : null
           };
           return;
         }
@@ -2958,6 +2996,14 @@
             return item.type === selected.type && item.id === selected.id;
           });
           if (!anchor) return;
+          if (selected.type === 'perp' || selected.type === 'angleMark') {
+            hoveredLabel = null;
+            selectedLabel = selected;
+            selectedFigure = false;
+            isPaletteOpen = false;
+            render();
+            return;
+          }
           pushHistorySnapshot();
           hoveredLabel = null;
           selectedLabel = selected;
@@ -3019,11 +3065,24 @@
         }
 
         if (dragState.mode === 'resize') {
-          const currentDistance = Math.hypot(currentPoint.x - dragState.center.x, currentPoint.y - dragState.center.y);
           if (dragState.target === 'label') {
-            const ratio = Math.max(0.3, Math.min(8, currentDistance / Math.max(dragState.distanceStart, 0.01)));
-            labelFontSize[dragState.type][dragState.id] = Math.max(10, Math.min(320, Math.round(dragState.fontSizeStart * ratio)));
+            if (dragState.type === 'perp' && dragState.id === 'B' && dragState.perpCornerStart && dragState.perpDirSum) {
+              const diagDirRaw = dragState.perpDirSum;
+              const diagLen = Math.hypot(diagDirRaw.x, diagDirRaw.y) || 1;
+              const diagDir = { x: diagDirRaw.x / diagLen, y: diagDirRaw.y / diagLen };
+              const v = { x: currentPoint.x - dragState.perpCornerStart.x, y: currentPoint.y - dragState.perpCornerStart.y };
+              const diagonal = Math.max(0.02, v.x * diagDir.x + v.y * diagDir.y);
+              const nextMarkerSize = Math.max(0.05, diagonal / Math.SQRT2);
+              const startMarker = Math.max(dragState.perpMarkerSizeStart || 0.05, 1e-6);
+              const ratio = Math.max(0.3, Math.min(8, nextMarkerSize / startMarker));
+              labelFontSize.perp.B = Math.max(10, Math.min(320, Math.round(dragState.fontSizeStart * ratio)));
+            } else {
+              const currentDistance = Math.hypot(currentPoint.x - dragState.center.x, currentPoint.y - dragState.center.y);
+              const ratio = Math.max(0.3, Math.min(8, currentDistance / Math.max(dragState.distanceStart, 0.01)));
+              labelFontSize[dragState.type][dragState.id] = Math.max(10, Math.min(320, Math.round(dragState.fontSizeStart * ratio)));
+            }
           } else {
+            const currentDistance = Math.hypot(currentPoint.x - dragState.center.x, currentPoint.y - dragState.center.y);
             const ratio = Math.max(0.45, Math.min(3.2, currentDistance / Math.max(dragState.distanceStart, 0.01)));
             const nextScale = Math.max(0.3, Math.min(4, dragState.scaleStart * ratio));
             const scaleRatio = nextScale / Math.max(figureState.scale, 1e-9);
@@ -3032,10 +3091,14 @@
               scaleLabelGroupAround(center, scaleRatio, 'vertex');
               scaleLabelGroupAround(center, scaleRatio, 'side');
               scaleLabelGroupAround(center, scaleRatio, 'innerAngle');
+              scaleLabelGroupAround(center, scaleRatio, 'angleMark');
+              scaleLabelGroupAround(center, scaleRatio, 'perp');
               scaleLabelGroupAround(center, scaleRatio, 'area');
               scaleLabelFontGroup(scaleRatio, 'vertex');
               scaleLabelFontGroup(scaleRatio, 'side');
               scaleLabelFontGroup(scaleRatio, 'innerAngle');
+              scaleLabelFontGroup(scaleRatio, 'angleMark');
+              scaleLabelFontGroup(scaleRatio, 'perp');
               scaleLabelFontGroup(scaleRatio, 'area');
             }
             figureState.scale = nextScale;
@@ -3048,6 +3111,9 @@
         if (dragState.mode === 'rotate') {
           const currentAngle = Math.atan2(currentPoint.y - dragState.center.y, currentPoint.x - dragState.center.x);
           if (dragState.target === 'label') {
+            if (dragState.type === 'perp' || dragState.type === 'angleMark') {
+              return;
+            }
             labelStyleState[dragState.type][dragState.id].rotation = dragState.rotationStart + ((currentAngle - dragState.angleStart) * 180 / Math.PI);
           } else {
             const nextRotation = dragState.rotationStart + ((currentAngle - dragState.angleStart) * 180 / Math.PI);
@@ -3057,6 +3123,8 @@
               rotateLabelGroupAround(center, deltaRotation, 'vertex');
               rotateLabelGroupAround(center, deltaRotation, 'side');
               rotateLabelGroupAround(center, deltaRotation, 'innerAngle');
+              rotateLabelGroupAround(center, deltaRotation, 'angleMark');
+              rotateLabelGroupAround(center, deltaRotation, 'perp');
               rotateLabelGroupAround(center, deltaRotation, 'area');
             }
             figureState.rotation = nextRotation;
@@ -3084,6 +3152,8 @@
             translateLabelGroup(offsetDelta, 'vertex');
             translateLabelGroup(offsetDelta, 'side');
             translateLabelGroup(offsetDelta, 'innerAngle');
+            translateLabelGroup(offsetDelta, 'angleMark');
+            translateLabelGroup(offsetDelta, 'perp');
             translateLabelGroup(offsetDelta, 'area');
           }
           figureState.offset = nextOffset;
@@ -3135,13 +3205,13 @@
         hiddenLabelState.side = { a: false, b: false, c: false };
         hiddenLabelState.innerAngle = { A: true, B: true, C: true };
         hiddenLabelState.angleMark = { A: true, B: true, C: true };
-        hiddenLabelState.rightAngle = { B: false };
+        hiddenLabelState.perp = { B: false };
         hiddenLabelState.area = { main: true };
         labelFontSize.vertex = { A: 36, B: 36, C: 36 };
         labelFontSize.side = { a: 32, b: 32, c: 32 };
         labelFontSize.innerAngle = { A: 30, B: 30, C: 30 };
         labelFontSize.angleMark = { A: 26, B: 26, C: 26 };
-        labelFontSize.rightAngle = { B: 26 };
+        labelFontSize.perp = { B: 26 };
         labelFontSize.area = { main: 48 };
         angleMarkerMode.A = 0;
         angleMarkerMode.B = 0;
@@ -3157,7 +3227,7 @@
         labelPositions.side = { a: null, b: null, c: null };
         labelPositions.innerAngle = { A: null, B: null, C: null };
         labelPositions.angleMark = { A: null, B: null, C: null };
-        labelPositions.rightAngle = { B: null };
+        labelPositions.perp = { B: null };
         labelPositions.area = { main: null };
         zoomScale = 1;
         viewCenterOffset = { x: 0, y: 0 };
