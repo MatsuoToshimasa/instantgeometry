@@ -92,6 +92,7 @@
   let exportAspectIndex = 0;
   let angleMode = 'degrees';
   let unitIndex = 1;
+  let zoomScale = 1;
   let isDockCollapsed = false;
   let isRightDockCollapsed = false;
   let isPaletteOpen = false;
@@ -475,7 +476,7 @@
   function getSelectedAnchor() {
     if (!selectedLabel) return null;
     return currentLabelAnchors.find(function (item) {
-      return item.type === selectedLabel.type && item.id === selectedLabel.id;
+      return item.type === selectedLabel.type && item.id === selectedLabel.id && !item.hidden;
     }) || null;
   }
 
@@ -612,6 +613,14 @@
     } else {
       halfHeight = (contentWidth / aspect) / 2;
     }
+    halfWidth /= zoomScale;
+    halfHeight /= zoomScale;
+    if (box && exportFrame) {
+      const frameWidthRatio = exportFrame.clientWidth / Math.max(box.clientWidth, 1);
+      const frameHeightRatio = exportFrame.clientHeight / Math.max(box.clientHeight, 1);
+      halfWidth /= Math.max(frameWidthRatio, 1e-4);
+      halfHeight /= Math.max(frameHeightRatio, 1e-4);
+    }
     board.setBoundingBox([geometry.centroid.x - halfWidth, geometry.centroid.y + halfHeight, geometry.centroid.x + halfWidth, geometry.centroid.y - halfHeight], true);
   }
 
@@ -726,7 +735,7 @@
         labelLayer: labelLayer,
         currentLabelAnchors: currentLabelAnchors,
         getLabelStyle: getLabelStyle,
-        position: { x: 0, y: 0 },
+        position: getLabelPosition('specialVertex', 'O', getDefaultPosition('specialVertex', 'O', geometry)),
         text: 'O',
         fontSize: labelFontSize.specialVertex.O,
         labelKey: { type: 'specialVertex', id: 'O' },
@@ -1148,8 +1157,16 @@
     selectedLabel = null;
     selectedFigure = false;
     isPaletteOpen = false;
+    zoomScale = 1;
     render();
   });
+
+  box.addEventListener('wheel', function (event) {
+    event.preventDefault();
+    zoomScale = Math.max(0.45, Math.min(4, zoomScale * (event.deltaY < 0 ? 1.08 : 1 / 1.08)));
+    lastFitSignature = '';
+    render();
+  }, { passive: false });
 
   ratioBtn.addEventListener('click', function () {
     exportAspectIndex = (exportAspectIndex + 1) % exportAspects.length;
@@ -1163,6 +1180,7 @@
     exportAspectIndex = 0;
     unitIndex = 1;
     angleMode = 'degrees';
+    zoomScale = 1;
     labelStyleState = JSON.parse(JSON.stringify(styleDefaults));
     Object.keys(labelPositions).forEach(function (group) {
       Object.keys(labelPositions[group]).forEach(function (id) {
