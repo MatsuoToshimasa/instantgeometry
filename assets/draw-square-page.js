@@ -235,10 +235,6 @@
   }
 
   function getLabelPosition(type, id, basePosition) {
-    if (type === 'area' && id === 'main') {
-      labelPositions.area.main = { x: basePosition.x, y: basePosition.y };
-      return labelPositions.area.main;
-    }
     const stored = labelPositions[type] && labelPositions[type][id];
     if (stored && Number.isFinite(stored.x) && Number.isFinite(stored.y)) {
       return { x: stored.x, y: stored.y };
