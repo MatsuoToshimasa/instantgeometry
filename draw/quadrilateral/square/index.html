@@ -97,19 +97,19 @@
         function renderLocalSquareFallback() {
           const mount = document.getElementById('drawSimplePage');
           if (!mount) return;
-          mount.innerHTML = '' +
-            '<main style="min-height:100vh;background:#f4f6fb;padding:24px;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,\\'Segoe UI\\',sans-serif;">' +
-              '<div style="max-width:980px;margin:0 auto;background:#fff;border:1px solid #d7deef;border-radius:16px;padding:20px;">' +
-                '<h1 style="margin:0 0 10px;font-size:28px;color:#1e2638;">正方形</h1>' +
-                '<p style="margin:0 0 16px;color:#5b647a;">ローカル表示モードで描画しています。</p>' +
-                '<label style="display:block;font-weight:600;color:#28314a;margin-bottom:8px;">一辺</label>' +
-                '<input id="localSquareSide" type="text" value="5" style="width:220px;padding:10px 12px;border:1px solid #cfd7ea;border-radius:10px;font-size:16px;" />' +
-                '<div id="localSquareError" style="margin-top:8px;color:#c13737;min-height:20px;font-size:14px;"></div>' +
-                '<div style="margin-top:14px;border:1px solid #d7deef;border-radius:14px;background:#fafcff;padding:14px;">' +
-                  '<svg id="localSquareSvg" viewBox="0 0 600 420" width="100%" height="420" aria-label="square preview"></svg>' +
-                '</div>' +
-              '</div>' +
-            '</main>';
+          mount.innerHTML = `
+            <main style="min-height:100vh;background:#f4f6fb;padding:24px;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+              <div style="max-width:980px;margin:0 auto;background:#fff;border:1px solid #d7deef;border-radius:16px;padding:20px;">
+                <h1 style="margin:0 0 10px;font-size:28px;color:#1e2638;">正方形</h1>
+                <p style="margin:0 0 16px;color:#5b647a;">ローカル表示モードで描画しています。</p>
+                <label style="display:block;font-weight:600;color:#28314a;margin-bottom:8px;">一辺</label>
+                <input id="localSquareSide" type="text" value="5" style="width:220px;padding:10px 12px;border:1px solid #cfd7ea;border-radius:10px;font-size:16px;" />
+                <div id="localSquareError" style="margin-top:8px;color:#c13737;min-height:20px;font-size:14px;"></div>
+                <div style="margin-top:14px;border:1px solid #d7deef;border-radius:14px;background:#fafcff;padding:14px;">
+                  <svg id="localSquareSvg" viewBox="0 0 600 420" width="100%" height="420" aria-label="square preview"></svg>
+                </div>
+              </div>
+            </main>`;
 
           const sideInput = document.getElementById('localSquareSide');
           const err = document.getElementById('localSquareError');
