@@ -850,6 +850,7 @@
         side: { a: true, b: true, c: true },
         innerAngle: { A: true, B: true, C: true },
         angleMark: { A: true, B: true, C: true },
+        rightAngleMark: { A: false, B: false, C: false },
         area: { main: true }
       };
 
@@ -858,9 +859,11 @@
         side: { a: 32, b: 32, c: 32 },
         innerAngle: { A: 30, B: 30, C: 30 },
         angleMark: { A: 26, B: 26, C: 26 },
+        rightAngleMark: { A: 26, B: 26, C: 26 },
         area: { main: 48 }
       };
       const angleMarkerMode = { A: 0, B: 0, C: 0 };
+      const rightAngleMarkerMode = { A: 0, B: 0, C: 0 };
       const segmentArcMode = { side: { a: 1, b: 1, c: 1 } };
       const customLabelText = {
         side: { a: '', b: '', c: '' },
@@ -874,6 +877,7 @@
         side: { a: true, b: true, c: false },
         innerAngle: { A: false, B: false, C: true },
         angleMark: { A: true, B: true, C: true },
+        rightAngleMark: { A: true, B: true, C: true },
         area: { main: true }
       };
 
@@ -882,6 +886,7 @@
         side: { a: null, b: null, c: null },
         innerAngle: { A: null, B: null, C: null },
         angleMark: { A: null, B: null, C: null },
+        rightAngleMark: { A: null, B: null, C: null },
         area: { main: null }
       };
 
@@ -906,6 +911,11 @@
             A: { color: '#687086', rotation: 0 },
             B: { color: '#687086', rotation: 0 },
             C: { color: '#687086', rotation: 0 }
+          },
+          rightAngleMark: {
+            A: { color: '#111111', rotation: 0 },
+            B: { color: '#111111', rotation: 0 },
+            C: { color: '#111111', rotation: 0 }
           },
           area: {
             main: { color: '#25603b', rotation: 0 }
@@ -1694,6 +1704,21 @@
           return null;
         }
 
+        function normalizeRightAngleMarkerInput(input) {
+          const value = String(input || '').trim();
+          if (!value || value === '0' || value === '非表示') return 0;
+          if (value === '1' || value === '表示') return 1;
+          return null;
+        }
+
+        function getCurrentAngleDegrees(angleId) {
+          if (!currentGeometry) return null;
+          if (angleId === 'A') return currentGeometry.angleA;
+          if (angleId === 'B') return currentGeometry.angleB;
+          if (angleId === 'C') return currentGeometry.angleC;
+          return null;
+        }
+
         function getVertexTokenByKey(vertexKey) {
           const raw = String(vertexLabelText[vertexKey] || vertexKey).trim().toUpperCase();
           return /^[A-Z]+$/.test(raw) ? raw : vertexKey;
@@ -1748,6 +1773,9 @@
             button.addEventListener('contextmenu', async function (event) {
               event.preventDefault();
               const currentMode = Number.isFinite(angleMarkerMode[config.id]) ? angleMarkerMode[config.id] : 0;
+              const currentAngle = getCurrentAngleDegrees(config.id);
+              const canUseRightMarker = Number.isFinite(currentAngle) && Math.abs(currentAngle - 90) < 1e-3;
+              const currentRightMode = Number.isFinite(rightAngleMarkerMode[config.id]) ? rightAngleMarkerMode[config.id] : 0;
               const response = await window.InstantGeometrySharedLabelConfig.promptTripleSetting({
                 title: '角ラベル設定',
                 firstLabel: '角マーク（0:なし / 1:記号なし / 2:○ / 3:| / 4:= / 5:× / 6:△ / 7:塗）',
@@ -1755,8 +1783,8 @@
                 secondLabel: '文字（空欄で数値表示）',
                 secondValue: customLabelText.innerAngle[config.id] || '',
                 thirdLabel: '直角マーク（0:非表示 / 1:表示）',
-                thirdValue: '90°以外は設定不可',
-                thirdDisabled: true
+                thirdValue: canUseRightMarker ? String(currentRightMode) : '90°以外は設定不可',
+                thirdDisabled: !canUseRightMarker
               });
               if (response === null) return;
               const mode = normalizeAngleMarkerInput(response.first);
@@ -1767,7 +1795,24 @@
               pushHistorySnapshot();
               angleMarkerMode[config.id] = mode;
               customLabelText.innerAngle[config.id] = response.second;
+              if (canUseRightMarker) {
+                const rightMode = normalizeRightAngleMarkerInput(response.third);
+                if (rightMode === null) {
+                  setStatus('直角マークは「0 / 1」で指定してください。', true);
+                  return;
+                }
+                rightAngleMarkerMode[config.id] = rightMode;
+              } else {
+                rightAngleMarkerMode[config.id] = 0;
+              }
+              labelState.rightAngleMark[config.id] = !!rightAngleMarkerMode[config.id];
+              hiddenLabelState.rightAngleMark[config.id] = !labelState.rightAngleMark[config.id];
+              if (!labelState.rightAngleMark[config.id] && selectedLabel && selectedLabel.type === 'rightAngleMark' && selectedLabel.id === config.id) {
+                selectedLabel = null;
+                isPaletteOpen = false;
+              }
               hiddenLabelState.angleMark[config.id] = (mode === 0);
+              if (labelState.rightAngleMark[config.id]) resetSingleLabel('rightAngleMark', config.id);
               render();
             });
           } else if (config.type === 'side') {
@@ -2157,6 +2202,7 @@
           unitIndex: unitIndex,
           angleMode: angleMode,
           angleMarkerMode: cloneStateValue(angleMarkerMode),
+          rightAngleMarkerMode: cloneStateValue(rightAngleMarkerMode),
           segmentArcMode: cloneStateValue(segmentArcMode),
           customLabelText: cloneStateValue(customLabelText)
         };
@@ -2184,6 +2230,7 @@
         }
         angleMode = state.angleMode === 'radians' ? 'radians' : 'degrees';
         Object.assign(angleMarkerMode, cloneStateValue(state.angleMarkerMode || angleMarkerMode));
+        Object.assign(rightAngleMarkerMode, cloneStateValue(state.rightAngleMarkerMode || rightAngleMarkerMode));
         if (state.segmentArcMode && state.segmentArcMode.side) {
           Object.assign(segmentArcMode.side, cloneStateValue(state.segmentArcMode.side));
         }
@@ -2589,6 +2636,67 @@
         });
       }
 
+      function getPerpMarkerGeometry(vertex, firstPoint, secondPoint, fontSize) {
+        const vec1 = { x: firstPoint.x - vertex.x, y: firstPoint.y - vertex.y };
+        const vec2 = { x: secondPoint.x - vertex.x, y: secondPoint.y - vertex.y };
+        const len1 = Math.hypot(vec1.x, vec1.y) || 1;
+        const len2 = Math.hypot(vec2.x, vec2.y) || 1;
+        const dir1 = { x: vec1.x / len1, y: vec1.y / len1 };
+        const dir2 = { x: vec2.x / len2, y: vec2.y / len2 };
+        const sizeScale = Math.max(0.12, Math.min(3.2, fontSize / 26));
+        const markerSize = Math.max(0.02, Math.min(Math.min(len1, len2) * 0.85, Math.min(len1, len2) * 0.11 * sizeScale));
+        const p0 = { x: vertex.x, y: vertex.y };
+        const p1 = { x: p0.x + dir1.x * markerSize, y: p0.y + dir1.y * markerSize };
+        const p3 = { x: p0.x + dir2.x * markerSize, y: p0.y + dir2.y * markerSize };
+        const p2 = { x: p1.x + dir2.x * markerSize, y: p1.y + dir2.y * markerSize };
+        const center = { x: (p0.x + p2.x) / 2, y: (p0.y + p2.y) / 2 };
+        return { p0: p0, p1: p1, p2: p2, p3: p3, center: center };
+      }
+
+      function drawRightAngleDecoration(angleId, triangle) {
+        if (!rightAngleMarkerMode[angleId]) return;
+        const geometry = getAngleDecorationGeometry(angleId, triangle);
+        if (!geometry) return;
+        const fontSize = Math.max(labelFontSize.rightAngleMark[angleId], 4);
+        const perpGeom = getPerpMarkerGeometry(geometry.vertex, geometry.p1, geometry.p2, fontSize);
+        const p1 = perpGeom.p1;
+        const p2 = perpGeom.p2;
+        const p3 = perpGeom.p3;
+        const markStyle = {
+          strokeWidth: 2.2,
+          strokeColor: getLabelStyle('rightAngleMark', angleId).color || '#111111',
+          fixed: true,
+          highlight: false
+        };
+        board.create('segment', [[p1.x, p1.y], [p2.x, p2.y]], markStyle);
+        board.create('segment', [[p2.x, p2.y], [p3.x, p3.y]], markStyle);
+        const screenPoints = [perpGeom.p0, p1, p2, p3].map(userToScreenPoint);
+        const xs = screenPoints.map(function (pt) { return pt.x; });
+        const ys = screenPoints.map(function (pt) { return pt.y; });
+        currentLabelAnchors.push({
+          type: 'rightAngleMark',
+          id: angleId,
+          x: perpGeom.center.x,
+          y: perpGeom.center.y,
+          scaleCenter: { x: geometry.vertex.x, y: geometry.vertex.y },
+          threshold: 0.45,
+          curveThreshold: null,
+          curveHit: null,
+          visible: true,
+          hidden: false,
+          text: '⊥',
+          fontSize: labelFontSize.rightAngleMark[angleId],
+          color: getLabelStyle('rightAngleMark', angleId).color || '#111111',
+          rotation: 0,
+          screenRect: {
+            left: Math.min.apply(null, xs),
+            top: Math.min.apply(null, ys),
+            right: Math.max.apply(null, xs),
+            bottom: Math.max.apply(null, ys)
+          }
+        });
+      }
+
       function toggleHiddenLabel(type, id) {
         if (!labelState[type] || typeof labelState[type][id] === 'undefined') return;
 
@@ -2598,6 +2706,7 @@
             side: { a: 32, b: 32, c: 32 },
             innerAngle: { A: 30, B: 30, C: 30 },
             angleMark: { A: 26, B: 26, C: 26 },
+            rightAngleMark: { A: 26, B: 26, C: 26 },
             area: { main: 48 }
           };
           return defaults[typeKey] && Number.isFinite(defaults[typeKey][idKey]) ? defaults[typeKey][idKey] : 32;
@@ -2642,6 +2751,7 @@
           if (type === 'vertex') return 2;
           if (type === 'innerAngle') return 12;
           if (type === 'angleMark') return 12;
+          if (type === 'rightAngleMark') return 12;
           if (type === 'area') return 14;
           return 4;
         }
@@ -2917,6 +3027,11 @@
               drawAngleDecoration(angleId, triangle);
             }
           });
+          ['A', 'B', 'C'].forEach(function (angleId) {
+            if (labelState.rightAngleMark[angleId] && !hiddenLabelState.rightAngleMark[angleId]) {
+              drawRightAngleDecoration(angleId, triangle);
+            }
+          });
 
           if (labelState.area.main && !hiddenLabelState.area.main) {
             createSelectableText(
@@ -3003,13 +3118,13 @@
             render();
             return;
           }
-          if (overlayControl.mode === 'rotate' && selectedLabel && selectedLabel.type === 'angleMark') {
+          if (overlayControl.mode === 'rotate' && selectedLabel && (selectedLabel.type === 'angleMark' || selectedLabel.type === 'rightAngleMark')) {
             return;
           }
           const anchorForSelection = selectedLabel ? getSelectedAnchor() : getFigureSelectionAnchor();
           if (!anchorForSelection) return;
           pushHistorySnapshot();
-          const dragCenter = (selectedLabel && selectedLabel.type === 'angleMark' && anchorForSelection.scaleCenter)
+          const dragCenter = (selectedLabel && (selectedLabel.type === 'angleMark' || selectedLabel.type === 'rightAngleMark') && anchorForSelection.scaleCenter)
             ? { x: anchorForSelection.scaleCenter.x, y: anchorForSelection.scaleCenter.y }
             : { x: anchorForSelection.x, y: anchorForSelection.y };
           dragState = {
@@ -3034,7 +3149,7 @@
             return item.type === selected.type && item.id === selected.id;
           });
           if (!anchor) return;
-          if (selected.type === 'angleMark') {
+          if (selected.type === 'angleMark' || selected.type === 'rightAngleMark') {
             hoveredLabel = null;
             selectedLabel = selected;
             selectedFigure = false;
@@ -3106,7 +3221,8 @@
           const currentDistance = Math.hypot(currentPoint.x - dragState.center.x, currentPoint.y - dragState.center.y);
           if (dragState.target === 'label') {
             const ratio = Math.max(0.3, Math.min(8, currentDistance / Math.max(dragState.distanceStart, 0.01)));
-            labelFontSize[dragState.type][dragState.id] = Math.max(10, Math.min(320, Math.round(dragState.fontSizeStart * ratio)));
+            const minFontSize = dragState.type === 'rightAngleMark' ? 4 : 10;
+            labelFontSize[dragState.type][dragState.id] = Math.max(minFontSize, Math.min(320, Math.round(dragState.fontSizeStart * ratio)));
           } else {
             const ratio = Math.max(0.45, Math.min(3.2, currentDistance / Math.max(dragState.distanceStart, 0.01)));
             const nextScale = Math.max(0.3, Math.min(4, dragState.scaleStart * ratio));
@@ -3117,11 +3233,13 @@
               scaleLabelGroupAround(center, scaleRatio, 'side');
               scaleLabelGroupAround(center, scaleRatio, 'innerAngle');
               scaleLabelGroupAround(center, scaleRatio, 'angleMark');
+              scaleLabelGroupAround(center, scaleRatio, 'rightAngleMark');
               scaleLabelGroupAround(center, scaleRatio, 'area');
               scaleLabelFontGroup(scaleRatio, 'vertex');
               scaleLabelFontGroup(scaleRatio, 'side');
               scaleLabelFontGroup(scaleRatio, 'innerAngle');
               scaleLabelFontGroup(scaleRatio, 'angleMark');
+              scaleLabelFontGroup(scaleRatio, 'rightAngleMark');
               scaleLabelFontGroup(scaleRatio, 'area');
             }
             figureState.scale = nextScale;
@@ -3134,6 +3252,9 @@
         if (dragState.mode === 'rotate') {
           const currentAngle = Math.atan2(currentPoint.y - dragState.center.y, currentPoint.x - dragState.center.x);
           if (dragState.target === 'label') {
+            if (dragState.type === 'angleMark' || dragState.type === 'rightAngleMark') {
+              return;
+            }
             labelStyleState[dragState.type][dragState.id].rotation = dragState.rotationStart + ((currentAngle - dragState.angleStart) * 180 / Math.PI);
           } else {
             const nextRotation = dragState.rotationStart + ((currentAngle - dragState.angleStart) * 180 / Math.PI);
@@ -3144,6 +3265,7 @@
               rotateLabelGroupAround(center, deltaRotation, 'side');
               rotateLabelGroupAround(center, deltaRotation, 'innerAngle');
               rotateLabelGroupAround(center, deltaRotation, 'angleMark');
+              rotateLabelGroupAround(center, deltaRotation, 'rightAngleMark');
               rotateLabelGroupAround(center, deltaRotation, 'area');
             }
             figureState.rotation = nextRotation;
@@ -3172,6 +3294,7 @@
             translateLabelGroup(offsetDelta, 'side');
             translateLabelGroup(offsetDelta, 'innerAngle');
             translateLabelGroup(offsetDelta, 'angleMark');
+            translateLabelGroup(offsetDelta, 'rightAngleMark');
             translateLabelGroup(offsetDelta, 'area');
           }
           figureState.offset = nextOffset;
@@ -3223,15 +3346,20 @@
         hiddenLabelState.side = { a: true, b: true, c: false };
         hiddenLabelState.innerAngle = { A: false, B: false, C: true };
         hiddenLabelState.angleMark = { A: true, B: true, C: true };
+        hiddenLabelState.rightAngleMark = { A: true, B: true, C: true };
         hiddenLabelState.area = { main: true };
         labelFontSize.vertex = { A: 36, B: 36, C: 36 };
         labelFontSize.side = { a: 32, b: 32, c: 32 };
         labelFontSize.innerAngle = { A: 30, B: 30, C: 30 };
         labelFontSize.angleMark = { A: 26, B: 26, C: 26 };
+        labelFontSize.rightAngleMark = { A: 26, B: 26, C: 26 };
         labelFontSize.area = { main: 48 };
         angleMarkerMode.A = 0;
         angleMarkerMode.B = 0;
         angleMarkerMode.C = 0;
+        rightAngleMarkerMode.A = 0;
+        rightAngleMarkerMode.B = 0;
+        rightAngleMarkerMode.C = 0;
         segmentArcMode.side = { a: 1, b: 1, c: 1 };
         customLabelText.side = { a: '', b: '', c: '' };
         customLabelText.innerAngle = { A: '', B: '', C: '' };
@@ -3247,6 +3375,7 @@
         labelPositions.side = { a: null, b: null, c: null };
         labelPositions.innerAngle = { A: null, B: null, C: null };
         labelPositions.angleMark = { A: null, B: null, C: null };
+        labelPositions.rightAngleMark = { A: null, B: null, C: null };
         labelPositions.area = { main: null };
         zoomScale = 1;
         viewCenterOffset = { x: 0, y: 0 };
