@@ -1665,7 +1665,18 @@
     try {
       currentGeometry = getGeometryFromInputs();
       updateExportFrame();
-      const fitSignature = JSON.stringify({ shape: shape, points: currentGeometry.points, aspect: exportAspectIndex, boxW: box.clientWidth, boxH: box.clientHeight });
+      const inputSignature = Object.keys(inputElements).sort().reduce(function (acc, key) {
+        acc[key] = inputElements[key].value;
+        return acc;
+      }, {});
+      const fitSignature = JSON.stringify({
+        shape: shape,
+        inputs: inputSignature,
+        aspect: exportAspectIndex,
+        boxW: box.clientWidth,
+        boxH: box.clientHeight,
+        zoom: zoomScale
+      });
       if (fitSignature !== lastFitSignature) {
         fitBoard(currentGeometry);
         lastFitSignature = fitSignature;
