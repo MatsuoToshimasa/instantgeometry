@@ -36,18 +36,18 @@
     };
   }
 
-  function getSideLabelGeometry(P, Q, center, sideId, getLabelPosition) {
+  function getSideLabelGeometry(P, Q, center, labelType, labelId, getLabelPosition) {
     const arc = getSideArcData(P, Q, center);
     const segmentMid = { x: (P.x + Q.x) / 2, y: (P.y + Q.y) / 2 };
     const baseDirX = arc.centerPoint.x - segmentMid.x;
     const baseDirY = arc.centerPoint.y - segmentMid.y;
     const baseDirLen = Math.hypot(baseDirX, baseDirY) || 1;
-    const defaultOffset = (sideId === 'a' || sideId === 'b') ? 0.14 : 0;
+    const defaultOffset = (labelId === 'a' || labelId === 'b') ? 0.14 : 0;
     const defaultPoint = {
       x: arc.centerPoint.x + (baseDirX / baseDirLen) * defaultOffset,
       y: arc.centerPoint.y + (baseDirY / baseDirLen) * defaultOffset
     };
-    const desiredMidpoint = getLabelPosition('side', sideId, defaultPoint);
+    const desiredMidpoint = getLabelPosition(labelType, labelId, defaultPoint);
     const control = {
       x: (desiredMidpoint.x * 2) - ((P.x + Q.x) / 2),
       y: (desiredMidpoint.y * 2) - ((P.y + Q.y) / 2)
@@ -62,8 +62,11 @@
   }
 
   function drawSideArcLabel(deps) {
-    const arc = getSideLabelGeometry(deps.P, deps.Q, deps.center, deps.sideId, deps.getLabelPosition);
-    const style = deps.getLabelStyle('side', deps.sideId);
+    const labelType = deps.labelType || 'side';
+    const labelId = deps.labelId || deps.sideId;
+    const labelFontGroup = deps.labelFontGroup || labelType;
+    const arc = getSideLabelGeometry(deps.P, deps.Q, deps.center, labelType, labelId, deps.getLabelPosition);
+    const style = deps.getLabelStyle(labelType, labelId);
     const strokeWidth = 2;
 
     deps.board.create('curve', [
@@ -95,8 +98,8 @@
     deps.createSelectableText(
       arc.centerPoint,
       deps.text,
-      deps.labelFontSize.side[deps.sideId],
-      { type: 'side', id: deps.sideId },
+      deps.labelFontSize[labelFontGroup][labelId],
+      { type: labelType, id: labelId },
       {
         color: style.color,
         threshold: 0.55,

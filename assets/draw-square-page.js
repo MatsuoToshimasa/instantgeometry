@@ -754,16 +754,31 @@
     ['AC', 'BD'].forEach(function (id) {
       if (!labelState.diagonal[id]) return;
       const pair = id === 'AC' ? [P.A, P.C] : [P.B, P.D];
-      window.InstantGeometrySharedLabels.createSelectableText({
+      window.InstantGeometrySharedOrnaments.drawSideArcLabel({
         board: board,
-        labelLayer: labelLayer,
-        currentLabelAnchors: currentLabelAnchors,
-        getLabelStyle: getLabelStyle,
-        position: getLabelPosition('diagonal', id, getDefaultPosition('diagonal', id, geometry)),
+        P: pair[0],
+        Q: pair[1],
+        center: geometry.centroid,
         text: getLabelText('diagonal', id, geometry),
-        fontSize: labelFontSize.diagonal[id],
-        labelKey: { type: 'diagonal', id: id },
-        options: { color: '#7d8db8', threshold: 0.62 }
+        labelType: 'diagonal',
+        labelId: id,
+        labelFontGroup: 'diagonal',
+        getLabelPosition: getLabelPosition,
+        getLabelStyle: getLabelStyle,
+        createSelectableText: function (position, text, fontSize, labelKey, options) {
+          return window.InstantGeometrySharedLabels.createSelectableText({
+            board: board,
+            labelLayer: labelLayer,
+            currentLabelAnchors: currentLabelAnchors,
+            getLabelStyle: getLabelStyle,
+            position: position,
+            text: text,
+            fontSize: fontSize,
+            labelKey: labelKey,
+            options: options
+          });
+        },
+        labelFontSize: labelFontSize
       });
       board.create('segment', [[pair[0].x, pair[0].y], [pair[1].x, pair[1].y]], {
         fixed: true,
