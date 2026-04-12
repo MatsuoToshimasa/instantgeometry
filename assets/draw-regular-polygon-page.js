@@ -256,14 +256,9 @@
   }
 
   function getBaseRegularPolygon() {
-    const side = getInputValue('sideLen');
     const radius = getInputValue('radiusLen');
     const vertexCount = parseVertexCount();
-    const expectedSide = 2 * radius * Math.sin(Math.PI / vertexCount);
-    const tolerance = Math.max(0.02, expectedSide * 0.03);
-    if (Math.abs(side - expectedSide) > tolerance) {
-      throw new Error('1辺と半径が整合していません。N=' + vertexCount + ' のとき半径 ' + formatNumber(radius) + ' なら、1辺は ' + formatNumber(expectedSide) + ' です。');
-    }
+    const side = 2 * radius * Math.sin(Math.PI / vertexCount);
     const pointIds = getPointIds(vertexCount);
     const basePoints = {};
     const startAngle = -Math.PI / 2;
@@ -895,7 +890,6 @@
   }, { passive: false });
   ratioBtn.addEventListener('click', function () { exportAspectIndex = (exportAspectIndex + 1) % exportAspects.length; updateRatioButton(); lastFitSignature = ''; render(); });
   resetBtn.addEventListener('click', function () {
-    inputElements.sideLen.value = '5';
     inputElements.vertexCount.value = '6';
     inputElements.radiusLen.value = '5';
     exportAspectIndex = 0; unitIndex = 1; angleMode = 'degrees'; zoomScale = 1;

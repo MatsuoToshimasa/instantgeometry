@@ -64,7 +64,7 @@
     .toggle-grid{display:flex;flex-wrap:wrap;gap:6px}
   </style>
 </head>
-<body data-polygon-shape="hexagon">
+<body data-polygon-shape="regular">
   <main class="workspace">
     <div id="box" aria-label="正N角形の描画エリア"></div>
     <button class="page-back-btn" id="pageBackBtn" type="button">前の画面に戻る</button>
@@ -78,11 +78,10 @@
         <div class="section">
           <h3>形を決める値</h3>
           <div class="field-grid">
-            <div class="field"><label for="sideLen">1辺</label><input id="sideLen" data-polygon-input type="text" inputmode="decimal" value="5" /></div>
             <div class="field"><label for="vertexCount">N（3〜20）</label><input id="vertexCount" data-polygon-input type="number" min="3" max="20" step="1" value="6" /></div>
             <div class="field"><label for="radiusLen">半径</label><input id="radiusLen" data-polygon-input type="text" inputmode="decimal" value="5" /></div>
           </div>
-          <p class="hint">1辺・N・半径が整合しているときに描画します。N は 3 から 20 の整数です。</p>
+          <p class="hint">半径と N から正N角形を描画します。N は 3 から 20 の整数です。</p>
         </div>
       </aside>
       <div class="controls-stack">
