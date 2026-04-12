@@ -3005,9 +3005,9 @@
             highlight: false
           });
           const edgeStyle = { strokeWidth: 2, strokeColor: figureState.color, fixed: true, highlight: false };
-          if (segmentLineMode.side.a !== 0) board.create('segment', [pointB, pointC], edgeStyle);
-          if (segmentLineMode.side.b !== 0) board.create('segment', [pointC, pointA], edgeStyle);
-          if (segmentLineMode.side.c !== 0) board.create('segment', [pointA, pointB], edgeStyle);
+          if (!hiddenLabelState.side.a || segmentLineMode.side.a !== 0) board.create('segment', [pointB, pointC], edgeStyle);
+          if (!hiddenLabelState.side.b || segmentLineMode.side.b !== 0) board.create('segment', [pointC, pointA], edgeStyle);
+          if (!hiddenLabelState.side.c || segmentLineMode.side.c !== 0) board.create('segment', [pointA, pointB], edgeStyle);
 
           const centroid = {
             x: (triangle.A.x + triangle.B.x + triangle.C.x) / 3,

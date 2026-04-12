@@ -133,8 +133,8 @@
   };
   const segmentLineMode = {
     side: { AB: 1, BC: 1, CD: 1, DA: 1 },
-    specialSegment: { OA: 1, OB: 1, OC: 1, OD: 1 },
-    diagonal: { AC: 1, BD: 1 }
+    specialSegment: { OA: 0, OB: 0, OC: 0, OD: 0 },
+    diagonal: { AC: 0, BD: 0 }
   };
   const customLabelText = {
     side: { AB: '', BC: '', CD: '', DA: '' },
@@ -1383,8 +1383,7 @@
     }
 
     specialSegmentIds.forEach(function (id) {
-      if (!shouldDrawSpecialSegment(id)) return;
-      if (segmentLineMode.specialSegment[id] === 0) return;
+      if (!(labelState.specialSegment[id] || segmentLineMode.specialSegment[id] !== 0 || shouldDrawSpecialSegment(id))) return;
       const pair = { OA: [geometry.centroid, P.A], OB: [geometry.centroid, P.B], OC: [geometry.centroid, P.C], OD: [geometry.centroid, P.D] }[id];
       board.create('segment', [[pair[0].x, pair[0].y], [pair[1].x, pair[1].y]], {
         fixed: true,
@@ -1424,8 +1423,7 @@
     });
 
     ['AC', 'BD'].forEach(function (id) {
-      if (segmentLineMode.diagonal[id] === 0) return;
-      if (!labelState.diagonal[id]) return;
+      if (!(labelState.diagonal[id] || segmentLineMode.diagonal[id] !== 0)) return;
       const pair = id === 'AC' ? [P.A, P.C] : [P.B, P.D];
       window.InstantGeometrySharedOrnaments.drawSideArcLabel({
         board: board,
@@ -1690,10 +1688,10 @@
       highlight: false
     });
     const lineStyle = { fixed: true, strokeWidth: 2, strokeColor: figureState.color, highlight: false };
-    if (segmentLineMode.side.AB !== 0) board.create('segment', [pointA, pointB], lineStyle);
-    if (segmentLineMode.side.BC !== 0) board.create('segment', [pointB, pointC], lineStyle);
-    if (segmentLineMode.side.CD !== 0) board.create('segment', [pointC, pointD], lineStyle);
-    if (segmentLineMode.side.DA !== 0) board.create('segment', [pointD, pointA], lineStyle);
+    if (labelState.side.AB || segmentLineMode.side.AB !== 0) board.create('segment', [pointA, pointB], lineStyle);
+    if (labelState.side.BC || segmentLineMode.side.BC !== 0) board.create('segment', [pointB, pointC], lineStyle);
+    if (labelState.side.CD || segmentLineMode.side.CD !== 0) board.create('segment', [pointC, pointD], lineStyle);
+    if (labelState.side.DA || segmentLineMode.side.DA !== 0) board.create('segment', [pointD, pointA], lineStyle);
   }
 
   function render() {
@@ -2019,13 +2017,13 @@
       segmentArcMode.specialSegment[id] = 1;
     });
     Object.keys(segmentLineMode.specialSegment).forEach(function (id) {
-      segmentLineMode.specialSegment[id] = 1;
+      segmentLineMode.specialSegment[id] = 0;
     });
     Object.keys(segmentArcMode.diagonal).forEach(function (id) {
       segmentArcMode.diagonal[id] = 1;
     });
     Object.keys(segmentLineMode.diagonal).forEach(function (id) {
-      segmentLineMode.diagonal[id] = 1;
+      segmentLineMode.diagonal[id] = 0;
     });
     Object.keys(customLabelText.side).forEach(function (id) { customLabelText.side[id] = ''; });
     Object.keys(customLabelText.angle).forEach(function (id) { customLabelText.angle[id] = ''; });

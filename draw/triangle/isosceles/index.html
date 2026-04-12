@@ -858,7 +858,7 @@
       };
       const angleMarkerMode = { A: 0, B: 0, C: 0, AHC: 0, BHC: 0, ACH: 0, BCH: 0 };
       const segmentArcMode = { side: { a: 1, b: 1, c: 1, AH: 1, BH: 1, CH: 1 } };
-      const segmentLineMode = { side: { a: 1, b: 1, c: 1, AH: 1, BH: 1, CH: 1 } };
+      const segmentLineMode = { side: { a: 1, b: 1, c: 1, AH: 0, BH: 0, CH: 0 } };
       const customLabelText = {
         side: { a: '', b: '', c: '', AH: '', BH: '', CH: '' },
         innerAngle: { A: '', B: '', C: '', AHC: '', BHC: '', ACH: '', BCH: '' },
@@ -2949,9 +2949,9 @@
             highlight: false
           });
           const edgeStyle = { strokeWidth: 2, strokeColor: figureState.color, fixed: true, highlight: false };
-          if (segmentLineMode.side.a !== 0) board.create('segment', [pointB, pointC], edgeStyle);
-          if (segmentLineMode.side.b !== 0) board.create('segment', [pointC, pointA], edgeStyle);
-          if (segmentLineMode.side.c !== 0) board.create('segment', [pointA, pointB], edgeStyle);
+          if (!hiddenLabelState.side.a || segmentLineMode.side.a !== 0) board.create('segment', [pointB, pointC], edgeStyle);
+          if (!hiddenLabelState.side.b || segmentLineMode.side.b !== 0) board.create('segment', [pointC, pointA], edgeStyle);
+          if (!hiddenLabelState.side.c || segmentLineMode.side.c !== 0) board.create('segment', [pointA, pointB], edgeStyle);
           function isVisible(type, id) {
             return !!(labelState[type] && labelState[type][id] && !(hiddenLabelState[type] && hiddenLabelState[type][id]));
           }
@@ -3413,7 +3413,7 @@
         angleMarkerMode.ACH = 0;
         angleMarkerMode.BCH = 0;
         segmentArcMode.side = { a: 1, b: 1, c: 1, AH: 1, BH: 1, CH: 1 };
-        segmentLineMode.side = { a: 1, b: 1, c: 1, AH: 1, BH: 1, CH: 1 };
+        segmentLineMode.side = { a: 1, b: 1, c: 1, AH: 0, BH: 0, CH: 0 };
         customLabelText.side = { a: '', b: '', c: '', AH: '', BH: '', CH: '' };
         customLabelText.innerAngle = { A: '', B: '', C: '', AHC: '', BHC: '', ACH: '', BCH: '' };
         customLabelText.area = { main: '' };

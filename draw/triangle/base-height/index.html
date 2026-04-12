@@ -876,7 +876,7 @@
         side: { BC: 1, CA: 1, AB: 1, AH: 1, BH: 1, CH: 1 }
       };
       const segmentLineMode = {
-        side: { BC: 1, CA: 1, AB: 1, AH: 1, BH: 1, CH: 1 }
+        side: { BC: 1, CA: 1, AB: 1, AH: 0, BH: 0, CH: 0 }
       };
       const customLabelText = {
         side: { BC: '', CA: '', AB: '', AH: '', BH: '', CH: '' },
@@ -3251,9 +3251,9 @@
             highlight: false
           });
           const edgeStyle = { strokeWidth: 2, strokeColor: figureState.color, fixed: true, highlight: false };
-          if (segmentLineMode.side.BC !== 0) board.create('segment', [pointB, pointC], edgeStyle);
-          if (segmentLineMode.side.CA !== 0) board.create('segment', [pointC, pointA], edgeStyle);
-          if (segmentLineMode.side.AB !== 0) board.create('segment', [pointA, pointB], edgeStyle);
+          if (!hiddenLabelState.side.BC || segmentLineMode.side.BC !== 0) board.create('segment', [pointB, pointC], edgeStyle);
+          if (!hiddenLabelState.side.CA || segmentLineMode.side.CA !== 0) board.create('segment', [pointC, pointA], edgeStyle);
+          if (!hiddenLabelState.side.AB || segmentLineMode.side.AB !== 0) board.create('segment', [pointA, pointB], edgeStyle);
 
           const centroid = {
             x: (triangle.A.x + triangle.B.x + triangle.C.x) / 3,
@@ -3721,7 +3721,7 @@
         angleMarkerMode.CHA = 0;
         angleMarkerMode.CHB = 0;
         segmentArcMode.side = { BC: 1, CA: 1, AB: 1, AH: 1, BH: 1, CH: 1 };
-        segmentLineMode.side = { BC: 1, CA: 1, AB: 1, AH: 1, BH: 1, CH: 1 };
+        segmentLineMode.side = { BC: 1, CA: 1, AB: 1, AH: 0, BH: 0, CH: 0 };
         customLabelText.side = { BC: '', CA: '', AB: '', AH: '', BH: '', CH: '' };
         customLabelText.innerAngle = { A: '', B: '', C: '', CAH: '', CBH: '', ACH: '', BCH: '', CHA: '', CHB: '' };
         customLabelText.area = { main: '' };
