@@ -29,7 +29,9 @@
 
   const statusBox = document.getElementById('statusBox');
   const generalLabelToggleGrid = document.getElementById('generalLabelToggleGrid');
-  const specialLabelToggleGrid = document.getElementById('specialLabelToggleGrid');
+  const specialPointToggleGrid = document.getElementById('specialPointToggleGrid');
+  const specialDiagonalToggleGrid = document.getElementById('specialDiagonalToggleGrid');
+  const specialAngleToggleGrid = document.getElementById('specialAngleToggleGrid');
   const leftDock = document.getElementById('leftDock');
   const rightDock = document.getElementById('rightDock');
   const leftToggle = document.getElementById('dockToggleBtn');
@@ -722,9 +724,11 @@
   }
 
   function getSpecialConfigs() {
-    return specialPointIds.map(function (id) { return { type: 'specialPoint', id: id }; })
-      .concat(diagonalIds.map(function (id) { return { type: 'diagonal', id: id }; }))
-      .concat(specialAngleIds.map(function (id) { return { type: 'angle', id: id }; }));
+    return {
+      points: specialPointIds.map(function (id) { return { type: 'specialPoint', id: id }; }),
+      diagonals: diagonalIds.map(function (id) { return { type: 'diagonal', id: id }; }),
+      angles: specialAngleIds.map(function (id) { return { type: 'angle', id: id }; })
+    };
   }
 
   function getToggleLabel(config) {
@@ -747,7 +751,9 @@
 
   function renderLabelToggleButtons() {
     generalLabelToggleGrid.innerHTML = '';
-    specialLabelToggleGrid.innerHTML = '';
+    specialPointToggleGrid.innerHTML = '';
+    specialDiagonalToggleGrid.innerHTML = '';
+    specialAngleToggleGrid.innerHTML = '';
     function buildToggleButton(config, parent) {
       const button = document.createElement('button');
       button.type = 'button';
@@ -873,8 +879,15 @@
     getGeneralConfigs().forEach(function (config) {
       buildToggleButton(config, generalLabelToggleGrid);
     });
-    getSpecialConfigs().forEach(function (config) {
-      buildToggleButton(config, specialLabelToggleGrid);
+    const specialConfigs = getSpecialConfigs();
+    specialConfigs.points.forEach(function (config) {
+      buildToggleButton(config, specialPointToggleGrid);
+    });
+    specialConfigs.diagonals.forEach(function (config) {
+      buildToggleButton(config, specialDiagonalToggleGrid);
+    });
+    specialConfigs.angles.forEach(function (config) {
+      buildToggleButton(config, specialAngleToggleGrid);
     });
   }
 
