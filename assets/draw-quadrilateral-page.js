@@ -10,6 +10,7 @@
     parallelogram: { name: '平行四辺形', slug: 'parallelogram' },
     'parallelogram-angle': { name: '平行四辺形（2辺＋角）', slug: 'parallelogram-angle' },
     convex: { name: '凸四角形', slug: 'convex' },
+    concave: { name: '凹四角形', slug: 'concave' },
     trapezoid: { name: '台形', slug: 'trapezoid' },
     square: { name: '正方形', slug: 'square' }
   }[shape] || { name: '四角形', slug: 'quadrilateral' };
@@ -525,6 +526,60 @@
   }
 
   function getGeometryFromInputs() {
+    if (shape === 'concave') {
+      const AB = getInputValue('sideABLen', 6);
+      const BC = getInputValue('sideBCLen', 5);
+      const CD = getInputValue('sideCDLen', 4);
+      const DA = getInputValue('sideDALen', 7);
+      const angleDeg = getInputValue('angleADeg', 70);
+      if (!(angleDeg > 0 && angleDeg < 180)) {
+        throw new Error('∠A は 0° より大きく 180° 未満で入力してください。');
+      }
+      const theta = angleDeg * Math.PI / 180;
+      const A = { x: 0, y: 0 };
+      const B = { x: AB * Math.cos(theta), y: -AB * Math.sin(theta) };
+      const D = { x: DA, y: 0 };
+      const vx = D.x - B.x;
+      const vy = D.y - B.y;
+      const BD = Math.hypot(vx, vy);
+      if (BD <= 1e-9 || BD > (BC + CD) || BD < Math.abs(BC - CD)) {
+        throw new Error('この条件では凹四角形を作れません。辺の長さと∠Aを見直してください。');
+      }
+      const ux = vx / BD;
+      const uy = vy / BD;
+      const proj = (BC * BC - CD * CD + BD * BD) / (2 * BD);
+      const h2 = (BC * BC) - (proj * proj);
+      if (h2 < -1e-8) {
+        throw new Error('この条件では凹四角形を作れません。辺の長さと∠Aを見直してください。');
+      }
+      const h = Math.sqrt(Math.max(0, h2));
+      const baseX = B.x + ux * proj;
+      const baseY = B.y + uy * proj;
+      const perpX = -uy;
+      const perpY = ux;
+      const candidate1 = { x: baseX + perpX * h, y: baseY + perpY * h };
+      const candidate2 = { x: baseX - perpX * h, y: baseY - perpY * h };
+      function pointInTriangle(point, p1, p2, p3) {
+        const area = function (a, b, c) {
+          return (a.x * (b.y - c.y) + b.x * (c.y - a.y) + c.x * (a.y - b.y)) / 2;
+        };
+        const total = Math.abs(area(p1, p2, p3));
+        const a1 = Math.abs(area(point, p2, p3));
+        const a2 = Math.abs(area(p1, point, p3));
+        const a3 = Math.abs(area(p1, p2, point));
+        return Math.abs(total - (a1 + a2 + a3)) < Math.max(1e-6, total * 1e-6);
+      }
+      const inside1 = pointInTriangle(candidate1, A, B, D);
+      const inside2 = pointInTriangle(candidate2, A, B, D);
+      let C = null;
+      if (inside1 && !inside2) C = candidate1;
+      else if (!inside1 && inside2) C = candidate2;
+      else if (inside1 && inside2) C = candidate1.y > candidate2.y ? candidate1 : candidate2;
+      if (!C) {
+        throw new Error('この条件では凹四角形を作れません。辺の長さと∠Aを見直してください。');
+      }
+      return finalizeGeometry({ A: A, B: B, C: C, D: D });
+    }
     if (shape === 'convex') {
       const AB = getInputValue('sideABLen', 6);
       const BC = getInputValue('sideBCLen', 5);
