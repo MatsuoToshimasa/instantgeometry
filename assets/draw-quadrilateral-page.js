@@ -8,6 +8,7 @@
     rectangle: { name: '長方形', slug: 'rectangle' },
     rhombus: { name: '菱形', slug: 'rhombus' },
     parallelogram: { name: '平行四辺形', slug: 'parallelogram' },
+    'parallelogram-angle': { name: '平行四辺形（2辺＋角）', slug: 'parallelogram-angle' },
     trapezoid: { name: '台形', slug: 'trapezoid' },
     square: { name: '正方形', slug: 'square' }
   }[shape] || { name: '四角形', slug: 'quadrilateral' };
@@ -531,6 +532,22 @@
         C: { x: (width / 2) - (skew / 2), y: -height / 2 },
         D: { x: (width / 2) + (skew / 2), y: height / 2 }
       });
+    }
+    if (shape === 'parallelogram-angle') {
+      const sideAB = getInputValue('sideABLen', 5);
+      const sideAD = getInputValue('sideADLen', 7);
+      const angleDeg = getInputValue('angleADeg', 60);
+      if (!(angleDeg > 0 && angleDeg < 180)) {
+        throw new Error('∠A は 0° より大きく 180° 未満で入力してください。');
+      }
+      const theta = angleDeg * Math.PI / 180;
+      const ax = -(sideAD / 2) - (sideAB * Math.cos(theta) / 2);
+      const ay = (sideAB * Math.sin(theta)) / 2;
+      const A = { x: ax, y: ay };
+      const B = { x: ax + (sideAB * Math.cos(theta)), y: ay - (sideAB * Math.sin(theta)) };
+      const D = { x: ax + sideAD, y: ay };
+      const C = { x: D.x + (B.x - A.x), y: D.y + (B.y - A.y) };
+      return finalizeGeometry({ A: A, B: B, C: C, D: D });
     }
     if (shape === 'trapezoid') {
       const topBase = getInputValue('topBaseLen', 4);
