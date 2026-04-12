@@ -2115,6 +2115,21 @@
         return text + unit + (square ? '²' : '');
       }
 
+      function getCustomSideText(id, fallback) {
+        const custom = window.InstantGeometrySharedLabelConfig.normalizeCustomLabelInput(customLabelText.side[id]);
+        return custom ? appendUnit(custom, false) : appendUnit(fallback, false);
+      }
+
+      function getCustomAngleText(id, fallback) {
+        const custom = window.InstantGeometrySharedLabelConfig.normalizeCustomLabelInput(customLabelText.innerAngle[id]);
+        return custom ? window.InstantGeometrySharedLabelConfig.formatAngleCustomText(custom, angleMode) : fallback;
+      }
+
+      function getCustomAreaText(fallback) {
+        const custom = window.InstantGeometrySharedLabelConfig.normalizeCustomLabelInput(customLabelText.area.main);
+        return custom ? appendUnit(custom, true) : appendUnit(fallback, true);
+      }
+
       function getPerpMarkerGeometry(triangle, fontSize) {
         const p0 = { x: triangle.B.x, y: triangle.B.y };
         const vecBA = { x: triangle.A.x - triangle.B.x, y: triangle.A.y - triangle.B.y };
