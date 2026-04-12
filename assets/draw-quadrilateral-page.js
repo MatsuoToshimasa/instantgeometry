@@ -268,7 +268,7 @@
       OD: ['COD', 'DOA', 'OCD', 'ODA', 'OAD', 'ODC']
     };
     return (relatedAngles[id] || []).some(function (angleId) {
-      return labelState.angle[angleId] || labelState.angleMark[angleId];
+      return labelState.angle[angleId] || labelState.angleMark[angleId] || labelState.rightAngleMark[angleId];
     });
   }
 

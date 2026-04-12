@@ -2932,14 +2932,35 @@
             vertices: { visible: false },
             highlight: false
           });
-          if (labelState.side.CH && !hiddenLabelState.side.CH) {
-            board.create('segment', [pointC, pointHBoard], {
-              strokeWidth: 1.6,
-              strokeColor: '#687086',
-              dash: 2,
-              fixed: true,
-              highlight: false
-            });
+          function isVisible(type, id) {
+            return !!(labelState[type] && labelState[type][id] && !(hiddenLabelState[type] && hiddenLabelState[type][id]));
+          }
+          function shouldDrawIsoHelperSegment(id) {
+            if (isVisible('side', id)) return true;
+            if (id === 'AH') return isVisible('innerAngle', 'AHC') || isVisible('angleMark', 'AHC') || isVisible('perp', 'AHC');
+            if (id === 'BH') return isVisible('innerAngle', 'BHC') || isVisible('angleMark', 'BHC') || isVisible('perp', 'BHC');
+            if (id === 'CH') {
+              return ['AHC', 'BHC', 'ACH', 'BCH'].some(function (angleId) {
+                return isVisible('innerAngle', angleId) || isVisible('angleMark', angleId);
+              }) || isVisible('perp', 'AHC') || isVisible('perp', 'BHC');
+            }
+            return false;
+          }
+          const helperLineStyle = {
+            strokeWidth: 1.6,
+            strokeColor: '#687086',
+            dash: 2,
+            fixed: true,
+            highlight: false
+          };
+          if (shouldDrawIsoHelperSegment('CH')) {
+            board.create('segment', [pointC, pointHBoard], helperLineStyle);
+          }
+          if (shouldDrawIsoHelperSegment('AH')) {
+            board.create('segment', [pointA, pointHBoard], helperLineStyle);
+          }
+          if (shouldDrawIsoHelperSegment('BH')) {
+            board.create('segment', [pointB, pointHBoard], helperLineStyle);
           }
 
           const centroid = {

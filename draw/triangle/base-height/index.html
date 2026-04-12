@@ -3189,10 +3189,35 @@
           const pointH = board.create('point', [triangle.H.x, triangle.H.y], { name: '', size: 3, fixed: true, strokeColor: '#111111', fillColor: '#111111' });
           const chStyle = getLabelStyle('side', 'CH');
           const chLineStyle = { strokeWidth: 2, strokeColor: chStyle.color || '#111111', dash: 2, fixed: true, highlight: false };
-          board.create('segment', [pointC, pointH], chLineStyle);
-          if (triangle.H.x < triangle.A.x) {
+          function isVisible(type, id) {
+            return !!(labelState[type] && labelState[type][id] && !(hiddenLabelState[type] && hiddenLabelState[type][id]));
+          }
+          function shouldDrawBaseHeightHelperSegment(id) {
+            if (isVisible('side', id)) return true;
+            if (id === 'AH') {
+              return ['CAH', 'CHA'].some(function (angleId) {
+                return isVisible('innerAngle', angleId) || isVisible('angleMark', angleId);
+              }) || isVisible('perp', 'CHA');
+            }
+            if (id === 'BH') {
+              return ['CBH', 'CHB'].some(function (angleId) {
+                return isVisible('innerAngle', angleId) || isVisible('angleMark', angleId);
+              }) || isVisible('perp', 'CHB');
+            }
+            if (id === 'CH') {
+              return ['ACH', 'BCH', 'CHA', 'CHB'].some(function (angleId) {
+                return isVisible('innerAngle', angleId) || isVisible('angleMark', angleId);
+              }) || isVisible('perp', 'CHA') || isVisible('perp', 'CHB');
+            }
+            return false;
+          }
+          if (shouldDrawBaseHeightHelperSegment('CH')) {
+            board.create('segment', [pointC, pointH], chLineStyle);
+          }
+          if (shouldDrawBaseHeightHelperSegment('AH')) {
             board.create('segment', [pointA, pointH], chLineStyle);
-          } else if (triangle.H.x > triangle.B.x) {
+          }
+          if (shouldDrawBaseHeightHelperSegment('BH')) {
             board.create('segment', [pointB, pointH], chLineStyle);
           }
 
