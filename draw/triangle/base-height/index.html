@@ -895,7 +895,7 @@
 
       const hiddenLabelState = {
         vertex: { A: false, B: false, C: false, H: false },
-        side: { BC: true, CA: true, AB: false, AH: true, BH: true, CH: false },
+        side: { BC: true, CA: true, AB: false, AH: true, BH: true, CH: true },
         innerAngle: { A: true, B: true, C: true, CAH: true, CBH: true, ACH: true, BCH: true, CHA: true, CHB: true },
         angleMark: { A: false, B: false, C: false, CAH: false, CBH: false, ACH: false, BCH: false, CHA: false, CHB: false },
         perp: { CHA: true, CHB: true },
@@ -3192,21 +3192,24 @@
           function isVisible(type, id) {
             return !!(labelState[type] && labelState[type][id] && !(hiddenLabelState[type] && hiddenLabelState[type][id]));
           }
+          function isAngleMarkVisible(id) {
+            return angleMarkerMode[id] !== 0 && isVisible('angleMark', id);
+          }
           function shouldDrawBaseHeightHelperSegment(id) {
             if (isVisible('side', id)) return true;
             if (id === 'AH') {
               return ['CAH', 'CHA'].some(function (angleId) {
-                return isVisible('innerAngle', angleId) || isVisible('angleMark', angleId);
+                return isVisible('innerAngle', angleId) || isAngleMarkVisible(angleId);
               }) || isVisible('perp', 'CHA');
             }
             if (id === 'BH') {
               return ['CBH', 'CHB'].some(function (angleId) {
-                return isVisible('innerAngle', angleId) || isVisible('angleMark', angleId);
+                return isVisible('innerAngle', angleId) || isAngleMarkVisible(angleId);
               }) || isVisible('perp', 'CHB');
             }
             if (id === 'CH') {
               return ['ACH', 'BCH', 'CHA', 'CHB'].some(function (angleId) {
-                return isVisible('innerAngle', angleId) || isVisible('angleMark', angleId);
+                return isVisible('innerAngle', angleId) || isAngleMarkVisible(angleId);
               }) || isVisible('perp', 'CHA') || isVisible('perp', 'CHB');
             }
             return false;
@@ -3670,7 +3673,7 @@
 
       function resetVisualState() {
         hiddenLabelState.vertex = { A: false, B: false, C: false, H: false };
-        hiddenLabelState.side = { BC: true, CA: true, AB: false, AH: true, BH: true, CH: false };
+        hiddenLabelState.side = { BC: true, CA: true, AB: false, AH: true, BH: true, CH: true };
         hiddenLabelState.innerAngle = { A: true, B: true, C: true, CAH: true, CBH: true, ACH: true, BCH: true, CHA: true, CHB: true };
         hiddenLabelState.angleMark = { A: false, B: false, C: false, CAH: false, CBH: false, ACH: false, BCH: false, CHA: false, CHB: false };
         hiddenLabelState.perp = { CHA: true, CHB: true };

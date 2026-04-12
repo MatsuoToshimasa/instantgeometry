@@ -2935,13 +2935,16 @@
           function isVisible(type, id) {
             return !!(labelState[type] && labelState[type][id] && !(hiddenLabelState[type] && hiddenLabelState[type][id]));
           }
+          function isAngleMarkVisible(id) {
+            return angleMarkerMode[id] !== 0 && isVisible('angleMark', id);
+          }
           function shouldDrawIsoHelperSegment(id) {
             if (isVisible('side', id)) return true;
-            if (id === 'AH') return isVisible('innerAngle', 'AHC') || isVisible('angleMark', 'AHC') || isVisible('perp', 'AHC');
-            if (id === 'BH') return isVisible('innerAngle', 'BHC') || isVisible('angleMark', 'BHC') || isVisible('perp', 'BHC');
+            if (id === 'AH') return isVisible('innerAngle', 'AHC') || isAngleMarkVisible('AHC') || isVisible('perp', 'AHC');
+            if (id === 'BH') return isVisible('innerAngle', 'BHC') || isAngleMarkVisible('BHC') || isVisible('perp', 'BHC');
             if (id === 'CH') {
               return ['AHC', 'BHC', 'ACH', 'BCH'].some(function (angleId) {
-                return isVisible('innerAngle', angleId) || isVisible('angleMark', angleId);
+                return isVisible('innerAngle', angleId) || isAngleMarkVisible(angleId);
               }) || isVisible('perp', 'AHC') || isVisible('perp', 'BHC');
             }
             return false;
