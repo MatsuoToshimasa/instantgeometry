@@ -3,6 +3,8 @@
 
   const shape = (document.body.dataset.quadrilateralShape || 'square').toLowerCase();
   const shapeMeta = {
+    'isosceles-trapezoid': { name: '等脚台形', slug: 'isosceles-trapezoid' },
+    kite: { name: '凧形', slug: 'kite' },
     rectangle: { name: '長方形', slug: 'rectangle' },
     rhombus: { name: '菱形', slug: 'rhombus' },
     parallelogram: { name: '平行四辺形', slug: 'parallelogram' },
@@ -475,6 +477,28 @@
   }
 
   function getGeometryFromInputs() {
+    if (shape === 'isosceles-trapezoid') {
+      const topBase = getInputValue('topBaseLen', 4);
+      const bottomBase = getInputValue('bottomBaseLen', 8);
+      const height = getInputValue('heightLen', 5);
+      return finalizeGeometry({
+        A: { x: -topBase / 2, y: height / 2 },
+        B: { x: -bottomBase / 2, y: -height / 2 },
+        C: { x: bottomBase / 2, y: -height / 2 },
+        D: { x: topBase / 2, y: height / 2 }
+      });
+    }
+    if (shape === 'kite') {
+      const width = getInputValue('widthLen', 6);
+      const upperHeight = getInputValue('upperHeightLen', 4);
+      const lowerHeight = getInputValue('lowerHeightLen', 6);
+      return finalizeGeometry({
+        A: { x: 0, y: upperHeight },
+        B: { x: -width / 2, y: 0 },
+        C: { x: 0, y: -lowerHeight },
+        D: { x: width / 2, y: 0 }
+      });
+    }
     if (shape === 'rectangle') {
       const width = getInputValue('widthLen', 7);
       const height = getInputValue('heightLen', 5);
@@ -1782,10 +1806,12 @@
 
   resetBtn.addEventListener('click', function () {
     if (inputElements.sideLen) inputElements.sideLen.value = '5';
-    if (inputElements.widthLen) inputElements.widthLen.value = '7';
-    if (inputElements.heightLen) inputElements.heightLen.value = '5';
-    if (inputElements.horizontalDiagLen) inputElements.horizontalDiagLen.value = '8';
-    if (inputElements.verticalDiagLen) inputElements.verticalDiagLen.value = '5';
+      if (inputElements.widthLen) inputElements.widthLen.value = '7';
+      if (inputElements.heightLen) inputElements.heightLen.value = '5';
+      if (inputElements.upperHeightLen) inputElements.upperHeightLen.value = '4';
+      if (inputElements.lowerHeightLen) inputElements.lowerHeightLen.value = '6';
+      if (inputElements.horizontalDiagLen) inputElements.horizontalDiagLen.value = '8';
+      if (inputElements.verticalDiagLen) inputElements.verticalDiagLen.value = '5';
     if (inputElements.baseLen) inputElements.baseLen.value = '7';
     if (inputElements.skewLen) inputElements.skewLen.value = '2';
     if (inputElements.topBaseLen) inputElements.topBaseLen.value = '4';
