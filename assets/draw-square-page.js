@@ -447,7 +447,7 @@
         render();
       });
       if (config.type === 'vertex') {
-        button.addEventListener('contextmenu', function (event) {
+        button.addEventListener('contextmenu', async function (event) {
           event.preventDefault();
           const current = getVertexTokenByKey(config.id);
           const next = window.prompt('頂点ラベル文字を入力してください（A-Z のみ）', current);
@@ -465,10 +465,10 @@
           render();
         });
       } else if (config.type === 'angle') {
-        button.addEventListener('contextmenu', function (event) {
+        button.addEventListener('contextmenu', async function (event) {
           event.preventDefault();
           const currentMode = Number.isFinite(angleMarkerMode[config.id]) ? angleMarkerMode[config.id] : 0;
-          const response = window.InstantGeometrySharedLabelConfig.promptDualSetting({
+          const response = await window.InstantGeometrySharedLabelConfig.promptDualSetting({
             title: '角ラベル設定',
             firstLabel: '角マーク（0:なし / 1:記号なし / 2:○ / 3:| / 4:= / 5:× / 6:△ / 7:塗）',
             firstValue: String(currentMode),
@@ -493,10 +493,10 @@
           render();
         });
       } else if (config.type === 'side') {
-        button.addEventListener('contextmenu', function (event) {
+        button.addEventListener('contextmenu', async function (event) {
           event.preventDefault();
           const currentMode = Number.isFinite(segmentArcMode.side[config.id]) ? segmentArcMode.side[config.id] : 1;
-          const response = window.InstantGeometrySharedLabelConfig.promptDualSetting({
+          const response = await window.InstantGeometrySharedLabelConfig.promptDualSetting({
             title: '線分ラベル設定',
             firstLabel: '弧表示（0:弧を非表示 / 1:弧を表示）',
             firstValue: String(currentMode),
@@ -514,9 +514,9 @@
           render();
         });
       } else if (config.type === 'area') {
-        button.addEventListener('contextmenu', function (event) {
+        button.addEventListener('contextmenu', async function (event) {
           event.preventDefault();
-          const response = window.InstantGeometrySharedLabelConfig.promptSingleText({
+          const response = await window.InstantGeometrySharedLabelConfig.promptSingleText({
             title: '面積ラベル設定\n文字を使う場合は入力してください。空欄で数値表示に戻ります。',
             value: customLabelText.area.main || ''
           });
@@ -545,10 +545,10 @@
         render();
       });
       if (config.type === 'diagonal') {
-        button.addEventListener('contextmenu', function (event) {
+        button.addEventListener('contextmenu', async function (event) {
           event.preventDefault();
           const currentMode = Number.isFinite(segmentArcMode.diagonal[config.id]) ? segmentArcMode.diagonal[config.id] : 1;
-          const response = window.InstantGeometrySharedLabelConfig.promptDualSetting({
+          const response = await window.InstantGeometrySharedLabelConfig.promptDualSetting({
             title: '線分ラベル設定',
             firstLabel: '弧表示（0:弧を非表示 / 1:弧を表示）',
             firstValue: String(currentMode),
