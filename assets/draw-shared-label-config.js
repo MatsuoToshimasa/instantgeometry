@@ -65,6 +65,16 @@
     secondField.appendChild(secondLabel);
     secondField.appendChild(secondInput);
 
+    const thirdField = document.createElement('label');
+    thirdField.className = 'ig-label-config-field';
+    const thirdLabel = document.createElement('span');
+    thirdLabel.className = 'ig-label-config-label';
+    const thirdInput = document.createElement('input');
+    thirdInput.className = 'ig-label-config-input';
+    thirdInput.type = 'text';
+    thirdField.appendChild(thirdLabel);
+    thirdField.appendChild(thirdInput);
+
     const actions = document.createElement('div');
     actions.className = 'ig-label-config-actions';
     const cancelButton = document.createElement('button');
@@ -81,6 +91,7 @@
     modal.appendChild(title);
     modal.appendChild(firstField);
     modal.appendChild(secondField);
+    modal.appendChild(thirdField);
     modal.appendChild(actions);
     overlay.appendChild(modal);
     document.body.appendChild(overlay);
@@ -101,7 +112,8 @@
     okButton.addEventListener('click', function () {
       close({
         first: normalizeCustomLabelInput(firstInput.value),
-        second: normalizeCustomLabelInput(secondInput.value)
+        second: normalizeCustomLabelInput(secondInput.value),
+        third: normalizeCustomLabelInput(thirdInput.value)
       });
     });
     overlay.addEventListener('keydown', function (event) {
@@ -126,6 +138,9 @@
       secondField: secondField,
       secondLabel: secondLabel,
       secondInput: secondInput,
+      thirdField: thirdField,
+      thirdLabel: thirdLabel,
+      thirdInput: thirdInput,
       okButton: okButton,
       cancelButton: cancelButton
     };
@@ -139,9 +154,17 @@
     elements.firstInput.value = String(config.firstValue == null ? '' : config.firstValue);
     elements.secondLabel.textContent = String(config.secondLabel || '');
     elements.secondInput.value = String(config.secondValue == null ? '' : config.secondValue);
+    elements.thirdLabel.textContent = String(config.thirdLabel || '');
+    elements.thirdInput.value = String(config.thirdValue == null ? '' : config.thirdValue);
     elements.secondField.hidden = !config.showSecond;
+    elements.thirdField.hidden = !config.showThird;
+    elements.thirdInput.disabled = !!config.thirdDisabled;
     elements.overlay.hidden = false;
-    const focusTarget = config.focusSecond && config.showSecond ? elements.secondInput : elements.firstInput;
+    const focusTarget = config.focusThird && config.showThird && !config.thirdDisabled
+      ? elements.thirdInput
+      : config.focusSecond && config.showSecond
+        ? elements.secondInput
+        : elements.firstInput;
     window.requestAnimationFrame(function () {
       focusTarget.focus();
       focusTarget.select();
@@ -177,6 +200,23 @@
     return normalizeCustomLabelInput(result.first);
   }
 
+  async function promptTripleSetting(config) {
+    return openModal({
+      title: config.title,
+      firstLabel: config.firstLabel,
+      firstValue: config.firstValue,
+      secondLabel: config.secondLabel,
+      secondValue: config.secondValue,
+      thirdLabel: config.thirdLabel,
+      thirdValue: config.thirdValue,
+      showSecond: true,
+      showThird: true,
+      thirdDisabled: !!config.thirdDisabled,
+      focusSecond: false,
+      focusThird: false
+    });
+  }
+
   function formatAngleCustomText(text, angleMode) {
     const value = normalizeCustomLabelInput(text);
     if (!value) return '';
@@ -187,6 +227,7 @@
     normalizeCustomLabelInput: normalizeCustomLabelInput,
     promptDualSetting: promptDualSetting,
     promptSingleText: promptSingleText,
+    promptTripleSetting: promptTripleSetting,
     formatAngleCustomText: formatAngleCustomText
   };
 })();

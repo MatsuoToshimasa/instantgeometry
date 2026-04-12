@@ -106,6 +106,7 @@
   let isPaletteOpen = false;
   let lastFitSignature = '';
   const angleMarkerMode = { A: 0, B: 0, C: 0, D: 0, AOB: 0, BOC: 0, COD: 0, DOA: 0, OAB: 0, OBC: 0, OCD: 0, ODA: 0, OAD: 0, ODC: 0, OCB: 0, OBA: 0 };
+  const rightAngleMarkerMode = { A: 0, B: 0, C: 0, D: 0, AOB: 0, BOC: 0, COD: 0, DOA: 0, OAB: 0, OBC: 0, OCD: 0, ODA: 0, OAD: 0, ODC: 0, OCB: 0, OBA: 0 };
   const segmentArcMode = {
     side: { AB: 1, BC: 1, CD: 1, DA: 1 },
     specialSegment: { OA: 1, OB: 1, OC: 1, OD: 1 },
@@ -204,6 +205,10 @@
     return Math.acos(dot) * 180 / Math.PI;
   }
 
+  function isRightAngleId(id, geometry) {
+    return Math.abs(getAngleMeasureDegrees(id, geometry) - 90) < 1e-6;
+  }
+
   function getAngleDefaultByGeometry(id, geometry) {
     const data = getAngleGeometry(id, geometry);
     if (!data) return geometry.centroid;
@@ -252,6 +257,13 @@
     if (value === '5' || value.toLowerCase() === 'x' || value === '×') return 5;
     if (value === '6' || value === '△') return 6;
     if (value === '7' || value === '塗') return 7;
+    return null;
+  }
+
+  function normalizeRightAngleMarkerInput(input) {
+    const value = String(input || '').trim();
+    if (!value || value === '0' || value === '非表示') return 0;
+    if (value === '1' || value === '表示') return 1;
     return null;
   }
 
@@ -591,13 +603,19 @@
       } else if (config.type === 'angle') {
         button.addEventListener('contextmenu', async function (event) {
           event.preventDefault();
+          const geometryForAngle = currentGeometry || getSquareGeometry(evaluateExpression(sideInput.value || '5'));
+          const canUseRightMarker = isRightAngleId(config.id, geometryForAngle);
           const currentMode = Number.isFinite(angleMarkerMode[config.id]) ? angleMarkerMode[config.id] : 0;
-          const response = await window.InstantGeometrySharedLabelConfig.promptDualSetting({
+          const currentRightMode = Number.isFinite(rightAngleMarkerMode[config.id]) ? rightAngleMarkerMode[config.id] : 0;
+          const response = await window.InstantGeometrySharedLabelConfig.promptTripleSetting({
             title: '角ラベル設定',
             firstLabel: '角マーク（0:なし / 1:記号なし / 2:○ / 3:| / 4:= / 5:× / 6:△ / 7:塗）',
             firstValue: String(currentMode),
             secondLabel: '文字（空欄で数値表示）',
-            secondValue: customLabelText.angle[config.id] || ''
+            secondValue: customLabelText.angle[config.id] || '',
+            thirdLabel: '直角マーク（0:非表示 / 1:表示）',
+            thirdValue: canUseRightMarker ? String(currentRightMode) : '90°以外は設定不可',
+            thirdDisabled: !canUseRightMarker
           });
           if (response === null) return;
           const mode = normalizeAngleMarkerInput(response.first);
@@ -607,6 +625,16 @@
           }
           angleMarkerMode[config.id] = mode;
           customLabelText.angle[config.id] = response.second;
+          if (canUseRightMarker) {
+            const rightMode = normalizeRightAngleMarkerInput(response.third);
+            if (rightMode === null) {
+              setStatus('直角マークは「0 / 1」で指定してください。', true);
+              return;
+            }
+            rightAngleMarkerMode[config.id] = rightMode;
+          } else {
+            rightAngleMarkerMode[config.id] = 0;
+          }
           labelState.angleMark[config.id] = (mode !== 0);
           if (!labelState.angleMark[config.id] && selectedLabel && selectedLabel.type === 'angleMark' && selectedLabel.id === config.id) {
             selectedLabel = null;
@@ -695,13 +723,19 @@
       if (config.type === 'angle') {
         button.addEventListener('contextmenu', async function (event) {
           event.preventDefault();
+          const geometryForAngle = currentGeometry || getSquareGeometry(evaluateExpression(sideInput.value || '5'));
+          const canUseRightMarker = isRightAngleId(config.id, geometryForAngle);
           const currentMode = Number.isFinite(angleMarkerMode[config.id]) ? angleMarkerMode[config.id] : 0;
-          const response = await window.InstantGeometrySharedLabelConfig.promptDualSetting({
+          const currentRightMode = Number.isFinite(rightAngleMarkerMode[config.id]) ? rightAngleMarkerMode[config.id] : 0;
+          const response = await window.InstantGeometrySharedLabelConfig.promptTripleSetting({
             title: '角ラベル設定',
             firstLabel: '角マーク（0:なし / 1:記号なし / 2:○ / 3:| / 4:= / 5:× / 6:△ / 7:塗）',
             firstValue: String(currentMode),
             secondLabel: '文字（空欄で数値表示）',
-            secondValue: customLabelText.angle[config.id] || ''
+            secondValue: customLabelText.angle[config.id] || '',
+            thirdLabel: '直角マーク（0:非表示 / 1:表示）',
+            thirdValue: canUseRightMarker ? String(currentRightMode) : '90°以外は設定不可',
+            thirdDisabled: !canUseRightMarker
           });
           if (response === null) return;
           const mode = normalizeAngleMarkerInput(response.first);
@@ -711,6 +745,16 @@
           }
           angleMarkerMode[config.id] = mode;
           customLabelText.angle[config.id] = response.second;
+          if (canUseRightMarker) {
+            const rightMode = normalizeRightAngleMarkerInput(response.third);
+            if (rightMode === null) {
+              setStatus('直角マークは「0 / 1」で指定してください。', true);
+              return;
+            }
+            rightAngleMarkerMode[config.id] = rightMode;
+          } else {
+            rightAngleMarkerMode[config.id] = 0;
+          }
           labelState.angleMark[config.id] = (mode !== 0);
           if (!labelState.angleMark[config.id] && selectedLabel && selectedLabel.type === 'angleMark' && selectedLabel.id === config.id) {
             selectedLabel = null;
@@ -1010,6 +1054,10 @@
       if (!labelState.angleMark[id]) return;
       drawAngleDecoration(id, geometry);
     });
+    ['A', 'B', 'C', 'D'].forEach(function (id) {
+      if (!rightAngleMarkerMode[id]) return;
+      drawRightAngleDecoration(id, geometry);
+    });
 
     if (labelState.area.main) {
       window.InstantGeometrySharedLabels.createSelectableText({
@@ -1137,6 +1185,10 @@
       if (!labelState.angleMark[id]) return;
       drawAngleDecoration(id, geometry);
     });
+    specialAngleIds.forEach(function (id) {
+      if (!rightAngleMarkerMode[id]) return;
+      drawRightAngleDecoration(id, geometry);
+    });
 
     renderSelectionOverlay(getSelectedAnchor() || getFigureSelectionAnchor());
   }
@@ -1260,6 +1312,38 @@
       fontSize: labelFontSize.angleMark[angleId],
       rotation: 0,
       color: color
+    });
+  }
+
+  function drawRightAngleDecoration(angleId, geometry) {
+    const data = getAngleGeometry(angleId, geometry);
+    if (!data) return;
+    if (!isRightAngleId(angleId, geometry)) return;
+    const vertex = data.vertex;
+    const p1 = data.p1;
+    const p2 = data.p2;
+    const v1 = { x: p1.x - vertex.x, y: p1.y - vertex.y };
+    const v2 = { x: p2.x - vertex.x, y: p2.y - vertex.y };
+    const l1 = Math.hypot(v1.x, v1.y) || 1;
+    const l2 = Math.hypot(v2.x, v2.y) || 1;
+    const u1 = { x: v1.x / l1, y: v1.y / l1 };
+    const u2 = { x: v2.x / l2, y: v2.y / l2 };
+    const size = Math.max(0.06, geometry.side * (angleId[1] === 'O' ? 0.08 : 0.06));
+    const pA = { x: vertex.x + u1.x * size, y: vertex.y + u1.y * size };
+    const pB = { x: pA.x + u2.x * size, y: pA.y + u2.y * size };
+    const pC = { x: vertex.x + u2.x * size, y: vertex.y + u2.y * size };
+    const color = getLabelStyle('angle', angleId).color || '#687086';
+    board.create('segment', [[pA.x, pA.y], [pB.x, pB.y]], {
+      fixed: true,
+      strokeWidth: 2,
+      strokeColor: color,
+      highlight: false
+    });
+    board.create('segment', [[pB.x, pB.y], [pC.x, pC.y]], {
+      fixed: true,
+      strokeWidth: 2,
+      strokeColor: color,
+      highlight: false
     });
   }
 
@@ -1565,6 +1649,9 @@
     });
     Object.keys(angleMarkerMode).forEach(function (id) {
       angleMarkerMode[id] = 0;
+    });
+    Object.keys(rightAngleMarkerMode).forEach(function (id) {
+      rightAngleMarkerMode[id] = 0;
     });
     Object.keys(segmentArcMode.side).forEach(function (id) {
       segmentArcMode.side[id] = 1;
