@@ -850,6 +850,7 @@
         side: { a: true, b: true, c: true },
         innerAngle: { A: true, B: true, C: true },
         angleMark: { A: true, B: true, C: true },
+        rightAngleMark: { B: true },
         area: { main: true }
       };
 
@@ -858,6 +859,7 @@
         side: { a: 32, b: 32, c: 32 },
         innerAngle: { A: 30, B: 30, C: 30 },
         angleMark: { A: 26, B: 26, C: 26 },
+        rightAngleMark: { B: 26 },
         area: { main: 48 }
       };
       const angleMarkerMode = { A: 0, B: 0, C: 0 };
@@ -875,6 +877,7 @@
         side: { a: true, b: false, c: false },
         innerAngle: { A: true, B: true, C: true },
         angleMark: { A: true, B: true, C: true },
+        rightAngleMark: { B: false },
         area: { main: true }
       };
 
@@ -883,6 +886,7 @@
         side: { a: null, b: null, c: null },
         innerAngle: { A: null, B: null, C: null },
         angleMark: { A: null, B: null, C: null },
+        rightAngleMark: { B: null },
         area: { main: null }
       };
 
@@ -907,6 +911,9 @@
             A: { color: '#687086', rotation: 0 },
             B: { color: '#687086', rotation: 0 },
             C: { color: '#687086', rotation: 0 }
+          },
+          rightAngleMark: {
+            B: { color: '#111111', rotation: 0 }
           },
           area: {
             main: { color: '#25603b', rotation: 0 }
@@ -1764,7 +1771,14 @@
               } else {
                 rightAngleMarkerMode[config.id] = 0;
               }
+              labelState.rightAngleMark[config.id] = !!rightAngleMarkerMode[config.id];
+              hiddenLabelState.rightAngleMark[config.id] = !labelState.rightAngleMark[config.id];
+              if (!labelState.rightAngleMark[config.id] && selectedLabel && selectedLabel.type === 'rightAngleMark' && selectedLabel.id === config.id) {
+                selectedLabel = null;
+                isPaletteOpen = false;
+              }
               hiddenLabelState.angleMark[config.id] = (mode === 0);
+              if (labelState.rightAngleMark[config.id]) resetSingleLabel('rightAngleMark', config.id);
               render();
             });
           } else if (config.type === 'side') {
@@ -2607,17 +2621,48 @@
 
       function drawRightAngleDecoration(angleId, triangle) {
         if (angleId !== 'B' || !rightAngleMarkerMode.B) return;
-        const perpGeom = getPerpMarkerGeometry(triangle, Math.max(labelFontSize.innerAngle.B, 34));
+        const fontSize = Math.max(labelFontSize.rightAngleMark.B, 34);
+        const perpGeom = getPerpMarkerGeometry(triangle, fontSize);
         const p1 = perpGeom.p1;
         const p2 = perpGeom.p2;
         const p3 = perpGeom.p3;
-        const markStyle = { strokeWidth: 2.2, strokeColor: '#111111', fixed: true, highlight: false };
+        const markStyle = {
+          strokeWidth: 2.2,
+          strokeColor: getLabelStyle('rightAngleMark', 'B').color || '#111111',
+          fixed: true,
+          highlight: false
+        };
         board.create('segment', [[p1.x, p1.y], [p2.x, p2.y]], markStyle);
         board.create('segment', [[p2.x, p2.y], [p3.x, p3.y]], markStyle);
+        const screenPoints = [perpGeom.p0, p1, p2, p3].map(userToScreenPoint);
+        const xs = screenPoints.map(function (pt) { return pt.x; });
+        const ys = screenPoints.map(function (pt) { return pt.y; });
+        currentLabelAnchors.push({
+          type: 'rightAngleMark',
+          id: 'B',
+          x: perpGeom.center.x,
+          y: perpGeom.center.y,
+          scaleCenter: { x: triangle.B.x, y: triangle.B.y },
+          threshold: 0.45,
+          curveThreshold: null,
+          curveHit: null,
+          visible: true,
+          hidden: false,
+          text: '⊥',
+          fontSize: labelFontSize.rightAngleMark.B,
+          color: getLabelStyle('rightAngleMark', 'B').color || '#111111',
+          rotation: 0,
+          screenRect: {
+            left: Math.min.apply(null, xs),
+            top: Math.min.apply(null, ys),
+            right: Math.max.apply(null, xs),
+            bottom: Math.max.apply(null, ys)
+          }
+        });
       }
 
       function getRightAngleLabelDefaultPoint(triangle) {
-        const perpGeom = getPerpMarkerGeometry(triangle, Math.max(labelFontSize.innerAngle.B, 34));
+        const perpGeom = getPerpMarkerGeometry(triangle, Math.max(labelFontSize.rightAngleMark.B, 34));
         const centroid = {
           x: (triangle.A.x + triangle.B.x + triangle.C.x) / 3,
           y: (triangle.A.y + triangle.B.y + triangle.C.y) / 3
@@ -2683,6 +2728,7 @@
           if (type === 'vertex') return 2;
           if (type === 'innerAngle') return 12;
           if (type === 'angleMark') return 12;
+          if (type === 'rightAngleMark') return 12;
           if (type === 'area') return 14;
           return 4;
         }
@@ -3044,10 +3090,15 @@
             render();
             return;
           }
+          if (overlayControl.mode === 'rotate' && selectedLabel && (selectedLabel.type === 'angleMark' || selectedLabel.type === 'rightAngleMark')) {
+            return;
+          }
           const anchorForSelection = selectedLabel ? getSelectedAnchor() : getFigureSelectionAnchor();
           if (!anchorForSelection) return;
           pushHistorySnapshot();
-          const dragCenter = { x: anchorForSelection.x, y: anchorForSelection.y };
+          const dragCenter = (selectedLabel && (selectedLabel.type === 'angleMark' || selectedLabel.type === 'rightAngleMark') && anchorForSelection.scaleCenter)
+            ? { x: anchorForSelection.scaleCenter.x, y: anchorForSelection.scaleCenter.y }
+            : { x: anchorForSelection.x, y: anchorForSelection.y };
           dragState = {
             mode: overlayControl.mode,
             target: selectedLabel ? 'label' : 'figure',
@@ -3070,7 +3121,7 @@
             return item.type === selected.type && item.id === selected.id;
           });
           if (!anchor) return;
-          if (selected.type === 'angleMark') {
+          if (selected.type === 'angleMark' || selected.type === 'rightAngleMark') {
             hoveredLabel = null;
             selectedLabel = selected;
             selectedFigure = false;
@@ -3154,11 +3205,13 @@
               scaleLabelGroupAround(center, scaleRatio, 'side');
               scaleLabelGroupAround(center, scaleRatio, 'innerAngle');
               scaleLabelGroupAround(center, scaleRatio, 'angleMark');
+              scaleLabelGroupAround(center, scaleRatio, 'rightAngleMark');
               scaleLabelGroupAround(center, scaleRatio, 'area');
               scaleLabelFontGroup(scaleRatio, 'vertex');
               scaleLabelFontGroup(scaleRatio, 'side');
               scaleLabelFontGroup(scaleRatio, 'innerAngle');
               scaleLabelFontGroup(scaleRatio, 'angleMark');
+              scaleLabelFontGroup(scaleRatio, 'rightAngleMark');
               scaleLabelFontGroup(scaleRatio, 'area');
             }
             figureState.scale = nextScale;
@@ -3171,7 +3224,7 @@
         if (dragState.mode === 'rotate') {
           const currentAngle = Math.atan2(currentPoint.y - dragState.center.y, currentPoint.x - dragState.center.x);
           if (dragState.target === 'label') {
-            if (dragState.type === 'angleMark') {
+            if (dragState.type === 'angleMark' || dragState.type === 'rightAngleMark') {
               return;
             }
             labelStyleState[dragState.type][dragState.id].rotation = dragState.rotationStart + ((currentAngle - dragState.angleStart) * 180 / Math.PI);
@@ -3184,6 +3237,7 @@
               rotateLabelGroupAround(center, deltaRotation, 'side');
               rotateLabelGroupAround(center, deltaRotation, 'innerAngle');
               rotateLabelGroupAround(center, deltaRotation, 'angleMark');
+              rotateLabelGroupAround(center, deltaRotation, 'rightAngleMark');
               rotateLabelGroupAround(center, deltaRotation, 'area');
             }
             figureState.rotation = nextRotation;
@@ -3212,6 +3266,7 @@
             translateLabelGroup(offsetDelta, 'side');
             translateLabelGroup(offsetDelta, 'innerAngle');
             translateLabelGroup(offsetDelta, 'angleMark');
+            translateLabelGroup(offsetDelta, 'rightAngleMark');
             translateLabelGroup(offsetDelta, 'area');
           }
           figureState.offset = nextOffset;
@@ -3263,11 +3318,13 @@
         hiddenLabelState.side = { a: true, b: false, c: false };
         hiddenLabelState.innerAngle = { A: true, B: true, C: true };
         hiddenLabelState.angleMark = { A: true, B: true, C: true };
+        hiddenLabelState.rightAngleMark = { B: false };
         hiddenLabelState.area = { main: true };
         labelFontSize.vertex = { A: 36, B: 36, C: 36 };
         labelFontSize.side = { a: 32, b: 32, c: 32 };
         labelFontSize.innerAngle = { A: 30, B: 30, C: 30 };
         labelFontSize.angleMark = { A: 26, B: 26, C: 26 };
+        labelFontSize.rightAngleMark = { B: 26 };
         labelFontSize.area = { main: 48 };
         angleMarkerMode.A = 0;
         angleMarkerMode.B = 0;
@@ -3288,6 +3345,7 @@
         labelPositions.side = { a: null, b: null, c: null };
         labelPositions.innerAngle = { A: null, B: null, C: null };
         labelPositions.angleMark = { A: null, B: null, C: null };
+        labelPositions.rightAngleMark = { B: null };
         labelPositions.area = { main: null };
         zoomScale = 1;
         viewCenterOffset = { x: 0, y: 0 };

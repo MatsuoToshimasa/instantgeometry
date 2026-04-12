@@ -43,6 +43,7 @@
     side: { AB: true, BC: true, CD: true, DA: true },
     angle: { A: false, B: false, C: false, D: false, AOB: false, BOC: false, COD: false, DOA: false, OAB: false, OBC: false, OCD: false, ODA: false, OAD: false, ODC: false, OCB: false, OBA: false },
     angleMark: { A: false, B: false, C: false, D: false, AOB: false, BOC: false, COD: false, DOA: false, OAB: false, OBC: false, OCD: false, ODA: false, OAD: false, ODC: false, OCB: false, OBA: false },
+    rightAngleMark: { A: true, B: true, C: true, D: true, AOB: true, BOC: true, COD: true, DOA: true, OAB: true, OBC: true, OCD: true, ODA: true, OAD: true, ODC: true, OCB: true, OBA: true },
     area: { main: false },
     specialVertex: { O: false },
     specialSegment: { OA: false, OB: false, OC: false, OD: false },
@@ -55,6 +56,7 @@
     side: { AB: 32, BC: 32, CD: 32, DA: 32 },
     angle: { A: 30, B: 30, C: 30, D: 30, AOB: 28, BOC: 28, COD: 28, DOA: 28, OAB: 28, OBC: 28, OCD: 28, ODA: 28, OAD: 28, ODC: 28, OCB: 28, OBA: 28 },
     angleMark: { A: 26, B: 26, C: 26, D: 26, AOB: 24, BOC: 24, COD: 24, DOA: 24, OAB: 24, OBC: 24, OCD: 24, ODA: 24, OAD: 24, ODC: 24, OCB: 24, OBA: 24 },
+    rightAngleMark: { A: 26, B: 26, C: 26, D: 26, AOB: 24, BOC: 24, COD: 24, DOA: 24, OAB: 24, OBC: 24, OCD: 24, ODA: 24, OAD: 24, ODC: 24, OCB: 24, OBA: 24 },
     area: { main: 48 },
     specialVertex: { O: 34 },
     specialSegment: { OA: 28, OB: 28, OC: 28, OD: 28 },
@@ -66,6 +68,7 @@
     side: { AB: style('#2a5bd7'), BC: style('#2a5bd7'), CD: style('#2a5bd7'), DA: style('#2a5bd7') },
     angle: { A: style('#687086'), B: style('#687086'), C: style('#687086'), D: style('#687086'), AOB: style('#687086'), BOC: style('#687086'), COD: style('#687086'), DOA: style('#687086'), OAB: style('#687086'), OBC: style('#687086'), OCD: style('#687086'), ODA: style('#687086'), OAD: style('#687086'), ODC: style('#687086'), OCB: style('#687086'), OBA: style('#687086') },
     angleMark: { A: style('#687086'), B: style('#687086'), C: style('#687086'), D: style('#687086'), AOB: style('#687086'), BOC: style('#687086'), COD: style('#687086'), DOA: style('#687086'), OAB: style('#687086'), OBC: style('#687086'), OCD: style('#687086'), ODA: style('#687086'), OAD: style('#687086'), ODC: style('#687086'), OCB: style('#687086'), OBA: style('#687086') },
+    rightAngleMark: { A: style('#111111'), B: style('#111111'), C: style('#111111'), D: style('#111111'), AOB: style('#111111'), BOC: style('#111111'), COD: style('#111111'), DOA: style('#111111'), OAB: style('#111111'), OBC: style('#111111'), OCD: style('#111111'), ODA: style('#111111'), OAD: style('#111111'), ODC: style('#111111'), OCB: style('#111111'), OBA: style('#111111') },
     area: { main: style('#25603b') },
     specialVertex: { O: style('#1f2430') },
     specialSegment: { OA: style('#7d8db8'), OB: style('#7d8db8'), OC: style('#7d8db8'), OD: style('#7d8db8') },
@@ -77,6 +80,7 @@
     side: { AB: null, BC: null, CD: null, DA: null },
     angle: { A: null, B: null, C: null, D: null, AOB: null, BOC: null, COD: null, DOA: null, OAB: null, OBC: null, OCD: null, ODA: null, OAD: null, ODC: null, OCB: null, OBA: null },
     angleMark: { A: null, B: null, C: null, D: null, AOB: null, BOC: null, COD: null, DOA: null, OAB: null, OBC: null, OCD: null, ODA: null, OAD: null, ODC: null, OCB: null, OBA: null },
+    rightAngleMark: { A: null, B: null, C: null, D: null, AOB: null, BOC: null, COD: null, DOA: null, OAB: null, OBC: null, OCD: null, ODA: null, OAD: null, ODC: null, OCB: null, OBA: null },
     area: { main: null },
     specialVertex: { O: null },
     specialSegment: { OA: null, OB: null, OC: null, OD: null },
@@ -635,12 +639,18 @@
           } else {
             rightAngleMarkerMode[config.id] = 0;
           }
+          labelState.rightAngleMark[config.id] = !!rightAngleMarkerMode[config.id];
+          if (!labelState.rightAngleMark[config.id] && selectedLabel && selectedLabel.type === 'rightAngleMark' && selectedLabel.id === config.id) {
+            selectedLabel = null;
+            isPaletteOpen = false;
+          }
           labelState.angleMark[config.id] = (mode !== 0);
           if (!labelState.angleMark[config.id] && selectedLabel && selectedLabel.type === 'angleMark' && selectedLabel.id === config.id) {
             selectedLabel = null;
             isPaletteOpen = false;
           }
           if (mode !== 0) resetSingleLabel('angleMark', config.id);
+          if (labelState.rightAngleMark[config.id]) resetSingleLabel('rightAngleMark', config.id);
           renderLabelToggleButtons();
           render();
         });
@@ -755,12 +765,18 @@
           } else {
             rightAngleMarkerMode[config.id] = 0;
           }
+          labelState.rightAngleMark[config.id] = !!rightAngleMarkerMode[config.id];
+          if (!labelState.rightAngleMark[config.id] && selectedLabel && selectedLabel.type === 'rightAngleMark' && selectedLabel.id === config.id) {
+            selectedLabel = null;
+            isPaletteOpen = false;
+          }
           labelState.angleMark[config.id] = (mode !== 0);
           if (!labelState.angleMark[config.id] && selectedLabel && selectedLabel.type === 'angleMark' && selectedLabel.id === config.id) {
             selectedLabel = null;
             isPaletteOpen = false;
           }
           if (mode !== 0) resetSingleLabel('angleMark', config.id);
+          if (labelState.rightAngleMark[config.id]) resetSingleLabel('rightAngleMark', config.id);
           renderLabelToggleButtons();
           render();
         });
@@ -1328,11 +1344,12 @@
     const l2 = Math.hypot(v2.x, v2.y) || 1;
     const u1 = { x: v1.x / l1, y: v1.y / l1 };
     const u2 = { x: v2.x / l2, y: v2.y / l2 };
-    const size = Math.max(0.06, geometry.side * (angleId[1] === 'O' ? 0.08 : 0.06));
+    const sizeScale = Math.max(0.35, Math.min(8, labelFontSize.rightAngleMark[angleId] / 26));
+    const size = Math.max(0.06, geometry.side * (angleId[1] === 'O' ? 0.08 : 0.06) * sizeScale);
     const pA = { x: vertex.x + u1.x * size, y: vertex.y + u1.y * size };
     const pB = { x: pA.x + u2.x * size, y: pA.y + u2.y * size };
     const pC = { x: vertex.x + u2.x * size, y: vertex.y + u2.y * size };
-    const color = getLabelStyle('angle', angleId).color || '#687086';
+    const color = getLabelStyle('rightAngleMark', angleId).color || '#111111';
     board.create('segment', [[pA.x, pA.y], [pB.x, pB.y]], {
       fixed: true,
       strokeWidth: 2,
@@ -1344,6 +1361,25 @@
       strokeWidth: 2,
       strokeColor: color,
       highlight: false
+    });
+    const screenPoints = [vertex, pA, pB, pC].map(userToScreenPoint);
+    const xs = screenPoints.map(function (pt) { return pt.x; });
+    const ys = screenPoints.map(function (pt) { return pt.y; });
+    currentLabelAnchors.push({
+      type: 'rightAngleMark',
+      id: angleId,
+      x: (vertex.x + pB.x) / 2,
+      y: (vertex.y + pB.y) / 2,
+      scaleCenter: { x: vertex.x, y: vertex.y },
+      screenRect: {
+        left: Math.min.apply(null, xs),
+        right: Math.max.apply(null, xs),
+        top: Math.min.apply(null, ys),
+        bottom: Math.max.apply(null, ys)
+      },
+      fontSize: labelFontSize.rightAngleMark[angleId],
+      rotation: 0,
+      color: color
     });
   }
 
@@ -1483,12 +1519,12 @@
         render();
         return;
       }
-      if (overlayControl.mode === 'rotate' && selectedLabel && selectedLabel.type === 'angleMark') {
+      if (overlayControl.mode === 'rotate' && selectedLabel && (selectedLabel.type === 'angleMark' || selectedLabel.type === 'rightAngleMark')) {
         return;
       }
       const anchor = selectedLabel ? getSelectedAnchor() : getFigureSelectionAnchor();
       if (!anchor) return;
-      const dragCenter = (selectedLabel && selectedLabel.type === 'angleMark' && anchor.scaleCenter)
+      const dragCenter = (selectedLabel && (selectedLabel.type === 'angleMark' || selectedLabel.type === 'rightAngleMark') && anchor.scaleCenter)
         ? { x: anchor.scaleCenter.x, y: anchor.scaleCenter.y }
         : { x: anchor.x, y: anchor.y };
       dragState = {
@@ -1513,7 +1549,7 @@
       selectedFigure = false;
       isPaletteOpen = false;
       render();
-      if (anchorHit.type === 'angleMark') return;
+      if (anchorHit.type === 'angleMark' || anchorHit.type === 'rightAngleMark') return;
       return;
     }
 
