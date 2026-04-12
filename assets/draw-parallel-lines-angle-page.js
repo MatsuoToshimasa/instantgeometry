@@ -42,9 +42,10 @@
   labelLayer.setAttribute('aria-hidden', 'true');
   box.appendChild(labelLayer);
 
-  const pointLabelText = { A: 'A', B: 'B', M: 'M' };
+  const pointLabelText = { A: 'A', B: 'B', M: 'M', P: 'P', Q: 'Q', R: 'R', S: 'S' };
   const defaultLabelState = {
     point: { A: true, B: true, M: true },
+    segment: { PQ: true, RS: true, AM: true, BM: true },
     angle: { theta1: false, theta2: false },
     angleMark: { theta1: false, theta2: false },
     rightAngleMark: { theta1: false, theta2: false }
@@ -52,6 +53,7 @@
   const labelState = JSON.parse(JSON.stringify(defaultLabelState));
   const labelFontDefaults = {
     point: { A: 36, B: 36, M: 36 },
+    segment: { PQ: 30, RS: 30, AM: 30, BM: 30 },
     angle: { theta1: 28, theta2: 28 },
     angleMark: { theta1: 26, theta2: 26 },
     rightAngleMark: { theta1: 26, theta2: 26 }
@@ -59,6 +61,7 @@
   const labelFontSize = JSON.parse(JSON.stringify(labelFontDefaults));
   const styleDefaults = {
     point: { A: style('#1f2430'), B: style('#1f2430'), M: style('#1f2430') },
+    segment: { PQ: style('#2a5bd7'), RS: style('#2a5bd7'), AM: style('#2a5bd7'), BM: style('#2a5bd7') },
     angle: { theta1: style('#687086'), theta2: style('#687086') },
     angleMark: { theta1: style('#687086'), theta2: style('#687086') },
     rightAngleMark: { theta1: style('#111111'), theta2: style('#111111') }
@@ -66,13 +69,16 @@
   let labelStyleState = JSON.parse(JSON.stringify(styleDefaults));
   const labelPositions = {
     point: { A: null, B: null, M: null },
+    segment: { PQ: null, RS: null, AM: null, BM: null },
     angle: { theta1: null, theta2: null },
     angleMark: { theta1: null, theta2: null },
     rightAngleMark: { theta1: null, theta2: null }
   };
-  const customLabelText = { angle: { theta1: '', theta2: '' } };
+  const customLabelText = { segment: { PQ: '', RS: '', AM: '', BM: '' }, angle: { theta1: '', theta2: '' } };
   const angleMarkerMode = { theta1: 0, theta2: 0 };
   const rightAngleMarkerMode = { theta1: 0, theta2: 0 };
+  const segmentArcMode = { PQ: 1, RS: 1, AM: 1, BM: 1 };
+  const segmentLineMode = { PQ: 1, RS: 1, AM: 1, BM: 1 };
 
   let currentGeometry = null;
   let currentLabelAnchors = [];
@@ -206,10 +212,10 @@
 
     return {
       basePoints: {
-        T1: { x: leftX, y: topY },
-        T2: { x: rightX, y: topY },
-        B1: { x: leftX, y: bottomY },
-        B2: { x: rightX, y: bottomY },
+        P: { x: leftX, y: topY },
+        Q: { x: rightX, y: topY },
+        R: { x: leftX, y: bottomY },
+        S: { x: rightX, y: bottomY },
         A: A,
         B: B,
         M: M
@@ -257,6 +263,10 @@
       { type: 'point', id: 'A' },
       { type: 'point', id: 'B' },
       { type: 'point', id: 'M' },
+      { type: 'segment', id: 'PQ' },
+      { type: 'segment', id: 'RS' },
+      { type: 'segment', id: 'AM' },
+      { type: 'segment', id: 'BM' },
       { type: 'angle', id: 'theta1' },
       { type: 'angle', id: 'theta2' }
     ];
@@ -266,12 +276,21 @@
     return /^[A-Z]+$/.test(raw) ? raw : id;
   }
   function getAngleToggleLabel(id) { return id === 'theta1' ? 'θ1' : 'θ2'; }
-  function getToggleLabel(config) { return config.type === 'point' ? getPointLabelToken(config.id) : getAngleToggleLabel(config.id); }
+  function getSegmentToggleLabel(id) { return id; }
+  function getToggleLabel(config) {
+    if (config.type === 'point') return getPointLabelToken(config.id);
+    if (config.type === 'segment') return getSegmentToggleLabel(config.id);
+    return getAngleToggleLabel(config.id);
+  }
   function getAngleMeasureDegrees(id, geometry) { return id === 'theta1' ? geometry.theta1Deg : geometry.theta2Deg; }
   function isRightAngleId(id, geometry) { return Math.abs(getAngleMeasureDegrees(id, geometry) - 90) < 1e-4; }
   function getAngleData(id, geometry) {
-    if (id === 'theta1') return { vertex: geometry.points.A, p1: geometry.points.T2, p2: geometry.points.M };
-    return { vertex: geometry.points.B, p1: geometry.points.B1, p2: geometry.points.M };
+    if (id === 'theta1') return { vertex: geometry.points.A, p1: geometry.points.Q, p2: geometry.points.M };
+    return { vertex: geometry.points.B, p1: geometry.points.R, p2: geometry.points.M };
+  }
+  function getCustomSegmentText(id, fallback) {
+    const custom = window.InstantGeometrySharedLabelConfig.normalizeCustomLabelInput(customLabelText.segment[id]);
+    return custom || fallback;
   }
   function getCustomAngleText(id, fallback) {
     const custom = window.InstantGeometrySharedLabelConfig.normalizeCustomLabelInput(customLabelText.angle[id]);
@@ -298,6 +317,11 @@
   }
   function getLabelText(type, id, geometry) {
     if (type === 'point') return getPointLabelToken(id);
+    if (type === 'segment') {
+      const map = { PQ: ['P', 'Q'], RS: ['R', 'S'], AM: ['A', 'M'], BM: ['B', 'M'] };
+      const ends = map[id];
+      return getCustomSegmentText(id, formatNumber(segmentLength(geometry.points[ends[0]], geometry.points[ends[1]])));
+    }
     const degrees = getAngleMeasureDegrees(id, geometry);
     const base = angleMode === 'degrees' ? (formatNumber(degrees) + '°') : formatNumber(degrees * Math.PI / 180);
     return getCustomAngleText(id, base);
@@ -346,6 +370,29 @@
             return;
           }
           renderLabelToggleButtons();
+          render();
+          return;
+        }
+        if (config.type === 'segment') {
+          const response = await window.InstantGeometrySharedLabelConfig.promptTripleSetting({
+            title: '線分ラベル設定',
+            firstLabel: '線分表示（0:線分を非表示 / 1:線分を表示）',
+            firstValue: String(segmentLineMode[config.id]),
+            secondLabel: '弧表示（0:弧を非表示 / 1:弧を表示）',
+            secondValue: String(segmentArcMode[config.id]),
+            thirdLabel: '文字（空欄で数値表示）',
+            thirdValue: customLabelText.segment[config.id] || '',
+            firstBinary: true,
+            secondBinary: true
+          });
+          if (response === null) return;
+          const lineMode = window.InstantGeometrySharedOrnaments.normalizeSegmentArcInput(response.first);
+          const arcMode = window.InstantGeometrySharedOrnaments.normalizeSegmentArcInput(response.second);
+          if (lineMode === null) { setStatus('線分表示は「0 / 1」で指定してください。', true); return; }
+          if (arcMode === null) { setStatus('弧表示は「0 / 1」で指定してください。', true); return; }
+          segmentLineMode[config.id] = lineMode;
+          segmentArcMode[config.id] = arcMode;
+          customLabelText.segment[config.id] = response.third;
           render();
           return;
         }
@@ -472,7 +519,7 @@
   }
 
   function fitBoard(geometry) {
-    const points = ['T1', 'T2', 'B1', 'B2', 'A', 'B', 'M'].map(function (id) { return geometry.points[id]; });
+    const points = ['P', 'Q', 'R', 'S', 'A', 'B', 'M'].map(function (id) { return geometry.points[id]; });
     const xs = points.map(function (p) { return p.x; });
     const ys = points.map(function (p) { return p.y; });
     const minX = Math.min.apply(null, xs);
@@ -546,18 +593,18 @@
   function renderFigure(geometry) {
     const lineStyle = { fixed: true, strokeWidth: 2, strokeColor: figureState.color, highlight: false };
     const fillStyle = { borders: { visible: false, fixed: true, highlight: false }, fillColor: hexToRgba(figureState.color, 0.08), fillOpacity: 0, vertices: { visible: false }, highlight: false };
-    const T1 = board.create('point', [geometry.points.T1.x, geometry.points.T1.y], { visible: false, fixed: true });
-    const T2 = board.create('point', [geometry.points.T2.x, geometry.points.T2.y], { visible: false, fixed: true });
-    const B1 = board.create('point', [geometry.points.B1.x, geometry.points.B1.y], { visible: false, fixed: true });
-    const B2 = board.create('point', [geometry.points.B2.x, geometry.points.B2.y], { visible: false, fixed: true });
+    const P = board.create('point', [geometry.points.P.x, geometry.points.P.y], { visible: false, fixed: true });
+    const Q = board.create('point', [geometry.points.Q.x, geometry.points.Q.y], { visible: false, fixed: true });
+    const R = board.create('point', [geometry.points.R.x, geometry.points.R.y], { visible: false, fixed: true });
+    const S = board.create('point', [geometry.points.S.x, geometry.points.S.y], { visible: false, fixed: true });
     const A = board.create('point', [geometry.points.A.x, geometry.points.A.y], { name: '', size: 3, fixed: true, strokeColor: '#111111', fillColor: '#111111' });
     const B = board.create('point', [geometry.points.B.x, geometry.points.B.y], { name: '', size: 3, fixed: true, strokeColor: '#111111', fillColor: '#111111' });
     const M = board.create('point', [geometry.points.M.x, geometry.points.M.y], { name: '', size: 3, fixed: true, strokeColor: '#111111', fillColor: '#111111' });
-    board.create('polygon', [[geometry.points.T1.x, geometry.points.T1.y], [geometry.points.T2.x, geometry.points.T2.y], [geometry.points.B2.x, geometry.points.B2.y], [geometry.points.B1.x, geometry.points.B1.y]], fillStyle);
-    board.create('segment', [T1, T2], lineStyle);
-    board.create('segment', [B1, B2], lineStyle);
-    board.create('segment', [A, M], lineStyle);
-    board.create('segment', [B, M], lineStyle);
+    board.create('polygon', [[geometry.points.P.x, geometry.points.P.y], [geometry.points.Q.x, geometry.points.Q.y], [geometry.points.S.x, geometry.points.S.y], [geometry.points.R.x, geometry.points.R.y]], fillStyle);
+    if (labelState.segment.PQ || segmentLineMode.PQ !== 0) board.create('segment', [P, Q], lineStyle);
+    if (labelState.segment.RS || segmentLineMode.RS !== 0) board.create('segment', [R, S], lineStyle);
+    if (labelState.segment.AM || segmentLineMode.AM !== 0) board.create('segment', [A, M], lineStyle);
+    if (labelState.segment.BM || segmentLineMode.BM !== 0) board.create('segment', [B, M], lineStyle);
   }
 
   function drawAngleDecoration(id, geometry) {
@@ -692,6 +739,26 @@
     ['A', 'B', 'M'].forEach(function (id) {
       if (!labelState.point[id]) return;
       createSelectableText(getLabelPosition('point', id, getDefaultPointPosition(id, geometry)), getLabelText('point', id, geometry), labelFontSize.point[id], { type: 'point', id: id }, { color: '#1f2430' });
+    });
+    ['PQ', 'RS', 'AM', 'BM'].forEach(function (id) {
+      if (!labelState.segment[id]) return;
+      const map = { PQ: ['P', 'Q'], RS: ['R', 'S'], AM: ['A', 'M'], BM: ['B', 'M'] };
+      const ends = map[id];
+      window.InstantGeometrySharedOrnaments.drawSideArcLabel({
+        board: board,
+        P: geometry.points[ends[0]],
+        Q: geometry.points[ends[1]],
+        center: geometry.centroid,
+        text: getLabelText('segment', id, geometry),
+        labelType: 'segment',
+        labelId: id,
+        labelFontGroup: 'segment',
+        showArc: segmentArcMode[id] !== 0,
+        getLabelPosition: getLabelPosition,
+        getLabelStyle: getLabelStyle,
+        createSelectableText: createSelectableText,
+        labelFontSize: labelFontSize
+      });
     });
     ['theta1', 'theta2'].forEach(function (id) {
       if (labelState.angle[id]) createSelectableText(getLabelPosition('angle', id, getDefaultAnglePosition(id, geometry)), getLabelText('angle', id, geometry), labelFontSize.angle[id], { type: 'angle', id: id }, { color: '#687086', threshold: 0.6 });
@@ -934,13 +1001,17 @@
       Object.keys(labelStyleState[group]).forEach(function (id) { labelStyleState[group][id] = JSON.parse(JSON.stringify(styleDefaults[group][id])); });
     });
     Object.keys(labelState.point).forEach(function (id) { labelState.point[id] = true; });
+    Object.keys(labelState.segment).forEach(function (id) { labelState.segment[id] = true; });
     Object.keys(labelState.angle).forEach(function (id) { labelState.angle[id] = false; });
     Object.keys(labelState.angleMark).forEach(function (id) { labelState.angleMark[id] = false; });
     Object.keys(labelState.rightAngleMark).forEach(function (id) { labelState.rightAngleMark[id] = false; });
+    Object.keys(segmentArcMode).forEach(function (id) { segmentArcMode[id] = 1; });
+    Object.keys(segmentLineMode).forEach(function (id) { segmentLineMode[id] = 1; });
+    Object.keys(customLabelText.segment).forEach(function (id) { customLabelText.segment[id] = ''; });
     Object.keys(angleMarkerMode).forEach(function (id) { angleMarkerMode[id] = 0; });
     Object.keys(rightAngleMarkerMode).forEach(function (id) { rightAngleMarkerMode[id] = 0; });
     Object.keys(customLabelText.angle).forEach(function (id) { customLabelText.angle[id] = ''; });
-    ['A', 'B', 'M'].forEach(function (id) { pointLabelText[id] = id; });
+    ['A', 'B', 'M', 'P', 'Q', 'R', 'S'].forEach(function (id) { pointLabelText[id] = id; });
     figureState = { color: '#2a5bd7', rotation: 0, scale: 1, offset: { x: 0, y: 0 } };
     selectedLabel = null;
     selectedFigure = false;
