@@ -1103,6 +1103,14 @@
     return window.InstantGeometrySharedSelection.findSelectionControl(point, currentSelectionOverlay);
   }
 
+  function pointInFigureSelectionBounds(point) {
+    if (!selectedFigure || !currentSelectionOverlay || !currentSelectionOverlay.bounds || !currentSelectionOverlay.bounds.corners) {
+      return false;
+    }
+    const corners = currentSelectionOverlay.bounds.corners;
+    return pointInPolygon(point, [corners.topLeft, corners.topRight, corners.bottomRight, corners.bottomLeft]);
+  }
+
   function rotateLabelGroupAround(center, angleDeg) {
     Object.keys(labelPositions).forEach(function (type) {
       Object.keys(labelPositions[type]).forEach(function (id) {
@@ -1771,6 +1779,16 @@
         rotationStart: selectedLabel ? labelStyleState[selectedLabel.type][selectedLabel.id].rotation : figureState.rotation,
         distanceStart: Math.hypot(point.x - dragCenter.x, point.y - dragCenter.y),
         angleStart: Math.atan2(point.y - dragCenter.y, point.x - dragCenter.x)
+      };
+      return;
+    }
+
+    if (selectedFigure && pointInFigureSelectionBounds(point)) {
+      dragState = {
+        mode: 'figure-move',
+        target: 'figure',
+        startClient: { x: event.clientX, y: event.clientY },
+        offsetStart: { x: figureState.offset.x, y: figureState.offset.y }
       };
       return;
     }
