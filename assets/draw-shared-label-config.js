@@ -96,6 +96,16 @@
     overlay.appendChild(modal);
     document.body.appendChild(overlay);
 
+    function bindBinaryGuard(input) {
+      input.addEventListener('input', function () {
+        if (input.dataset.binaryOnly !== '1') return;
+        input.value = String(input.value || '').replace(/[^01]/g, '').slice(0, 1);
+      });
+    }
+    bindBinaryGuard(firstInput);
+    bindBinaryGuard(secondInput);
+    bindBinaryGuard(thirdInput);
+
     function close(result) {
       overlay.hidden = true;
       const resolver = activeResolver;
@@ -149,6 +159,14 @@
 
   function openModal(config) {
     const elements = ensureModal();
+    function configureBinary(input, enabled) {
+      input.dataset.binaryOnly = enabled ? '1' : '0';
+      input.inputMode = enabled ? 'numeric' : 'text';
+      input.maxLength = enabled ? 1 : 128;
+      if (enabled) {
+        input.value = String(input.value || '').replace(/[^01]/g, '').slice(0, 1);
+      }
+    }
     elements.title.textContent = String(config.title || 'ラベル設定');
     elements.firstLabel.textContent = String(config.firstLabel || '');
     elements.firstInput.value = String(config.firstValue == null ? '' : config.firstValue);
@@ -159,6 +177,9 @@
     elements.secondField.hidden = !config.showSecond;
     elements.thirdField.hidden = !config.showThird;
     elements.thirdInput.disabled = !!config.thirdDisabled;
+    configureBinary(elements.firstInput, !!config.firstBinary);
+    configureBinary(elements.secondInput, !!config.secondBinary);
+    configureBinary(elements.thirdInput, !!config.thirdBinary);
     elements.overlay.hidden = false;
     const focusTarget = config.focusThird && config.showThird && !config.thirdDisabled
       ? elements.thirdInput
@@ -212,6 +233,9 @@
       showSecond: true,
       showThird: true,
       thirdDisabled: !!config.thirdDisabled,
+      firstBinary: !!config.firstBinary,
+      secondBinary: !!config.secondBinary,
+      thirdBinary: !!config.thirdBinary,
       focusSecond: false,
       focusThird: false
     });

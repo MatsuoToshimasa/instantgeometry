@@ -131,6 +131,11 @@
     specialSegment: { OA: 1, OB: 1, OC: 1, OD: 1 },
     diagonal: { AC: 1, BD: 1 }
   };
+  const segmentLineMode = {
+    side: { AB: 1, BC: 1, CD: 1, DA: 1 },
+    specialSegment: { OA: 1, OB: 1, OC: 1, OD: 1 },
+    diagonal: { AC: 1, BD: 1 }
+  };
   const customLabelText = {
     side: { AB: '', BC: '', CD: '', DA: '' },
     angle: { A: '', B: '', C: '', D: '', AOB: '', BOC: '', COD: '', DOA: '', OAB: '', OBC: '', OCD: '', ODA: '', OAD: '', ODC: '', OCB: '', OBA: '' },
@@ -890,22 +895,33 @@
       } else if (config.type === 'side') {
         button.addEventListener('contextmenu', async function (event) {
           event.preventDefault();
-          const currentMode = Number.isFinite(segmentArcMode.side[config.id]) ? segmentArcMode.side[config.id] : 1;
-          const response = await window.InstantGeometrySharedLabelConfig.promptDualSetting({
+          const currentLineMode = Number.isFinite(segmentLineMode.side[config.id]) ? segmentLineMode.side[config.id] : 1;
+          const currentArcMode = Number.isFinite(segmentArcMode.side[config.id]) ? segmentArcMode.side[config.id] : 1;
+          const response = await window.InstantGeometrySharedLabelConfig.promptTripleSetting({
             title: '線分ラベル設定',
-            firstLabel: '弧表示（0:弧を非表示 / 1:弧を表示）',
-            firstValue: String(currentMode),
-            secondLabel: '文字（空欄で数値表示）',
-            secondValue: customLabelText.side[config.id] || ''
+            firstLabel: '線分表示（0:線分を非表示 / 1:線分を表示）',
+            firstValue: String(currentLineMode),
+            secondLabel: '弧表示（0:弧を非表示 / 1:弧を表示）',
+            secondValue: String(currentArcMode),
+            thirdLabel: '文字（空欄で数値表示）',
+            thirdValue: customLabelText.side[config.id] || '',
+            firstBinary: true,
+            secondBinary: true
           });
           if (response === null) return;
-          const mode = window.InstantGeometrySharedOrnaments.normalizeSegmentArcInput(response.first);
-          if (mode === null) {
+          const lineMode = window.InstantGeometrySharedOrnaments.normalizeSegmentArcInput(response.first);
+          if (lineMode === null) {
+            setStatus('線分表示は「0 / 1」で指定してください。', true);
+            return;
+          }
+          const arcMode = window.InstantGeometrySharedOrnaments.normalizeSegmentArcInput(response.second);
+          if (arcMode === null) {
             setStatus('線分ラベルの弧表示は「0 / 1」で指定してください。', true);
             return;
           }
-          segmentArcMode.side[config.id] = mode;
-          customLabelText.side[config.id] = response.second;
+          segmentLineMode.side[config.id] = lineMode;
+          segmentArcMode.side[config.id] = arcMode;
+          customLabelText.side[config.id] = response.third;
           render();
         });
       } else if (config.type === 'area') {
@@ -1017,44 +1033,66 @@
       if (config.type === 'specialSegment') {
         button.addEventListener('contextmenu', async function (event) {
           event.preventDefault();
-          const currentMode = Number.isFinite(segmentArcMode.specialSegment[config.id]) ? segmentArcMode.specialSegment[config.id] : 1;
-          const response = await window.InstantGeometrySharedLabelConfig.promptDualSetting({
+          const currentLineMode = Number.isFinite(segmentLineMode.specialSegment[config.id]) ? segmentLineMode.specialSegment[config.id] : 1;
+          const currentArcMode = Number.isFinite(segmentArcMode.specialSegment[config.id]) ? segmentArcMode.specialSegment[config.id] : 1;
+          const response = await window.InstantGeometrySharedLabelConfig.promptTripleSetting({
             title: '線分ラベル設定',
-            firstLabel: '弧表示（0:弧を非表示 / 1:弧を表示）',
-            firstValue: String(currentMode),
-            secondLabel: '文字（空欄で数値表示）',
-            secondValue: customLabelText.specialSegment[config.id] || ''
+            firstLabel: '線分表示（0:線分を非表示 / 1:線分を表示）',
+            firstValue: String(currentLineMode),
+            secondLabel: '弧表示（0:弧を非表示 / 1:弧を表示）',
+            secondValue: String(currentArcMode),
+            thirdLabel: '文字（空欄で数値表示）',
+            thirdValue: customLabelText.specialSegment[config.id] || '',
+            firstBinary: true,
+            secondBinary: true
           });
           if (response === null) return;
-          const mode = window.InstantGeometrySharedOrnaments.normalizeSegmentArcInput(response.first);
-          if (mode === null) {
+          const lineMode = window.InstantGeometrySharedOrnaments.normalizeSegmentArcInput(response.first);
+          if (lineMode === null) {
+            setStatus('線分表示は「0 / 1」で指定してください。', true);
+            return;
+          }
+          const arcMode = window.InstantGeometrySharedOrnaments.normalizeSegmentArcInput(response.second);
+          if (arcMode === null) {
             setStatus('線分ラベルの弧表示は「0 / 1」で指定してください。', true);
             return;
           }
-          segmentArcMode.specialSegment[config.id] = mode;
-          customLabelText.specialSegment[config.id] = response.second;
+          segmentLineMode.specialSegment[config.id] = lineMode;
+          segmentArcMode.specialSegment[config.id] = arcMode;
+          customLabelText.specialSegment[config.id] = response.third;
           render();
         });
       }
       if (config.type === 'diagonal') {
         button.addEventListener('contextmenu', async function (event) {
           event.preventDefault();
-          const currentMode = Number.isFinite(segmentArcMode.diagonal[config.id]) ? segmentArcMode.diagonal[config.id] : 1;
-          const response = await window.InstantGeometrySharedLabelConfig.promptDualSetting({
+          const currentLineMode = Number.isFinite(segmentLineMode.diagonal[config.id]) ? segmentLineMode.diagonal[config.id] : 1;
+          const currentArcMode = Number.isFinite(segmentArcMode.diagonal[config.id]) ? segmentArcMode.diagonal[config.id] : 1;
+          const response = await window.InstantGeometrySharedLabelConfig.promptTripleSetting({
             title: '線分ラベル設定',
-            firstLabel: '弧表示（0:弧を非表示 / 1:弧を表示）',
-            firstValue: String(currentMode),
-            secondLabel: '文字（空欄で数値表示）',
-            secondValue: customLabelText.diagonal[config.id] || ''
+            firstLabel: '線分表示（0:線分を非表示 / 1:線分を表示）',
+            firstValue: String(currentLineMode),
+            secondLabel: '弧表示（0:弧を非表示 / 1:弧を表示）',
+            secondValue: String(currentArcMode),
+            thirdLabel: '文字（空欄で数値表示）',
+            thirdValue: customLabelText.diagonal[config.id] || '',
+            firstBinary: true,
+            secondBinary: true
           });
           if (response === null) return;
-          const mode = window.InstantGeometrySharedOrnaments.normalizeSegmentArcInput(response.first);
-          if (mode === null) {
+          const lineMode = window.InstantGeometrySharedOrnaments.normalizeSegmentArcInput(response.first);
+          if (lineMode === null) {
+            setStatus('線分表示は「0 / 1」で指定してください。', true);
+            return;
+          }
+          const arcMode = window.InstantGeometrySharedOrnaments.normalizeSegmentArcInput(response.second);
+          if (arcMode === null) {
             setStatus('線分ラベルの弧表示は「0 / 1」で指定してください。', true);
             return;
           }
-          segmentArcMode.diagonal[config.id] = mode;
-          customLabelText.diagonal[config.id] = response.second;
+          segmentLineMode.diagonal[config.id] = lineMode;
+          segmentArcMode.diagonal[config.id] = arcMode;
+          customLabelText.diagonal[config.id] = response.third;
           render();
         });
       }
@@ -1346,6 +1384,7 @@
 
     specialSegmentIds.forEach(function (id) {
       if (!shouldDrawSpecialSegment(id)) return;
+      if (segmentLineMode.specialSegment[id] === 0) return;
       const pair = { OA: [geometry.centroid, P.A], OB: [geometry.centroid, P.B], OC: [geometry.centroid, P.C], OD: [geometry.centroid, P.D] }[id];
       board.create('segment', [[pair[0].x, pair[0].y], [pair[1].x, pair[1].y]], {
         fixed: true,
@@ -1385,6 +1424,7 @@
     });
 
     ['AC', 'BD'].forEach(function (id) {
+      if (segmentLineMode.diagonal[id] === 0) return;
       if (!labelState.diagonal[id]) return;
       const pair = id === 'AC' ? [P.A, P.C] : [P.B, P.D];
       window.InstantGeometrySharedOrnaments.drawSideArcLabel({
@@ -1643,12 +1683,17 @@
     const pointC = board.create('point', [P.C.x, P.C.y], { name: '', size: 3, fixed: true, strokeColor: '#111111', fillColor: '#111111' });
     const pointD = board.create('point', [P.D.x, P.D.y], { name: '', size: 3, fixed: true, strokeColor: '#111111', fillColor: '#111111' });
     board.create('polygon', [pointA, pointB, pointC, pointD], {
-      borders: { strokeWidth: 2, strokeColor: figureState.color, fixed: true, highlight: false },
+      borders: { visible: false, fixed: true, highlight: false },
       fillColor: hexToRgba(figureState.color, 0.08),
       fillOpacity: 0,
       vertices: { visible: false },
       highlight: false
     });
+    const lineStyle = { fixed: true, strokeWidth: 2, strokeColor: figureState.color, highlight: false };
+    if (segmentLineMode.side.AB !== 0) board.create('segment', [pointA, pointB], lineStyle);
+    if (segmentLineMode.side.BC !== 0) board.create('segment', [pointB, pointC], lineStyle);
+    if (segmentLineMode.side.CD !== 0) board.create('segment', [pointC, pointD], lineStyle);
+    if (segmentLineMode.side.DA !== 0) board.create('segment', [pointD, pointA], lineStyle);
   }
 
   function render() {
@@ -1967,11 +2012,20 @@
     Object.keys(segmentArcMode.side).forEach(function (id) {
       segmentArcMode.side[id] = 1;
     });
+    Object.keys(segmentLineMode.side).forEach(function (id) {
+      segmentLineMode.side[id] = 1;
+    });
     Object.keys(segmentArcMode.specialSegment).forEach(function (id) {
       segmentArcMode.specialSegment[id] = 1;
     });
+    Object.keys(segmentLineMode.specialSegment).forEach(function (id) {
+      segmentLineMode.specialSegment[id] = 1;
+    });
     Object.keys(segmentArcMode.diagonal).forEach(function (id) {
       segmentArcMode.diagonal[id] = 1;
+    });
+    Object.keys(segmentLineMode.diagonal).forEach(function (id) {
+      segmentLineMode.diagonal[id] = 1;
     });
     Object.keys(customLabelText.side).forEach(function (id) { customLabelText.side[id] = ''; });
     Object.keys(customLabelText.angle).forEach(function (id) { customLabelText.angle[id] = ''; });

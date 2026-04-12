@@ -858,6 +858,7 @@
       const angleMarkerMode = { A: 0, B: 0, C: 0 };
       const rightAngleMarkerMode = { A: 0, B: 0, C: 0 };
       const segmentArcMode = { side: { a: 1, b: 1, c: 1 } };
+      const segmentLineMode = { side: { a: 1, b: 1, c: 1 } };
       const customLabelText = {
         side: { a: '', b: '', c: '' },
         innerAngle: { A: '', B: '', C: '' },
@@ -1605,23 +1606,34 @@
           } else if (config.type === 'side') {
             button.addEventListener('contextmenu', async function (event) {
               event.preventDefault();
-              const currentMode = Number.isFinite(segmentArcMode.side[config.id]) ? segmentArcMode.side[config.id] : 1;
-              const response = await window.InstantGeometrySharedLabelConfig.promptDualSetting({
+              const currentLineMode = Number.isFinite(segmentLineMode.side[config.id]) ? segmentLineMode.side[config.id] : 1;
+              const currentArcMode = Number.isFinite(segmentArcMode.side[config.id]) ? segmentArcMode.side[config.id] : 1;
+              const response = await window.InstantGeometrySharedLabelConfig.promptTripleSetting({
                 title: '線分ラベル設定',
-                firstLabel: '弧表示（0:弧を非表示 / 1:弧を表示）',
-                firstValue: String(currentMode),
-                secondLabel: '文字（空欄で数値表示）',
-                secondValue: customLabelText.side[config.id] || ''
+                firstLabel: '線分表示（0:線分を非表示 / 1:線分を表示）',
+                firstValue: String(currentLineMode),
+                secondLabel: '弧表示（0:弧を非表示 / 1:弧を表示）',
+                secondValue: String(currentArcMode),
+                thirdLabel: '文字（空欄で数値表示）',
+                thirdValue: customLabelText.side[config.id] || '',
+                firstBinary: true,
+                secondBinary: true
               });
               if (response === null) return;
-              const mode = window.InstantGeometrySharedOrnaments.normalizeSegmentArcInput(response.first);
-              if (mode === null) {
+              const lineMode = window.InstantGeometrySharedOrnaments.normalizeSegmentArcInput(response.first);
+              if (lineMode === null) {
+                setStatus('線分表示は「0 / 1」で指定してください。', true);
+                return;
+              }
+              const arcMode = window.InstantGeometrySharedOrnaments.normalizeSegmentArcInput(response.second);
+              if (arcMode === null) {
                 setStatus('線分ラベルの弧表示は「0 / 1」で指定してください。', true);
                 return;
               }
               pushHistorySnapshot();
-              segmentArcMode.side[config.id] = mode;
-              customLabelText.side[config.id] = response.second;
+              segmentLineMode.side[config.id] = lineMode;
+              segmentArcMode.side[config.id] = arcMode;
+              customLabelText.side[config.id] = response.third;
               render();
             });
           } else if (config.type === 'area') {
@@ -1836,6 +1848,7 @@
           angleMarkerMode: cloneStateValue(angleMarkerMode),
           rightAngleMarkerMode: cloneStateValue(rightAngleMarkerMode),
           segmentArcMode: cloneStateValue(segmentArcMode),
+          segmentLineMode: cloneStateValue(segmentLineMode),
           customLabelText: cloneStateValue(customLabelText)
         };
       }
@@ -1865,6 +1878,9 @@
         Object.assign(rightAngleMarkerMode, cloneStateValue(state.rightAngleMarkerMode || rightAngleMarkerMode));
         if (state.segmentArcMode && state.segmentArcMode.side) {
           Object.assign(segmentArcMode.side, cloneStateValue(state.segmentArcMode.side));
+        }
+        if (state.segmentLineMode && state.segmentLineMode.side) {
+          Object.assign(segmentLineMode.side, cloneStateValue(state.segmentLineMode.side));
         }
         if (state.customLabelText) {
           if (state.customLabelText.side) Object.assign(customLabelText.side, cloneStateValue(state.customLabelText.side));
@@ -2611,11 +2627,15 @@
           const pointC = board.create('point', [triangle.C.x, triangle.C.y], { name: '', size: 3, fixed: true, strokeColor: '#111111', fillColor: '#111111' });
 
           const polygon = board.create('polygon', [pointA, pointB, pointC], {
-            borders: { strokeWidth: 2, strokeColor: figureState.color, fixed: true, highlight: false },
+            borders: { visible: false, fixed: true, highlight: false },
             fillColor: hexToRgba(figureState.color, 0.1),
             vertices: { visible: false },
             highlight: false
           });
+          const edgeStyle = { strokeWidth: 2, strokeColor: figureState.color, fixed: true, highlight: false };
+          if (segmentLineMode.side.a !== 0) board.create('segment', [pointB, pointC], edgeStyle);
+          if (segmentLineMode.side.b !== 0) board.create('segment', [pointC, pointA], edgeStyle);
+          if (segmentLineMode.side.c !== 0) board.create('segment', [pointA, pointB], edgeStyle);
 
           const centroid = {
             x: (triangle.A.x + triangle.B.x + triangle.C.x) / 3,
@@ -2991,6 +3011,7 @@
         rightAngleMarkerMode.B = 0;
         rightAngleMarkerMode.C = 0;
         segmentArcMode.side = { a: 1, b: 1, c: 1 };
+        segmentLineMode.side = { a: 1, b: 1, c: 1 };
         customLabelText.side = { a: '', b: '', c: '' };
         customLabelText.innerAngle = { A: '', B: '', C: '' };
         customLabelText.area = { main: '' };
