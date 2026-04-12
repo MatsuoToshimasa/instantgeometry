@@ -1760,7 +1760,8 @@
             button.addEventListener('contextmenu', async function (event) {
               event.preventDefault();
               const response = await window.InstantGeometrySharedLabelConfig.promptSingleText({
-                title: '面積ラベル設定\n文字を使う場合は入力してください。空欄で数値表示に戻ります。',
+                title: '面積ラベル設定',
+                firstLabel: '文字（空欄で数値表示）',
                 value: customLabelText.area.main || ''
               });
               if (response === null) return;
