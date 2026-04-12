@@ -325,35 +325,124 @@
     });
   }
 
+  function circleIntersections(center1, radius1, center2, radius2) {
+    const dx = center2.x - center1.x;
+    const dy = center2.y - center1.y;
+    const d = Math.hypot(dx, dy);
+    if (d < 1e-8 || d > radius1 + radius2 + 1e-8 || d < Math.abs(radius1 - radius2) - 1e-8) return [];
+    const a = (radius1 * radius1 - radius2 * radius2 + d * d) / (2 * d);
+    const h2 = Math.max(0, radius1 * radius1 - a * a);
+    const h = Math.sqrt(h2);
+    const mx = center1.x + (a * dx) / d;
+    const my = center1.y + (a * dy) / d;
+    const rx = -dy * (h / d);
+    const ry = dx * (h / d);
+    const p1 = { x: mx + rx, y: my + ry };
+    const p2 = { x: mx - rx, y: my - ry };
+    return h < 1e-8 ? [p1] : [p1, p2];
+  }
+
+  function signedArea(points) {
+    let sum = 0;
+    for (let i = 0; i < points.length; i += 1) {
+      const p = points[i];
+      const q = points[(i + 1) % points.length];
+      sum += p.x * q.y - q.x * p.y;
+    }
+    return sum / 2;
+  }
+
+  function orientation(a, b, c) {
+    return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
+  }
+
+  function onSegment(a, b, c) {
+    return Math.min(a.x, c.x) - 1e-8 <= b.x && b.x <= Math.max(a.x, c.x) + 1e-8 &&
+      Math.min(a.y, c.y) - 1e-8 <= b.y && b.y <= Math.max(a.y, c.y) + 1e-8;
+  }
+
+  function segmentsIntersect(a, b, c, d) {
+    const o1 = orientation(a, b, c);
+    const o2 = orientation(a, b, d);
+    const o3 = orientation(c, d, a);
+    const o4 = orientation(c, d, b);
+    if (((o1 > 0 && o2 < 0) || (o1 < 0 && o2 > 0)) && ((o3 > 0 && o4 < 0) || (o3 < 0 && o4 > 0))) return true;
+    if (Math.abs(o1) < 1e-8 && onSegment(a, c, b)) return true;
+    if (Math.abs(o2) < 1e-8 && onSegment(a, d, b)) return true;
+    if (Math.abs(o3) < 1e-8 && onSegment(c, a, d)) return true;
+    if (Math.abs(o4) < 1e-8 && onSegment(c, b, d)) return true;
+    return false;
+  }
+
+  function isSimplePentagon(points) {
+    const edges = [
+      [points[0], points[1]],
+      [points[1], points[2]],
+      [points[2], points[3]],
+      [points[3], points[4]],
+      [points[4], points[0]]
+    ];
+    const skip = { '0-1': true, '1-2': true, '2-3': true, '3-4': true, '0-4': true };
+    for (let i = 0; i < edges.length; i += 1) {
+      for (let j = i + 1; j < edges.length; j += 1) {
+        if (skip[i + '-' + j]) continue;
+        if (segmentsIntersect(edges[i][0], edges[i][1], edges[j][0], edges[j][1])) return false;
+      }
+    }
+    return true;
+  }
+
   function getBasePentagon() {
     const ab = getInputValue('sideABLen');
     const bc = getInputValue('sideBCLen');
     const cd = getInputValue('sideCDLen');
     const de = getInputValue('sideDELen');
     const ea = getInputValue('sideEALen');
-    const angleA = getInputValue('angleADeg');
-    if (angleA >= Math.PI * 0.98) throw new Error('∠Aは180°未満にしてください。');
+    const ac = getInputValue('diagACLen');
+    const ad = getInputValue('diagADLen');
 
     const A = { x: 0, y: 0 };
     const B = { x: ab, y: 0 };
-    const E = { x: ea * Math.cos(angleA), y: ea * Math.sin(angleA) };
+    const cCandidates = circleIntersections(A, ac, B, bc).filter(function (point) {
+      return point.y > 0;
+    });
+    if (!cCandidates.length) {
+      throw new Error('この条件では五角形を作れません。5辺・AC・AD を見直してください。');
+    }
+    const C = cCandidates.sort(function (left, right) { return right.y - left.y; })[0];
 
-    const beDistance = segmentLength(B, E);
-    const chainSum = bc + cd + de;
-    const minReach = Math.max(0, Math.max(bc, cd, de) - (chainSum - Math.max(bc, cd, de)));
-    if (beDistance > chainSum + 1e-6 || beDistance < minReach - 1e-6) {
-      throw new Error('この条件では五角形を作れません。辺の長さと∠Aを見直してください。');
+    const dCandidates = circleIntersections(A, ad, C, cd);
+    if (!dCandidates.length) {
+      throw new Error('この条件では五角形を作れません。5辺・AC・AD を見直してください。');
     }
 
-    const chain = solveChain(B, E, [bc, cd, de], A);
-    const points = [A, B, chain[1], chain[2], E];
+    let best = null;
+    dCandidates.forEach(function (D) {
+      const eCandidates = circleIntersections(A, ea, D, de);
+      eCandidates.forEach(function (E) {
+        const points = [A, B, C, D, E];
+        const area = signedArea(points);
+        if (area <= 1e-6) return;
+        if (!isSimplePentagon(points)) return;
+        const score = area + (Math.min(C.y, D.y, E.y) > -1e-6 ? 1000 : 0);
+        if (!best || score > best.score) {
+          best = { points: points, C: C, D: D, E: E, score: score };
+        }
+      });
+    });
+
+    if (!best) {
+      throw new Error('この条件では五角形を作れません。5辺・AC・AD を見直してください。');
+    }
+
+    const points = best.points;
     const centroid = polygonCentroidFromList(points);
     const centered = {
       A: { x: A.x - centroid.x, y: A.y - centroid.y },
       B: { x: B.x - centroid.x, y: B.y - centroid.y },
-      C: { x: chain[1].x - centroid.x, y: chain[1].y - centroid.y },
-      D: { x: chain[2].x - centroid.x, y: chain[2].y - centroid.y },
-      E: { x: E.x - centroid.x, y: E.y - centroid.y }
+      C: { x: best.C.x - centroid.x, y: best.C.y - centroid.y },
+      D: { x: best.D.x - centroid.x, y: best.D.y - centroid.y },
+      E: { x: best.E.x - centroid.x, y: best.E.y - centroid.y }
     };
     const baseList = pointIds.map(function (id) { return centered[id]; });
     const xs = baseList.map(function (p) { return p.x; });
@@ -367,48 +456,6 @@
       side: (ab + bc + cd + de + ea) / 5,
       area: polygonArea(points)
     };
-  }
-
-  function solveChain(start, end, lengths, anchor) {
-    const total = lengths.reduce(function (sum, value) { return sum + value; }, 0);
-    const dir = { x: end.x - start.x, y: end.y - start.y };
-    const dist = Math.hypot(dir.x, dir.y) || 1;
-    const unit = { x: dir.x / dist, y: dir.y / dist };
-    let normal = { x: -unit.y, y: unit.x };
-    const mid = { x: (start.x + end.x) / 2, y: (start.y + end.y) / 2 };
-    const away = { x: mid.x - anchor.x, y: mid.y - anchor.y };
-    if (normal.x * away.x + normal.y * away.y < 0) {
-      normal = { x: -normal.x, y: -normal.y };
-    }
-    const arch = Math.max(total * 0.18, dist * 0.28, 0.8);
-    const joints = [
-      { x: start.x, y: start.y },
-      { x: start.x + dir.x / 3 + normal.x * arch, y: start.y + dir.y / 3 + normal.y * arch },
-      { x: start.x + dir.x * 2 / 3 + normal.x * arch * 0.9, y: start.y + dir.y * 2 / 3 + normal.y * arch * 0.9 },
-      { x: end.x, y: end.y }
-    ];
-    for (let iteration = 0; iteration < 80; iteration += 1) {
-      joints[3] = { x: end.x, y: end.y };
-      for (let i = 2; i >= 0; i -= 1) {
-        const r = segmentLength(joints[i], joints[i + 1]) || 1;
-        const lambda = lengths[i] / r;
-        joints[i] = {
-          x: (1 - lambda) * joints[i + 1].x + lambda * joints[i].x,
-          y: (1 - lambda) * joints[i + 1].y + lambda * joints[i].y
-        };
-      }
-      joints[0] = { x: start.x, y: start.y };
-      for (let i = 0; i < 3; i += 1) {
-        const r = segmentLength(joints[i], joints[i + 1]) || 1;
-        const lambda = lengths[i] / r;
-        joints[i + 1] = {
-          x: (1 - lambda) * joints[i].x + lambda * joints[i + 1].x,
-          y: (1 - lambda) * joints[i].y + lambda * joints[i + 1].y
-        };
-      }
-      if (segmentLength(joints[3], end) < 1e-4) break;
-    }
-    return joints;
   }
 
   function getGeometryFromInputs() {
@@ -1289,7 +1336,8 @@
     inputElements.sideCDLen.value = '4.2';
     inputElements.sideDELen.value = '4.8';
     inputElements.sideEALen.value = '5.3';
-    inputElements.angleADeg.value = '108';
+    inputElements.diagACLen.value = '7.4';
+    inputElements.diagADLen.value = '8.1';
     exportAspectIndex = 0;
     unitIndex = 1;
     angleMode = 'degrees';
