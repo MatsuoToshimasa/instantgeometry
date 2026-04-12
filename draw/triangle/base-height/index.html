@@ -868,6 +868,9 @@
         ACH: 0,
         BCH: 0
       };
+      const segmentArcMode = {
+        side: { BC: 1, CA: 1, AB: 1, AH: 1, BH: 1, CH: 1 }
+      };
       const vertexLabelText = { A: 'A', B: 'B', C: 'C', H: 'H' };
 
       function getVertexTokenByKey(vertexKey) {
@@ -1750,32 +1753,35 @@
         const arc = getSideLabelGeometry(P, Q, center, sideId);
         const style = getLabelStyle('side', sideId);
         const strokeWidth = 2;
+        const showArc = segmentArcMode.side[sideId] !== 0;
 
-        board.create('curve', [
-          function (t) { return quadraticPoint(P, arc.control, Q, t).x; },
-          function (t) { return quadraticPoint(P, arc.control, Q, t).y; },
-          0,
-          0.5 - arc.gapHalf
-        ], {
-          strokeWidth: strokeWidth,
-          dash: 2,
-          fixed: true,
-          strokeColor: style.color,
-          highlight: false
-        });
+        if (showArc) {
+          board.create('curve', [
+            function (t) { return quadraticPoint(P, arc.control, Q, t).x; },
+            function (t) { return quadraticPoint(P, arc.control, Q, t).y; },
+            0,
+            0.5 - arc.gapHalf
+          ], {
+            strokeWidth: strokeWidth,
+            dash: 2,
+            fixed: true,
+            strokeColor: style.color,
+            highlight: false
+          });
 
-        board.create('curve', [
-          function (t) { return quadraticPoint(P, arc.control, Q, t).x; },
-          function (t) { return quadraticPoint(P, arc.control, Q, t).y; },
-          0.5 + arc.gapHalf,
-          1
-        ], {
-          strokeWidth: strokeWidth,
-          dash: 2,
-          fixed: true,
-          strokeColor: style.color,
-          highlight: false
-        });
+          board.create('curve', [
+            function (t) { return quadraticPoint(P, arc.control, Q, t).x; },
+            function (t) { return quadraticPoint(P, arc.control, Q, t).y; },
+            0.5 + arc.gapHalf,
+            1
+          ], {
+            strokeWidth: strokeWidth,
+            dash: 2,
+            fixed: true,
+            strokeColor: style.color,
+            highlight: false
+          });
+        }
 
         createSelectableText(
           arc.centerPoint,
@@ -1785,15 +1791,15 @@
           {
             color: style.color,
             threshold: 0.55,
-            curveThreshold: 0.22,
-            curveHit: {
+            curveThreshold: showArc ? 0.22 : null,
+            curveHit: showArc ? {
               P: P,
               Q: Q,
               control: arc.control,
               start: 0,
               gapHalf: arc.gapHalf,
               end: 1
-            }
+            } : null
           }
         );
 
@@ -1928,6 +1934,21 @@
               pushHistorySnapshot();
               angleMarkerMode[config.id] = mode;
               hiddenLabelState.angleMark[config.id] = (mode === 0);
+              render();
+            });
+          } else if (config.type === 'side') {
+            button.addEventListener('contextmenu', function (event) {
+              event.preventDefault();
+              const currentMode = Number.isFinite(segmentArcMode.side[config.id]) ? segmentArcMode.side[config.id] : 1;
+              const next = window.prompt('線分ラベルの弧表示を選択（0:弧を非表示 / 1:弧を表示）', String(currentMode));
+              if (next === null) return;
+              const mode = window.InstantGeometrySharedOrnaments.normalizeSegmentArcInput(next);
+              if (mode === null) {
+                setStatus('線分ラベルの弧表示は「0 / 1」で指定してください。', true);
+                return;
+              }
+              pushHistorySnapshot();
+              segmentArcMode.side[config.id] = mode;
               render();
             });
           }
@@ -2266,6 +2287,7 @@
           labelFontSize: cloneStateValue(labelFontSize),
           labelStyleState: cloneStateValue(labelStyleState),
           angleMarkerMode: cloneStateValue(angleMarkerMode),
+          segmentArcMode: cloneStateValue(segmentArcMode),
           figureState: cloneStateValue(figureState),
           zoomScale: zoomScale,
           viewCenterOffset: cloneStateValue(viewCenterOffset),
@@ -2288,6 +2310,9 @@
           Object.assign(labelStyleState[type], cloneStateValue(state.labelStyleState[type]));
         });
         Object.assign(angleMarkerMode, cloneStateValue(state.angleMarkerMode || angleMarkerMode));
+        if (state.segmentArcMode && state.segmentArcMode.side) {
+          Object.assign(segmentArcMode.side, cloneStateValue(state.segmentArcMode.side));
+        }
         figureState = cloneStateValue(state.figureState || figureState);
         zoomScale = state.zoomScale;
         viewCenterOffset = cloneStateValue(state.viewCenterOffset || { x: 0, y: 0 });
@@ -3539,6 +3564,7 @@
         angleMarkerMode.CBH = 0;
         angleMarkerMode.ACH = 0;
         angleMarkerMode.BCH = 0;
+        segmentArcMode.side = { BC: 1, CA: 1, AB: 1, AH: 1, BH: 1, CH: 1 };
         labelStyleState = createLabelStyleState();
         figureState = {
           color: '#2a5bd7',

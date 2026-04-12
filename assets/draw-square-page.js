@@ -98,6 +98,10 @@
   let isPaletteOpen = false;
   let lastFitSignature = '';
   const angleMarkerMode = { A: 0, B: 0, C: 0, D: 0 };
+  const segmentArcMode = {
+    side: { AB: 1, BC: 1, CD: 1, DA: 1 },
+    diagonal: { AC: 1, BD: 1 }
+  };
   let figureState = {
     color: '#2a5bd7',
     rotation: 0,
@@ -457,6 +461,20 @@
           renderLabelToggleButtons();
           render();
         });
+      } else if (config.type === 'side') {
+        button.addEventListener('contextmenu', function (event) {
+          event.preventDefault();
+          const currentMode = Number.isFinite(segmentArcMode.side[config.id]) ? segmentArcMode.side[config.id] : 1;
+          const next = window.prompt('線分ラベルの弧表示を選択（0:弧を非表示 / 1:弧を表示）', String(currentMode));
+          if (next === null) return;
+          const mode = window.InstantGeometrySharedOrnaments.normalizeSegmentArcInput(next);
+          if (mode === null) {
+            setStatus('線分ラベルの弧表示は「0 / 1」で指定してください。', true);
+            return;
+          }
+          segmentArcMode.side[config.id] = mode;
+          render();
+        });
       }
       generalLabelToggleGrid.appendChild(button);
     });
@@ -477,6 +495,21 @@
         renderLabelToggleButtons();
         render();
       });
+      if (config.type === 'diagonal') {
+        button.addEventListener('contextmenu', function (event) {
+          event.preventDefault();
+          const currentMode = Number.isFinite(segmentArcMode.diagonal[config.id]) ? segmentArcMode.diagonal[config.id] : 1;
+          const next = window.prompt('線分ラベルの弧表示を選択（0:弧を非表示 / 1:弧を表示）', String(currentMode));
+          if (next === null) return;
+          const mode = window.InstantGeometrySharedOrnaments.normalizeSegmentArcInput(next);
+          if (mode === null) {
+            setStatus('線分ラベルの弧表示は「0 / 1」で指定してください。', true);
+            return;
+          }
+          segmentArcMode.diagonal[config.id] = mode;
+          render();
+        });
+      }
       specialLabelToggleGrid.appendChild(button);
     });
   }
@@ -698,10 +731,10 @@
     });
 
     const P = geometry.points;
-    if (labelState.side.AB) window.InstantGeometrySharedOrnaments.drawSideArcLabel({ board: board, P: P.A, Q: P.B, center: geometry.centroid, text: getLabelText('side', 'AB', geometry), sideId: 'AB', getLabelPosition: getLabelPosition, getLabelStyle: getLabelStyle, createSelectableText: function (position, text, fontSize, labelKey, options) { return window.InstantGeometrySharedLabels.createSelectableText({ board: board, labelLayer: labelLayer, currentLabelAnchors: currentLabelAnchors, getLabelStyle: getLabelStyle, position: position, text: text, fontSize: fontSize, labelKey: labelKey, options: options }); }, labelFontSize: labelFontSize });
-    if (labelState.side.BC) window.InstantGeometrySharedOrnaments.drawSideArcLabel({ board: board, P: P.B, Q: P.C, center: geometry.centroid, text: getLabelText('side', 'BC', geometry), sideId: 'BC', getLabelPosition: getLabelPosition, getLabelStyle: getLabelStyle, createSelectableText: function (position, text, fontSize, labelKey, options) { return window.InstantGeometrySharedLabels.createSelectableText({ board: board, labelLayer: labelLayer, currentLabelAnchors: currentLabelAnchors, getLabelStyle: getLabelStyle, position: position, text: text, fontSize: fontSize, labelKey: labelKey, options: options }); }, labelFontSize: labelFontSize });
-    if (labelState.side.CD) window.InstantGeometrySharedOrnaments.drawSideArcLabel({ board: board, P: P.C, Q: P.D, center: geometry.centroid, text: getLabelText('side', 'CD', geometry), sideId: 'CD', getLabelPosition: getLabelPosition, getLabelStyle: getLabelStyle, createSelectableText: function (position, text, fontSize, labelKey, options) { return window.InstantGeometrySharedLabels.createSelectableText({ board: board, labelLayer: labelLayer, currentLabelAnchors: currentLabelAnchors, getLabelStyle: getLabelStyle, position: position, text: text, fontSize: fontSize, labelKey: labelKey, options: options }); }, labelFontSize: labelFontSize });
-    if (labelState.side.DA) window.InstantGeometrySharedOrnaments.drawSideArcLabel({ board: board, P: P.D, Q: P.A, center: geometry.centroid, text: getLabelText('side', 'DA', geometry), sideId: 'DA', getLabelPosition: getLabelPosition, getLabelStyle: getLabelStyle, createSelectableText: function (position, text, fontSize, labelKey, options) { return window.InstantGeometrySharedLabels.createSelectableText({ board: board, labelLayer: labelLayer, currentLabelAnchors: currentLabelAnchors, getLabelStyle: getLabelStyle, position: position, text: text, fontSize: fontSize, labelKey: labelKey, options: options }); }, labelFontSize: labelFontSize });
+    if (labelState.side.AB) window.InstantGeometrySharedOrnaments.drawSideArcLabel({ board: board, P: P.A, Q: P.B, center: geometry.centroid, text: getLabelText('side', 'AB', geometry), sideId: 'AB', showArc: segmentArcMode.side.AB !== 0, getLabelPosition: getLabelPosition, getLabelStyle: getLabelStyle, createSelectableText: function (position, text, fontSize, labelKey, options) { return window.InstantGeometrySharedLabels.createSelectableText({ board: board, labelLayer: labelLayer, currentLabelAnchors: currentLabelAnchors, getLabelStyle: getLabelStyle, position: position, text: text, fontSize: fontSize, labelKey: labelKey, options: options }); }, labelFontSize: labelFontSize });
+    if (labelState.side.BC) window.InstantGeometrySharedOrnaments.drawSideArcLabel({ board: board, P: P.B, Q: P.C, center: geometry.centroid, text: getLabelText('side', 'BC', geometry), sideId: 'BC', showArc: segmentArcMode.side.BC !== 0, getLabelPosition: getLabelPosition, getLabelStyle: getLabelStyle, createSelectableText: function (position, text, fontSize, labelKey, options) { return window.InstantGeometrySharedLabels.createSelectableText({ board: board, labelLayer: labelLayer, currentLabelAnchors: currentLabelAnchors, getLabelStyle: getLabelStyle, position: position, text: text, fontSize: fontSize, labelKey: labelKey, options: options }); }, labelFontSize: labelFontSize });
+    if (labelState.side.CD) window.InstantGeometrySharedOrnaments.drawSideArcLabel({ board: board, P: P.C, Q: P.D, center: geometry.centroid, text: getLabelText('side', 'CD', geometry), sideId: 'CD', showArc: segmentArcMode.side.CD !== 0, getLabelPosition: getLabelPosition, getLabelStyle: getLabelStyle, createSelectableText: function (position, text, fontSize, labelKey, options) { return window.InstantGeometrySharedLabels.createSelectableText({ board: board, labelLayer: labelLayer, currentLabelAnchors: currentLabelAnchors, getLabelStyle: getLabelStyle, position: position, text: text, fontSize: fontSize, labelKey: labelKey, options: options }); }, labelFontSize: labelFontSize });
+    if (labelState.side.DA) window.InstantGeometrySharedOrnaments.drawSideArcLabel({ board: board, P: P.D, Q: P.A, center: geometry.centroid, text: getLabelText('side', 'DA', geometry), sideId: 'DA', showArc: segmentArcMode.side.DA !== 0, getLabelPosition: getLabelPosition, getLabelStyle: getLabelStyle, createSelectableText: function (position, text, fontSize, labelKey, options) { return window.InstantGeometrySharedLabels.createSelectableText({ board: board, labelLayer: labelLayer, currentLabelAnchors: currentLabelAnchors, getLabelStyle: getLabelStyle, position: position, text: text, fontSize: fontSize, labelKey: labelKey, options: options }); }, labelFontSize: labelFontSize });
 
     ['A', 'B', 'C', 'D'].forEach(function (id) {
       if (!labelState.angle[id]) return;
@@ -763,6 +796,7 @@
         labelType: 'diagonal',
         labelId: id,
         labelFontGroup: 'diagonal',
+        showArc: segmentArcMode.diagonal[id] !== 0,
         getLabelPosition: getLabelPosition,
         getLabelStyle: getLabelStyle,
         createSelectableText: function (position, text, fontSize, labelKey, options) {
@@ -1221,6 +1255,12 @@
     });
     Object.keys(angleMarkerMode).forEach(function (id) {
       angleMarkerMode[id] = 0;
+    });
+    Object.keys(segmentArcMode.side).forEach(function (id) {
+      segmentArcMode.side[id] = 1;
+    });
+    Object.keys(segmentArcMode.diagonal).forEach(function (id) {
+      segmentArcMode.diagonal[id] = 1;
     });
     figureState = {
       color: '#2a5bd7',

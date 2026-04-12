@@ -68,32 +68,35 @@
     const arc = getSideLabelGeometry(deps.P, deps.Q, deps.center, labelType, labelId, deps.getLabelPosition);
     const style = deps.getLabelStyle(labelType, labelId);
     const strokeWidth = 2;
+    const showArc = deps.showArc !== false;
 
-    deps.board.create('curve', [
-      function (t) { return quadraticPoint(deps.P, arc.control, deps.Q, t).x; },
-      function (t) { return quadraticPoint(deps.P, arc.control, deps.Q, t).y; },
-      0,
-      0.5 - arc.gapHalf
-    ], {
-      strokeWidth: strokeWidth,
-      dash: 2,
-      fixed: true,
-      strokeColor: style.color,
-      highlight: false
-    });
+    if (showArc) {
+      deps.board.create('curve', [
+        function (t) { return quadraticPoint(deps.P, arc.control, deps.Q, t).x; },
+        function (t) { return quadraticPoint(deps.P, arc.control, deps.Q, t).y; },
+        0,
+        0.5 - arc.gapHalf
+      ], {
+        strokeWidth: strokeWidth,
+        dash: 2,
+        fixed: true,
+        strokeColor: style.color,
+        highlight: false
+      });
 
-    deps.board.create('curve', [
-      function (t) { return quadraticPoint(deps.P, arc.control, deps.Q, t).x; },
-      function (t) { return quadraticPoint(deps.P, arc.control, deps.Q, t).y; },
-      0.5 + arc.gapHalf,
-      1
-    ], {
-      strokeWidth: strokeWidth,
-      dash: 2,
-      fixed: true,
-      strokeColor: style.color,
-      highlight: false
-    });
+      deps.board.create('curve', [
+        function (t) { return quadraticPoint(deps.P, arc.control, deps.Q, t).x; },
+        function (t) { return quadraticPoint(deps.P, arc.control, deps.Q, t).y; },
+        0.5 + arc.gapHalf,
+        1
+      ], {
+        strokeWidth: strokeWidth,
+        dash: 2,
+        fixed: true,
+        strokeColor: style.color,
+        highlight: false
+      });
+    }
 
     deps.createSelectableText(
       arc.centerPoint,
@@ -103,23 +106,33 @@
       {
         color: style.color,
         threshold: 0.55,
-        curveThreshold: 0.22,
-        curveHit: {
-          P: deps.P,
-          Q: deps.Q,
-          control: arc.control,
-          start: 0,
-          gapHalf: arc.gapHalf,
-          end: 1
-        }
+        curveThreshold: showArc ? 0.22 : null,
+        curveHit: showArc
+          ? {
+            P: deps.P,
+            Q: deps.Q,
+            control: arc.control,
+            start: 0,
+            gapHalf: arc.gapHalf,
+            end: 1
+          }
+          : null
       }
     );
+  }
+
+  function normalizeSegmentArcInput(input) {
+    const value = String(input || '').trim();
+    if (!value || value === '0' || value === '非表示') return 0;
+    if (value === '1' || value === '表示') return 1;
+    return null;
   }
 
   window.InstantGeometrySharedOrnaments = {
     quadraticPoint: quadraticPoint,
     getSideArcData: getSideArcData,
     getSideLabelGeometry: getSideLabelGeometry,
-    drawSideArcLabel: drawSideArcLabel
+    drawSideArcLabel: drawSideArcLabel,
+    normalizeSegmentArcInput: normalizeSegmentArcInput
   };
 })();

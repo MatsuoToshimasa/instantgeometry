@@ -861,6 +861,7 @@
         area: { main: 48 }
       };
       const angleMarkerMode = { A: 0, B: 0, C: 0 };
+      const segmentArcMode = { side: { a: 1, b: 1, c: 1 } };
       const vertexLabelText = { A: 'A', B: 'B', C: 'C' };
 
       const hiddenLabelState = {
@@ -1430,6 +1431,7 @@
           center: center,
           text: text,
           sideId: sideId,
+          showArc: segmentArcMode.side[sideId] !== 0,
           getLabelPosition: getLabelPosition,
           getLabelStyle: getLabelStyle,
           createSelectableText: createSelectableText,
@@ -1539,6 +1541,21 @@
               pushHistorySnapshot();
               angleMarkerMode[config.id] = mode;
               hiddenLabelState.angleMark[config.id] = (mode === 0);
+              render();
+            });
+          } else if (config.type === 'side') {
+            button.addEventListener('contextmenu', function (event) {
+              event.preventDefault();
+              const currentMode = Number.isFinite(segmentArcMode.side[config.id]) ? segmentArcMode.side[config.id] : 1;
+              const next = window.prompt('線分ラベルの弧表示を選択（0:弧を非表示 / 1:弧を表示）', String(currentMode));
+              if (next === null) return;
+              const mode = window.InstantGeometrySharedOrnaments.normalizeSegmentArcInput(next);
+              if (mode === null) {
+                setStatus('線分ラベルの弧表示は「0 / 1」で指定してください。', true);
+                return;
+              }
+              pushHistorySnapshot();
+              segmentArcMode.side[config.id] = mode;
               render();
             });
           }
@@ -1723,6 +1740,8 @@
           unitIndex: unitIndex,
           angleMode: angleMode,
           angleMarkerMode: cloneStateValue(angleMarkerMode)
+          ,
+          segmentArcMode: cloneStateValue(segmentArcMode)
         };
       }
 
@@ -1748,6 +1767,9 @@
         }
         angleMode = state.angleMode === 'radians' ? 'radians' : 'degrees';
         Object.assign(angleMarkerMode, cloneStateValue(state.angleMarkerMode || angleMarkerMode));
+        if (state.segmentArcMode && state.segmentArcMode.side) {
+          Object.assign(segmentArcMode.side, cloneStateValue(state.segmentArcMode.side));
+        }
         hoveredLabel = null;
         selectedLabel = null;
         selectedFigure = false;
@@ -2782,6 +2804,7 @@
         angleMarkerMode.A = 0;
         angleMarkerMode.B = 0;
         angleMarkerMode.C = 0;
+        segmentArcMode.side = { a: 1, b: 1, c: 1 };
         labelStyleState = createLabelStyleState();
         figureState = {
           color: '#2a5bd7',
