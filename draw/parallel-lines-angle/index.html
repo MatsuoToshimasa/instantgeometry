@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>平行線と2角 | Instant Geometry</title>
+  <link rel="stylesheet" href="/assets/base.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jsxgraph/distrib/jsxgraph.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/jsxgraph/distrib/jsxgraphcore.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <style>
+    :root{--panel:#ffffff;--line:#d9dce7;--text:#1f2430;--muted:#687086;--accent:#2a5bd7;--shadow:0 10px 28px rgba(27,39,94,.08);--radius:20px;--danger:#b42318;--danger-bg:#fff1f0;--danger-line:#f3c3bf}
+    *{box-sizing:border-box} html,body{height:100%;overflow:hidden}
+    body{margin:0;display:flex;flex-direction:column;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;background:linear-gradient(180deg,#f8faff 0%,#f4f6fb 100%);color:var(--text)}
+    .workspace{position:relative;flex:1;min-height:0;overflow:hidden}
+    .dock-card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);backdrop-filter:blur(10px)}
+    .left-dock{position:absolute;top:16px;left:16px;bottom:16px;z-index:20;width:min(360px,calc(100vw - 96px));display:flex;flex-direction:column;gap:12px;transition:transform .24s ease;overflow:visible}
+    .left-dock.is-collapsed{transform:translateX(calc(-100% + 20px))}
+    .right-dock{position:absolute;top:16px;right:16px;bottom:16px;z-index:20;width:min(300px,calc(100vw - 96px));display:flex;flex-direction:column;transition:transform .24s ease;overflow:visible}
+    .right-dock.is-collapsed{transform:translateX(calc(100% - 20px))}
+    .dock-topbar{position:relative;display:flex;align-items:center}
+    .dock-toggle{position:absolute;top:0;right:-56px;width:44px;min-width:44px;height:44px;border:1px solid var(--line);border-radius:14px;background:#fff;color:var(--text);font-size:18px;cursor:pointer;box-shadow:var(--shadow);z-index:2}
+    .dock-toggle-right{left:-56px;right:auto}
+    .panel{flex:0 0 430px;max-height:430px;min-height:0;padding:16px 16px 14px;overflow-y:auto;overflow-x:hidden}
+    .panel h1{margin:0;font-size:24px;line-height:1.25}
+    .section{margin-top:14px;padding-top:12px;border-top:1px solid #eceff5}
+    .section h3{margin:0 0 8px;font-size:15px;line-height:1.4}
+    .field-grid{display:grid;gap:8px}.field{display:grid;gap:4px}
+    .field label{font-size:11px;color:var(--muted);line-height:1.3}
+    .field input{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:11px;font-size:15px;background:#fff;color:var(--text)}
+    .hint{margin:0;color:var(--muted);font-size:11px;line-height:1.45}
+    .button-row{display:grid;gap:10px}
+    .download-btn,.tool-btn,.page-back-btn{border:1px solid #cfd7ea;border-radius:13px;background:linear-gradient(180deg,#ffffff 0%,#f6f8ff 100%);color:#24304d;font-size:13px;font-weight:700;letter-spacing:.01em;cursor:pointer;box-shadow:0 1px 0 rgba(255,255,255,.9) inset,0 2px 8px rgba(36,71,168,.08);transition:.16s ease}
+    .download-btn,.tool-btn{padding:10px 13px}.group-title{margin:0 0 8px;color:var(--muted);font-size:12px;font-weight:700;letter-spacing:.03em}.btn-ac{min-width:124px}.btn-bd{min-width:84px;padding:9px 11px;font-size:13px}
+    .download-btn:hover,.tool-btn:hover,.page-back-btn:hover{border-color:#9fb3ea;color:#1f3d94;background:linear-gradient(180deg,#ffffff 0%,#eef3ff 100%)}
+    .controls-stack{display:flex;flex-direction:column;gap:10px;min-height:0}
+    .board-status{margin:0;padding:11px 12px;font-size:13px;color:#3153a4;background:#f8faff;border:1px solid #e1e8fb;border-radius:14px;line-height:1.6}
+    .board-status.error{color:var(--danger);border-color:var(--danger-line);background:var(--danger-bg)}
+    .overlay-card{padding:14px}.tool-row{display:flex;align-items:center;flex-wrap:wrap;gap:8px;justify-content:flex-start}
+    #box{position:absolute;inset:0;width:100%;height:100%;border:none;border-radius:0;background:#fbfcff} #box svg,#box svg *{pointer-events:none!important}
+    #labelLayer{position:absolute;inset:0;z-index:8;pointer-events:none;overflow:hidden}
+    .floating-label{position:absolute;left:0;top:0;transform-origin:center center;white-space:nowrap;line-height:1;will-change:transform;user-select:none;pointer-events:auto;font-style:normal;font-weight:500;text-rendering:geometricPrecision;-webkit-font-smoothing:antialiased;cursor:grab;font-family:"Times New Roman","STIX Two Text","Cambria Math",serif}
+    .floating-label:active{cursor:grabbing}
+    .export-frame{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);border:2px solid rgba(42,91,215,.32);pointer-events:none;z-index:6;border-radius:18px}
+    .page-back-btn{position:absolute;top:6px;left:50%;transform:translateX(-50%);z-index:24;min-width:148px;padding:10px 14px}
+    .export-backdrop{position:absolute;inset:0;pointer-events:none;z-index:5;--frame-left:0px;--frame-top:0px;--frame-right:0px;--frame-bottom:0px;background-color:rgba(248,250,255,.88);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='12' viewBox='0 0 90 12'%3E%3Ctext x='0' y='10' fill='rgba(31,36,48,0.12)' font-family='Arial,sans-serif' font-size='11' font-weight='800' letter-spacing='-0.12'%3EInstant Geometry%3C/text%3E%3C/svg%3E");background-repeat:repeat;background-size:90px 12px;background-position:0 0;-webkit-mask:linear-gradient(#000 0 0) top / 100% var(--frame-top) no-repeat,linear-gradient(#000 0 0) left / var(--frame-left) calc(var(--frame-bottom) - var(--frame-top)) no-repeat,linear-gradient(#000 0 0) right / calc(100% - var(--frame-right)) calc(var(--frame-bottom) - var(--frame-top)) no-repeat,linear-gradient(#000 0 0) bottom / 100% calc(100% - var(--frame-bottom)) no-repeat;mask:linear-gradient(#000 0 0) top / 100% var(--frame-top) no-repeat,linear-gradient(#000 0 0) left / var(--frame-left) calc(var(--frame-bottom) - var(--frame-top)) no-repeat,linear-gradient(#000 0 0) right / calc(100% - var(--frame-right)) calc(var(--frame-bottom) - var(--frame-top)) no-repeat,linear-gradient(#000 0 0) bottom / 100% calc(100% - var(--frame-bottom)) no-repeat}
+    .label-toggles{flex:1;min-height:0;display:flex;flex-direction:column;gap:12px;overflow:hidden}.toggle-card{flex:1;background:rgba(255,255,255,.92);border:1px solid #e7eaf3;border-radius:14px;padding:12px;box-shadow:var(--shadow);backdrop-filter:blur(10px);overflow-y:auto;overflow-x:hidden}.toggle-title{margin:0 0 10px;color:var(--muted);font-size:12px;font-weight:700;letter-spacing:.04em}.toggle-grid{display:flex;flex-wrap:wrap;gap:6px}
+  </style>
+</head>
+<body>
+  <main class="workspace">
+    <div id="box" aria-label="平行線と2角の描画エリア"></div>
+    <button class="page-back-btn" id="pageBackBtn" type="button">前の画面に戻る</button>
+    <div id="exportBackdrop" class="export-backdrop" aria-hidden="true"></div>
+    <div id="exportFrame" class="export-frame" aria-hidden="true"></div>
+    <div class="left-dock" id="leftDock">
+      <div class="dock-topbar"><button class="dock-toggle" id="dockToggleBtn" type="button" aria-expanded="true">‹</button></div>
+      <aside class="panel dock-card">
+        <h1>平行線と2角</h1>
+        <div class="section">
+          <h3>形を決める値</h3>
+          <div class="field-grid">
+            <div class="field"><label for="aPos">点Aの位置</label><input id="aPos" data-parallel-input type="text" inputmode="decimal" value="-2.5" /></div>
+            <div class="field"><label for="bPos">点Bの位置</label><input id="bPos" data-parallel-input type="text" inputmode="decimal" value="2.5" /></div>
+            <div class="field"><label for="theta1">上の線とAMのなす角 θ1</label><input id="theta1" data-parallel-input type="text" inputmode="decimal" value="60" /></div>
+            <div class="field"><label for="theta2">下の線とBMのなす角 θ2</label><input id="theta2" data-parallel-input type="text" inputmode="decimal" value="70" /></div>
+          </div>
+          <p class="hint">上の平行線上に A、下の平行線上に B を置き、角 θ1 と θ2 から交点 M を決めます。</p>
+        </div>
+      </aside>
+      <div class="controls-stack">
+        <div class="board-status dock-card" id="statusBox">入力をもとに図形を描画しています。</div>
+        <div class="overlay-card dock-card"><p class="group-title">画面</p><div class="tool-row"><button class="tool-btn btn-ac" id="ratioBtn" type="button">画面比 1:1</button><button class="tool-btn btn-ac" id="resetBtn" type="button">リセット</button></div></div>
+        <div class="overlay-card dock-card"><p class="group-title">出力</p><div class="tool-row button-row"><button class="download-btn btn-bd" type="button" data-download-format="pdf">PDF</button><button class="download-btn btn-bd" type="button" data-download-format="png">PNG</button><button class="download-btn btn-bd" type="button" data-download-format="png-transparent">透過</button></div></div>
+        <div class="overlay-card dock-card"><p class="group-title">単位</p><div class="tool-row"><button class="tool-btn btn-ac" id="angleModeBtn" type="button">度数法</button></div></div>
+      </div>
+    </div>
+    <aside class="right-dock" id="rightDock">
+      <div class="dock-topbar"><button class="dock-toggle dock-toggle-right" id="rightDockToggleBtn" type="button" aria-expanded="true">›</button></div>
+      <div class="label-toggles"><div class="toggle-card"><p class="toggle-title">一般ラベル</p><div class="toggle-grid" id="generalLabelToggleGrid"></div><p class="toggle-title" style="margin-top:12px;">特別ラベル</p><div class="toggle-grid" id="specialLabelToggleGrid"></div></div></div>
+    </aside>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/assets/components.js"></script>
+  <script src="/assets/draw-shared-labels.js"></script>
+  <script src="/assets/draw-shared-label-config.js"></script>
+  <script src="/assets/draw-shared-selection.js"></script>
+  <script src="/assets/draw-parallel-lines-angle-page.js"></script>
+</body>
+</html>
