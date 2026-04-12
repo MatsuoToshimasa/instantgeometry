@@ -19,6 +19,10 @@
   const exportBackdrop = document.getElementById('exportBackdrop');
   const exportFrame = document.getElementById('exportFrame');
   const vertexLabelText = { A: 'A', B: 'B', C: 'C', D: 'D', O: 'O' };
+  const generalAngleIds = ['A', 'B', 'C', 'D'];
+  const specialAngleIds = ['AOB', 'BOC', 'COD', 'DOA', 'OAB', 'OBC', 'OBD', 'ODA', 'OAD', 'ODC', 'OCB', 'OBA'];
+  const allAngleIds = generalAngleIds.concat(specialAngleIds);
+  const specialSegmentIds = ['OA', 'OB', 'OC', 'OD'];
 
   const board = JXG.JSXGraph.initBoard('box', {
     boundingbox: [0, 8, 12, 0],
@@ -37,10 +41,11 @@
   const defaultLabelState = {
     vertex: { A: true, B: true, C: true, D: true },
     side: { AB: true, BC: true, CD: true, DA: true },
-    angle: { A: false, B: false, C: false, D: false },
-    angleMark: { A: false, B: false, C: false, D: false },
+    angle: { A: false, B: false, C: false, D: false, AOB: false, BOC: false, COD: false, DOA: false, OAB: false, OBC: false, OBD: false, ODA: false, OAD: false, ODC: false, OCB: false, OBA: false },
+    angleMark: { A: false, B: false, C: false, D: false, AOB: false, BOC: false, COD: false, DOA: false, OAB: false, OBC: false, OBD: false, ODA: false, OAD: false, ODC: false, OCB: false, OBA: false },
     area: { main: false },
     specialVertex: { O: false },
+    specialSegment: { OA: false, OB: false, OC: false, OD: false },
     diagonal: { AC: false, BD: false }
   };
 
@@ -48,30 +53,33 @@
   const labelFontDefaults = {
     vertex: { A: 36, B: 36, C: 36, D: 36 },
     side: { AB: 32, BC: 32, CD: 32, DA: 32 },
-    angle: { A: 30, B: 30, C: 30, D: 30 },
-    angleMark: { A: 26, B: 26, C: 26, D: 26 },
+    angle: { A: 30, B: 30, C: 30, D: 30, AOB: 28, BOC: 28, COD: 28, DOA: 28, OAB: 28, OBC: 28, OBD: 28, ODA: 28, OAD: 28, ODC: 28, OCB: 28, OBA: 28 },
+    angleMark: { A: 26, B: 26, C: 26, D: 26, AOB: 24, BOC: 24, COD: 24, DOA: 24, OAB: 24, OBC: 24, OBD: 24, ODA: 24, OAD: 24, ODC: 24, OCB: 24, OBA: 24 },
     area: { main: 48 },
     specialVertex: { O: 34 },
+    specialSegment: { OA: 28, OB: 28, OC: 28, OD: 28 },
     diagonal: { AC: 28, BD: 28 }
   };
   const labelFontSize = JSON.parse(JSON.stringify(labelFontDefaults));
   const styleDefaults = {
     vertex: { A: style('#1f2430'), B: style('#1f2430'), C: style('#1f2430'), D: style('#1f2430') },
     side: { AB: style('#2a5bd7'), BC: style('#2a5bd7'), CD: style('#2a5bd7'), DA: style('#2a5bd7') },
-    angle: { A: style('#687086'), B: style('#687086'), C: style('#687086'), D: style('#687086') },
-    angleMark: { A: style('#687086'), B: style('#687086'), C: style('#687086'), D: style('#687086') },
+    angle: { A: style('#687086'), B: style('#687086'), C: style('#687086'), D: style('#687086'), AOB: style('#687086'), BOC: style('#687086'), COD: style('#687086'), DOA: style('#687086'), OAB: style('#687086'), OBC: style('#687086'), OBD: style('#687086'), ODA: style('#687086'), OAD: style('#687086'), ODC: style('#687086'), OCB: style('#687086'), OBA: style('#687086') },
+    angleMark: { A: style('#687086'), B: style('#687086'), C: style('#687086'), D: style('#687086'), AOB: style('#687086'), BOC: style('#687086'), COD: style('#687086'), DOA: style('#687086'), OAB: style('#687086'), OBC: style('#687086'), OBD: style('#687086'), ODA: style('#687086'), OAD: style('#687086'), ODC: style('#687086'), OCB: style('#687086'), OBA: style('#687086') },
     area: { main: style('#25603b') },
     specialVertex: { O: style('#1f2430') },
+    specialSegment: { OA: style('#7d8db8'), OB: style('#7d8db8'), OC: style('#7d8db8'), OD: style('#7d8db8') },
     diagonal: { AC: style('#7d8db8'), BD: style('#7d8db8') }
   };
   let labelStyleState = JSON.parse(JSON.stringify(styleDefaults));
   const labelPositions = {
     vertex: { A: null, B: null, C: null, D: null },
     side: { AB: null, BC: null, CD: null, DA: null },
-    angle: { A: null, B: null, C: null, D: null },
-    angleMark: { A: null, B: null, C: null, D: null },
+    angle: { A: null, B: null, C: null, D: null, AOB: null, BOC: null, COD: null, DOA: null, OAB: null, OBC: null, OBD: null, ODA: null, OAD: null, ODC: null, OCB: null, OBA: null },
+    angleMark: { A: null, B: null, C: null, D: null, AOB: null, BOC: null, COD: null, DOA: null, OAB: null, OBC: null, OBD: null, ODA: null, OAD: null, ODC: null, OCB: null, OBA: null },
     area: { main: null },
     specialVertex: { O: null },
+    specialSegment: { OA: null, OB: null, OC: null, OD: null },
     diagonal: { AC: null, BD: null }
   };
 
@@ -97,15 +105,17 @@
   let isRightDockCollapsed = false;
   let isPaletteOpen = false;
   let lastFitSignature = '';
-  const angleMarkerMode = { A: 0, B: 0, C: 0, D: 0 };
+  const angleMarkerMode = { A: 0, B: 0, C: 0, D: 0, AOB: 0, BOC: 0, COD: 0, DOA: 0, OAB: 0, OBC: 0, OBD: 0, ODA: 0, OAD: 0, ODC: 0, OCB: 0, OBA: 0 };
   const segmentArcMode = {
     side: { AB: 1, BC: 1, CD: 1, DA: 1 },
+    specialSegment: { OA: 1, OB: 1, OC: 1, OD: 1 },
     diagonal: { AC: 1, BD: 1 }
   };
   const customLabelText = {
     side: { AB: '', BC: '', CD: '', DA: '' },
-    angle: { A: '', B: '', C: '', D: '' },
+    angle: { A: '', B: '', C: '', D: '', AOB: '', BOC: '', COD: '', DOA: '', OAB: '', OBC: '', OBD: '', ODA: '', OAD: '', ODC: '', OCB: '', OBA: '' },
     area: { main: '' },
+    specialSegment: { OA: '', OB: '', OC: '', OD: '' },
     diagonal: { AC: '', BD: '' }
   };
   let figureState = {
@@ -145,6 +155,91 @@
 
   function getSideName(id) {
     return id.split('').map(getVertexTokenByKey).join('');
+  }
+
+  function getAngleName(id) {
+    return id.length === 1 ? ('∠' + getVertexTokenByKey(id)) : ('∠' + id.split('').map(getVertexTokenByKey).join(''));
+  }
+
+  function getPointByName(name, geometry) {
+    if (name === 'O') return geometry.centroid;
+    return geometry.points[name];
+  }
+
+  function getAngleGeometry(id, geometry) {
+    if (id.length === 1) {
+      const presets = {
+        A: { vertex: 'A', p1: 'B', p2: 'D' },
+        B: { vertex: 'B', p1: 'A', p2: 'C' },
+        C: { vertex: 'C', p1: 'B', p2: 'D' },
+        D: { vertex: 'D', p1: 'A', p2: 'C' }
+      };
+      const preset = presets[id];
+      return {
+        vertex: getPointByName(preset.vertex, geometry),
+        p1: getPointByName(preset.p1, geometry),
+        p2: getPointByName(preset.p2, geometry)
+      };
+    }
+    if (id.length === 3) {
+      return {
+        vertex: getPointByName(id[1], geometry),
+        p1: getPointByName(id[0], geometry),
+        p2: getPointByName(id[2], geometry)
+      };
+    }
+    return null;
+  }
+
+  function getAngleMeasureDegrees(id, geometry) {
+    const data = getAngleGeometry(id, geometry);
+    if (!data) return 0;
+    const v1x = data.p1.x - data.vertex.x;
+    const v1y = data.p1.y - data.vertex.y;
+    const v2x = data.p2.x - data.vertex.x;
+    const v2y = data.p2.y - data.vertex.y;
+    const len1 = Math.hypot(v1x, v1y) || 1;
+    const len2 = Math.hypot(v2x, v2y) || 1;
+    const dot = Math.max(-1, Math.min(1, ((v1x * v2x) + (v1y * v2y)) / (len1 * len2)));
+    return Math.acos(dot) * 180 / Math.PI;
+  }
+
+  function getAngleDefaultByGeometry(id, geometry) {
+    const data = getAngleGeometry(id, geometry);
+    if (!data) return geometry.centroid;
+    const d1x = data.p1.x - data.vertex.x;
+    const d1y = data.p1.y - data.vertex.y;
+    const d2x = data.p2.x - data.vertex.x;
+    const d2y = data.p2.y - data.vertex.y;
+    const l1 = Math.hypot(d1x, d1y) || 1;
+    const l2 = Math.hypot(d2x, d2y) || 1;
+    const u1 = { x: d1x / l1, y: d1y / l1 };
+    const u2 = { x: d2x / l2, y: d2y / l2 };
+    let bisector = { x: u1.x + u2.x, y: u1.y + u2.y };
+    const blen = Math.hypot(bisector.x, bisector.y);
+    if (blen < 1e-6) {
+      bisector = { x: -u1.y, y: u1.x };
+    } else {
+      bisector = { x: bisector.x / blen, y: bisector.y / blen };
+    }
+    const radius = id[1] === 'O' ? geometry.side * 0.24 : geometry.side * 0.16;
+    return {
+      x: data.vertex.x + bisector.x * radius,
+      y: data.vertex.y + bisector.y * radius
+    };
+  }
+
+  function shouldDrawSpecialSegment(id) {
+    if (labelState.specialSegment[id]) return true;
+    const relatedAngles = {
+      OA: ['AOB', 'DOA', 'OAB', 'ODA', 'OAD', 'OBA'],
+      OB: ['AOB', 'BOC', 'OAB', 'OBC', 'OBD', 'OBA'],
+      OC: ['BOC', 'COD', 'OCB', 'ODC'],
+      OD: ['COD', 'DOA', 'OBD', 'ODA', 'OAD', 'ODC']
+    };
+    return (relatedAngles[id] || []).some(function (angleId) {
+      return labelState.angle[angleId] || labelState.angleMark[angleId];
+    });
   }
 
   function normalizeAngleMarkerInput(input) {
@@ -355,12 +450,18 @@
     const P = geometry.points;
     const G = geometry.centroid;
     if (type === 'vertex') return getVertexDefault(G, P[id]);
-    if (type === 'angle') return getAngleDefault(G, P[id]);
+    if (type === 'angle') {
+      return id.length === 1 ? getAngleDefault(G, P[id]) : getAngleDefaultByGeometry(id, geometry);
+    }
     if (type === 'area' || type === 'specialVertex') return { x: G.x, y: G.y };
     if (type === 'diagonal') {
       return id === 'AC'
         ? getPerpendicularDefault(P.A, P.C, G, 0.5)
         : getPerpendicularDefault(P.B, P.D, G, 0.5);
+    }
+    if (type === 'specialSegment') {
+      const pair = { OA: [G, P.A], OB: [G, P.B], OC: [G, P.C], OD: [G, P.D] }[id];
+      return getPerpendicularDefault(pair[0], pair[1], G, 0.38);
     }
     const sideMap = {
       AB: [P.A, P.B],
@@ -374,9 +475,10 @@
   function getLabelText(type, id, geometry) {
     const side = geometry.side;
     if (type === 'vertex') return getVertexTokenByKey(id);
-    if (type === 'specialVertex') return id;
+    if (type === 'specialVertex') return getVertexTokenByKey(id);
     if (type === 'side') return getCustomSegmentText('side', id, formatNumber(side));
-    if (type === 'angle') return getCustomAngleText(id, angleMode === 'degrees' ? '90°' : 'π/2');
+    if (type === 'specialSegment') return getCustomSegmentText('specialSegment', id, formatNumber(side / Math.SQRT2));
+    if (type === 'angle') return getCustomAngleText(id, angleMode === 'degrees' ? (formatNumber(getAngleMeasureDegrees(id, geometry)) + '°') : formatNumber(getAngleMeasureDegrees(id, geometry) * Math.PI / 180));
     if (type === 'area') return getCustomAreaText(formatNumber(side * side));
     if (type === 'diagonal') return getCustomSegmentText('diagonal', id, (formatNumber(side) === '1' ? '' : formatNumber(side)) + '√2');
     return '';
@@ -403,8 +505,24 @@
   function getSpecialConfigs() {
     return [
       { type: 'specialVertex', id: 'O' },
+      { type: 'specialSegment', id: 'OA' },
+      { type: 'specialSegment', id: 'OB' },
+      { type: 'specialSegment', id: 'OC' },
+      { type: 'specialSegment', id: 'OD' },
       { type: 'diagonal', id: 'AC' },
-      { type: 'diagonal', id: 'BD' }
+      { type: 'diagonal', id: 'BD' },
+      { type: 'angle', id: 'AOB' },
+      { type: 'angle', id: 'BOC' },
+      { type: 'angle', id: 'COD' },
+      { type: 'angle', id: 'DOA' },
+      { type: 'angle', id: 'OAB' },
+      { type: 'angle', id: 'OBC' },
+      { type: 'angle', id: 'OBD' },
+      { type: 'angle', id: 'ODA' },
+      { type: 'angle', id: 'OAD' },
+      { type: 'angle', id: 'ODC' },
+      { type: 'angle', id: 'OCB' },
+      { type: 'angle', id: 'OBA' }
     ];
   }
 
@@ -412,7 +530,8 @@
     if (config.type === 'vertex') return getVertexTokenByKey(config.id);
     if (config.type === 'specialVertex') return getVertexTokenByKey(config.id);
     if (config.type === 'side') return getSideName(config.id);
-    if (config.type === 'angle') return '∠' + getVertexTokenByKey(config.id);
+    if (config.type === 'specialSegment') return getSideName(config.id);
+    if (config.type === 'angle') return getAngleName(config.id);
     if (config.type === 'area') return getAreaName();
     if (config.type === 'diagonal') return getSideName(config.id);
     return config.id;
@@ -570,6 +689,57 @@
             return;
           }
           renderLabelToggleButtons();
+          render();
+        });
+      }
+      if (config.type === 'angle') {
+        button.addEventListener('contextmenu', async function (event) {
+          event.preventDefault();
+          const currentMode = Number.isFinite(angleMarkerMode[config.id]) ? angleMarkerMode[config.id] : 0;
+          const response = await window.InstantGeometrySharedLabelConfig.promptDualSetting({
+            title: '角ラベル設定',
+            firstLabel: '角マーク（0:なし / 1:記号なし / 2:○ / 3:| / 4:= / 5:× / 6:△ / 7:塗）',
+            firstValue: String(currentMode),
+            secondLabel: '文字（空欄で数値表示）',
+            secondValue: customLabelText.angle[config.id] || ''
+          });
+          if (response === null) return;
+          const mode = normalizeAngleMarkerInput(response.first);
+          if (mode === null) {
+            setStatus('角マークは「0 / 1 / 2 / 3 / 4 / 5 / 6 / 7」で指定してください。', true);
+            return;
+          }
+          angleMarkerMode[config.id] = mode;
+          customLabelText.angle[config.id] = response.second;
+          labelState.angleMark[config.id] = (mode !== 0);
+          if (!labelState.angleMark[config.id] && selectedLabel && selectedLabel.type === 'angleMark' && selectedLabel.id === config.id) {
+            selectedLabel = null;
+            isPaletteOpen = false;
+          }
+          if (mode !== 0) resetSingleLabel('angleMark', config.id);
+          renderLabelToggleButtons();
+          render();
+        });
+      }
+      if (config.type === 'specialSegment') {
+        button.addEventListener('contextmenu', async function (event) {
+          event.preventDefault();
+          const currentMode = Number.isFinite(segmentArcMode.specialSegment[config.id]) ? segmentArcMode.specialSegment[config.id] : 1;
+          const response = await window.InstantGeometrySharedLabelConfig.promptDualSetting({
+            title: '線分ラベル設定',
+            firstLabel: '弧表示（0:弧を非表示 / 1:弧を表示）',
+            firstValue: String(currentMode),
+            secondLabel: '文字（空欄で数値表示）',
+            secondValue: customLabelText.specialSegment[config.id] || ''
+          });
+          if (response === null) return;
+          const mode = window.InstantGeometrySharedOrnaments.normalizeSegmentArcInput(response.first);
+          if (mode === null) {
+            setStatus('線分ラベルの弧表示は「0 / 1」で指定してください。', true);
+            return;
+          }
+          segmentArcMode.specialSegment[config.id] = mode;
+          customLabelText.specialSegment[config.id] = response.second;
           render();
         });
       }
@@ -869,6 +1039,46 @@
       });
     }
 
+    specialSegmentIds.forEach(function (id) {
+      if (!shouldDrawSpecialSegment(id)) return;
+      const pair = { OA: [geometry.centroid, P.A], OB: [geometry.centroid, P.B], OC: [geometry.centroid, P.C], OD: [geometry.centroid, P.D] }[id];
+      board.create('segment', [[pair[0].x, pair[0].y], [pair[1].x, pair[1].y]], {
+        fixed: true,
+        strokeColor: '#9aa7c7',
+        strokeWidth: 1.4,
+        dash: 2,
+        highlight: false
+      });
+      if (!labelState.specialSegment[id]) return;
+      window.InstantGeometrySharedOrnaments.drawSideArcLabel({
+        board: board,
+        P: pair[0],
+        Q: pair[1],
+        center: geometry.centroid,
+        text: getLabelText('specialSegment', id, geometry),
+        labelType: 'specialSegment',
+        labelId: id,
+        labelFontGroup: 'specialSegment',
+        showArc: segmentArcMode.specialSegment[id] !== 0,
+        getLabelPosition: getLabelPosition,
+        getLabelStyle: getLabelStyle,
+        createSelectableText: function (position, text, fontSize, labelKey, options) {
+          return window.InstantGeometrySharedLabels.createSelectableText({
+            board: board,
+            labelLayer: labelLayer,
+            currentLabelAnchors: currentLabelAnchors,
+            getLabelStyle: getLabelStyle,
+            position: position,
+            text: text,
+            fontSize: fontSize,
+            labelKey: labelKey,
+            options: options
+          });
+        },
+        labelFontSize: labelFontSize
+      });
+    });
+
     ['AC', 'BD'].forEach(function (id) {
       if (!labelState.diagonal[id]) return;
       const pair = id === 'AC' ? [P.A, P.C] : [P.B, P.D];
@@ -908,16 +1118,31 @@
       });
     });
 
+    specialAngleIds.forEach(function (id) {
+      if (!labelState.angle[id]) return;
+      window.InstantGeometrySharedLabels.createSelectableText({
+        board: board,
+        labelLayer: labelLayer,
+        currentLabelAnchors: currentLabelAnchors,
+        getLabelStyle: getLabelStyle,
+        position: getLabelPosition('angle', id, getDefaultPosition('angle', id, geometry)),
+        text: getLabelText('angle', id, geometry),
+        fontSize: labelFontSize.angle[id],
+        labelKey: { type: 'angle', id: id },
+        options: { color: '#687086', threshold: 0.6 }
+      });
+    });
+
+    specialAngleIds.forEach(function (id) {
+      if (!labelState.angleMark[id]) return;
+      drawAngleDecoration(id, geometry);
+    });
+
     renderSelectionOverlay(getSelectedAnchor() || getFigureSelectionAnchor());
   }
 
   function getAngleDecorationGeometry(angleId, geometry) {
-    const P = geometry.points;
-    if (angleId === 'A') return { vertex: P.A, p1: P.B, p2: P.D };
-    if (angleId === 'B') return { vertex: P.B, p1: P.A, p2: P.C };
-    if (angleId === 'C') return { vertex: P.C, p1: P.B, p2: P.D };
-    if (angleId === 'D') return { vertex: P.D, p1: P.A, p2: P.C };
-    return null;
+    return getAngleGeometry(angleId, geometry);
   }
 
   function drawAngleDecoration(angleId, geometry) {
@@ -1344,13 +1569,22 @@
     Object.keys(segmentArcMode.side).forEach(function (id) {
       segmentArcMode.side[id] = 1;
     });
+    Object.keys(segmentArcMode.specialSegment).forEach(function (id) {
+      segmentArcMode.specialSegment[id] = 1;
+    });
     Object.keys(segmentArcMode.diagonal).forEach(function (id) {
       segmentArcMode.diagonal[id] = 1;
     });
     Object.keys(customLabelText.side).forEach(function (id) { customLabelText.side[id] = ''; });
     Object.keys(customLabelText.angle).forEach(function (id) { customLabelText.angle[id] = ''; });
+    Object.keys(customLabelText.specialSegment).forEach(function (id) { customLabelText.specialSegment[id] = ''; });
     Object.keys(customLabelText.diagonal).forEach(function (id) { customLabelText.diagonal[id] = ''; });
     customLabelText.area.main = '';
+    vertexLabelText.A = 'A';
+    vertexLabelText.B = 'B';
+    vertexLabelText.C = 'C';
+    vertexLabelText.D = 'D';
+    vertexLabelText.O = 'O';
     figureState = {
       color: '#2a5bd7',
       rotation: 0,
