@@ -20,7 +20,7 @@
   const exportFrame = document.getElementById('exportFrame');
   const vertexLabelText = { A: 'A', B: 'B', C: 'C', D: 'D', O: 'O' };
   const generalAngleIds = ['A', 'B', 'C', 'D'];
-  const specialAngleIds = ['AOB', 'BOC', 'COD', 'DOA', 'OAB', 'OBC', 'OBD', 'ODA', 'OAD', 'ODC', 'OCB', 'OBA'];
+  const specialAngleIds = ['AOB', 'BOC', 'COD', 'DOA', 'OAB', 'OBC', 'OCD', 'ODA', 'OAD', 'ODC', 'OCB', 'OBA'];
   const allAngleIds = generalAngleIds.concat(specialAngleIds);
   const specialSegmentIds = ['OA', 'OB', 'OC', 'OD'];
 
@@ -41,8 +41,8 @@
   const defaultLabelState = {
     vertex: { A: true, B: true, C: true, D: true },
     side: { AB: true, BC: true, CD: true, DA: true },
-    angle: { A: false, B: false, C: false, D: false, AOB: false, BOC: false, COD: false, DOA: false, OAB: false, OBC: false, OBD: false, ODA: false, OAD: false, ODC: false, OCB: false, OBA: false },
-    angleMark: { A: false, B: false, C: false, D: false, AOB: false, BOC: false, COD: false, DOA: false, OAB: false, OBC: false, OBD: false, ODA: false, OAD: false, ODC: false, OCB: false, OBA: false },
+    angle: { A: false, B: false, C: false, D: false, AOB: false, BOC: false, COD: false, DOA: false, OAB: false, OBC: false, OCD: false, ODA: false, OAD: false, ODC: false, OCB: false, OBA: false },
+    angleMark: { A: false, B: false, C: false, D: false, AOB: false, BOC: false, COD: false, DOA: false, OAB: false, OBC: false, OCD: false, ODA: false, OAD: false, ODC: false, OCB: false, OBA: false },
     area: { main: false },
     specialVertex: { O: false },
     specialSegment: { OA: false, OB: false, OC: false, OD: false },
@@ -53,8 +53,8 @@
   const labelFontDefaults = {
     vertex: { A: 36, B: 36, C: 36, D: 36 },
     side: { AB: 32, BC: 32, CD: 32, DA: 32 },
-    angle: { A: 30, B: 30, C: 30, D: 30, AOB: 28, BOC: 28, COD: 28, DOA: 28, OAB: 28, OBC: 28, OBD: 28, ODA: 28, OAD: 28, ODC: 28, OCB: 28, OBA: 28 },
-    angleMark: { A: 26, B: 26, C: 26, D: 26, AOB: 24, BOC: 24, COD: 24, DOA: 24, OAB: 24, OBC: 24, OBD: 24, ODA: 24, OAD: 24, ODC: 24, OCB: 24, OBA: 24 },
+    angle: { A: 30, B: 30, C: 30, D: 30, AOB: 28, BOC: 28, COD: 28, DOA: 28, OAB: 28, OBC: 28, OCD: 28, ODA: 28, OAD: 28, ODC: 28, OCB: 28, OBA: 28 },
+    angleMark: { A: 26, B: 26, C: 26, D: 26, AOB: 24, BOC: 24, COD: 24, DOA: 24, OAB: 24, OBC: 24, OCD: 24, ODA: 24, OAD: 24, ODC: 24, OCB: 24, OBA: 24 },
     area: { main: 48 },
     specialVertex: { O: 34 },
     specialSegment: { OA: 28, OB: 28, OC: 28, OD: 28 },
@@ -64,8 +64,8 @@
   const styleDefaults = {
     vertex: { A: style('#1f2430'), B: style('#1f2430'), C: style('#1f2430'), D: style('#1f2430') },
     side: { AB: style('#2a5bd7'), BC: style('#2a5bd7'), CD: style('#2a5bd7'), DA: style('#2a5bd7') },
-    angle: { A: style('#687086'), B: style('#687086'), C: style('#687086'), D: style('#687086'), AOB: style('#687086'), BOC: style('#687086'), COD: style('#687086'), DOA: style('#687086'), OAB: style('#687086'), OBC: style('#687086'), OBD: style('#687086'), ODA: style('#687086'), OAD: style('#687086'), ODC: style('#687086'), OCB: style('#687086'), OBA: style('#687086') },
-    angleMark: { A: style('#687086'), B: style('#687086'), C: style('#687086'), D: style('#687086'), AOB: style('#687086'), BOC: style('#687086'), COD: style('#687086'), DOA: style('#687086'), OAB: style('#687086'), OBC: style('#687086'), OBD: style('#687086'), ODA: style('#687086'), OAD: style('#687086'), ODC: style('#687086'), OCB: style('#687086'), OBA: style('#687086') },
+    angle: { A: style('#687086'), B: style('#687086'), C: style('#687086'), D: style('#687086'), AOB: style('#687086'), BOC: style('#687086'), COD: style('#687086'), DOA: style('#687086'), OAB: style('#687086'), OBC: style('#687086'), OCD: style('#687086'), ODA: style('#687086'), OAD: style('#687086'), ODC: style('#687086'), OCB: style('#687086'), OBA: style('#687086') },
+    angleMark: { A: style('#687086'), B: style('#687086'), C: style('#687086'), D: style('#687086'), AOB: style('#687086'), BOC: style('#687086'), COD: style('#687086'), DOA: style('#687086'), OAB: style('#687086'), OBC: style('#687086'), OCD: style('#687086'), ODA: style('#687086'), OAD: style('#687086'), ODC: style('#687086'), OCB: style('#687086'), OBA: style('#687086') },
     area: { main: style('#25603b') },
     specialVertex: { O: style('#1f2430') },
     specialSegment: { OA: style('#7d8db8'), OB: style('#7d8db8'), OC: style('#7d8db8'), OD: style('#7d8db8') },
@@ -75,8 +75,8 @@
   const labelPositions = {
     vertex: { A: null, B: null, C: null, D: null },
     side: { AB: null, BC: null, CD: null, DA: null },
-    angle: { A: null, B: null, C: null, D: null, AOB: null, BOC: null, COD: null, DOA: null, OAB: null, OBC: null, OBD: null, ODA: null, OAD: null, ODC: null, OCB: null, OBA: null },
-    angleMark: { A: null, B: null, C: null, D: null, AOB: null, BOC: null, COD: null, DOA: null, OAB: null, OBC: null, OBD: null, ODA: null, OAD: null, ODC: null, OCB: null, OBA: null },
+    angle: { A: null, B: null, C: null, D: null, AOB: null, BOC: null, COD: null, DOA: null, OAB: null, OBC: null, OCD: null, ODA: null, OAD: null, ODC: null, OCB: null, OBA: null },
+    angleMark: { A: null, B: null, C: null, D: null, AOB: null, BOC: null, COD: null, DOA: null, OAB: null, OBC: null, OCD: null, ODA: null, OAD: null, ODC: null, OCB: null, OBA: null },
     area: { main: null },
     specialVertex: { O: null },
     specialSegment: { OA: null, OB: null, OC: null, OD: null },
@@ -105,7 +105,7 @@
   let isRightDockCollapsed = false;
   let isPaletteOpen = false;
   let lastFitSignature = '';
-  const angleMarkerMode = { A: 0, B: 0, C: 0, D: 0, AOB: 0, BOC: 0, COD: 0, DOA: 0, OAB: 0, OBC: 0, OBD: 0, ODA: 0, OAD: 0, ODC: 0, OCB: 0, OBA: 0 };
+  const angleMarkerMode = { A: 0, B: 0, C: 0, D: 0, AOB: 0, BOC: 0, COD: 0, DOA: 0, OAB: 0, OBC: 0, OCD: 0, ODA: 0, OAD: 0, ODC: 0, OCB: 0, OBA: 0 };
   const segmentArcMode = {
     side: { AB: 1, BC: 1, CD: 1, DA: 1 },
     specialSegment: { OA: 1, OB: 1, OC: 1, OD: 1 },
@@ -113,7 +113,7 @@
   };
   const customLabelText = {
     side: { AB: '', BC: '', CD: '', DA: '' },
-    angle: { A: '', B: '', C: '', D: '', AOB: '', BOC: '', COD: '', DOA: '', OAB: '', OBC: '', OBD: '', ODA: '', OAD: '', ODC: '', OCB: '', OBA: '' },
+    angle: { A: '', B: '', C: '', D: '', AOB: '', BOC: '', COD: '', DOA: '', OAB: '', OBC: '', OCD: '', ODA: '', OAD: '', ODC: '', OCB: '', OBA: '' },
     area: { main: '' },
     specialSegment: { OA: '', OB: '', OC: '', OD: '' },
     diagonal: { AC: '', BD: '' }
@@ -233,9 +233,9 @@
     if (labelState.specialSegment[id]) return true;
     const relatedAngles = {
       OA: ['AOB', 'DOA', 'OAB', 'ODA', 'OAD', 'OBA'],
-      OB: ['AOB', 'BOC', 'OAB', 'OBC', 'OBD', 'OBA'],
+      OB: ['AOB', 'BOC', 'OAB', 'OBC', 'OCD', 'OBA'],
       OC: ['BOC', 'COD', 'OCB', 'ODC'],
-      OD: ['COD', 'DOA', 'OBD', 'ODA', 'OAD', 'ODC']
+      OD: ['COD', 'DOA', 'OCD', 'ODA', 'OAD', 'ODC']
     };
     return (relatedAngles[id] || []).some(function (angleId) {
       return labelState.angle[angleId] || labelState.angleMark[angleId];
@@ -517,7 +517,7 @@
       { type: 'angle', id: 'DOA' },
       { type: 'angle', id: 'OAB' },
       { type: 'angle', id: 'OBC' },
-      { type: 'angle', id: 'OBD' },
+      { type: 'angle', id: 'OCD' },
       { type: 'angle', id: 'ODA' },
       { type: 'angle', id: 'OAD' },
       { type: 'angle', id: 'ODC' },
