@@ -2592,14 +2592,27 @@
 
       function drawRightAngleDecoration(angleId, triangle) {
         if (angleId !== 'B' || !rightAngleMarkerMode.B) return;
-        const perpGeom = getPerpMarkerGeometry(triangle, labelFontSize.innerAngle.B);
+        const perpGeom = getPerpMarkerGeometry(triangle, Math.max(labelFontSize.innerAngle.B, 34));
         const p1 = perpGeom.p1;
         const p2 = perpGeom.p2;
         const p3 = perpGeom.p3;
-        const innerAngleStyle = getLabelStyle('innerAngle', 'B');
-        const markStyle = { strokeWidth: 2, strokeColor: innerAngleStyle.color || '#687086', fixed: true, highlight: false };
+        const markStyle = { strokeWidth: 2.2, strokeColor: '#111111', fixed: true, highlight: false };
         board.create('segment', [[p1.x, p1.y], [p2.x, p2.y]], markStyle);
         board.create('segment', [[p2.x, p2.y], [p3.x, p3.y]], markStyle);
+      }
+
+      function getRightAngleLabelDefaultPoint(triangle) {
+        const perpGeom = getPerpMarkerGeometry(triangle, Math.max(labelFontSize.innerAngle.B, 34));
+        const centroid = {
+          x: (triangle.A.x + triangle.B.x + triangle.C.x) / 3,
+          y: (triangle.A.y + triangle.B.y + triangle.C.y) / 3
+        };
+        const towardCentroid = { x: centroid.x - perpGeom.center.x, y: centroid.y - perpGeom.center.y };
+        const len = Math.hypot(towardCentroid.x, towardCentroid.y) || 1;
+        return {
+          x: perpGeom.center.x + (towardCentroid.x / len) * 0.16,
+          y: perpGeom.center.y + (towardCentroid.y / len) * 0.16
+        };
       }
 
       function toggleHiddenLabel(type, id) {
@@ -2919,7 +2932,7 @@
             createSelectableText(getLabelPosition('innerAngle', 'A', getCentroidVertexInternalPoint(centroid, triangle.A)), getCustomAngleText('A', formatAngleValue(triangle.angleA)), labelFontSize.innerAngle.A, { type: 'innerAngle', id: 'A' }, { color: innerLabelColor });
           }
           if (labelState.innerAngle.B && !hiddenLabelState.innerAngle.B) {
-            createSelectableText(getLabelPosition('innerAngle', 'B', getCentroidVertexInternalPoint(centroid, triangle.B)), getCustomAngleText('B', formatAngleValue(triangle.angleB)), labelFontSize.innerAngle.B, { type: 'innerAngle', id: 'B' }, { color: innerLabelColor });
+            createSelectableText(getLabelPosition('innerAngle', 'B', getRightAngleLabelDefaultPoint(triangle)), getCustomAngleText('B', formatAngleValue(triangle.angleB)), labelFontSize.innerAngle.B, { type: 'innerAngle', id: 'B' }, { color: innerLabelColor });
           }
           if (labelState.innerAngle.C && !hiddenLabelState.innerAngle.C) {
             createSelectableText(getLabelPosition('innerAngle', 'C', getCentroidVertexInternalPoint(centroid, triangle.C)), getCustomAngleText('C', formatAngleValue(triangle.angleC)), labelFontSize.innerAngle.C, { type: 'innerAngle', id: 'C' }, { color: innerLabelColor });
