@@ -1813,7 +1813,9 @@
                 isPaletteOpen = false;
               }
               hiddenLabelState.angleMark[config.id] = (mode === 0);
-              if (labelState.rightAngleMark[config.id]) resetSingleLabel('rightAngleMark', config.id);
+              if (labelState.rightAngleMark[config.id]) {
+                labelPositions.rightAngleMark[config.id] = null;
+              }
               render();
             });
           } else if (config.type === 'side') {

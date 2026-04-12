@@ -2932,13 +2932,15 @@
             vertices: { visible: false },
             highlight: false
           });
-          board.create('segment', [pointC, pointHBoard], {
-            strokeWidth: 1.6,
-            strokeColor: '#687086',
-            dash: 2,
-            fixed: true,
-            highlight: false
-          });
+          if (labelState.side.CH && !hiddenLabelState.side.CH) {
+            board.create('segment', [pointC, pointHBoard], {
+              strokeWidth: 1.6,
+              strokeColor: '#687086',
+              dash: 2,
+              fixed: true,
+              highlight: false
+            });
+          }
 
           const centroid = {
             x: (triangle.A.x + triangle.B.x + triangle.C.x) / 3,
