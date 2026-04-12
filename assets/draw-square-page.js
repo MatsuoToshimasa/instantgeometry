@@ -1344,8 +1344,8 @@
     const l2 = Math.hypot(v2.x, v2.y) || 1;
     const u1 = { x: v1.x / l1, y: v1.y / l1 };
     const u2 = { x: v2.x / l2, y: v2.y / l2 };
-    const sizeScale = Math.max(0.35, Math.min(8, labelFontSize.rightAngleMark[angleId] / 26));
-    const size = Math.max(0.06, geometry.side * (angleId[1] === 'O' ? 0.08 : 0.06) * sizeScale);
+    const sizeScale = Math.max(0.12, Math.min(8, labelFontSize.rightAngleMark[angleId] / 26));
+    const size = Math.max(0.02, geometry.side * (angleId[1] === 'O' ? 0.08 : 0.06) * sizeScale);
     const pA = { x: vertex.x + u1.x * size, y: vertex.y + u1.y * size };
     const pB = { x: pA.x + u2.x * size, y: pA.y + u2.y * size };
     const pC = { x: vertex.x + u2.x * size, y: vertex.y + u2.y * size };
@@ -1593,7 +1593,8 @@
     if (dragState.mode === 'resize') {
       const ratio = Math.max(0.3, Math.min(8, Math.hypot(point.x - dragState.center.x, point.y - dragState.center.y) / Math.max(dragState.distanceStart, 0.01)));
       if (dragState.target === 'label') {
-        labelFontSize[dragState.type][dragState.id] = Math.max(10, Math.min(320, Math.round(dragState.fontSizeStart * ratio)));
+        const minFontSize = dragState.type === 'rightAngleMark' ? 4 : 10;
+        labelFontSize[dragState.type][dragState.id] = Math.max(minFontSize, Math.min(320, Math.round(dragState.fontSizeStart * ratio)));
       } else {
         const nextScale = Math.max(0.3, Math.min(4, dragState.scaleStart * ratio));
         const scaleRatio = nextScale / Math.max(figureState.scale, 1e-9);
