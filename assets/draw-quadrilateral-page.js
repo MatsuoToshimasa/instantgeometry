@@ -9,6 +9,7 @@
     rhombus: { name: '菱形', slug: 'rhombus' },
     parallelogram: { name: '平行四辺形', slug: 'parallelogram' },
     'parallelogram-angle': { name: '平行四辺形（2辺＋角）', slug: 'parallelogram-angle' },
+    convex: { name: '凸四角形', slug: 'convex' },
     trapezoid: { name: '台形', slug: 'trapezoid' },
     square: { name: '正方形', slug: 'square' }
   }[shape] || { name: '四角形', slug: 'quadrilateral' };
@@ -478,6 +479,47 @@
   }
 
   function getGeometryFromInputs() {
+    if (shape === 'convex') {
+      const AB = getInputValue('sideABLen', 6);
+      const BC = getInputValue('sideBCLen', 5);
+      const CD = getInputValue('sideCDLen', 4);
+      const DA = getInputValue('sideDALen', 7);
+      const angleDeg = getInputValue('angleADeg', 70);
+      if (!(angleDeg > 0 && angleDeg < 180)) {
+        throw new Error('∠A は 0° より大きく 180° 未満で入力してください。');
+      }
+      const theta = angleDeg * Math.PI / 180;
+      const A = { x: 0, y: 0 };
+      const B = { x: AB * Math.cos(theta), y: -AB * Math.sin(theta) };
+      const D = { x: DA, y: 0 };
+      const vx = D.x - B.x;
+      const vy = D.y - B.y;
+      const BD = Math.hypot(vx, vy);
+      if (BD <= 1e-9 || BD > (BC + CD) || BD < Math.abs(BC - CD)) {
+        throw new Error('この条件では凸四角形を作れません。辺の長さと∠Aを見直してください。');
+      }
+      const ux = vx / BD;
+      const uy = vy / BD;
+      const proj = (BC * BC - CD * CD + BD * BD) / (2 * BD);
+      const h2 = (BC * BC) - (proj * proj);
+      if (h2 < -1e-8) {
+        throw new Error('この条件では凸四角形を作れません。辺の長さと∠Aを見直してください。');
+      }
+      const h = Math.sqrt(Math.max(0, h2));
+      const baseX = B.x + ux * proj;
+      const baseY = B.y + uy * proj;
+      const perpX = -uy;
+      const perpY = ux;
+      const candidate1 = { x: baseX + perpX * h, y: baseY + perpY * h };
+      const candidate2 = { x: baseX - perpX * h, y: baseY - perpY * h };
+      const centroidLike = { x: (A.x + B.x + D.x) / 3, y: (A.y + B.y + D.y) / 3 };
+      const side1 = ((B.x - A.x) * (candidate1.y - A.y)) - ((B.y - A.y) * (candidate1.x - A.x));
+      const side2 = ((B.x - A.x) * (candidate2.y - A.y)) - ((B.y - A.y) * (candidate2.x - A.x));
+      const C = (side1 * side2 <= 0)
+        ? (candidate1.y < candidate2.y ? candidate1 : candidate2)
+        : ((candidate1.x - centroidLike.x) + (candidate1.y - centroidLike.y) > (candidate2.x - centroidLike.x) + (candidate2.y - centroidLike.y) ? candidate1 : candidate2);
+      return finalizeGeometry({ A: A, B: B, C: C, D: D });
+    }
     if (shape === 'isosceles-trapezoid') {
       const topBase = getInputValue('topBaseLen', 4);
       const bottomBase = getInputValue('bottomBaseLen', 8);
