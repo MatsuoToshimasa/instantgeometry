@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>台形 | Instant Geometry</title>
+  <title>平行四辺形 | Instant Geometry</title>
   <link rel="stylesheet" href="/assets/base.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jsxgraph/distrib/jsxgraph.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" />
@@ -489,9 +489,9 @@
     }
   </style>
 </head>
-<body data-quadrilateral-shape="trapezoid">
+<body data-quadrilateral-shape="parallelogram">
   <main class="workspace">
-    <div id="box" aria-label="台形の描画エリア"></div>
+    <div id="box" aria-label="平行四辺形の描画エリア"></div>
     <button class="page-back-btn" id="pageBackBtn" type="button">前の画面に戻る</button>
     <div id="exportBackdrop" class="export-backdrop" aria-hidden="true">
       <div class="export-backdrop-piece" data-piece="top"></div>
@@ -506,26 +506,22 @@
         <button class="dock-toggle" id="dockToggleBtn" type="button" aria-expanded="true">‹</button>
       </div>
       <aside class="panel dock-card">
-        <h1>台形</h1>
+        <h1>平行四辺形</h1>
 
         <div class="section">
           <h3>形を決める値</h3>
           <div class="field-grid">
             <div class="field">
-              <label for="topBaseLen">上底</label>
-              <input id="topBaseLen" data-quad-input type="text" inputmode="decimal" value="4" />
-            </div>
-            <div class="field">
-              <label for="bottomBaseLen">下底</label>
-              <input id="bottomBaseLen" data-quad-input type="text" inputmode="decimal" value="8" />
+              <label for="baseLen">横</label>
+              <input id="baseLen" data-quad-input type="text" inputmode="decimal" value="7" />
             </div>
             <div class="field">
               <label for="heightLen">高さ</label>
               <input id="heightLen" data-quad-input type="text" inputmode="decimal" value="5" />
             </div>
             <div class="field">
-              <label for="shiftLen">左のずれ</label>
-              <input id="shiftLen" data-quad-input type="text" inputmode="decimal" value="1.5" />
+              <label for="skewLen">ずれ</label>
+              <input id="skewLen" data-quad-input type="text" inputmode="decimal" value="2" />
             </div>
           </div>
           <p class="hint">整数や小数に加えて、sqrt(3)、π/2、sin(30deg) のような式も入力できます。</p>
@@ -533,7 +529,7 @@
       </aside>
 
       <div class="controls-stack">
-        <div class="board-status dock-card" id="statusBox">入力をもとに台形を描画しています。</div>
+        <div class="board-status dock-card" id="statusBox">入力をもとに平行四辺形を描画しています。</div>
         <div class="overlay-card dock-card">
           <p class="group-title">画面</p>
           <div class="tool-row">

@@ -589,6 +589,21 @@
           </div>
           <p class="purpose">上底、下底、高さ、ずれから台形を描画します。</p>
         </a>
+
+        <a class="card" href="/draw/quadrilateral/parallelogram/">
+          <div class="card-top">
+            <div class="tag">四角形</div>
+            <div class="arrow">→</div>
+          </div>
+          <h3>平行四辺形</h3>
+          <div class="illust" aria-hidden="true">
+            <svg viewBox="0 0 280 140" width="100%" height="100%">
+              <rect width="280" height="140" fill="#fbfcff"/>
+              <polygon points="88,104 212,104 184,42 60,42" fill="rgba(42,91,215,.10)" stroke="#2a5bd7" stroke-width="3"/>
+            </svg>
+          </div>
+          <p class="purpose">横、高さ、ずれから平行四辺形を描画します。</p>
+        </a>
       </div>
     </section>
 
@@ -711,7 +726,7 @@
           ['その他の図形', '円、楕円、正N角形、星型などを描画します。'],
           ['よく使う入口', '迷ったらここから始めるのがおすすめです。']
         ],
-        cardTitles: ['三角形（SSS）', '二等辺三角形', '三角形（SAS）', '三角形（ASA）', '三角形（AAS）', '三角形（AAA）', '三角形（3点座標）', '三角形（底辺＋高さ）', '直角三角形（鋭角）', '直角三角形（隣辺）', '直角三角形（対辺）', '正方形', '長方形', '菱形', '台形', '正N角形', '円', '楕円', '星型'],
+        cardTitles: ['三角形（SSS）', '二等辺三角形', '三角形（SAS）', '三角形（ASA）', '三角形（AAS）', '三角形（AAA）', '三角形（3点座標）', '三角形（底辺＋高さ）', '直角三角形（鋭角）', '直角三角形（隣辺）', '直角三角形（対辺）', '正方形', '長方形', '菱形', '台形', '平行四辺形', '正N角形', '円', '楕円', '星型'],
         cardBodies: [
           '3辺の長さがわかっている三角形を描画します。',
           '等辺と底辺の長さから二等辺三角形を描画します。',
@@ -728,6 +743,7 @@
           '中心、横、縦、回転角から長方形を描画します。',
           '対角線、中心、回転角から菱形を描画します。',
           '上底、下底、高さ、ずれから台形を描画します。',
+          '横、高さ、ずれから平行四辺形を描画します。',
           '中心、半径、頂点数から正N角形を描画します。',
           '中心と半径から円を描画します。',
           '中心、長半径、短半径、回転角から楕円を描画します。',
@@ -748,7 +764,7 @@
           ['Other Shapes', 'Draw circles, ellipses, regular polygons, stars, and more.'],
           ['Popular Shortcuts', 'If you are not sure where to start, these are good first choices.']
         ],
-        cardTitles: ['Triangle (SSS)', 'Isosceles Triangle', 'Triangle (SAS)', 'Triangle (ASA)', 'Triangle (AAS)', 'Triangle (AAA)', 'Triangle (3 Points)', 'Triangle (Base + Height)', 'Right Triangle (Acute)', 'Right Triangle (Adjacent)', 'Right Triangle (Opposite)', 'Square', 'Rectangle', 'Rhombus', 'Trapezoid', 'Regular Polygon', 'Circle', 'Ellipse', 'Star'],
+        cardTitles: ['Triangle (SSS)', 'Isosceles Triangle', 'Triangle (SAS)', 'Triangle (ASA)', 'Triangle (AAS)', 'Triangle (AAA)', 'Triangle (3 Points)', 'Triangle (Base + Height)', 'Right Triangle (Acute)', 'Right Triangle (Adjacent)', 'Right Triangle (Opposite)', 'Square', 'Rectangle', 'Rhombus', 'Trapezoid', 'Parallelogram', 'Regular Polygon', 'Circle', 'Ellipse', 'Star'],
         cardBodies: [
           'Draw a triangle from three known side lengths.',
           'Draw an isosceles triangle from its equal side and base.',
@@ -765,6 +781,7 @@
           'Draw a rectangle from its center, width, height, and rotation.',
           'Draw a rhombus from its diagonals, center, and rotation.',
           'Draw a trapezoid from its top base, bottom base, height, and offset.',
+          'Draw a parallelogram from its width, height, and horizontal shift.',
           'Draw a regular polygon from its center, radius, and number of vertices.',
           'Draw a circle from its center and radius.',
           'Draw an ellipse from its center, major radius, minor radius, and rotation.',
@@ -785,7 +802,7 @@
           ['其他图形', '绘制圆、椭圆、正N边形、星形等图形。'],
           ['常用入口', '如果不确定从哪里开始，可以先用这些入口。']
         ],
-        cardTitles: ['三角形（SSS）', '等腰三角形', '三角形（SAS）', '三角形（ASA）', '三角形（AAS）', '三角形（AAA）', '三角形（3点坐标）', '三角形（底边+高度）', '直角三角形（锐角）', '直角三角形（邻边）', '直角三角形（对边）', '正方形', '长方形', '菱形', '梯形', '正N边形', '圆', '椭圆', '星形'],
+        cardTitles: ['三角形（SSS）', '等腰三角形', '三角形（SAS）', '三角形（ASA）', '三角形（AAS）', '三角形（AAA）', '三角形（3点坐标）', '三角形（底边+高度）', '直角三角形（锐角）', '直角三角形（邻边）', '直角三角形（对边）', '正方形', '长方形', '菱形', '梯形', '平行四边形', '正N边形', '圆', '椭圆', '星形'],
         cardBodies: [
           '根据三边长度绘制三角形。',
           '根据等边与底边绘制等腰三角形。',
@@ -802,6 +819,7 @@
           '根据中心、宽、高和旋转角绘制长方形。',
           '根据对角线、中心和旋转角绘制菱形。',
           '根据上底、下底、高度和偏移绘制梯形。',
+          '根据横向长度、高度和偏移绘制平行四边形。',
           '根据中心、半径和顶点数绘制正N边形。',
           '根据圆心和半径绘制圆。',
           '根据中心、长半轴、短半轴和旋转角绘制椭圆。',
@@ -822,7 +840,7 @@
           ['Otras figuras', 'Dibuja círculos, elipses, polígonos regulares, estrellas y más.'],
           ['Entradas frecuentes', 'Si no sabes por dónde empezar, estas opciones son buenas primeras elecciones.']
         ],
-        cardTitles: ['Triángulo (SSS)', 'Triángulo isósceles', 'Triángulo (SAS)', 'Triángulo (ASA)', 'Triángulo (AAS)', 'Triángulo (AAA)', 'Triángulo (3 puntos)', 'Triángulo (base + altura)', 'Triángulo rectángulo (agudo)', 'Triángulo rectángulo (adyacente)', 'Triángulo rectángulo (opuesto)', 'Cuadrado', 'Rectángulo', 'Rombo', 'Trapecio', 'Polígono regular', 'Círculo', 'Elipse', 'Estrella'],
+        cardTitles: ['Triángulo (SSS)', 'Triángulo isósceles', 'Triángulo (SAS)', 'Triángulo (ASA)', 'Triángulo (AAS)', 'Triángulo (AAA)', 'Triángulo (3 puntos)', 'Triángulo (base + altura)', 'Triángulo rectángulo (agudo)', 'Triángulo rectángulo (adyacente)', 'Triángulo rectángulo (opuesto)', 'Cuadrado', 'Rectángulo', 'Rombo', 'Trapecio', 'Paralelogramo', 'Polígono regular', 'Círculo', 'Elipse', 'Estrella'],
         cardBodies: [
           'Dibuja un triángulo a partir de tres lados conocidos.',
           'Dibuja un triángulo isósceles a partir del lado igual y la base.',
@@ -839,6 +857,7 @@
           'Dibuja un rectángulo con centro, ancho, alto y rotación.',
           'Dibuja un rombo con diagonales, centro y rotación.',
           'Dibuja un trapecio con base superior, base inferior, altura y desplazamiento.',
+          'Dibuja un paralelogramo a partir del ancho, la altura y el desplazamiento horizontal.',
           'Dibuja un polígono regular con centro, radio y número de vértices.',
           'Dibuja un círculo con centro y radio.',
           'Dibuja una elipse con centro, semieje mayor, semieje menor y rotación.',
@@ -860,8 +879,8 @@
       document.querySelector('.hero h1').innerHTML = t.heroTitle;
       document.querySelector('.hero p').textContent = t.heroLead;
       document.querySelectorAll('.card .tag').forEach(function (el, index) {
-        if (index <= 9) el.textContent = t.sections[0][0];
-        else if (index <= 13) el.textContent = t.sections[1][0];
+        if (index <= 10) el.textContent = t.sections[0][0];
+        else if (index <= 15) el.textContent = t.sections[1][0];
         else el.textContent = t.sections[2][0];
       });
       document.querySelectorAll('.section-head').forEach(function (section, index) {
