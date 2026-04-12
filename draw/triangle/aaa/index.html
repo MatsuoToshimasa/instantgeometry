@@ -1821,12 +1821,15 @@
             button.addEventListener('contextmenu', async function (event) {
               event.preventDefault();
               const currentMode = Number.isFinite(angleMarkerMode[config.id]) ? angleMarkerMode[config.id] : 0;
-              const response = await window.InstantGeometrySharedLabelConfig.promptDualSetting({
+              const response = await window.InstantGeometrySharedLabelConfig.promptTripleSetting({
                 title: '角ラベル設定',
                 firstLabel: '角マーク（0:なし / 1:記号なし / 2:○ / 3:| / 4:= / 5:× / 6:△ / 7:塗）',
                 firstValue: String(currentMode),
                 secondLabel: '文字（空欄で数値表示）',
-                secondValue: customLabelText.innerAngle[config.id] || ''
+                secondValue: customLabelText.innerAngle[config.id] || '',
+                thirdLabel: '直角マーク（0:非表示 / 1:表示）',
+                thirdValue: '90°以外は設定不可',
+                thirdDisabled: true
               });
               if (response === null) return;
               const mode = normalizeAngleMarkerInput(response.first);

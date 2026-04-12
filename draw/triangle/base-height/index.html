@@ -847,9 +847,9 @@
       const labelState = {
         vertex: { A: true, B: true, C: true, H: true },
         side: { BC: true, CA: true, AB: true, AH: true, BH: true, CH: true },
-        innerAngle: { A: true, B: true, C: true, CAH: true, CBH: true, ACH: true, BCH: true },
-        angleMark: { A: true, B: true, C: true, CAH: true, CBH: true, ACH: true, BCH: true },
-        perp: { BHC: true },
+        innerAngle: { A: true, B: true, C: true, CAH: true, CBH: true, ACH: true, BCH: true, CHA: true, CHB: true },
+        angleMark: { A: true, B: true, C: true, CAH: true, CBH: true, ACH: true, BCH: true, CHA: true, CHB: true },
+        perp: { CHA: false, CHB: false },
         area: { main: false }
       };
 
@@ -857,8 +857,8 @@
         vertex: { A: 36, B: 36, C: 36, H: 32 },
         side: { BC: 32, CA: 32, AB: 32, AH: 26, BH: 26, CH: 26 },
         innerAngle: { A: 26, B: 26, C: 26, CAH: 26, CBH: 26, ACH: 26, BCH: 26 },
-        angleMark: { A: 26, B: 26, C: 26, CAH: 26, CBH: 26, ACH: 26, BCH: 26 },
-        perp: { BHC: 26 },
+        angleMark: { A: 26, B: 26, C: 26, CAH: 26, CBH: 26, ACH: 26, BCH: 26, CHA: 26, CHB: 26 },
+        perp: { CHA: 26, CHB: 26 },
         area: { main: 48 }
       };
       const angleMarkerMode = {
@@ -868,14 +868,16 @@
         CAH: 0,
         CBH: 0,
         ACH: 0,
-        BCH: 0
+        BCH: 0,
+        CHA: 0,
+        CHB: 0
       };
       const segmentArcMode = {
         side: { BC: 1, CA: 1, AB: 1, AH: 1, BH: 1, CH: 1 }
       };
       const customLabelText = {
         side: { BC: '', CA: '', AB: '', AH: '', BH: '', CH: '' },
-        innerAngle: { A: '', B: '', C: '', CAH: '', CBH: '', ACH: '', BCH: '' },
+        innerAngle: { A: '', B: '', C: '', CAH: '', CBH: '', ACH: '', BCH: '', CHA: '', CHB: '' },
         area: { main: '' }
       };
       const vertexLabelText = { A: 'A', B: 'B', C: 'C', H: 'H' };
@@ -894,18 +896,18 @@
       const hiddenLabelState = {
         vertex: { A: false, B: false, C: false, H: false },
         side: { BC: true, CA: true, AB: false, AH: true, BH: true, CH: false },
-        innerAngle: { A: true, B: true, C: true, CAH: true, CBH: true, ACH: true, BCH: true },
-        angleMark: { A: false, B: false, C: false, CAH: false, CBH: false, ACH: false, BCH: false },
-        perp: { BHC: false },
+        innerAngle: { A: true, B: true, C: true, CAH: true, CBH: true, ACH: true, BCH: true, CHA: true, CHB: true },
+        angleMark: { A: false, B: false, C: false, CAH: false, CBH: false, ACH: false, BCH: false, CHA: false, CHB: false },
+        perp: { CHA: true, CHB: true },
         area: { main: true }
       };
 
       const labelPositions = {
         vertex: { A: null, B: null, C: null, H: null },
         side: { BC: null, CA: null, AB: null, AH: null, BH: null, CH: null },
-        innerAngle: { A: null, B: null, C: null, CAH: null, CBH: null, ACH: null, BCH: null },
-        angleMark: { A: null, B: null, C: null, CAH: null, CBH: null, ACH: null, BCH: null },
-        perp: { BHC: null },
+        innerAngle: { A: null, B: null, C: null, CAH: null, CBH: null, ACH: null, BCH: null, CHA: null, CHB: null },
+        angleMark: { A: null, B: null, C: null, CAH: null, CBH: null, ACH: null, BCH: null, CHA: null, CHB: null },
+        perp: { CHA: null, CHB: null },
         area: { main: null }
       };
 
@@ -932,7 +934,9 @@
             CAH: { color: '#687086', rotation: 0 },
             CBH: { color: '#687086', rotation: 0 },
             ACH: { color: '#687086', rotation: 0 },
-            BCH: { color: '#687086', rotation: 0 }
+            BCH: { color: '#687086', rotation: 0 },
+            CHA: { color: '#687086', rotation: 0 },
+            CHB: { color: '#687086', rotation: 0 }
           },
           angleMark: {
             A: { color: '#687086', rotation: 0 },
@@ -941,10 +945,13 @@
             CAH: { color: '#687086', rotation: 0 },
             CBH: { color: '#687086', rotation: 0 },
             ACH: { color: '#687086', rotation: 0 },
-            BCH: { color: '#687086', rotation: 0 }
+            BCH: { color: '#687086', rotation: 0 },
+            CHA: { color: '#687086', rotation: 0 },
+            CHB: { color: '#687086', rotation: 0 }
           },
           perp: {
-            BHC: { color: '#111111', rotation: 0 }
+            CHA: { color: '#111111', rotation: 0 },
+            CHB: { color: '#111111', rotation: 0 }
           },
           area: {
             main: { color: '#25603b', rotation: 0 }
@@ -1361,6 +1368,16 @@
         };
       }
 
+      function labelPointBetween(vertex, target1, target2, distance) {
+        const dx = (target1.x - vertex.x) + (target2.x - vertex.x);
+        const dy = (target1.y - vertex.y) + (target2.y - vertex.y);
+        const len = Math.hypot(dx, dy) || 1;
+        return {
+          x: vertex.x + (dx / len) * distance,
+          y: vertex.y + (dy / len) * distance
+        };
+      }
+
       function labelMidpointWithNormal(P, Q, distance, towardPositiveY) {
         const mx = (P.x + Q.x) / 2;
         const my = (P.y + Q.y) / 2;
@@ -1712,23 +1729,22 @@
         return labelNode;
       }
 
-      function getPerpMarkerGeometry(triangle, fontSize) {
-        const midAB = (triangle.A.x + triangle.B.x) / 2;
-        const horizontalTarget = triangle.H.x > midAB ? triangle.A : triangle.B;
-        const vecHB = { x: horizontalTarget.x - triangle.H.x, y: horizontalTarget.y - triangle.H.y };
+      function getPerpMarkerGeometry(triangle, angleId, fontSize) {
+        const horizontalTarget = angleId === 'CHA' ? triangle.A : triangle.B;
+        const vecHX = { x: horizontalTarget.x - triangle.H.x, y: horizontalTarget.y - triangle.H.y };
         const vecHC = { x: triangle.C.x - triangle.H.x, y: triangle.C.y - triangle.H.y };
-        const lenHB = Math.hypot(vecHB.x, vecHB.y) || 1;
+        const lenHX = Math.hypot(vecHX.x, vecHX.y) || 1;
         const lenHC = Math.hypot(vecHC.x, vecHC.y) || 1;
-        const dirHB = { x: vecHB.x / lenHB, y: vecHB.y / lenHB };
+        const dirHX = { x: vecHX.x / lenHX, y: vecHX.y / lenHX };
         const dirHC = { x: vecHC.x / lenHC, y: vecHC.y / lenHC };
         const sizeScale = Math.max(0.12, Math.min(3.2, fontSize / 26));
-        const markerSize = Math.max(0.02, Math.min(Math.min(lenHB, lenHC) * 0.85, Math.min(lenHB, lenHC) * 0.11 * sizeScale));
+        const markerSize = Math.max(0.02, Math.min(Math.min(lenHX, lenHC) * 0.85, Math.min(lenHX, lenHC) * 0.11 * sizeScale));
         const p0 = { x: triangle.H.x, y: triangle.H.y };
-        const p1 = { x: p0.x + dirHB.x * markerSize, y: p0.y + dirHB.y * markerSize };
+        const p1 = { x: p0.x + dirHX.x * markerSize, y: p0.y + dirHX.y * markerSize };
         const p3 = { x: p0.x + dirHC.x * markerSize, y: p0.y + dirHC.y * markerSize };
         const p2 = { x: p1.x + dirHC.x * markerSize, y: p1.y + dirHC.y * markerSize };
         const center = { x: (p0.x + p2.x) / 2, y: (p0.y + p2.y) / 2 };
-        return { p0: p0, p1: p1, p2: p2, p3: p3, center: center, markerSize: markerSize, dirHB: dirHB, dirHC: dirHC };
+        return { p0: p0, p1: p1, p2: p2, p3: p3, center: center, markerSize: markerSize, dirHX: dirHX, dirHC: dirHC };
       }
 
       function getSideLabelGeometry(P, Q, center, sideId) {
@@ -1842,7 +1858,8 @@
           { type: 'innerAngle', id: 'CBH' },
           { type: 'innerAngle', id: 'ACH' },
           { type: 'innerAngle', id: 'BCH' },
-          { type: 'perp', id: 'BHC' }
+          { type: 'innerAngle', id: 'CHA' },
+          { type: 'innerAngle', id: 'CHB' }
         ];
       }
 
@@ -1889,7 +1906,6 @@
             }
             return '∠' + mapVertexTokens(config.id);
           }
-          if (config.type === 'perp') return '⊥';
           if (config.type === 'area') return '△' + mapVertexTokens('ABC');
           return config.type + ' ' + config.id;
         }
@@ -1935,12 +1951,16 @@
             button.addEventListener('contextmenu', async function (event) {
               event.preventDefault();
               const currentMode = Number.isFinite(angleMarkerMode[config.id]) ? angleMarkerMode[config.id] : 0;
-              const response = await window.InstantGeometrySharedLabelConfig.promptDualSetting({
+              const canUseRightMarker = (config.id === 'CHA' || config.id === 'CHB');
+              const response = await window.InstantGeometrySharedLabelConfig.promptTripleSetting({
                 title: '角ラベル設定',
                 firstLabel: '角マーク（0:なし / 1:記号なし / 2:○ / 3:| / 4:= / 5:× / 6:△ / 7:塗）',
                 firstValue: String(currentMode),
                 secondLabel: '文字（空欄で数値表示）',
-                secondValue: customLabelText.innerAngle[config.id] || ''
+                secondValue: customLabelText.innerAngle[config.id] || '',
+                thirdLabel: '直角マーク（0:非表示 / 1:表示）',
+                thirdValue: canUseRightMarker ? String(labelState.perp[config.id] ? 1 : 0) : '90°以外は設定不可',
+                thirdDisabled: !canUseRightMarker
               });
               if (response === null) return;
               const mode = normalizeAngleMarkerInput(response.first);
@@ -1952,6 +1972,15 @@
               angleMarkerMode[config.id] = mode;
               customLabelText.innerAngle[config.id] = response.second;
               hiddenLabelState.angleMark[config.id] = (mode === 0);
+              if (canUseRightMarker) {
+                const rightMode = String(response.third || '').trim();
+                if (rightMode !== '0' && rightMode !== '1' && rightMode !== '非表示' && rightMode !== '表示') {
+                  setStatus('直角マークは「0 / 1」で指定してください。', true);
+                  return;
+                }
+                labelState.perp[config.id] = (rightMode === '1' || rightMode === '表示');
+                hiddenLabelState.perp[config.id] = !labelState.perp[config.id];
+              }
               render();
             });
           } else if (config.type === 'side') {
@@ -2562,6 +2591,8 @@
         if (angleId === 'CBH') return { vertex: triangle.B, p1: triangle.C, p2: triangle.H };
         if (angleId === 'ACH') return { vertex: triangle.C, p1: triangle.A, p2: triangle.H };
         if (angleId === 'BCH') return { vertex: triangle.C, p1: triangle.B, p2: triangle.H };
+        if (angleId === 'CHA') return { vertex: triangle.H, p1: triangle.C, p2: triangle.A };
+        if (angleId === 'CHB') return { vertex: triangle.H, p1: triangle.C, p2: triangle.B };
         return null;
       }
 
@@ -2887,9 +2918,9 @@
           const defaults = {
             vertex: { A: 36, B: 36, C: 36, H: 32 },
             side: { BC: 32, CA: 32, AB: 32, AH: 26, BH: 26, CH: 26 },
-            innerAngle: { A: 26, B: 26, C: 26, CAH: 26, CBH: 26, ACH: 26, BCH: 26 },
-            angleMark: { A: 26, B: 26, C: 26, CAH: 26, CBH: 26, ACH: 26, BCH: 26 },
-            perp: { BHC: 26 },
+            innerAngle: { A: 26, B: 26, C: 26, CAH: 26, CBH: 26, ACH: 26, BCH: 26, CHA: 26, CHB: 26 },
+            angleMark: { A: 26, B: 26, C: 26, CAH: 26, CBH: 26, ACH: 26, BCH: 26, CHA: 26, CHB: 26 },
+            perp: { CHA: 26, CHB: 26 },
             area: { main: 48 }
           };
           return defaults[typeKey] && Number.isFinite(defaults[typeKey][idKey]) ? defaults[typeKey][idKey] : 32;
@@ -3232,49 +3263,56 @@
           if (labelState.innerAngle.BCH && !hiddenLabelState.innerAngle.BCH) {
             createSelectableText(getLabelPosition('innerAngle', 'BCH', labelPointNear(triangle.C, triangle.B, 0.95)), getCustomAngleText('BCH', formatAngleValue(baseTriangle.angleBCH)), labelFontSize.innerAngle.BCH, { type: 'innerAngle', id: 'BCH' }, { color: innerLabelColor });
           }
+          if (labelState.innerAngle.CHA && !hiddenLabelState.innerAngle.CHA) {
+            createSelectableText(getLabelPosition('innerAngle', 'CHA', labelPointBetween(triangle.H, triangle.C, triangle.A, 0.84)), getCustomAngleText('CHA', formatAngleValue(90)), labelFontSize.innerAngle.CHA, { type: 'innerAngle', id: 'CHA' }, { color: innerLabelColor });
+          }
+          if (labelState.innerAngle.CHB && !hiddenLabelState.innerAngle.CHB) {
+            createSelectableText(getLabelPosition('innerAngle', 'CHB', labelPointBetween(triangle.H, triangle.C, triangle.B, 0.84)), getCustomAngleText('CHB', formatAngleValue(90)), labelFontSize.innerAngle.CHB, { type: 'innerAngle', id: 'CHB' }, { color: innerLabelColor });
+          }
 
-          ['A', 'B', 'C', 'CAH', 'CBH', 'ACH', 'BCH'].forEach(function (angleId) {
+          ['A', 'B', 'C', 'CAH', 'CBH', 'ACH', 'BCH', 'CHA', 'CHB'].forEach(function (angleId) {
             if (labelState.angleMark[angleId] && !hiddenLabelState.angleMark[angleId]) {
               drawAngleDecoration(angleId, triangle);
             }
           });
-          if (labelState.perp.BHC && !hiddenLabelState.perp.BHC) {
-            const perpGeom = getPerpMarkerGeometry(triangle, labelFontSize.perp.BHC);
-            const p0 = perpGeom.p0;
-            const p1 = perpGeom.p1;
-            const p2 = perpGeom.p2;
-            const p3 = perpGeom.p3;
-            const perpStyle = getLabelStyle('perp', 'BHC');
-            const markStyle = { strokeWidth: 2, strokeColor: perpStyle.color || '#111111', fixed: true, highlight: false };
-            board.create('segment', [[p1.x, p1.y], [p2.x, p2.y]], markStyle);
-            board.create('segment', [[p2.x, p2.y], [p3.x, p3.y]], markStyle);
+          ['CHA', 'CHB'].forEach(function (perpId) {
+            if (labelState.perp[perpId] && !hiddenLabelState.perp[perpId]) {
+              const perpGeom = getPerpMarkerGeometry(triangle, perpId, labelFontSize.perp[perpId]);
+              const p0 = perpGeom.p0;
+              const p1 = perpGeom.p1;
+              const p2 = perpGeom.p2;
+              const p3 = perpGeom.p3;
+              const perpStyle = getLabelStyle('perp', perpId);
+              const markStyle = { strokeWidth: 2, strokeColor: perpStyle.color || '#111111', fixed: true, highlight: false };
+              board.create('segment', [[p1.x, p1.y], [p2.x, p2.y]], markStyle);
+              board.create('segment', [[p2.x, p2.y], [p3.x, p3.y]], markStyle);
 
-            const screenPoints = [p0, p1, p2, p3].map(userToScreenPoint);
-            const xs = screenPoints.map(function (pt) { return pt.x; });
-            const ys = screenPoints.map(function (pt) { return pt.y; });
-            const center = { x: (p0.x + p2.x) / 2, y: (p0.y + p2.y) / 2 };
-            currentLabelAnchors.push({
-              type: 'perp',
-              id: 'BHC',
-              x: perpGeom.center.x,
-              y: perpGeom.center.y,
-              threshold: 0.45,
-              curveThreshold: null,
-              curveHit: null,
-              visible: true,
-              hidden: false,
-              text: '⊥',
-              fontSize: labelFontSize.perp.BHC,
-              color: perpStyle.color || '#111111',
-              rotation: getLabelStyle('perp', 'BHC').rotation || 0,
-              screenRect: {
-                left: Math.min.apply(null, xs),
-                top: Math.min.apply(null, ys),
-                right: Math.max.apply(null, xs),
-                bottom: Math.max.apply(null, ys)
-              }
-            });
-          }
+              const screenPoints = [p0, p1, p2, p3].map(userToScreenPoint);
+              const xs = screenPoints.map(function (pt) { return pt.x; });
+              const ys = screenPoints.map(function (pt) { return pt.y; });
+              currentLabelAnchors.push({
+                type: 'perp',
+                id: perpId,
+                x: perpGeom.center.x,
+                y: perpGeom.center.y,
+                threshold: 0.45,
+                curveThreshold: null,
+                curveHit: null,
+                visible: true,
+                hidden: false,
+                text: '⊥',
+                fontSize: labelFontSize.perp[perpId],
+                color: perpStyle.color || '#111111',
+                rotation: getLabelStyle('perp', perpId).rotation || 0,
+                screenRect: {
+                  left: Math.min.apply(null, xs),
+                  top: Math.min.apply(null, ys),
+                  right: Math.max.apply(null, xs),
+                  bottom: Math.max.apply(null, ys)
+                }
+              });
+            }
+          });
 
           if (labelState.area.main && !hiddenLabelState.area.main) {
             const s = (baseTriangle.AB + baseTriangle.BC + baseTriangle.CA) / 2;
@@ -3371,7 +3409,7 @@
           if (!anchorForSelection) return;
           pushHistorySnapshot();
           const perpStartGeom = (selectedLabel && selectedLabel.type === 'perp' && overlayControl.mode === 'resize')
-            ? getPerpMarkerGeometry(currentGeometry, labelFontSize.perp.BHC)
+            ? getPerpMarkerGeometry(currentGeometry, selectedLabel.id, labelFontSize.perp[selectedLabel.id])
             : null;
           const dragCenter = (selectedLabel && selectedLabel.type === 'angleMark' && anchorForSelection.scaleCenter)
             ? { x: anchorForSelection.scaleCenter.x, y: anchorForSelection.scaleCenter.y }
@@ -3389,7 +3427,7 @@
             distanceStart: Math.hypot(coords[0] - dragCenter.x, coords[1] - dragCenter.y),
             angleStart: Math.atan2(coords[1] - dragCenter.y, coords[0] - dragCenter.x),
             perpCornerStart: perpStartGeom ? { x: perpStartGeom.p0.x, y: perpStartGeom.p0.y } : null,
-            perpDirSum: perpStartGeom ? { x: perpStartGeom.dirHB.x + perpStartGeom.dirHC.x, y: perpStartGeom.dirHB.y + perpStartGeom.dirHC.y } : null,
+            perpDirSum: perpStartGeom ? { x: perpStartGeom.dirHX.x + perpStartGeom.dirHC.x, y: perpStartGeom.dirHX.y + perpStartGeom.dirHC.y } : null,
             perpMarkerSizeStart: perpStartGeom ? perpStartGeom.markerSize : null
           };
           return;
@@ -3471,7 +3509,7 @@
 
         if (dragState.mode === 'resize') {
           if (dragState.target === 'label') {
-            if (dragState.type === 'perp' && dragState.id === 'BHC' && dragState.perpCornerStart && dragState.perpDirSum) {
+            if (dragState.type === 'perp' && dragState.perpCornerStart && dragState.perpDirSum) {
               const diagDirRaw = dragState.perpDirSum;
               const diagLen = Math.hypot(diagDirRaw.x, diagDirRaw.y) || 1;
               const diagDir = { x: diagDirRaw.x / diagLen, y: diagDirRaw.y / diagLen };
@@ -3480,7 +3518,7 @@
               const nextMarkerSize = Math.max(0.05, diagonal / Math.SQRT2);
               const startMarker = Math.max(dragState.perpMarkerSizeStart || 0.05, 1e-6);
               const ratio = Math.max(0.3, Math.min(8, nextMarkerSize / startMarker));
-              labelFontSize.perp.BHC = Math.max(4, Math.min(320, Math.round(dragState.fontSizeStart * ratio)));
+              labelFontSize.perp[dragState.id] = Math.max(4, Math.min(320, Math.round(dragState.fontSizeStart * ratio)));
             } else {
               const currentDistance = Math.hypot(currentPoint.x - dragState.center.x, currentPoint.y - dragState.center.y);
               const ratio = Math.max(0.3, Math.min(8, currentDistance / Math.max(dragState.distanceStart, 0.01)));
@@ -3608,15 +3646,15 @@
       function resetVisualState() {
         hiddenLabelState.vertex = { A: false, B: false, C: false, H: false };
         hiddenLabelState.side = { BC: true, CA: true, AB: false, AH: true, BH: true, CH: false };
-        hiddenLabelState.innerAngle = { A: true, B: true, C: true, CAH: true, CBH: true, ACH: true, BCH: true };
-        hiddenLabelState.angleMark = { A: false, B: false, C: false, CAH: false, CBH: false, ACH: false, BCH: false };
-        hiddenLabelState.perp = { BHC: false };
+        hiddenLabelState.innerAngle = { A: true, B: true, C: true, CAH: true, CBH: true, ACH: true, BCH: true, CHA: true, CHB: true };
+        hiddenLabelState.angleMark = { A: false, B: false, C: false, CAH: false, CBH: false, ACH: false, BCH: false, CHA: false, CHB: false };
+        hiddenLabelState.perp = { CHA: true, CHB: true };
         hiddenLabelState.area = { main: true };
         labelFontSize.vertex = { A: 36, B: 36, C: 36, H: 32 };
         labelFontSize.side = { BC: 32, CA: 32, AB: 32, AH: 26, BH: 26, CH: 26 };
-        labelFontSize.innerAngle = { A: 26, B: 26, C: 26, CAH: 26, CBH: 26, ACH: 26, BCH: 26 };
-        labelFontSize.angleMark = { A: 26, B: 26, C: 26, CAH: 26, CBH: 26, ACH: 26, BCH: 26 };
-        labelFontSize.perp = { BHC: 26 };
+        labelFontSize.innerAngle = { A: 26, B: 26, C: 26, CAH: 26, CBH: 26, ACH: 26, BCH: 26, CHA: 26, CHB: 26 };
+        labelFontSize.angleMark = { A: 26, B: 26, C: 26, CAH: 26, CBH: 26, ACH: 26, BCH: 26, CHA: 26, CHB: 26 };
+        labelFontSize.perp = { CHA: 26, CHB: 26 };
         labelFontSize.area = { main: 48 };
         vertexLabelText.A = 'A';
         vertexLabelText.B = 'B';
@@ -3629,9 +3667,11 @@
         angleMarkerMode.CBH = 0;
         angleMarkerMode.ACH = 0;
         angleMarkerMode.BCH = 0;
+        angleMarkerMode.CHA = 0;
+        angleMarkerMode.CHB = 0;
         segmentArcMode.side = { BC: 1, CA: 1, AB: 1, AH: 1, BH: 1, CH: 1 };
         customLabelText.side = { BC: '', CA: '', AB: '', AH: '', BH: '', CH: '' };
-        customLabelText.innerAngle = { A: '', B: '', C: '', CAH: '', CBH: '', ACH: '', BCH: '' };
+        customLabelText.innerAngle = { A: '', B: '', C: '', CAH: '', CBH: '', ACH: '', BCH: '', CHA: '', CHB: '' };
         customLabelText.area = { main: '' };
         labelStyleState = createLabelStyleState();
         figureState = {
@@ -3642,9 +3682,9 @@
         };
         labelPositions.vertex = { A: null, B: null, C: null, H: null };
         labelPositions.side = { BC: null, CA: null, AB: null, AH: null, BH: null, CH: null };
-        labelPositions.innerAngle = { A: null, B: null, C: null, CAH: null, CBH: null, ACH: null, BCH: null };
-        labelPositions.angleMark = { A: null, B: null, C: null, CAH: null, CBH: null, ACH: null, BCH: null };
-        labelPositions.perp = { BHC: null };
+        labelPositions.innerAngle = { A: null, B: null, C: null, CAH: null, CBH: null, ACH: null, BCH: null, CHA: null, CHB: null };
+        labelPositions.angleMark = { A: null, B: null, C: null, CAH: null, CBH: null, ACH: null, BCH: null, CHA: null, CHB: null };
+        labelPositions.perp = { CHA: null, CHB: null };
         labelPositions.area = { main: null };
         zoomScale = 1;
         viewCenterOffset = { x: 0, y: 0 };
