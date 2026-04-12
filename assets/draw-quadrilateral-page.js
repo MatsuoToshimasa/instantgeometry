@@ -263,7 +263,7 @@
     if (labelState.specialSegment[id]) return true;
     const relatedAngles = {
       OA: ['AOB', 'DOA', 'OAB', 'ODA', 'OAD', 'OBA'],
-      OB: ['AOB', 'BOC', 'OAB', 'OBC', 'OCD', 'OBA'],
+      OB: ['AOB', 'BOC', 'OAB', 'OBC', 'OBA'],
       OC: ['BOC', 'COD', 'OCB', 'ODC'],
       OD: ['COD', 'DOA', 'OCD', 'ODA', 'OAD', 'ODC']
     };
