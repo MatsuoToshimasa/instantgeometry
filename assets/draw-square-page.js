@@ -102,6 +102,12 @@
     side: { AB: 1, BC: 1, CD: 1, DA: 1 },
     diagonal: { AC: 1, BD: 1 }
   };
+  const customLabelText = {
+    side: { AB: '', BC: '', CD: '', DA: '' },
+    angle: { A: '', B: '', C: '', D: '' },
+    area: { main: '' },
+    diagonal: { AC: '', BD: '' }
+  };
   let figureState = {
     color: '#2a5bd7',
     rotation: 0,
@@ -120,6 +126,21 @@
 
   function getAreaName() {
     return '□' + ['A', 'B', 'C', 'D'].map(getVertexTokenByKey).join('');
+  }
+
+  function getCustomAngleText(id, fallback) {
+    const custom = window.InstantGeometrySharedLabelConfig.normalizeCustomLabelInput(customLabelText.angle[id]);
+    return custom ? window.InstantGeometrySharedLabelConfig.formatAngleCustomText(custom, angleMode) : fallback;
+  }
+
+  function getCustomSegmentText(type, id, fallback) {
+    const custom = window.InstantGeometrySharedLabelConfig.normalizeCustomLabelInput(customLabelText[type][id]);
+    return custom ? appendUnit(custom, false) : appendUnit(fallback, false);
+  }
+
+  function getCustomAreaText(fallback) {
+    const custom = window.InstantGeometrySharedLabelConfig.normalizeCustomLabelInput(customLabelText.area.main);
+    return custom ? appendUnit(custom, true) : appendUnit(fallback, true);
   }
 
   function getSideName(id) {
@@ -354,10 +375,10 @@
     const side = geometry.side;
     if (type === 'vertex') return getVertexTokenByKey(id);
     if (type === 'specialVertex') return id;
-    if (type === 'side') return appendUnit(formatNumber(side), false);
-    if (type === 'angle') return angleMode === 'degrees' ? '90°' : 'π/2';
-    if (type === 'area') return appendUnit(formatNumber(side * side), true);
-    if (type === 'diagonal') return appendUnit((formatNumber(side) === '1' ? '' : formatNumber(side)) + '√2', false);
+    if (type === 'side') return getCustomSegmentText('side', id, formatNumber(side));
+    if (type === 'angle') return getCustomAngleText(id, angleMode === 'degrees' ? '90°' : 'π/2');
+    if (type === 'area') return getCustomAreaText(formatNumber(side * side));
+    if (type === 'diagonal') return getCustomSegmentText('diagonal', id, (formatNumber(side) === '1' ? '' : formatNumber(side)) + '√2');
     return '';
   }
 
@@ -400,6 +421,9 @@
     labelPositions[type][id] = null;
     labelFontSize[type][id] = labelFontDefaults[type][id];
     labelStyleState[type][id] = JSON.parse(JSON.stringify(styleDefaults[type][id]));
+    if (customLabelText[type] && Object.prototype.hasOwnProperty.call(customLabelText[type], id)) {
+      customLabelText[type][id] = '';
+    }
   }
 
   function renderLabelToggleButtons() {
@@ -444,14 +468,21 @@
         button.addEventListener('contextmenu', function (event) {
           event.preventDefault();
           const currentMode = Number.isFinite(angleMarkerMode[config.id]) ? angleMarkerMode[config.id] : 0;
-          const next = window.prompt('角マークを選択（0:なし / 1:記号なし / 2:○ / 3:| / 4:= / 5:× / 6:△ / 7:塗）', String(currentMode));
-          if (next === null) return;
-          const mode = normalizeAngleMarkerInput(next);
+          const response = window.InstantGeometrySharedLabelConfig.promptDualSetting({
+            title: '角ラベル設定',
+            firstLabel: '角マーク（0:なし / 1:記号なし / 2:○ / 3:| / 4:= / 5:× / 6:△ / 7:塗）',
+            firstValue: String(currentMode),
+            secondLabel: '文字（空欄で数値表示）',
+            secondValue: customLabelText.angle[config.id] || ''
+          });
+          if (response === null) return;
+          const mode = normalizeAngleMarkerInput(response.first);
           if (mode === null) {
             setStatus('角マークは「0 / 1 / 2 / 3 / 4 / 5 / 6 / 7」で指定してください。', true);
             return;
           }
           angleMarkerMode[config.id] = mode;
+          customLabelText.angle[config.id] = response.second;
           labelState.angleMark[config.id] = (mode !== 0);
           if (!labelState.angleMark[config.id] && selectedLabel && selectedLabel.type === 'angleMark' && selectedLabel.id === config.id) {
             selectedLabel = null;
@@ -465,14 +496,32 @@
         button.addEventListener('contextmenu', function (event) {
           event.preventDefault();
           const currentMode = Number.isFinite(segmentArcMode.side[config.id]) ? segmentArcMode.side[config.id] : 1;
-          const next = window.prompt('線分ラベルの弧表示を選択（0:弧を非表示 / 1:弧を表示）', String(currentMode));
-          if (next === null) return;
-          const mode = window.InstantGeometrySharedOrnaments.normalizeSegmentArcInput(next);
+          const response = window.InstantGeometrySharedLabelConfig.promptDualSetting({
+            title: '線分ラベル設定',
+            firstLabel: '弧表示（0:弧を非表示 / 1:弧を表示）',
+            firstValue: String(currentMode),
+            secondLabel: '文字（空欄で数値表示）',
+            secondValue: customLabelText.side[config.id] || ''
+          });
+          if (response === null) return;
+          const mode = window.InstantGeometrySharedOrnaments.normalizeSegmentArcInput(response.first);
           if (mode === null) {
             setStatus('線分ラベルの弧表示は「0 / 1」で指定してください。', true);
             return;
           }
           segmentArcMode.side[config.id] = mode;
+          customLabelText.side[config.id] = response.second;
+          render();
+        });
+      } else if (config.type === 'area') {
+        button.addEventListener('contextmenu', function (event) {
+          event.preventDefault();
+          const response = window.InstantGeometrySharedLabelConfig.promptSingleText({
+            title: '面積ラベル設定\n文字を使う場合は入力してください。空欄で数値表示に戻ります。',
+            value: customLabelText.area.main || ''
+          });
+          if (response === null) return;
+          customLabelText.area.main = response;
           render();
         });
       }
@@ -499,14 +548,21 @@
         button.addEventListener('contextmenu', function (event) {
           event.preventDefault();
           const currentMode = Number.isFinite(segmentArcMode.diagonal[config.id]) ? segmentArcMode.diagonal[config.id] : 1;
-          const next = window.prompt('線分ラベルの弧表示を選択（0:弧を非表示 / 1:弧を表示）', String(currentMode));
-          if (next === null) return;
-          const mode = window.InstantGeometrySharedOrnaments.normalizeSegmentArcInput(next);
+          const response = window.InstantGeometrySharedLabelConfig.promptDualSetting({
+            title: '線分ラベル設定',
+            firstLabel: '弧表示（0:弧を非表示 / 1:弧を表示）',
+            firstValue: String(currentMode),
+            secondLabel: '文字（空欄で数値表示）',
+            secondValue: customLabelText.diagonal[config.id] || ''
+          });
+          if (response === null) return;
+          const mode = window.InstantGeometrySharedOrnaments.normalizeSegmentArcInput(response.first);
           if (mode === null) {
             setStatus('線分ラベルの弧表示は「0 / 1」で指定してください。', true);
             return;
           }
           segmentArcMode.diagonal[config.id] = mode;
+          customLabelText.diagonal[config.id] = response.second;
           render();
         });
       }
@@ -1262,6 +1318,10 @@
     Object.keys(segmentArcMode.diagonal).forEach(function (id) {
       segmentArcMode.diagonal[id] = 1;
     });
+    Object.keys(customLabelText.side).forEach(function (id) { customLabelText.side[id] = ''; });
+    Object.keys(customLabelText.angle).forEach(function (id) { customLabelText.angle[id] = ''; });
+    Object.keys(customLabelText.diagonal).forEach(function (id) { customLabelText.diagonal[id] = ''; });
+    customLabelText.area.main = '';
     figureState = {
       color: '#2a5bd7',
       rotation: 0,

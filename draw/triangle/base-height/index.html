@@ -663,6 +663,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/assets/components.js"></script>
+  <script src="/assets/draw-shared-label-config.js"></script>
   <script src="/assets/draw-shared-ornaments.js"></script>
   <script>
     (function () {
@@ -871,6 +872,11 @@
       };
       const segmentArcMode = {
         side: { BC: 1, CA: 1, AB: 1, AH: 1, BH: 1, CH: 1 }
+      };
+      const customLabelText = {
+        side: { BC: '', CA: '', AB: '', AH: '', BH: '', CH: '' },
+        innerAngle: { A: '', B: '', C: '', CAH: '', CBH: '', ACH: '', BCH: '' },
+        area: { main: '' }
       };
       const vertexLabelText = { A: 'A', B: 'B', C: 'C', H: 'H' };
 
@@ -1925,15 +1931,22 @@
             button.addEventListener('contextmenu', function (event) {
               event.preventDefault();
               const currentMode = Number.isFinite(angleMarkerMode[config.id]) ? angleMarkerMode[config.id] : 0;
-              const next = window.prompt('角マークを選択（0:なし / 1:記号なし / 2:○ / 3:| / 4:= / 5:× / 6:△ / 7:塗）', String(currentMode));
-              if (next === null) return;
-              const mode = normalizeAngleMarkerInput(next);
+              const response = window.InstantGeometrySharedLabelConfig.promptDualSetting({
+                title: '角ラベル設定',
+                firstLabel: '角マーク（0:なし / 1:記号なし / 2:○ / 3:| / 4:= / 5:× / 6:△ / 7:塗）',
+                firstValue: String(currentMode),
+                secondLabel: '文字（空欄で数値表示）',
+                secondValue: customLabelText.innerAngle[config.id] || ''
+              });
+              if (response === null) return;
+              const mode = normalizeAngleMarkerInput(response.first);
               if (mode === null) {
                 setStatus('角マークは「0 / 1 / 2 / 3 / 4 / 5 / 6 / 7」で指定してください。', true);
                 return;
               }
               pushHistorySnapshot();
               angleMarkerMode[config.id] = mode;
+              customLabelText.innerAngle[config.id] = response.second;
               hiddenLabelState.angleMark[config.id] = (mode === 0);
               render();
             });
@@ -1941,15 +1954,34 @@
             button.addEventListener('contextmenu', function (event) {
               event.preventDefault();
               const currentMode = Number.isFinite(segmentArcMode.side[config.id]) ? segmentArcMode.side[config.id] : 1;
-              const next = window.prompt('線分ラベルの弧表示を選択（0:弧を非表示 / 1:弧を表示）', String(currentMode));
-              if (next === null) return;
-              const mode = window.InstantGeometrySharedOrnaments.normalizeSegmentArcInput(next);
+              const response = window.InstantGeometrySharedLabelConfig.promptDualSetting({
+                title: '線分ラベル設定',
+                firstLabel: '弧表示（0:弧を非表示 / 1:弧を表示）',
+                firstValue: String(currentMode),
+                secondLabel: '文字（空欄で数値表示）',
+                secondValue: customLabelText.side[config.id] || ''
+              });
+              if (response === null) return;
+              const mode = window.InstantGeometrySharedOrnaments.normalizeSegmentArcInput(response.first);
               if (mode === null) {
                 setStatus('線分ラベルの弧表示は「0 / 1」で指定してください。', true);
                 return;
               }
               pushHistorySnapshot();
               segmentArcMode.side[config.id] = mode;
+              customLabelText.side[config.id] = response.second;
+              render();
+            });
+          } else if (config.type === 'area') {
+            button.addEventListener('contextmenu', function (event) {
+              event.preventDefault();
+              const response = window.InstantGeometrySharedLabelConfig.promptSingleText({
+                title: '面積ラベル設定\n文字を使う場合は入力してください。空欄で数値表示に戻ります。',
+                value: customLabelText.area.main || ''
+              });
+              if (response === null) return;
+              pushHistorySnapshot();
+              customLabelText.area.main = response;
               render();
             });
           }
@@ -2270,6 +2302,21 @@
         return text + unit + (square ? '²' : '');
       }
 
+      function getCustomSideText(id, fallback) {
+        const custom = window.InstantGeometrySharedLabelConfig.normalizeCustomLabelInput(customLabelText.side[id]);
+        return custom ? appendUnit(custom, false) : appendUnit(fallback, false);
+      }
+
+      function getCustomAngleText(id, fallback) {
+        const custom = window.InstantGeometrySharedLabelConfig.normalizeCustomLabelInput(customLabelText.innerAngle[id]);
+        return custom ? window.InstantGeometrySharedLabelConfig.formatAngleCustomText(custom, angleMode) : fallback;
+      }
+
+      function getCustomAreaText(fallback) {
+        const custom = window.InstantGeometrySharedLabelConfig.normalizeCustomLabelInput(customLabelText.area.main);
+        return custom ? custom : fallback;
+      }
+
       function cloneStateValue(value) {
         return JSON.parse(JSON.stringify(value));
       }
@@ -2294,7 +2341,8 @@
           viewCenterOffset: cloneStateValue(viewCenterOffset),
           exportAspectIndex: exportAspectIndex,
           unitIndex: unitIndex,
-          angleMode: angleMode
+          angleMode: angleMode,
+          customLabelText: cloneStateValue(customLabelText)
         };
       }
 
@@ -2323,6 +2371,11 @@
           figureState.offset = { x: 0, y: 0 };
         }
         angleMode = state.angleMode === 'radians' ? 'radians' : 'degrees';
+        if (state.customLabelText) {
+          if (state.customLabelText.side) Object.assign(customLabelText.side, cloneStateValue(state.customLabelText.side));
+          if (state.customLabelText.innerAngle) Object.assign(customLabelText.innerAngle, cloneStateValue(state.customLabelText.innerAngle));
+          if (state.customLabelText.area) Object.assign(customLabelText.area, cloneStateValue(state.customLabelText.area));
+        }
         hoveredLabel = null;
         selectedLabel = null;
         selectedFigure = false;
@@ -2840,6 +2893,12 @@
         function resetLabelVisual(typeKey, idKey) {
           if (labelPositions[typeKey]) labelPositions[typeKey][idKey] = null;
           if (labelFontSize[typeKey]) labelFontSize[typeKey][idKey] = getDefaultFontSize(typeKey, idKey);
+          if (customLabelText[typeKey] && typeof customLabelText[typeKey][idKey] !== 'undefined') {
+            customLabelText[typeKey][idKey] = '';
+          }
+          if (typeKey === 'area' && customLabelText.area && typeof customLabelText.area[idKey] !== 'undefined') {
+            customLabelText.area[idKey] = '';
+          }
           const styleDefaults = createLabelStyleState();
           if (labelStyleState[typeKey] && styleDefaults[typeKey] && styleDefaults[typeKey][idKey]) {
             labelStyleState[typeKey][idKey] = {
@@ -3128,45 +3187,45 @@
           }
 
           if (labelState.side.BC && !hiddenLabelState.side.BC) {
-            drawSideArcLabel(triangle.B, triangle.C, centroid, appendUnit(formatHypotenuseSymbolic(baseTriangle.CH, baseTriangle.BH), false), 'BC');
+            drawSideArcLabel(triangle.B, triangle.C, centroid, getCustomSideText('BC', formatHypotenuseSymbolic(baseTriangle.CH, baseTriangle.BH)), 'BC');
           }
           if (labelState.side.CA && !hiddenLabelState.side.CA) {
-            drawSideArcLabel(triangle.C, triangle.A, centroid, appendUnit(formatHypotenuseSymbolic(baseTriangle.CH, baseTriangle.AH), false), 'CA');
+            drawSideArcLabel(triangle.C, triangle.A, centroid, getCustomSideText('CA', formatHypotenuseSymbolic(baseTriangle.CH, baseTriangle.AH)), 'CA');
           }
           if (labelState.side.AB && !hiddenLabelState.side.AB) {
-            drawSideArcLabel(triangle.A, triangle.B, centroid, appendUnit(formatLengthSymbolic(baseTriangle.AB), false), 'AB');
+            drawSideArcLabel(triangle.A, triangle.B, centroid, getCustomSideText('AB', formatLengthSymbolic(baseTriangle.AB)), 'AB');
           }
           if (labelState.side.AH && !hiddenLabelState.side.AH) {
-            drawSideArcLabel(triangle.A, triangle.H, centroid, appendUnit(formatLengthSymbolic(baseTriangle.AH), false), 'AH');
+            drawSideArcLabel(triangle.A, triangle.H, centroid, getCustomSideText('AH', formatLengthSymbolic(baseTriangle.AH)), 'AH');
           }
           if (labelState.side.BH && !hiddenLabelState.side.BH) {
-            drawSideArcLabel(triangle.B, triangle.H, centroid, appendUnit(formatLengthSymbolic(baseTriangle.BH), false), 'BH');
+            drawSideArcLabel(triangle.B, triangle.H, centroid, getCustomSideText('BH', formatLengthSymbolic(baseTriangle.BH)), 'BH');
           }
           if (labelState.side.CH && !hiddenLabelState.side.CH) {
-            drawSideArcLabel(triangle.C, triangle.H, centroid, appendUnit(formatLengthSymbolic(baseTriangle.CH), false), 'CH');
+            drawSideArcLabel(triangle.C, triangle.H, centroid, getCustomSideText('CH', formatLengthSymbolic(baseTriangle.CH)), 'CH');
           }
 
           const innerLabelColor = '#687086';
           if (labelState.innerAngle.A && !hiddenLabelState.innerAngle.A) {
-            createSelectableText(getLabelPosition('innerAngle', 'A', labelPointNear(triangle.A, triangle.C, 1.0)), formatAngleValue(baseTriangle.angleCAH), labelFontSize.innerAngle.A, { type: 'innerAngle', id: 'A' }, { color: innerLabelColor });
+            createSelectableText(getLabelPosition('innerAngle', 'A', labelPointNear(triangle.A, triangle.C, 1.0)), getCustomAngleText('A', formatAngleValue(baseTriangle.angleCAH)), labelFontSize.innerAngle.A, { type: 'innerAngle', id: 'A' }, { color: innerLabelColor });
           }
           if (labelState.innerAngle.B && !hiddenLabelState.innerAngle.B) {
-            createSelectableText(getLabelPosition('innerAngle', 'B', labelPointNear(triangle.B, triangle.C, 1.0)), formatAngleValue(baseTriangle.angleCBH), labelFontSize.innerAngle.B, { type: 'innerAngle', id: 'B' }, { color: innerLabelColor });
+            createSelectableText(getLabelPosition('innerAngle', 'B', labelPointNear(triangle.B, triangle.C, 1.0)), getCustomAngleText('B', formatAngleValue(baseTriangle.angleCBH)), labelFontSize.innerAngle.B, { type: 'innerAngle', id: 'B' }, { color: innerLabelColor });
           }
           if (labelState.innerAngle.C && !hiddenLabelState.innerAngle.C) {
-            createSelectableText(getLabelPosition('innerAngle', 'C', getCentroidVertexInternalPoint(centroid, triangle.C)), formatAngleValue(baseTriangle.angleACB), labelFontSize.innerAngle.C, { type: 'innerAngle', id: 'C' }, { color: innerLabelColor });
+            createSelectableText(getLabelPosition('innerAngle', 'C', getCentroidVertexInternalPoint(centroid, triangle.C)), getCustomAngleText('C', formatAngleValue(baseTriangle.angleACB)), labelFontSize.innerAngle.C, { type: 'innerAngle', id: 'C' }, { color: innerLabelColor });
           }
           if (labelState.innerAngle.CAH && !hiddenLabelState.innerAngle.CAH) {
-            createSelectableText(getLabelPosition('innerAngle', 'CAH', labelPointNear(triangle.A, triangle.C, 1.16)), formatAngleValue(baseTriangle.angleCAH), labelFontSize.innerAngle.CAH, { type: 'innerAngle', id: 'CAH' }, { color: innerLabelColor });
+            createSelectableText(getLabelPosition('innerAngle', 'CAH', labelPointNear(triangle.A, triangle.C, 1.16)), getCustomAngleText('CAH', formatAngleValue(baseTriangle.angleCAH)), labelFontSize.innerAngle.CAH, { type: 'innerAngle', id: 'CAH' }, { color: innerLabelColor });
           }
           if (labelState.innerAngle.CBH && !hiddenLabelState.innerAngle.CBH) {
-            createSelectableText(getLabelPosition('innerAngle', 'CBH', labelPointNear(triangle.B, triangle.C, 1.16)), formatAngleValue(baseTriangle.angleCBH), labelFontSize.innerAngle.CBH, { type: 'innerAngle', id: 'CBH' }, { color: innerLabelColor });
+            createSelectableText(getLabelPosition('innerAngle', 'CBH', labelPointNear(triangle.B, triangle.C, 1.16)), getCustomAngleText('CBH', formatAngleValue(baseTriangle.angleCBH)), labelFontSize.innerAngle.CBH, { type: 'innerAngle', id: 'CBH' }, { color: innerLabelColor });
           }
           if (labelState.innerAngle.ACH && !hiddenLabelState.innerAngle.ACH) {
-            createSelectableText(getLabelPosition('innerAngle', 'ACH', labelPointNear(triangle.C, triangle.A, 0.95)), formatAngleValue(baseTriangle.angleACH), labelFontSize.innerAngle.ACH, { type: 'innerAngle', id: 'ACH' }, { color: innerLabelColor });
+            createSelectableText(getLabelPosition('innerAngle', 'ACH', labelPointNear(triangle.C, triangle.A, 0.95)), getCustomAngleText('ACH', formatAngleValue(baseTriangle.angleACH)), labelFontSize.innerAngle.ACH, { type: 'innerAngle', id: 'ACH' }, { color: innerLabelColor });
           }
           if (labelState.innerAngle.BCH && !hiddenLabelState.innerAngle.BCH) {
-            createSelectableText(getLabelPosition('innerAngle', 'BCH', labelPointNear(triangle.C, triangle.B, 0.95)), formatAngleValue(baseTriangle.angleBCH), labelFontSize.innerAngle.BCH, { type: 'innerAngle', id: 'BCH' }, { color: innerLabelColor });
+            createSelectableText(getLabelPosition('innerAngle', 'BCH', labelPointNear(triangle.C, triangle.B, 0.95)), getCustomAngleText('BCH', formatAngleValue(baseTriangle.angleBCH)), labelFontSize.innerAngle.BCH, { type: 'innerAngle', id: 'BCH' }, { color: innerLabelColor });
           }
 
           ['A', 'B', 'C', 'CAH', 'CBH', 'ACH', 'BCH'].forEach(function (angleId) {
@@ -3218,7 +3277,7 @@
             const areaText = formatAreaRadical(areaRadicand);
             createSelectableText(
               getLabelPosition('area', 'main', { x: centroid.x, y: centroid.y }),
-              '△' + mapVertexTokens('ABC') + ' = ' + appendUnit(areaText, true),
+              getCustomAreaText('△' + mapVertexTokens('ABC') + ' = ' + appendUnit(areaText, true)),
               labelFontSize.area.main,
               { type: 'area', id: 'main' },
               { color: '#25603b', threshold: 0.8 }
@@ -3566,6 +3625,9 @@
         angleMarkerMode.ACH = 0;
         angleMarkerMode.BCH = 0;
         segmentArcMode.side = { BC: 1, CA: 1, AB: 1, AH: 1, BH: 1, CH: 1 };
+        customLabelText.side = { BC: '', CA: '', AB: '', AH: '', BH: '', CH: '' };
+        customLabelText.innerAngle = { A: '', B: '', C: '', CAH: '', CBH: '', ACH: '', BCH: '' };
+        customLabelText.area = { main: '' };
         labelStyleState = createLabelStyleState();
         figureState = {
           color: '#2a5bd7',
