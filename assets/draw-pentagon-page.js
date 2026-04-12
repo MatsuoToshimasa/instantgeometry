@@ -3,7 +3,17 @@
 
   const pointIds = ['A', 'B', 'C', 'D', 'E'];
   const segmentIds = ['AB', 'BC', 'CD', 'DE', 'EA'];
+  const diagonalIds = ['AC', 'AD', 'BD', 'BE', 'CE'];
+  const specialPointIds = ['P', 'Q', 'R', 'S', 'T'];
   const angleIds = ['A', 'B', 'C', 'D', 'E'];
+  const specialAngleIds = [
+    'BAC', 'BAD', 'CAE', 'CAD', 'DAE',
+    'ABD', 'ABE', 'CBD', 'CBE', 'DBE',
+    'ACB', 'ACE', 'ACD', 'BCE', 'DCE',
+    'BDA', 'CDA', 'ADE', 'BDC', 'BDE',
+    'AEB', 'AEC', 'BEC', 'BED', 'CED'
+  ];
+  const allAngleIds = angleIds.concat(specialAngleIds);
   const shapeMeta = { name: '五角形', slug: 'pentagon' };
   const exportAspects = [
     { label: '1:1', value: 1 },
@@ -49,50 +59,123 @@
   box.appendChild(labelLayer);
 
   const pointLabelText = { A: 'A', B: 'B', C: 'C', D: 'D', E: 'E' };
+  const specialPointLabelText = { P: 'P', Q: 'Q', R: 'R', S: 'S', T: 'T' };
   const defaultLabelState = {
     point: { A: true, B: true, C: true, D: true, E: true },
     segment: { AB: true, BC: true, CD: true, DE: true, EA: true },
-    angle: { A: false, B: false, C: false, D: false, E: false },
-    angleMark: { A: false, B: false, C: false, D: false, E: false },
-    rightAngleMark: { A: true, B: true, C: true, D: true, E: true },
+    diagonal: { AC: false, AD: false, BD: false, BE: false, CE: false },
+    specialPoint: { P: false, Q: false, R: false, S: false, T: false },
+    angle: {
+      A: false, B: false, C: false, D: false, E: false,
+      BAC: false, BAD: false, CAE: false, CAD: false, DAE: false,
+      ABD: false, ABE: false, CBD: false, CBE: false, DBE: false,
+      ACB: false, ACE: false, ACD: false, BCE: false, DCE: false,
+      BDA: false, CDA: false, ADE: false, BDC: false, BDE: false,
+      AEB: false, AEC: false, BEC: false, BED: false, CED: false
+    },
+    angleMark: {
+      A: false, B: false, C: false, D: false, E: false,
+      BAC: false, BAD: false, CAE: false, CAD: false, DAE: false,
+      ABD: false, ABE: false, CBD: false, CBE: false, DBE: false,
+      ACB: false, ACE: false, ACD: false, BCE: false, DCE: false,
+      BDA: false, CDA: false, ADE: false, BDC: false, BDE: false,
+      AEB: false, AEC: false, BEC: false, BED: false, CED: false
+    },
+    rightAngleMark: {
+      A: true, B: true, C: true, D: true, E: true,
+      BAC: true, BAD: true, CAE: true, CAD: true, DAE: true,
+      ABD: true, ABE: true, CBD: true, CBE: true, DBE: true,
+      ACB: true, ACE: true, ACD: true, BCE: true, DCE: true,
+      BDA: true, CDA: true, ADE: true, BDC: true, BDE: true,
+      AEB: true, AEC: true, BEC: true, BED: true, CED: true
+    },
     area: { main: false }
   };
   const labelState = JSON.parse(JSON.stringify(defaultLabelState));
   const labelFontDefaults = {
     point: { A: 36, B: 36, C: 36, D: 36, E: 36 },
     segment: { AB: 30, BC: 30, CD: 30, DE: 30, EA: 30 },
-    angle: { A: 28, B: 28, C: 28, D: 28, E: 28 },
-    angleMark: { A: 26, B: 26, C: 26, D: 26, E: 26 },
-    rightAngleMark: { A: 26, B: 26, C: 26, D: 26, E: 26 },
+    diagonal: { AC: 28, AD: 28, BD: 28, BE: 28, CE: 28 },
+    specialPoint: { P: 34, Q: 34, R: 34, S: 34, T: 34 },
+    angle: {
+      A: 28, B: 28, C: 28, D: 28, E: 28,
+      BAC: 24, BAD: 24, CAE: 24, CAD: 24, DAE: 24,
+      ABD: 24, ABE: 24, CBD: 24, CBE: 24, DBE: 24,
+      ACB: 24, ACE: 24, ACD: 24, BCE: 24, DCE: 24,
+      BDA: 24, CDA: 24, ADE: 24, BDC: 24, BDE: 24,
+      AEB: 24, AEC: 24, BEC: 24, BED: 24, CED: 24
+    },
+    angleMark: {
+      A: 26, B: 26, C: 26, D: 26, E: 26,
+      BAC: 22, BAD: 22, CAE: 22, CAD: 22, DAE: 22,
+      ABD: 22, ABE: 22, CBD: 22, CBE: 22, DBE: 22,
+      ACB: 22, ACE: 22, ACD: 22, BCE: 22, DCE: 22,
+      BDA: 22, CDA: 22, ADE: 22, BDC: 22, BDE: 22,
+      AEB: 22, AEC: 22, BEC: 22, BED: 22, CED: 22
+    },
+    rightAngleMark: {
+      A: 26, B: 26, C: 26, D: 26, E: 26,
+      BAC: 22, BAD: 22, CAE: 22, CAD: 22, DAE: 22,
+      ABD: 22, ABE: 22, CBD: 22, CBE: 22, DBE: 22,
+      ACB: 22, ACE: 22, ACD: 22, BCE: 22, DCE: 22,
+      BDA: 22, CDA: 22, ADE: 22, BDC: 22, BDE: 22,
+      AEB: 22, AEC: 22, BEC: 22, BED: 22, CED: 22
+    },
     area: { main: 48 }
   };
   const labelFontSize = JSON.parse(JSON.stringify(labelFontDefaults));
   const styleDefaults = {
     point: { A: style('#1f2430'), B: style('#1f2430'), C: style('#1f2430'), D: style('#1f2430'), E: style('#1f2430') },
     segment: { AB: style('#2a5bd7'), BC: style('#2a5bd7'), CD: style('#2a5bd7'), DE: style('#2a5bd7'), EA: style('#2a5bd7') },
-    angle: { A: style('#687086'), B: style('#687086'), C: style('#687086'), D: style('#687086'), E: style('#687086') },
-    angleMark: { A: style('#687086'), B: style('#687086'), C: style('#687086'), D: style('#687086'), E: style('#687086') },
-    rightAngleMark: { A: style('#111111'), B: style('#111111'), C: style('#111111'), D: style('#111111'), E: style('#111111') },
+    diagonal: { AC: style('#7d8db8'), AD: style('#7d8db8'), BD: style('#7d8db8'), BE: style('#7d8db8'), CE: style('#7d8db8') },
+    specialPoint: { P: style('#1f2430'), Q: style('#1f2430'), R: style('#1f2430'), S: style('#1f2430'), T: style('#1f2430') },
+    angle: {
+      A: style('#687086'), B: style('#687086'), C: style('#687086'), D: style('#687086'), E: style('#687086'),
+      BAC: style('#687086'), BAD: style('#687086'), CAE: style('#687086'), CAD: style('#687086'), DAE: style('#687086'),
+      ABD: style('#687086'), ABE: style('#687086'), CBD: style('#687086'), CBE: style('#687086'), DBE: style('#687086'),
+      ACB: style('#687086'), ACE: style('#687086'), ACD: style('#687086'), BCE: style('#687086'), DCE: style('#687086'),
+      BDA: style('#687086'), CDA: style('#687086'), ADE: style('#687086'), BDC: style('#687086'), BDE: style('#687086'),
+      AEB: style('#687086'), AEC: style('#687086'), BEC: style('#687086'), BED: style('#687086'), CED: style('#687086')
+    },
+    angleMark: {
+      A: style('#687086'), B: style('#687086'), C: style('#687086'), D: style('#687086'), E: style('#687086'),
+      BAC: style('#687086'), BAD: style('#687086'), CAE: style('#687086'), CAD: style('#687086'), DAE: style('#687086'),
+      ABD: style('#687086'), ABE: style('#687086'), CBD: style('#687086'), CBE: style('#687086'), DBE: style('#687086'),
+      ACB: style('#687086'), ACE: style('#687086'), ACD: style('#687086'), BCE: style('#687086'), DCE: style('#687086'),
+      BDA: style('#687086'), CDA: style('#687086'), ADE: style('#687086'), BDC: style('#687086'), BDE: style('#687086'),
+      AEB: style('#687086'), AEC: style('#687086'), BEC: style('#687086'), BED: style('#687086'), CED: style('#687086')
+    },
+    rightAngleMark: {
+      A: style('#111111'), B: style('#111111'), C: style('#111111'), D: style('#111111'), E: style('#111111'),
+      BAC: style('#111111'), BAD: style('#111111'), CAE: style('#111111'), CAD: style('#111111'), DAE: style('#111111'),
+      ABD: style('#111111'), ABE: style('#111111'), CBD: style('#111111'), CBE: style('#111111'), DBE: style('#111111'),
+      ACB: style('#111111'), ACE: style('#111111'), ACD: style('#111111'), BCE: style('#111111'), DCE: style('#111111'),
+      BDA: style('#111111'), CDA: style('#111111'), ADE: style('#111111'), BDC: style('#111111'), BDE: style('#111111'),
+      AEB: style('#111111'), AEC: style('#111111'), BEC: style('#111111'), BED: style('#111111'), CED: style('#111111')
+    },
     area: { main: style('#25603b') }
   };
   let labelStyleState = JSON.parse(JSON.stringify(styleDefaults));
   const labelPositions = {
     point: { A: null, B: null, C: null, D: null, E: null },
     segment: { AB: null, BC: null, CD: null, DE: null, EA: null },
-    angle: { A: null, B: null, C: null, D: null, E: null },
-    angleMark: { A: null, B: null, C: null, D: null, E: null },
-    rightAngleMark: { A: null, B: null, C: null, D: null, E: null },
+    diagonal: { AC: null, AD: null, BD: null, BE: null, CE: null },
+    specialPoint: { P: null, Q: null, R: null, S: null, T: null },
+    angle: Object.assign({ A: null, B: null, C: null, D: null, E: null }, specialAngleIds.reduce(function (acc, id) { acc[id] = null; return acc; }, {})),
+    angleMark: Object.assign({ A: null, B: null, C: null, D: null, E: null }, specialAngleIds.reduce(function (acc, id) { acc[id] = null; return acc; }, {})),
+    rightAngleMark: Object.assign({ A: null, B: null, C: null, D: null, E: null }, specialAngleIds.reduce(function (acc, id) { acc[id] = null; return acc; }, {})),
     area: { main: null }
   };
   const customLabelText = {
     segment: { AB: '', BC: '', CD: '', DE: '', EA: '' },
-    angle: { A: '', B: '', C: '', D: '', E: '' },
+    diagonal: { AC: '', AD: '', BD: '', BE: '', CE: '' },
+    angle: Object.assign({ A: '', B: '', C: '', D: '', E: '' }, specialAngleIds.reduce(function (acc, id) { acc[id] = ''; return acc; }, {})),
     area: { main: '' }
   };
-  const angleMarkerMode = { A: 0, B: 0, C: 0, D: 0, E: 0 };
-  const rightAngleMarkerMode = { A: 0, B: 0, C: 0, D: 0, E: 0 };
-  const segmentArcMode = { AB: 1, BC: 1, CD: 1, DE: 1, EA: 1 };
-  const segmentLineMode = { AB: 1, BC: 1, CD: 1, DE: 1, EA: 1 };
+  const angleMarkerMode = Object.assign({ A: 0, B: 0, C: 0, D: 0, E: 0 }, specialAngleIds.reduce(function (acc, id) { acc[id] = 0; return acc; }, {}));
+  const rightAngleMarkerMode = Object.assign({ A: 0, B: 0, C: 0, D: 0, E: 0 }, specialAngleIds.reduce(function (acc, id) { acc[id] = 0; return acc; }, {}));
+  const segmentArcMode = { AB: 1, BC: 1, CD: 1, DE: 1, EA: 1, AC: 1, AD: 1, BD: 1, BE: 1, CE: 1 };
+  const segmentLineMode = { AB: 1, BC: 1, CD: 1, DE: 1, EA: 1, AC: 0, AD: 0, BD: 0, BE: 0, CE: 0 };
 
   let currentGeometry = null;
   let currentLabelAnchors = [];
@@ -251,6 +334,11 @@
     return /^[A-Z]+$/.test(raw) ? raw : id;
   }
 
+  function getSpecialPointLabelToken(id) {
+    const raw = String(specialPointLabelText[id] || id).trim().toUpperCase();
+    return /^[A-Z]+$/.test(raw) ? raw : id;
+  }
+
   function getAreaName() {
     return '多角形' + pointIds.map(getPointLabelToken).join('');
   }
@@ -260,7 +348,16 @@
   }
 
   function getAngleName(id) {
-    return '∠' + getPointLabelToken(id);
+    return '∠' + id.split('').map(getPointLabelToken).join('');
+  }
+
+  function canonicalSegmentId(a, b) {
+    const direct = a + b;
+    const reverse = b + a;
+    const known = segmentIds.concat(diagonalIds);
+    if (known.indexOf(direct) >= 0) return direct;
+    if (known.indexOf(reverse) >= 0) return reverse;
+    return direct;
   }
 
   function normalizeAngleMarkerInput(input) {
@@ -461,8 +558,17 @@
   function getGeometryFromInputs() {
     const base = getBasePentagon();
     const transformed = transformBasePoints(base.basePoints);
+    const points = transformed.points;
+    const specialPoints = {
+      P: lineIntersection(points.A, points.C, points.B, points.D),
+      Q: lineIntersection(points.B, points.D, points.C, points.E),
+      R: lineIntersection(points.C, points.E, points.A, points.D),
+      S: lineIntersection(points.A, points.D, points.B, points.E),
+      T: lineIntersection(points.B, points.E, points.A, points.C)
+    };
     return {
-      points: transformed.points,
+      points: points,
+      specialPoints: specialPoints,
       centroid: transformed.centroid,
       side: base.side * figureState.scale,
       area: base.area * figureState.scale * figureState.scale,
@@ -473,11 +579,35 @@
     };
   }
 
+  function lineIntersection(P, Q, R, S) {
+    const a1 = Q.y - P.y;
+    const b1 = P.x - Q.x;
+    const c1 = a1 * P.x + b1 * P.y;
+    const a2 = S.y - R.y;
+    const b2 = R.x - S.x;
+    const c2 = a2 * R.x + b2 * R.y;
+    const det = a1 * b2 - a2 * b1;
+    if (Math.abs(det) < 1e-8) {
+      return { x: (P.x + Q.x + R.x + S.x) / 4, y: (P.y + Q.y + R.y + S.y) / 4 };
+    }
+    return {
+      x: (b2 * c1 - b1 * c2) / det,
+      y: (a1 * c2 - a2 * c1) / det
+    };
+  }
+
   function getAngleData(id, geometry) {
-    const index = pointIds.indexOf(id);
-    const prevId = pointIds[(index - 1 + pointIds.length) % pointIds.length];
-    const nextId = pointIds[(index + 1) % pointIds.length];
-    return { vertex: geometry.points[id], p1: geometry.points[prevId], p2: geometry.points[nextId] };
+    if (id.length === 1) {
+      const index = pointIds.indexOf(id);
+      const prevId = pointIds[(index - 1 + pointIds.length) % pointIds.length];
+      const nextId = pointIds[(index + 1) % pointIds.length];
+      return { vertex: geometry.points[id], p1: geometry.points[prevId], p2: geometry.points[nextId] };
+    }
+    return {
+      vertex: geometry.points[id[1]],
+      p1: geometry.points[id[0]],
+      p2: geometry.points[id[2]]
+    };
   }
 
   function getAngleMeasureDegrees(id, geometry) {
@@ -534,9 +664,14 @@
     const P = geometry.points;
     const G = geometry.centroid;
     if (type === 'point') return getPointDefault(G, P[id]);
+    if (type === 'specialPoint') return getPointDefault(G, geometry.specialPoints[id]);
     if (type === 'segment') {
       const pair = { AB: [P.A, P.B], BC: [P.B, P.C], CD: [P.C, P.D], DE: [P.D, P.E], EA: [P.E, P.A] }[id];
       return getPerpendicularDefault(pair[0], pair[1], G, geometry.side * 0.18);
+    }
+    if (type === 'diagonal') {
+      const pair = { AC: [P.A, P.C], AD: [P.A, P.D], BD: [P.B, P.D], BE: [P.B, P.E], CE: [P.C, P.E] }[id];
+      return getPerpendicularDefault(pair[0], pair[1], G, geometry.side * 0.16);
     }
     if (type === 'angle') return getAngleDefault(id, geometry);
     return { x: G.x, y: G.y };
@@ -560,9 +695,15 @@
   function getLabelText(type, id, geometry) {
     const P = geometry.points;
     if (type === 'point') return getPointLabelToken(id);
+    if (type === 'specialPoint') return getSpecialPointLabelToken(id);
     if (type === 'segment') {
       const pair = { AB: [P.A, P.B], BC: [P.B, P.C], CD: [P.C, P.D], DE: [P.D, P.E], EA: [P.E, P.A] }[id];
       return getCustomSegmentText(id, formatNumber(segmentLength(pair[0], pair[1])));
+    }
+    if (type === 'diagonal') {
+      const pair = { AC: [P.A, P.C], AD: [P.A, P.D], BD: [P.B, P.D], BE: [P.B, P.E], CE: [P.C, P.E] }[id];
+      const custom = window.InstantGeometrySharedLabelConfig.normalizeCustomLabelInput(customLabelText.diagonal[id]);
+      return custom ? appendUnit(custom, false) : appendUnit(formatNumber(segmentLength(pair[0], pair[1])), false);
     }
     if (type === 'angle') {
       const base = angleMode === 'degrees'
@@ -580,9 +721,17 @@
       .concat([{ type: 'area', id: 'main' }]);
   }
 
+  function getSpecialConfigs() {
+    return specialPointIds.map(function (id) { return { type: 'specialPoint', id: id }; })
+      .concat(diagonalIds.map(function (id) { return { type: 'diagonal', id: id }; }))
+      .concat(specialAngleIds.map(function (id) { return { type: 'angle', id: id }; }));
+  }
+
   function getToggleLabel(config) {
     if (config.type === 'point') return getPointLabelToken(config.id);
+    if (config.type === 'specialPoint') return getSpecialPointLabelToken(config.id);
     if (config.type === 'segment') return getSegmentName(config.id);
+    if (config.type === 'diagonal') return getSegmentName(config.id);
     if (config.type === 'angle') return getAngleName(config.id);
     return getAreaName();
   }
@@ -599,7 +748,7 @@
   function renderLabelToggleButtons() {
     generalLabelToggleGrid.innerHTML = '';
     specialLabelToggleGrid.innerHTML = '';
-    getGeneralConfigs().forEach(function (config) {
+    function buildToggleButton(config, parent) {
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'download-btn btn-bd';
@@ -618,16 +767,18 @@
       });
       button.addEventListener('contextmenu', async function (event) {
         event.preventDefault();
-        if (config.type === 'point') {
+        if (config.type === 'point' || config.type === 'specialPoint') {
+          const getter = config.type === 'point' ? getPointLabelToken : getSpecialPointLabelToken;
+          const store = config.type === 'point' ? pointLabelText : specialPointLabelText;
           const response = await window.InstantGeometrySharedLabelConfig.promptSingleText({
             title: '点ラベル設定',
             firstLabel: '文字（A-Z のみ）',
-            value: getPointLabelToken(config.id)
+            value: getter(config.id)
           });
           if (response === null) return;
           const normalized = String(response).trim().toUpperCase();
-          if (!normalized) pointLabelText[config.id] = config.id;
-          else if (/^[A-Z]+$/.test(normalized)) pointLabelText[config.id] = normalized.slice(0, 12);
+          if (!normalized) store[config.id] = config.id;
+          else if (/^[A-Z]+$/.test(normalized)) store[config.id] = normalized.slice(0, 12);
           else {
             setStatus('点ラベルは英字大文字（A-Z）のみ入力できます。', true);
             return;
@@ -636,7 +787,8 @@
           render();
           return;
         }
-        if (config.type === 'segment') {
+        if (config.type === 'segment' || config.type === 'diagonal') {
+          const textStore = config.type === 'segment' ? customLabelText.segment : customLabelText.diagonal;
           const response = await window.InstantGeometrySharedLabelConfig.promptTripleSetting({
             title: '線分ラベル設定',
             firstLabel: '線分表示（0:線分を非表示 / 1:線分を表示）',
@@ -644,7 +796,7 @@
             secondLabel: '弧表示（0:弧を非表示 / 1:弧を表示）',
             secondValue: String(segmentArcMode[config.id]),
             thirdLabel: '文字（空欄で数値表示）',
-            thirdValue: customLabelText.segment[config.id] || '',
+            thirdValue: textStore[config.id] || '',
             firstBinary: true,
             secondBinary: true
           });
@@ -661,7 +813,7 @@
           }
           segmentLineMode[config.id] = lineMode;
           segmentArcMode[config.id] = arcMode;
-          customLabelText.segment[config.id] = response.third;
+          textStore[config.id] = response.third;
           render();
           return;
         }
@@ -716,7 +868,13 @@
           render();
         }
       });
-      generalLabelToggleGrid.appendChild(button);
+      parent.appendChild(button);
+    }
+    getGeneralConfigs().forEach(function (config) {
+      buildToggleButton(config, generalLabelToggleGrid);
+    });
+    getSpecialConfigs().forEach(function (config) {
+      buildToggleButton(config, specialLabelToggleGrid);
     });
   }
 
@@ -911,12 +1069,70 @@
       highlight: false
     });
     const lineStyle = { fixed: true, strokeWidth: 2, strokeColor: figureState.color, highlight: false };
-    const pairMap = { AB: [points[0], points[1]], BC: [points[1], points[2]], CD: [points[2], points[3]], DE: [points[3], points[4]], EA: [points[4], points[0]] };
+    const pairMap = {
+      AB: [points[0], points[1]],
+      BC: [points[1], points[2]],
+      CD: [points[2], points[3]],
+      DE: [points[3], points[4]],
+      EA: [points[4], points[0]],
+      AC: [points[0], points[2]],
+      AD: [points[0], points[3]],
+      BD: [points[1], points[3]],
+      BE: [points[1], points[4]],
+      CE: [points[2], points[4]]
+    };
     segmentIds.forEach(function (id) {
-      if (labelState.segment[id] || segmentLineMode[id] !== 0) {
+      if (labelState.segment[id] || segmentLineMode[id] !== 0 || shouldDrawSegmentFromAngles(id)) {
         board.create('segment', pairMap[id], lineStyle);
       }
     });
+    diagonalIds.forEach(function (id) {
+      if (labelState.diagonal[id] || segmentLineMode[id] !== 0 || shouldDrawSegmentFromAngles(id) || shouldDrawSegmentFromSpecialPoints(id)) {
+        board.create('segment', pairMap[id], {
+          fixed: true,
+          strokeWidth: 1.6,
+          strokeColor: '#9aa7c7',
+          dash: 2,
+          highlight: false
+        });
+      }
+    });
+  }
+
+  function shouldDrawSegmentFromAngles(segmentId) {
+    return allAngleIds.some(function (angleId) {
+      const visible = labelState.angle[angleId] || labelState.angleMark[angleId] || rightAngleMarkerMode[angleId] !== 0;
+      if (!visible) return false;
+      const data = getAngleSegmentIds(angleId);
+      return data[0] === segmentId || data[1] === segmentId;
+    });
+  }
+
+  function shouldDrawSegmentFromSpecialPoints(segmentId) {
+    const mapping = {
+      P: ['AC', 'BD'],
+      Q: ['BD', 'CE'],
+      R: ['CE', 'AD'],
+      S: ['AD', 'BE'],
+      T: ['BE', 'AC']
+    };
+    return specialPointIds.some(function (id) {
+      return labelState.specialPoint[id] && mapping[id].indexOf(segmentId) >= 0;
+    });
+  }
+
+  function getAngleSegmentIds(angleId) {
+    if (angleId.length === 1) {
+      const index = pointIds.indexOf(angleId);
+      return [
+        canonicalSegmentId(pointIds[(index - 1 + pointIds.length) % pointIds.length], angleId),
+        canonicalSegmentId(angleId, pointIds[(index + 1) % pointIds.length])
+      ];
+    }
+    return [
+      canonicalSegmentId(angleId[0], angleId[1]),
+      canonicalSegmentId(angleId[1], angleId[2])
+    ];
   }
 
   function drawAngleDecoration(id, geometry) {
@@ -1069,6 +1285,10 @@
       if (!labelState.point[id]) return;
       createSelectableText(getLabelPosition('point', id, getDefaultPosition('point', id, geometry)), getPointLabelToken(id), labelFontSize.point[id], { type: 'point', id: id }, { color: '#1f2430' });
     });
+    specialPointIds.forEach(function (id) {
+      if (!labelState.specialPoint[id]) return;
+      createSelectableText(getLabelPosition('specialPoint', id, getDefaultPosition('specialPoint', id, geometry)), getSpecialPointLabelToken(id), labelFontSize.specialPoint[id], { type: 'specialPoint', id: id }, { color: '#1f2430' });
+    });
     const P = geometry.points;
     const pairMap = { AB: [P.A, P.B], BC: [P.B, P.C], CD: [P.C, P.D], DE: [P.D, P.E], EA: [P.E, P.A] };
     segmentIds.forEach(function (id) {
@@ -1089,7 +1309,33 @@
         labelFontSize: labelFontSize
       });
     });
+    diagonalIds.forEach(function (id) {
+      if (!labelState.diagonal[id]) return;
+      const pair = { AC: [P.A, P.C], AD: [P.A, P.D], BD: [P.B, P.D], BE: [P.B, P.E], CE: [P.C, P.E] }[id];
+      window.InstantGeometrySharedOrnaments.drawSideArcLabel({
+        board: board,
+        P: pair[0],
+        Q: pair[1],
+        center: geometry.centroid,
+        text: getLabelText('diagonal', id, geometry),
+        labelType: 'diagonal',
+        labelId: id,
+        labelFontGroup: 'diagonal',
+        showArc: segmentArcMode[id] !== 0,
+        getLabelPosition: getLabelPosition,
+        getLabelStyle: getLabelStyle,
+        createSelectableText: createSelectableText,
+        labelFontSize: labelFontSize
+      });
+    });
     angleIds.forEach(function (id) {
+      if (labelState.angle[id]) {
+        createSelectableText(getLabelPosition('angle', id, getDefaultPosition('angle', id, geometry)), getLabelText('angle', id, geometry), labelFontSize.angle[id], { type: 'angle', id: id }, { color: '#687086', threshold: 0.6 });
+      }
+      if (labelState.angleMark[id]) drawAngleDecoration(id, geometry);
+      if (labelState.rightAngleMark[id]) drawRightAngleDecoration(id, geometry);
+    });
+    specialAngleIds.forEach(function (id) {
       if (labelState.angle[id]) {
         createSelectableText(getLabelPosition('angle', id, getDefaultPosition('angle', id, geometry)), getLabelText('angle', id, geometry), labelFontSize.angle[id], { type: 'angle', id: id }, { color: '#687086', threshold: 0.6 });
       }
@@ -1353,11 +1599,13 @@
     Object.keys(angleMarkerMode).forEach(function (id) { angleMarkerMode[id] = 0; });
     Object.keys(rightAngleMarkerMode).forEach(function (id) { rightAngleMarkerMode[id] = 0; });
     Object.keys(segmentArcMode).forEach(function (id) { segmentArcMode[id] = 1; });
-    Object.keys(segmentLineMode).forEach(function (id) { segmentLineMode[id] = 1; });
+    Object.keys(segmentLineMode).forEach(function (id) { segmentLineMode[id] = segmentIds.indexOf(id) >= 0 ? 1 : 0; });
     Object.keys(customLabelText.segment).forEach(function (id) { customLabelText.segment[id] = ''; });
+    Object.keys(customLabelText.diagonal).forEach(function (id) { customLabelText.diagonal[id] = ''; });
     Object.keys(customLabelText.angle).forEach(function (id) { customLabelText.angle[id] = ''; });
     customLabelText.area.main = '';
     pointIds.forEach(function (id) { pointLabelText[id] = id; });
+    specialPointIds.forEach(function (id) { specialPointLabelText[id] = id; });
     figureState = { color: '#2a5bd7', rotation: 0, scale: 1, offset: { x: 0, y: 0 } };
     selectedLabel = null;
     selectedFigure = false;
