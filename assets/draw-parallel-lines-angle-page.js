@@ -43,40 +43,48 @@
   box.appendChild(labelLayer);
 
   const pointLabelText = { A: 'A', B: 'B', M: 'M', P: 'P', Q: 'Q', R: 'R', S: 'S' };
+  const angleIds = ['PAM', 'QAM', 'AMB', 'RBM', 'SBM'];
+  const anglePointMap = {
+    PAM: ['P', 'A', 'M'],
+    QAM: ['Q', 'A', 'M'],
+    AMB: ['A', 'M', 'B'],
+    RBM: ['R', 'B', 'M'],
+    SBM: ['S', 'B', 'M']
+  };
   const defaultLabelState = {
     point: { A: true, B: true, M: true },
     segment: { PQ: true, RS: true, AM: true, BM: true },
-    angle: { theta1: false, theta2: false },
-    angleMark: { theta1: false, theta2: false },
-    rightAngleMark: { theta1: false, theta2: false }
+    angle: { PAM: false, QAM: false, AMB: false, RBM: false, SBM: false },
+    angleMark: { PAM: false, QAM: false, AMB: false, RBM: false, SBM: false },
+    rightAngleMark: { PAM: false, QAM: false, AMB: false, RBM: false, SBM: false }
   };
   const labelState = JSON.parse(JSON.stringify(defaultLabelState));
   const labelFontDefaults = {
     point: { A: 36, B: 36, M: 36 },
     segment: { PQ: 30, RS: 30, AM: 30, BM: 30 },
-    angle: { theta1: 28, theta2: 28 },
-    angleMark: { theta1: 26, theta2: 26 },
-    rightAngleMark: { theta1: 26, theta2: 26 }
+    angle: { PAM: 28, QAM: 28, AMB: 28, RBM: 28, SBM: 28 },
+    angleMark: { PAM: 26, QAM: 26, AMB: 26, RBM: 26, SBM: 26 },
+    rightAngleMark: { PAM: 26, QAM: 26, AMB: 26, RBM: 26, SBM: 26 }
   };
   const labelFontSize = JSON.parse(JSON.stringify(labelFontDefaults));
   const styleDefaults = {
     point: { A: style('#1f2430'), B: style('#1f2430'), M: style('#1f2430') },
     segment: { PQ: style('#2a5bd7'), RS: style('#2a5bd7'), AM: style('#2a5bd7'), BM: style('#2a5bd7') },
-    angle: { theta1: style('#687086'), theta2: style('#687086') },
-    angleMark: { theta1: style('#687086'), theta2: style('#687086') },
-    rightAngleMark: { theta1: style('#111111'), theta2: style('#111111') }
+    angle: { PAM: style('#687086'), QAM: style('#687086'), AMB: style('#687086'), RBM: style('#687086'), SBM: style('#687086') },
+    angleMark: { PAM: style('#687086'), QAM: style('#687086'), AMB: style('#687086'), RBM: style('#687086'), SBM: style('#687086') },
+    rightAngleMark: { PAM: style('#111111'), QAM: style('#111111'), AMB: style('#111111'), RBM: style('#111111'), SBM: style('#111111') }
   };
   let labelStyleState = JSON.parse(JSON.stringify(styleDefaults));
   const labelPositions = {
     point: { A: null, B: null, M: null },
     segment: { PQ: null, RS: null, AM: null, BM: null },
-    angle: { theta1: null, theta2: null },
-    angleMark: { theta1: null, theta2: null },
-    rightAngleMark: { theta1: null, theta2: null }
+    angle: { PAM: null, QAM: null, AMB: null, RBM: null, SBM: null },
+    angleMark: { PAM: null, QAM: null, AMB: null, RBM: null, SBM: null },
+    rightAngleMark: { PAM: null, QAM: null, AMB: null, RBM: null, SBM: null }
   };
-  const customLabelText = { segment: { PQ: '', RS: '', AM: '', BM: '' }, angle: { theta1: '', theta2: '' } };
-  const angleMarkerMode = { theta1: 0, theta2: 0 };
-  const rightAngleMarkerMode = { theta1: 0, theta2: 0 };
+  const customLabelText = { segment: { PQ: '', RS: '', AM: '', BM: '' }, angle: { PAM: '', QAM: '', AMB: '', RBM: '', SBM: '' } };
+  const angleMarkerMode = { PAM: 0, QAM: 0, AMB: 0, RBM: 0, SBM: 0 };
+  const rightAngleMarkerMode = { PAM: 0, QAM: 0, AMB: 0, RBM: 0, SBM: 0 };
   const segmentArcMode = { PQ: 1, RS: 1, AM: 1, BM: 1 };
   const segmentLineMode = { PQ: 1, RS: 1, AM: 1, BM: 1 };
 
@@ -267,26 +275,42 @@
       { type: 'segment', id: 'RS' },
       { type: 'segment', id: 'AM' },
       { type: 'segment', id: 'BM' },
-      { type: 'angle', id: 'theta1' },
-      { type: 'angle', id: 'theta2' }
+      { type: 'angle', id: 'PAM' },
+      { type: 'angle', id: 'QAM' },
+      { type: 'angle', id: 'AMB' },
+      { type: 'angle', id: 'RBM' },
+      { type: 'angle', id: 'SBM' }
     ];
   }
   function getPointLabelToken(id) {
     const raw = String(pointLabelText[id] || id).trim().toUpperCase();
     return /^[A-Z]+$/.test(raw) ? raw : id;
   }
-  function getAngleToggleLabel(id) { return id === 'theta1' ? 'θ1' : 'θ2'; }
+  function getAngleToggleLabel(id) { return '∠' + id; }
   function getSegmentToggleLabel(id) { return id; }
   function getToggleLabel(config) {
     if (config.type === 'point') return getPointLabelToken(config.id);
     if (config.type === 'segment') return getSegmentToggleLabel(config.id);
     return getAngleToggleLabel(config.id);
   }
-  function getAngleMeasureDegrees(id, geometry) { return id === 'theta1' ? geometry.theta1Deg : geometry.theta2Deg; }
+  function getAngleMeasureDegrees(id, geometry) {
+    const ids = anglePointMap[id];
+    const p1 = geometry.points[ids[0]];
+    const vertex = geometry.points[ids[1]];
+    const p2 = geometry.points[ids[2]];
+    const v1x = p1.x - vertex.x;
+    const v1y = p1.y - vertex.y;
+    const v2x = p2.x - vertex.x;
+    const v2y = p2.y - vertex.y;
+    const len1 = Math.hypot(v1x, v1y) || 1;
+    const len2 = Math.hypot(v2x, v2y) || 1;
+    const dot = Math.max(-1, Math.min(1, (v1x * v2x + v1y * v2y) / (len1 * len2)));
+    return Math.acos(dot) * 180 / Math.PI;
+  }
   function isRightAngleId(id, geometry) { return Math.abs(getAngleMeasureDegrees(id, geometry) - 90) < 1e-4; }
   function getAngleData(id, geometry) {
-    if (id === 'theta1') return { vertex: geometry.points.A, p1: geometry.points.Q, p2: geometry.points.M };
-    return { vertex: geometry.points.B, p1: geometry.points.R, p2: geometry.points.M };
+    const ids = anglePointMap[id];
+    return { vertex: geometry.points[ids[1]], p1: geometry.points[ids[0]], p2: geometry.points[ids[2]] };
   }
   function getCustomSegmentText(id, fallback) {
     const custom = window.InstantGeometrySharedLabelConfig.normalizeCustomLabelInput(customLabelText.segment[id]);
@@ -760,7 +784,7 @@
         labelFontSize: labelFontSize
       });
     });
-    ['theta1', 'theta2'].forEach(function (id) {
+    angleIds.forEach(function (id) {
       if (labelState.angle[id]) createSelectableText(getLabelPosition('angle', id, getDefaultAnglePosition(id, geometry)), getLabelText('angle', id, geometry), labelFontSize.angle[id], { type: 'angle', id: id }, { color: '#687086', threshold: 0.6 });
       if (labelState.angleMark[id]) drawAngleDecoration(id, geometry);
       if (labelState.rightAngleMark[id]) drawRightAngleDecoration(id, geometry);
