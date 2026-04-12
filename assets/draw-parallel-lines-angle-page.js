@@ -143,7 +143,7 @@
     const diff = { x: B.x - A.x, y: B.y - A.y };
     const t = (diff.x * dirB.y - diff.y * dirB.x) / denominator;
     const u = (diff.x * dirA.y - diff.y * dirA.x) / denominator;
-    if (!(t > 0 && u < 0)) throw new Error('指定した値では、M が平行線の間にできません。');
+    if (!(t > 0 && u > 0)) throw new Error('指定した値では、M が平行線の間にできません。');
     const M = { x: A.x + dirA.x * t, y: A.y + dirA.y * t };
     if (!(M.y < topY && M.y > bottomY)) throw new Error('指定した値では、M が平行線の間にできません。');
     return {
@@ -386,6 +386,18 @@
 
       setStatus('図形を描画しました。', false);
     } catch (error) {
+      const fallback = {
+        points: {
+          P: { x: -7, y: 1 },
+          Q: { x: 7, y: 1 },
+          R: { x: -7, y: -1 },
+          S: { x: 7, y: -1 }
+        }
+      };
+      svg.setAttribute('viewBox', [-8, -3, 16, 6].join(' '));
+      updateExportFrame();
+      drawSegment(fallback.points.P, fallback.points.Q, '#2a5bd7', 0.05);
+      drawSegment(fallback.points.R, fallback.points.S, '#2a5bd7', 0.05);
       setStatus(error.message || '描画に失敗しました。', true);
     }
   }
@@ -413,8 +425,8 @@
   resetBtn.addEventListener('click', function () {
     inputElements.aPos.value = '-2.5';
     inputElements.bPos.value = '2.5';
-    inputElements.theta1.value = '60';
-    inputElements.theta2.value = '70';
+    inputElements.theta1.value = '20';
+    inputElements.theta2.value = '30';
     labelState.point = { A: true, B: true, M: true };
     labelState.segment = { PQ: true, RS: true, AM: true, BM: true };
     labelState.angle = { PAM: false, QAM: false, AMB: false, RBM: false, SBM: false };
