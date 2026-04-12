@@ -1715,16 +1715,20 @@
             button.addEventListener('contextmenu', async function (event) {
               event.preventDefault();
               const current = vertexLabelText[config.id] || config.id;
-              const next = window.prompt('頂点ラベル文字を入力してください（A-Z のみ）', current);
-              if (next === null) return;
-              const normalized = String(next).trim().toUpperCase();
+              const response = await window.InstantGeometrySharedLabelConfig.promptSingleText({
+                title: '点ラベル設定',
+                firstLabel: '文字（A-Z のみ）',
+                value: current
+              });
+              if (response === null) return;
+              const normalized = String(response).trim().toUpperCase();
               pushHistorySnapshot();
               if (!normalized) {
                 vertexLabelText[config.id] = config.id;
               } else if (/^[A-Z]+$/.test(normalized)) {
                 vertexLabelText[config.id] = normalized.slice(0, 12);
               } else {
-                setStatus('頂点ラベルは英字大文字（A-Z）のみ入力できます。', true);
+                setStatus('点ラベルは英字大文字（A-Z）のみ入力できます。', true);
                 return;
               }
               renderLabelToggleButtons();

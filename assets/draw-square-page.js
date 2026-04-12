@@ -18,7 +18,7 @@
   const box = document.getElementById('box');
   const exportBackdrop = document.getElementById('exportBackdrop');
   const exportFrame = document.getElementById('exportFrame');
-  const vertexLabelText = { A: 'A', B: 'B', C: 'C', D: 'D' };
+  const vertexLabelText = { A: 'A', B: 'B', C: 'C', D: 'D', O: 'O' };
 
   const board = JXG.JSXGraph.initBoard('box', {
     boundingbox: [0, 8, 12, 0],
@@ -410,6 +410,7 @@
 
   function getToggleLabel(config) {
     if (config.type === 'vertex') return getVertexTokenByKey(config.id);
+    if (config.type === 'specialVertex') return getVertexTokenByKey(config.id);
     if (config.type === 'side') return getSideName(config.id);
     if (config.type === 'angle') return '∠' + getVertexTokenByKey(config.id);
     if (config.type === 'area') return getAreaName();
@@ -450,15 +451,19 @@
         button.addEventListener('contextmenu', async function (event) {
           event.preventDefault();
           const current = getVertexTokenByKey(config.id);
-          const next = window.prompt('頂点ラベル文字を入力してください（A-Z のみ）', current);
-          if (next === null) return;
-          const normalized = String(next).trim().toUpperCase();
+          const response = await window.InstantGeometrySharedLabelConfig.promptSingleText({
+            title: '点ラベル設定',
+            firstLabel: '文字（A-Z のみ）',
+            value: current
+          });
+          if (response === null) return;
+          const normalized = String(response).trim().toUpperCase();
           if (!normalized) {
             vertexLabelText[config.id] = config.id;
           } else if (/^[A-Z]+$/.test(normalized)) {
             vertexLabelText[config.id] = normalized.slice(0, 12);
           } else {
-            setStatus('頂点ラベルは英字大文字（A-Z）のみ入力できます。', true);
+            setStatus('点ラベルは英字大文字（A-Z）のみ入力できます。', true);
             return;
           }
           renderLabelToggleButtons();
@@ -544,6 +549,29 @@
         renderLabelToggleButtons();
         render();
       });
+      if (config.type === 'specialVertex') {
+        button.addEventListener('contextmenu', async function (event) {
+          event.preventDefault();
+          const current = getVertexTokenByKey(config.id);
+          const response = await window.InstantGeometrySharedLabelConfig.promptSingleText({
+            title: '点ラベル設定',
+            firstLabel: '文字（A-Z のみ）',
+            value: current
+          });
+          if (response === null) return;
+          const normalized = String(response).trim().toUpperCase();
+          if (!normalized) {
+            vertexLabelText[config.id] = config.id;
+          } else if (/^[A-Z]+$/.test(normalized)) {
+            vertexLabelText[config.id] = normalized.slice(0, 12);
+          } else {
+            setStatus('点ラベルは英字大文字（A-Z）のみ入力できます。', true);
+            return;
+          }
+          renderLabelToggleButtons();
+          render();
+        });
+      }
       if (config.type === 'diagonal') {
         button.addEventListener('contextmenu', async function (event) {
           event.preventDefault();
@@ -833,7 +861,7 @@
         currentLabelAnchors: currentLabelAnchors,
         getLabelStyle: getLabelStyle,
         position: getLabelPosition('specialVertex', 'O', getDefaultPosition('specialVertex', 'O', geometry)),
-        text: 'O',
+        text: getVertexTokenByKey('O'),
         fontSize: labelFontSize.specialVertex.O,
         labelKey: { type: 'specialVertex', id: 'O' },
         options: { color: '#1f2430', threshold: 0.58 }

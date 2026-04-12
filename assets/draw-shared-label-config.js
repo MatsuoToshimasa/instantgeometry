@@ -18,6 +18,7 @@
       '.ig-label-config-modal{width:min(420px,calc(100vw - 32px));background:#fff;border:1px solid rgba(148,163,184,0.35);border-radius:18px;box-shadow:0 20px 48px rgba(15,23,42,0.18);padding:20px 20px 18px;color:#1f2937;font:14px/1.45 \"Hiragino Sans\",\"Yu Gothic\",sans-serif;}',
       '.ig-label-config-title{font-size:18px;font-weight:700;margin:0 0 14px;}',
       '.ig-label-config-field{display:flex;flex-direction:column;gap:6px;margin:0 0 12px;}',
+      '.ig-label-config-field[hidden]{display:none !important;}',
       '.ig-label-config-label{font-size:13px;font-weight:600;color:#475569;}',
       '.ig-label-config-input{width:100%;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:12px;padding:10px 12px;font:14px/1.4 inherit;color:#0f172a;background:#fff;outline:none;}',
       '.ig-label-config-input:focus{border-color:#2a5bd7;box-shadow:0 0 0 3px rgba(42,91,215,0.15);}',
@@ -165,7 +166,7 @@
   async function promptSingleText(config) {
     const result = await openModal({
       title: config.title,
-      firstLabel: '文字',
+      firstLabel: config.firstLabel || '文字',
       firstValue: config.value,
       secondLabel: '',
       secondValue: '',
