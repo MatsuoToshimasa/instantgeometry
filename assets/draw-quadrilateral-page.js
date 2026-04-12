@@ -447,6 +447,33 @@
     return { points: points, centroid: centroid };
   }
 
+  function polygonCentroid(pointsMap) {
+    const ids = ['A', 'B', 'C', 'D'];
+    let twiceArea = 0;
+    let cx = 0;
+    let cy = 0;
+    for (let index = 0; index < ids.length; index += 1) {
+      const p = pointsMap[ids[index]];
+      const q = pointsMap[ids[(index + 1) % ids.length]];
+      const cross = (p.x * q.y) - (q.x * p.y);
+      twiceArea += cross;
+      cx += (p.x + q.x) * cross;
+      cy += (p.y + q.y) * cross;
+    }
+    if (Math.abs(twiceArea) < 1e-9) {
+      const avg = ids.reduce(function (acc, id) {
+        acc.x += pointsMap[id].x;
+        acc.y += pointsMap[id].y;
+        return acc;
+      }, { x: 0, y: 0 });
+      return { x: avg.x / ids.length, y: avg.y / ids.length };
+    }
+    return {
+      x: cx / (3 * twiceArea),
+      y: cy / (3 * twiceArea)
+    };
+  }
+
   function polygonArea(points) {
     const ids = ['A', 'B', 'C', 'D'];
     let sum = 0;
@@ -463,11 +490,25 @@
   }
 
   function finalizeGeometry(basePoints) {
-    const transformed = transformBasePoints(basePoints);
+    const baseCentroid = polygonCentroid(basePoints);
+    const normalizedBasePoints = {};
+    Object.keys(basePoints).forEach(function (key) {
+      normalizedBasePoints[key] = {
+        x: basePoints[key].x - baseCentroid.x,
+        y: basePoints[key].y - baseCentroid.y
+      };
+    });
+    const transformed = transformBasePoints(normalizedBasePoints);
     const points = transformed.points;
+    const xs = Object.keys(normalizedBasePoints).map(function (key) { return normalizedBasePoints[key].x; });
+    const ys = Object.keys(normalizedBasePoints).map(function (key) { return normalizedBasePoints[key].y; });
     return {
       points: points,
       centroid: transformed.centroid,
+      baseBounds: {
+        width: Math.max.apply(null, xs) - Math.min.apply(null, xs),
+        height: Math.max.apply(null, ys) - Math.min.apply(null, ys)
+      },
       side: Math.max(
         segmentLength(points.A, points.B),
         segmentLength(points.B, points.C),
@@ -1034,8 +1075,8 @@
       kind: 'figure',
       x: currentGeometry.centroid.x,
       y: currentGeometry.centroid.y,
-      width: currentGeometry.side * figureState.scale,
-      height: currentGeometry.side * figureState.scale,
+      width: Math.max(currentGeometry.baseBounds ? currentGeometry.baseBounds.width * figureState.scale : currentGeometry.side * figureState.scale, 0.8),
+      height: Math.max(currentGeometry.baseBounds ? currentGeometry.baseBounds.height * figureState.scale : currentGeometry.side * figureState.scale, 0.8),
       color: figureState.color,
       rotation: figureState.rotation
     };
