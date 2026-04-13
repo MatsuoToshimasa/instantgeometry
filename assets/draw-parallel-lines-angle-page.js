@@ -436,7 +436,14 @@
       handle.style.left = left + 'px';
       handle.style.top = top + 'px';
       handle.addEventListener('pointerdown', handleControlPointerDown);
-      if (name === 'palette') handle.style.color = getLabelStyle(selectedLabel.type, selectedLabel.id).color;
+      if (name === 'palette') {
+        handle.style.color = getLabelStyle(selectedLabel.type, selectedLabel.id).color;
+        handle.innerHTML = '<svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle class="palette-outer" cx="11" cy="11" r="8"></circle><circle class="palette-inner" cx="11" cy="11" r="4"></circle></svg>';
+      } else if (name === 'rotate') {
+        handle.innerHTML = '<svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle></svg>';
+      } else if (name === 'resize') {
+        handle.innerHTML = '<svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><path class="resize-main" d="M6 16 L16 6"></path><path class="resize-wing" d="M6 16 L6 11"></path><path class="resize-wing" d="M6 16 L11 16"></path><path class="resize-wing" d="M16 6 L16 11"></path><path class="resize-wing" d="M16 6 L11 6"></path></svg>';
+      }
       labelLayer.appendChild(handle);
       return handle;
     }
