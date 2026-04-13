@@ -392,6 +392,27 @@
     svg.appendChild(createSvgElement('line', attrs));
   }
 
+  function registerSegmentObjectAnchor(id, p1, p2) {
+    const screenStart = userToScreenPoint(p1);
+    const screenEnd = userToScreenPoint(p2);
+    const pad = 8;
+    currentLabelAnchors.push({
+      type: 'segmentObject',
+      id: id,
+      x: (p1.x + p2.x) / 2,
+      y: (p1.y + p2.y) / 2,
+      screenRect: {
+        left: Math.min(screenStart.x, screenEnd.x) - pad,
+        right: Math.max(screenStart.x, screenEnd.x) + pad,
+        top: Math.min(screenStart.y, screenEnd.y) - pad,
+        bottom: Math.max(screenStart.y, screenEnd.y) + pad
+      },
+      fontSize: 16,
+      rotation: Math.atan2(p2.y - p1.y, p2.x - p1.x) * 180 / Math.PI,
+      color: getLabelStyle('segmentObject', id).color
+    });
+  }
+
   function drawPoint(p, color) {
     svg.appendChild(createSvgElement('circle', { cx: p.x, cy: p.y, r: 0.06, fill: color }));
   }
@@ -853,7 +874,10 @@
       forEachSegmentId(function (id) {
         const ends = FIGURE_DEFINITION.segments[id];
         if (labelState.segment[id] || segmentLineMode[id] || segmentRequiredByAngle(id)) {
-          drawSegment(geometry.points[ends[0]], geometry.points[ends[1]], figureState.color, SEGMENT_STROKE_WIDTH);
+          const p1 = geometry.points[ends[0]];
+          const p2 = geometry.points[ends[1]];
+          drawSegment(p1, p2, getLabelStyle('segmentObject', id).color, SEGMENT_STROKE_WIDTH);
+          registerSegmentObjectAnchor(id, p1, p2);
         }
       });
       forEachPointId(function (id) {
