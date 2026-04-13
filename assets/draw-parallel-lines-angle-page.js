@@ -30,6 +30,10 @@
   const exportFrame = document.getElementById('exportFrame');
 
   const generalConfigs = [
+    { type: 'point', id: 'P' },
+    { type: 'point', id: 'Q' },
+    { type: 'point', id: 'R' },
+    { type: 'point', id: 'S' },
     { type: 'point', id: 'A' },
     { type: 'point', id: 'B' },
     { type: 'point', id: 'M' },
@@ -45,7 +49,7 @@
   ];
 
   const labelState = {
-    point: { A: true, B: true, M: true },
+    point: { P: true, Q: true, R: true, S: true, A: true, B: true, M: true },
     segment: { PQ: true, RS: true, AM: true, BM: true },
     angle: { PAM: false, QAM: false, AMB: false, RBM: false, SBM: false }
   };
@@ -369,10 +373,18 @@
       drawSegment(geometry.points.R, geometry.points.S, '#2a5bd7', 0.05);
       drawSegment(geometry.points.A, geometry.points.M, '#2a5bd7', 0.05);
       drawSegment(geometry.points.B, geometry.points.M, '#2a5bd7', 0.05);
+      drawPoint(geometry.points.P, '#111111');
+      drawPoint(geometry.points.Q, '#111111');
+      drawPoint(geometry.points.R, '#111111');
+      drawPoint(geometry.points.S, '#111111');
       drawPoint(geometry.points.A, '#111111');
       drawPoint(geometry.points.B, '#111111');
       drawPoint(geometry.points.M, '#111111');
 
+      if (labelState.point.P) drawText({ x: geometry.points.P.x - 0.24, y: geometry.points.P.y - 0.24 }, 'P', '#1f2430', '0.34');
+      if (labelState.point.Q) drawText({ x: geometry.points.Q.x + 0.24, y: geometry.points.Q.y - 0.24 }, 'Q', '#1f2430', '0.34');
+      if (labelState.point.R) drawText({ x: geometry.points.R.x - 0.24, y: geometry.points.R.y + 0.24 }, 'R', '#1f2430', '0.34');
+      if (labelState.point.S) drawText({ x: geometry.points.S.x + 0.24, y: geometry.points.S.y + 0.24 }, 'S', '#1f2430', '0.34');
       if (labelState.point.A) drawText({ x: geometry.points.A.x - 0.22, y: geometry.points.A.y + 0.24 }, 'A', '#1f2430', '0.34');
       if (labelState.point.B) drawText({ x: geometry.points.B.x + 0.22, y: geometry.points.B.y - 0.24 }, 'B', '#1f2430', '0.34');
       if (labelState.point.M) drawText({ x: geometry.points.M.x + 0.22, y: geometry.points.M.y + 0.24 }, 'M', '#1f2430', '0.34');
@@ -427,7 +439,7 @@
     inputElements.bPos.value = '2.5';
     inputElements.theta1.value = '20';
     inputElements.theta2.value = '30';
-    labelState.point = { A: true, B: true, M: true };
+    labelState.point = { P: true, Q: true, R: true, S: true, A: true, B: true, M: true };
     labelState.segment = { PQ: true, RS: true, AM: true, BM: true };
     labelState.angle = { PAM: false, QAM: false, AMB: false, RBM: false, SBM: false };
     exportAspectIndex = 0;
