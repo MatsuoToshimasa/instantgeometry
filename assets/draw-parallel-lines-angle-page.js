@@ -402,9 +402,9 @@
     if (!['P', 'Q', 'R', 'S'].includes(id)) return point;
 
     const lineLength = Math.abs(geometry.points.Q.x - geometry.points.P.x);
-    const offset = lineLength / 10;
-    const marginX = lineLength / 25;
-    const marginY = currentView.height * 0.05;
+    const offset = lineLength / 22;
+    const marginX = lineLength / 40;
+    const marginY = currentView.height * 0.035;
     const isLeft = id === 'P' || id === 'R';
     const isTop = id === 'P' || id === 'Q';
 
