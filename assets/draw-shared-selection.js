@@ -246,7 +246,7 @@
       const cx = left + 11;
       const cy = bottom + 11;
       getPaletteColors().forEach(function (color, index) {
-        const angle = (210 + ((330 - 210) * index / Math.max(getPaletteColors().length - 1, 1))) * Math.PI / 180;
+        const angle = (30 + ((150 - 30) * index / Math.max(getPaletteColors().length - 1, 1))) * Math.PI / 180;
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.style.background = color;

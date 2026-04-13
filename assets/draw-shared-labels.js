@@ -166,7 +166,7 @@
     labelNode.style.top = screen.y + 'px';
     labelNode.style.fontSize = fontSize + 'px';
     labelNode.style.color = style.color;
-    labelNode.style.transform = 'translate(-50%, -50%) translate(' + style.dx + 'px,' + style.dy + 'px) rotate(' + (-style.rotation) + 'deg) scale(' + style.scale + ')';
+    labelNode.style.transform = 'translate(-50%, -50%) translate(' + style.dx + 'px,' + style.dy + 'px) rotate(' + style.rotation + 'deg) scale(' + style.scale + ')';
     if (typeof onPointerDown === 'function') labelNode.addEventListener('pointerdown', onPointerDown);
     if (typeof onWheel === 'function') labelNode.addEventListener('wheel', onWheel, { passive: false });
     labelLayer.appendChild(labelNode);
@@ -183,7 +183,7 @@
       if (adjustX || adjustY) {
         style.dx += adjustX;
         style.dy += adjustY;
-        labelNode.style.transform = 'translate(-50%, -50%) translate(' + style.dx + 'px,' + style.dy + 'px) rotate(' + (-style.rotation) + 'deg) scale(' + style.scale + ')';
+        labelNode.style.transform = 'translate(-50%, -50%) translate(' + style.dx + 'px,' + style.dy + 'px) rotate(' + style.rotation + 'deg) scale(' + style.scale + ')';
       }
     }
     if (storeRef) {
