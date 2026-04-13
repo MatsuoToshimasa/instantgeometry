@@ -508,6 +508,19 @@
     const points = transformed.points;
     const xs = Object.keys(normalizedBasePoints).map(function (key) { return normalizedBasePoints[key].x; });
     const ys = Object.keys(normalizedBasePoints).map(function (key) { return normalizedBasePoints[key].y; });
+    const baseMeasurements = {
+      AB: segmentLength(normalizedBasePoints.A, normalizedBasePoints.B),
+      BC: segmentLength(normalizedBasePoints.B, normalizedBasePoints.C),
+      CD: segmentLength(normalizedBasePoints.C, normalizedBasePoints.D),
+      DA: segmentLength(normalizedBasePoints.D, normalizedBasePoints.A),
+      OA: segmentLength({ x: 0, y: 0 }, normalizedBasePoints.A),
+      OB: segmentLength({ x: 0, y: 0 }, normalizedBasePoints.B),
+      OC: segmentLength({ x: 0, y: 0 }, normalizedBasePoints.C),
+      OD: segmentLength({ x: 0, y: 0 }, normalizedBasePoints.D),
+      AC: segmentLength(normalizedBasePoints.A, normalizedBasePoints.C),
+      BD: segmentLength(normalizedBasePoints.B, normalizedBasePoints.D),
+      area: polygonArea(normalizedBasePoints)
+    };
     return {
       points: points,
       centroid: transformed.centroid,
@@ -521,7 +534,8 @@
         segmentLength(points.C, points.D),
         segmentLength(points.D, points.A)
       ),
-      area: polygonArea(points)
+      area: polygonArea(points),
+      measurements: baseMeasurements
     };
   }
 
@@ -770,25 +784,13 @@
   }
 
   function getLabelText(type, id, geometry) {
-    const P = geometry.points;
-    const sideLengths = {
-      AB: segmentLength(P.A, P.B),
-      BC: segmentLength(P.B, P.C),
-      CD: segmentLength(P.C, P.D),
-      DA: segmentLength(P.D, P.A),
-      OA: segmentLength(geometry.centroid, P.A),
-      OB: segmentLength(geometry.centroid, P.B),
-      OC: segmentLength(geometry.centroid, P.C),
-      OD: segmentLength(geometry.centroid, P.D),
-      AC: segmentLength(P.A, P.C),
-      BD: segmentLength(P.B, P.D)
-    };
+    const sideLengths = geometry.measurements;
     if (type === 'vertex') return getVertexTokenByKey(id);
     if (type === 'specialVertex') return getVertexTokenByKey(id);
     if (type === 'side') return getCustomSegmentText('side', id, formatNumber(sideLengths[id]));
     if (type === 'specialSegment') return getCustomSegmentText('specialSegment', id, formatNumber(sideLengths[id]));
     if (type === 'angle') return getCustomAngleText(id, angleMode === 'degrees' ? (formatNumber(getAngleMeasureDegrees(id, geometry)) + '°') : formatNumber(getAngleMeasureDegrees(id, geometry) * Math.PI / 180));
-    if (type === 'area') return getCustomAreaText(formatNumber(geometry.area));
+    if (type === 'area') return getCustomAreaText(formatNumber(sideLengths.area));
     if (type === 'diagonal') return getCustomSegmentText('diagonal', id, formatNumber(sideLengths[id]));
     return '';
   }
