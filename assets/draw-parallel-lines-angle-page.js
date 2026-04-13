@@ -392,30 +392,19 @@
   }
 
   function createDomLabel(type, id, anchor, text, fontSize) {
-    const style = getLabelStyle(type, id);
-    const screen = userToScreenPoint(anchor);
-    const node = document.createElement('div');
-    node.className = 'floating-label';
-    node.dataset.type = type;
-    node.dataset.id = id;
-    if (window.katex && typeof window.katex.render === 'function') {
-      try {
-        window.katex.render(window.InstantGeometrySharedLabels.toLatexMath(text), node, { throwOnError: false, output: 'html', strict: 'ignore' });
-      } catch (_) {
-        node.innerHTML = window.InstantGeometrySharedLabels.toMathLikeHtml(text);
-      }
-    } else {
-      node.innerHTML = window.InstantGeometrySharedLabels.toMathLikeHtml(text);
-    }
-    node.style.left = screen.x + 'px';
-    node.style.top = screen.y + 'px';
-    node.style.fontSize = fontSize + 'px';
-    node.style.color = style.color;
-    node.style.transform = 'translate(-50%, -50%) translate(' + style.dx + 'px,' + style.dy + 'px) rotate(' + (-style.rotation) + 'deg) scale(' + style.scale + ')';
-    node.addEventListener('pointerdown', handleLabelPointerDown);
-    node.addEventListener('wheel', handleLabelWheel, { passive: false });
-    labelLayer.appendChild(node);
-    labelNodes[type + ':' + id] = { node: node, anchor: anchor, fontSize: fontSize, type: type, id: id };
+    return window.InstantGeometrySharedLabels.createDomSelectableLabel({
+      labelLayer: labelLayer,
+      getLabelStyle: getLabelStyle,
+      toScreenPoint: userToScreenPoint,
+      onPointerDown: handleLabelPointerDown,
+      onWheel: handleLabelWheel,
+      storeRef: labelNodes,
+      type: type,
+      id: id,
+      anchor: anchor,
+      text: text,
+      fontSize: fontSize
+    });
   }
 
   function renderSelectionBox() {

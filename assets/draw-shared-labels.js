@@ -130,6 +130,52 @@
     return labelNode;
   }
 
+  function createDomSelectableLabel(deps) {
+    const labelLayer = deps.labelLayer;
+    const getLabelStyle = deps.getLabelStyle;
+    const toScreenPoint = deps.toScreenPoint;
+    const onPointerDown = deps.onPointerDown;
+    const onWheel = deps.onWheel;
+    const storeRef = deps.storeRef;
+    const type = deps.type;
+    const id = deps.id;
+    const anchor = deps.anchor;
+    const text = deps.text;
+    const fontSize = deps.fontSize;
+
+    const style = getLabelStyle(type, id);
+    const screen = toScreenPoint(anchor);
+    const labelNode = document.createElement('div');
+    labelNode.className = 'floating-label';
+    labelNode.dataset.type = type;
+    labelNode.dataset.id = id;
+    if (window.katex && typeof window.katex.render === 'function') {
+      try {
+        window.katex.render(toLatexMath(text), labelNode, {
+          throwOnError: false,
+          output: 'html',
+          strict: 'ignore'
+        });
+      } catch (_) {
+        labelNode.innerHTML = toMathLikeHtml(text);
+      }
+    } else {
+      labelNode.innerHTML = toMathLikeHtml(text);
+    }
+    labelNode.style.left = screen.x + 'px';
+    labelNode.style.top = screen.y + 'px';
+    labelNode.style.fontSize = fontSize + 'px';
+    labelNode.style.color = style.color;
+    labelNode.style.transform = 'translate(-50%, -50%) translate(' + style.dx + 'px,' + style.dy + 'px) rotate(' + (-style.rotation) + 'deg) scale(' + style.scale + ')';
+    if (typeof onPointerDown === 'function') labelNode.addEventListener('pointerdown', onPointerDown);
+    if (typeof onWheel === 'function') labelNode.addEventListener('wheel', onWheel, { passive: false });
+    labelLayer.appendChild(labelNode);
+    if (storeRef) {
+      storeRef[type + ':' + id] = { node: labelNode, anchor: anchor, fontSize: fontSize, type: type, id: id };
+    }
+    return labelNode;
+  }
+
   function createStyleStore() {
     return {};
   }
@@ -174,6 +220,7 @@
     toLatexMath: toLatexMath,
     userToScreenPoint: userToScreenPoint,
     createSelectableText: createSelectableText,
+    createDomSelectableLabel: createDomSelectableLabel,
     createStyleStore: createStyleStore,
     ensureLabelStyle: ensureLabelStyle,
     resetLabelStyle: resetLabelStyle,
