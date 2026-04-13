@@ -42,6 +42,10 @@
   const DEFAULT_SEGMENT_LINE_MODE = { PQ: 1, RS: 1, AM: 1, BM: 1 };
   const DEFAULT_SEGMENT_ARC_MODE = { PQ: 1, RS: 1, AM: 1, BM: 1 };
   const DEFAULT_ANGLE_MARKER_MODE = { PAM: 0, QAM: 0, AMB: 0, RBM: 0, SBM: 0 };
+  const POINT_LABEL_FONT_SIZE = 28;
+  const POINT_COLOR = '#111111';
+  const SEGMENT_COLOR = '#2a5bd7';
+  const SEGMENT_STROKE_WIDTH = 0.05;
   const inputElements = Array.from(document.querySelectorAll('[data-parallel-input]')).reduce(function (acc, element) {
     acc[element.id] = element;
     return acc;
@@ -227,6 +231,18 @@
 
   function getPointLabelText(id) {
     return String(customLabelText.point[id] || '').trim() || id;
+  }
+
+  function forEachPointId(callback) {
+    FIGURE_DEFINITION.points.forEach(callback);
+  }
+
+  function forEachSegmentId(callback) {
+    Object.keys(FIGURE_DEFINITION.segments).forEach(callback);
+  }
+
+  function forEachAngleId(callback) {
+    Object.keys(FIGURE_DEFINITION.angles).forEach(callback);
   }
 
   function getSegmentLabelText(id, geometry) {
@@ -647,30 +663,24 @@
       svg.setAttribute('viewBox', [view.x, view.y, view.width, view.height].join(' '));
       updateExportFrame();
 
-      if (labelState.segment.PQ || segmentLineMode.PQ || segmentRequiredByAngle('PQ')) drawSegment(geometry.points.P, geometry.points.Q, '#2a5bd7', 0.05);
-      if (labelState.segment.RS || segmentLineMode.RS || segmentRequiredByAngle('RS')) drawSegment(geometry.points.R, geometry.points.S, '#2a5bd7', 0.05);
-      if (labelState.segment.AM || segmentLineMode.AM || segmentRequiredByAngle('AM')) drawSegment(geometry.points.A, geometry.points.M, '#2a5bd7', 0.05);
-      if (labelState.segment.BM || segmentLineMode.BM || segmentRequiredByAngle('BM')) drawSegment(geometry.points.B, geometry.points.M, '#2a5bd7', 0.05);
-      drawPoint(geometry.points.P, '#111111');
-      drawPoint(geometry.points.Q, '#111111');
-      drawPoint(geometry.points.R, '#111111');
-      drawPoint(geometry.points.S, '#111111');
-      drawPoint(geometry.points.A, '#111111');
-      drawPoint(geometry.points.B, '#111111');
-      drawPoint(geometry.points.M, '#111111');
+      forEachSegmentId(function (id) {
+        const ends = FIGURE_DEFINITION.segments[id];
+        if (labelState.segment[id] || segmentLineMode[id] || segmentRequiredByAngle(id)) {
+          drawSegment(geometry.points[ends[0]], geometry.points[ends[1]], SEGMENT_COLOR, SEGMENT_STROKE_WIDTH);
+        }
+      });
+      forEachPointId(function (id) {
+        drawPoint(geometry.points[id], POINT_COLOR);
+      });
+      forEachPointId(function (id) {
+        if (!labelState.point[id]) return;
+        createDomLabel('point', id, getPointLabelAnchor(id, geometry), getPointLabelText(id), POINT_LABEL_FONT_SIZE);
+      });
 
-      if (labelState.point.P) createDomLabel('point', 'P', getPointLabelAnchor('P', geometry), getPointLabelText('P'), 28);
-      if (labelState.point.Q) createDomLabel('point', 'Q', getPointLabelAnchor('Q', geometry), getPointLabelText('Q'), 28);
-      if (labelState.point.R) createDomLabel('point', 'R', getPointLabelAnchor('R', geometry), getPointLabelText('R'), 28);
-      if (labelState.point.S) createDomLabel('point', 'S', getPointLabelAnchor('S', geometry), getPointLabelText('S'), 28);
-      if (labelState.point.A) createDomLabel('point', 'A', getPointLabelAnchor('A', geometry), getPointLabelText('A'), 28);
-      if (labelState.point.B) createDomLabel('point', 'B', getPointLabelAnchor('B', geometry), getPointLabelText('B'), 28);
-      if (labelState.point.M) createDomLabel('point', 'M', getPointLabelAnchor('M', geometry), getPointLabelText('M'), 28);
-
-      Object.keys(FIGURE_DEFINITION.segments).forEach(function (id) {
+      forEachSegmentId(function (id) {
         if (labelState.segment[id]) drawSegmentLabel(id, geometry);
       });
-      Object.keys(FIGURE_DEFINITION.angles).forEach(function (id) {
+      forEachAngleId(function (id) {
         if (angleHasVisual(id)) drawAngleVisual(id, geometry);
       });
 
@@ -694,8 +704,8 @@
       const cx = (fallbackBounds.minX + fallbackBounds.maxX) / 2;
       svg.setAttribute('viewBox', [cx - width / 2, -3, width, 6].join(' '));
       updateExportFrame();
-      drawSegment(fallback.points.P, fallback.points.Q, '#2a5bd7', 0.05);
-      drawSegment(fallback.points.R, fallback.points.S, '#2a5bd7', 0.05);
+      drawSegment(fallback.points.P, fallback.points.Q, SEGMENT_COLOR, SEGMENT_STROKE_WIDTH);
+      drawSegment(fallback.points.R, fallback.points.S, SEGMENT_COLOR, SEGMENT_STROKE_WIDTH);
       setStatus(error.message || '描画に失敗しました。', true);
     }
   }
