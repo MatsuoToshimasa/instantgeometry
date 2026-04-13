@@ -130,14 +130,20 @@
   function getGeometry() {
     const topY = 1;
     const bottomY = -1;
-    const leftX = -7;
-    const rightX = 7;
+    const pqLength = evaluateExpression(inputElements.pqLength.value);
+    const rsLength = evaluateExpression(inputElements.rsLength.value);
+    if (!(pqLength > 0)) throw new Error('上の線分 PQ の長さは 0 より大きくしてください。');
+    if (!(rsLength > 0)) throw new Error('下の線分 RS の長さは 0 より大きくしてください。');
+    const topLeftX = -pqLength / 2;
+    const topRightX = pqLength / 2;
+    const bottomLeftX = -rsLength / 2;
+    const bottomRightX = rsLength / 2;
     const aX = evaluateExpression(inputElements.aPos.value);
     const bX = evaluateExpression(inputElements.bPos.value);
     const theta1Deg = parseAngle(inputElements.theta1.value, 'θ1');
     const theta2Deg = parseAngle(inputElements.theta2.value, 'θ2');
-    if (!(aX > leftX && aX < rightX)) throw new Error('点Aの位置は上の線分の内部にしてください。');
-    if (!(bX > leftX && bX < rightX)) throw new Error('点Bの位置は下の線分の内部にしてください。');
+    if (!(aX > topLeftX && aX < topRightX)) throw new Error('点Aの位置は上の線分の内部にしてください。');
+    if (!(bX > bottomLeftX && bX < bottomRightX)) throw new Error('点Bの位置は下の線分の内部にしてください。');
     const A = { x: aX, y: topY };
     const B = { x: bX, y: bottomY };
     const dirA = { x: Math.cos(theta1Deg * Math.PI / 180), y: -Math.sin(theta1Deg * Math.PI / 180) };
@@ -152,10 +158,10 @@
     if (!(M.y < topY && M.y > bottomY)) throw new Error('指定した値では、M が平行線の間にできません。');
     return {
       points: {
-        P: { x: leftX, y: topY },
-        Q: { x: rightX, y: topY },
-        R: { x: leftX, y: bottomY },
-        S: { x: rightX, y: bottomY },
+        P: { x: topLeftX, y: topY },
+        Q: { x: topRightX, y: topY },
+        R: { x: bottomLeftX, y: bottomY },
+        S: { x: bottomRightX, y: bottomY },
         A: A,
         B: B,
         M: M
@@ -398,15 +404,20 @@
 
       setStatus('図形を描画しました。', false);
     } catch (error) {
+      const fallbackTopLength = Number.isFinite(evaluateExpressionSafe(inputElements.pqLength && inputElements.pqLength.value)) ? evaluateExpressionSafe(inputElements.pqLength.value) : 14;
+      const fallbackBottomLength = Number.isFinite(evaluateExpressionSafe(inputElements.rsLength && inputElements.rsLength.value)) ? evaluateExpressionSafe(inputElements.rsLength.value) : 14;
       const fallback = {
         points: {
-          P: { x: -7, y: 1 },
-          Q: { x: 7, y: 1 },
-          R: { x: -7, y: -1 },
-          S: { x: 7, y: -1 }
+          P: { x: -fallbackTopLength / 2, y: 1 },
+          Q: { x: fallbackTopLength / 2, y: 1 },
+          R: { x: -fallbackBottomLength / 2, y: -1 },
+          S: { x: fallbackBottomLength / 2, y: -1 }
         }
       };
-      svg.setAttribute('viewBox', [-8, -3, 16, 6].join(' '));
+      const fallbackBounds = getBounds(fallback.points);
+      const width = Math.max(16, fallbackBounds.maxX - fallbackBounds.minX + 2);
+      const cx = (fallbackBounds.minX + fallbackBounds.maxX) / 2;
+      svg.setAttribute('viewBox', [cx - width / 2, -3, width, 6].join(' '));
       updateExportFrame();
       drawSegment(fallback.points.P, fallback.points.Q, '#2a5bd7', 0.05);
       drawSegment(fallback.points.R, fallback.points.S, '#2a5bd7', 0.05);
@@ -435,6 +446,8 @@
     render();
   });
   resetBtn.addEventListener('click', function () {
+    inputElements.pqLength.value = '14';
+    inputElements.rsLength.value = '14';
     inputElements.aPos.value = '-2.5';
     inputElements.bPos.value = '2.5';
     inputElements.theta1.value = '20';
@@ -467,4 +480,12 @@
   updateDockToggleButtons();
   renderLabelToggleButtons();
   render();
+
+  function evaluateExpressionSafe(raw) {
+    try {
+      return evaluateExpression(raw);
+    } catch (_) {
+      return NaN;
+    }
+  }
 })();
