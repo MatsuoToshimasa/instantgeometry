@@ -1679,28 +1679,12 @@
       function getFigureSelectionAnchor() {
         if (!selectedFigure || !currentGeometry) return null;
         const centroid = getTriangleCentroid(currentGeometry);
-        const aggregatePoints = [currentGeometry.A, currentGeometry.B, currentGeometry.C];
-        currentLabelAnchors
-          .filter(function (item) { return item && item.screenRect; })
-          .forEach(function (item) {
-            const rect = item.screenRect;
-            aggregatePoints.push(
-              { x: (rect.left - board.origin.scrCoords[1]) / board.unitX, y: (board.origin.scrCoords[2] - rect.top) / board.unitY },
-              { x: (rect.right - board.origin.scrCoords[1]) / board.unitX, y: (board.origin.scrCoords[2] - rect.top) / board.unitY },
-              { x: (rect.right - board.origin.scrCoords[1]) / board.unitX, y: (board.origin.scrCoords[2] - rect.bottom) / board.unitY },
-              { x: (rect.left - board.origin.scrCoords[1]) / board.unitX, y: (board.origin.scrCoords[2] - rect.bottom) / board.unitY }
-            );
-          });
-        const bounds = window.InstantGeometrySharedSelection.computeRotatedBoundsFromPoints(centroid, figureState.rotation, aggregatePoints, 1.2);
         return {
-          kind: 'figure',
-          x: centroid.x,
-          y: centroid.y,
-          width: bounds.width,
-          height: bounds.height,
+          kind: 'triangleFigure',
+          center: centroid,
+          vertices: [currentGeometry.A, currentGeometry.B, currentGeometry.C],
           color: figureState.color,
-          rotation: figureState.rotation,
-          bounds: bounds
+          rotation: figureState.rotation
         };
       }
 
@@ -1711,6 +1695,113 @@
       function renderSelectionOverlay(anchor) {
         if (!anchor) {
           currentSelectionOverlay = null;
+          return;
+        }
+        if (anchor.kind === 'triangleFigure') {
+          const vertices = anchor.vertices;
+          const center = anchor.center;
+          const paletteColors = window.InstantGeometrySharedSelection.getPaletteColors();
+          const userPerPx = (1 / Math.max(Math.abs(board.unitX), 1e-6) + 1 / Math.max(Math.abs(board.unitY), 1e-6)) / 2;
+          const iconBasePx = 18;
+          const iconGapUser = 14 * userPerPx;
+          const sorted = vertices.slice().sort(function (a, b) {
+            if (Math.abs(a.y - b.y) > 1e-6) return b.y - a.y;
+            return a.x - b.x;
+          });
+          const topVertex = sorted[0];
+          const bottomTwo = sorted.slice(1).sort(function (a, b) { return a.x - b.x; });
+          const bottomLeftVertex = bottomTwo[0];
+          const bottomRightVertex = bottomTwo[1];
+          function extendFromVertex(vertex) {
+            const vx = vertex.x - center.x;
+            const vy = vertex.y - center.y;
+            const vlen = Math.hypot(vx, vy) || 1;
+            return {
+              x: vertex.x + (vx / vlen) * iconGapUser,
+              y: vertex.y + (vy / vlen) * iconGapUser
+            };
+          }
+          const rotateHandle = extendFromVertex(topVertex);
+          const paletteHandle = extendFromVertex(bottomLeftVertex);
+          const resizeHandle = extendFromVertex(bottomRightVertex);
+          [[vertices[0], vertices[1]], [vertices[1], vertices[2]], [vertices[2], vertices[0]]].forEach(function (pair) {
+            board.create('segment', [[pair[0].x, pair[0].y], [pair[1].x, pair[1].y]], {
+              fixed: true,
+              strokeColor: '#2a5bd7',
+              strokeWidth: 1.6,
+              dash: 2
+            });
+          });
+          board.create('point', [rotateHandle.x, rotateHandle.y], {
+            name: '',
+            fixed: true,
+            size: iconBasePx * 0.58,
+            strokeColor: '#2a5bd7',
+            fillColor: '#ffffff'
+          });
+          board.create('point', [paletteHandle.x, paletteHandle.y], {
+            name: '',
+            fixed: true,
+            size: iconBasePx * 0.54,
+            strokeColor: anchor.color,
+            fillColor: '#ffffff'
+          });
+          board.create('point', [paletteHandle.x, paletteHandle.y], {
+            name: '',
+            fixed: true,
+            size: iconBasePx * 0.28,
+            strokeColor: anchor.color,
+            fillColor: anchor.color
+          });
+          const resizeHalf = iconBasePx * 0.56 * userPerPx;
+          const resizeWing = iconBasePx * 0.25 * userPerPx;
+          const resizeDir = { x: -Math.SQRT1_2, y: Math.SQRT1_2 };
+          const resizeNorm = { x: -resizeDir.y, y: resizeDir.x };
+          const resizeStart = {
+            x: resizeHandle.x - resizeDir.x * resizeHalf,
+            y: resizeHandle.y - resizeDir.y * resizeHalf
+          };
+          const resizeEnd = {
+            x: resizeHandle.x + resizeDir.x * resizeHalf,
+            y: resizeHandle.y + resizeDir.y * resizeHalf
+          };
+          board.create('segment', [[resizeStart.x, resizeStart.y], [resizeEnd.x, resizeEnd.y]], { fixed: true, strokeWidth: 1.6, strokeColor: '#2a5bd7' });
+          board.create('segment', [[resizeStart.x, resizeStart.y], [resizeStart.x + resizeDir.x * resizeWing + resizeNorm.x * resizeWing, resizeStart.y + resizeDir.y * resizeWing + resizeNorm.y * resizeWing]], { fixed: true, strokeWidth: 1.4, strokeColor: '#2a5bd7' });
+          board.create('segment', [[resizeStart.x, resizeStart.y], [resizeStart.x + resizeDir.x * resizeWing - resizeNorm.x * resizeWing, resizeStart.y + resizeDir.y * resizeWing - resizeNorm.y * resizeWing]], { fixed: true, strokeWidth: 1.4, strokeColor: '#2a5bd7' });
+          board.create('segment', [[resizeEnd.x, resizeEnd.y], [resizeEnd.x - resizeDir.x * resizeWing + resizeNorm.x * resizeWing, resizeEnd.y - resizeDir.y * resizeWing + resizeNorm.y * resizeWing]], { fixed: true, strokeWidth: 1.4, strokeColor: '#2a5bd7' });
+          board.create('segment', [[resizeEnd.x, resizeEnd.y], [resizeEnd.x - resizeDir.x * resizeWing - resizeNorm.x * resizeWing, resizeEnd.y - resizeDir.y * resizeWing - resizeNorm.y * resizeWing]], { fixed: true, strokeWidth: 1.4, strokeColor: '#2a5bd7' });
+          const palette = [];
+          if (isPaletteOpen) {
+            paletteColors.forEach(function (color, index) {
+              const radius = Math.max(30, iconBasePx * 2.8) * userPerPx;
+              const angle = (210 + ((330 - 210) * index / Math.max(1, paletteColors.length - 1))) * Math.PI / 180;
+              const point = {
+                x: paletteHandle.x + Math.cos(angle) * radius,
+                y: paletteHandle.y + Math.sin(angle) * radius
+              };
+              board.create('point', [point.x, point.y], {
+                name: '',
+                fixed: true,
+                size: Math.max(4.5, iconBasePx * 0.5),
+                strokeColor: color,
+                fillColor: color
+              });
+              palette.push({ color: color, x: point.x, y: point.y });
+            });
+          }
+          currentSelectionOverlay = {
+            kind: 'triangleFigure',
+            vertices: vertices,
+            center: center,
+            rotateHandle: rotateHandle,
+            resizeHandle: resizeHandle,
+            paletteHandle: paletteHandle,
+            rotateHitRadius: iconBasePx * userPerPx,
+            resizeHitRadius: iconBasePx * 0.9 * userPerPx,
+            paletteHitRadius: iconBasePx * userPerPx,
+            paletteColorHitRadius: iconBasePx * 0.62 * userPerPx,
+            palette: palette
+          };
           return;
         }
         currentSelectionOverlay = window.InstantGeometrySharedSelection.renderSelectionOverlay({
@@ -1724,6 +1815,14 @@
 
       function findSelectionControl(point) {
         return window.InstantGeometrySharedSelection.findSelectionControl(point, currentSelectionOverlay);
+      }
+
+      function pointInFigureSelectionBounds(point) {
+        if (!selectedFigure || !currentSelectionOverlay) return false;
+        if (currentSelectionOverlay.kind === 'triangleFigure' && currentSelectionOverlay.vertices) {
+          return pointInTriangle(point, currentSelectionOverlay.vertices[0], currentSelectionOverlay.vertices[1], currentSelectionOverlay.vertices[2]);
+        }
+        return false;
       }
 
       function fitBoard(points) {
