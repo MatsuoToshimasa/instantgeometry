@@ -75,11 +75,7 @@
   let dragState = null;
   let labelNodes = {};
 
-  const labelStyles = {
-    point: {},
-    segment: {},
-    angle: {}
-  };
+  const labelStyles = window.InstantGeometrySharedLabels.createStyleStore();
 
   function setStatus(message, isError) {
     statusBox.textContent = message;
@@ -140,7 +136,14 @@
       button.textContent = getToggleLabel(config);
       button.setAttribute('aria-pressed', String(!!labelState[config.type][config.id]));
       button.addEventListener('click', function () {
-        labelState[config.type][config.id] = !labelState[config.type][config.id];
+        const nextValue = !labelState[config.type][config.id];
+        labelState[config.type][config.id] = nextValue;
+        if (nextValue) {
+          window.InstantGeometrySharedLabels.resetLabelStyle(labelStyles, config.type, config.id, getDefaultLabelStyle);
+        } else if (selectedLabel && selectedLabel.type === config.type && selectedLabel.id === config.id) {
+          selectedLabel = null;
+          paletteOpen = false;
+        }
         render();
         renderLabelToggleButtons();
       });
@@ -350,10 +353,17 @@
   }
 
   function getLabelStyle(type, id) {
-    if (!labelStyles[type][id]) {
-      labelStyles[type][id] = { dx: 0, dy: 0, rotation: 0, scale: 1, color: type === 'point' ? '#1f2430' : (type === 'angle' ? '#687086' : '#2a5bd7') };
-    }
-    return labelStyles[type][id];
+    return window.InstantGeometrySharedLabels.ensureLabelStyle(labelStyles, type, id, getDefaultLabelStyle);
+  }
+
+  function getDefaultLabelStyle(type) {
+    return {
+      dx: 0,
+      dy: 0,
+      rotation: 0,
+      scale: 1,
+      color: type === 'point' ? '#1f2430' : (type === 'angle' ? '#687086' : '#2a5bd7')
+    };
   }
 
   function userToScreenPoint(point) {
@@ -809,9 +819,7 @@
     Object.keys(segmentLineMode).forEach(function (key) { segmentLineMode[key] = 1; });
     Object.keys(segmentArcMode).forEach(function (key) { segmentArcMode[key] = 1; });
       Object.keys(angleMarkerMode).forEach(function (key) { angleMarkerMode[key] = 0; });
-      Object.keys(labelStyles.point).forEach(function (key) { delete labelStyles.point[key]; });
-      Object.keys(labelStyles.segment).forEach(function (key) { delete labelStyles.segment[key]; });
-      Object.keys(labelStyles.angle).forEach(function (key) { delete labelStyles.angle[key]; });
+      window.InstantGeometrySharedLabels.clearStyleStore(labelStyles);
       selectedLabel = null;
       paletteOpen = false;
       exportAspectIndex = 0;

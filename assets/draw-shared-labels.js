@@ -130,11 +130,53 @@
     return labelNode;
   }
 
+  function createStyleStore() {
+    return {};
+  }
+
+  function ensureLabelStyle(store, type, id, defaults) {
+    if (!store[type]) store[type] = {};
+    if (!store[type][id]) {
+      const base = typeof defaults === 'function' ? defaults(type, id) : (defaults || {});
+      store[type][id] = {
+        dx: Number.isFinite(base.dx) ? base.dx : 0,
+        dy: Number.isFinite(base.dy) ? base.dy : 0,
+        rotation: Number.isFinite(base.rotation) ? base.rotation : 0,
+        scale: Number.isFinite(base.scale) ? base.scale : 1,
+        color: base.color || '#2a5bd7'
+      };
+    }
+    return store[type][id];
+  }
+
+  function resetLabelStyle(store, type, id, defaults) {
+    if (!store[type]) store[type] = {};
+    const base = typeof defaults === 'function' ? defaults(type, id) : (defaults || {});
+    store[type][id] = {
+      dx: Number.isFinite(base.dx) ? base.dx : 0,
+      dy: Number.isFinite(base.dy) ? base.dy : 0,
+      rotation: Number.isFinite(base.rotation) ? base.rotation : 0,
+      scale: Number.isFinite(base.scale) ? base.scale : 1,
+      color: base.color || '#2a5bd7'
+    };
+    return store[type][id];
+  }
+
+  function clearStyleStore(store) {
+    Object.keys(store).forEach(function (type) {
+      delete store[type];
+    });
+  }
+
   window.InstantGeometrySharedLabels = {
     escapeHtml: escapeHtml,
     toMathLikeHtml: toMathLikeHtml,
     toLatexMath: toLatexMath,
     userToScreenPoint: userToScreenPoint,
-    createSelectableText: createSelectableText
+    createSelectableText: createSelectableText,
+    createStyleStore: createStyleStore,
+    ensureLabelStyle: ensureLabelStyle,
+    resetLabelStyle: resetLabelStyle,
+    clearStyleStore: clearStyleStore
   };
 })();
