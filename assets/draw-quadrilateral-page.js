@@ -1164,14 +1164,81 @@
 
   function getFigureSelectionAnchor() {
     if (!selectedFigure || !currentGeometry) return null;
+    const baseWidth = Math.max(currentGeometry.baseBounds ? currentGeometry.baseBounds.width * figureState.scale : currentGeometry.side * figureState.scale, 0.8);
+    const baseHeight = Math.max(currentGeometry.baseBounds ? currentGeometry.baseBounds.height * figureState.scale : currentGeometry.side * figureState.scale, 0.8);
+    const center = { x: currentGeometry.centroid.x, y: currentGeometry.centroid.y };
+    const baseCorners = {
+      topLeft: rotatePoint({ x: center.x - baseWidth / 2, y: center.y + baseHeight / 2 }, center, figureState.rotation),
+      topRight: rotatePoint({ x: center.x + baseWidth / 2, y: center.y + baseHeight / 2 }, center, figureState.rotation),
+      bottomRight: rotatePoint({ x: center.x + baseWidth / 2, y: center.y - baseHeight / 2 }, center, figureState.rotation),
+      bottomLeft: rotatePoint({ x: center.x - baseWidth / 2, y: center.y - baseHeight / 2 }, center, figureState.rotation)
+    };
+    const screenRects = currentLabelAnchors
+      .filter(function (item) { return item && item.screenRect; })
+      .map(function (item) { return item.screenRect; });
+    if (!screenRects.length) {
+      return {
+        kind: 'figure',
+        x: center.x,
+        y: center.y,
+        width: baseWidth,
+        height: baseHeight,
+        color: figureState.color,
+        rotation: figureState.rotation
+      };
+    }
+    const baseScreenPoints = [baseCorners.topLeft, baseCorners.topRight, baseCorners.bottomRight, baseCorners.bottomLeft].map(userToScreenPoint);
+    const union = screenRects.reduce(function (acc, rect) {
+      return {
+        left: Math.min(acc.left, rect.left),
+        top: Math.min(acc.top, rect.top),
+        right: Math.max(acc.right, rect.right),
+        bottom: Math.max(acc.bottom, rect.bottom)
+      };
+    }, {
+      left: Math.min.apply(null, baseScreenPoints.map(function (pt) { return pt.x; })),
+      top: Math.min.apply(null, baseScreenPoints.map(function (pt) { return pt.y; })),
+      right: Math.max.apply(null, baseScreenPoints.map(function (pt) { return pt.x; })),
+      bottom: Math.max.apply(null, baseScreenPoints.map(function (pt) { return pt.y; }))
+    });
+    const topLeft = {
+      x: (union.left - board.origin.scrCoords[1]) / board.unitX,
+      y: (board.origin.scrCoords[2] - union.top) / board.unitY
+    };
+    const topRight = {
+      x: (union.right - board.origin.scrCoords[1]) / board.unitX,
+      y: (board.origin.scrCoords[2] - union.top) / board.unitY
+    };
+    const bottomRight = {
+      x: (union.right - board.origin.scrCoords[1]) / board.unitX,
+      y: (board.origin.scrCoords[2] - union.bottom) / board.unitY
+    };
+    const bottomLeft = {
+      x: (union.left - board.origin.scrCoords[1]) / board.unitX,
+      y: (board.origin.scrCoords[2] - union.bottom) / board.unitY
+    };
     return {
       kind: 'figure',
-      x: currentGeometry.centroid.x,
-      y: currentGeometry.centroid.y,
-      width: Math.max(currentGeometry.baseBounds ? currentGeometry.baseBounds.width * figureState.scale : currentGeometry.side * figureState.scale, 0.8),
-      height: Math.max(currentGeometry.baseBounds ? currentGeometry.baseBounds.height * figureState.scale : currentGeometry.side * figureState.scale, 0.8),
+      x: center.x,
+      y: center.y,
+      width: baseWidth,
+      height: baseHeight,
       color: figureState.color,
-      rotation: figureState.rotation
+      rotation: figureState.rotation,
+      bounds: {
+        center: {
+          x: (topLeft.x + topRight.x + bottomRight.x + bottomLeft.x) / 4,
+          y: (topLeft.y + topRight.y + bottomRight.y + bottomLeft.y) / 4
+        },
+        width: Math.abs(topRight.x - topLeft.x),
+        height: Math.abs(topLeft.y - bottomLeft.y),
+        corners: {
+          topLeft: topLeft,
+          topRight: topRight,
+          bottomRight: bottomRight,
+          bottomLeft: bottomLeft
+        }
+      }
     };
   }
 

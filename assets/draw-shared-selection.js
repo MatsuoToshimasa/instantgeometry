@@ -26,7 +26,9 @@
     const anchor = deps.anchor;
     if (!anchor) return null;
 
-    const bounds = anchor.kind === 'figure'
+    const bounds = anchor.bounds
+      ? anchor.bounds
+      : anchor.kind === 'figure'
       ? {
         center: { x: anchor.x, y: anchor.y },
         width: anchor.width,
