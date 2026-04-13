@@ -1978,16 +1978,6 @@
       return;
     }
 
-    if (selectedFigure && pointInFigureSelectionBounds(point)) {
-      dragState = {
-        mode: 'figure-move',
-        target: 'figure',
-        startClient: { x: event.clientX, y: event.clientY },
-        offsetStart: { x: figureState.offset.x, y: figureState.offset.y }
-      };
-      return;
-    }
-
     const anchorHit = findAnchorAtPoint(point);
     if (anchorHit) {
       selectedLabel = anchorHit;
@@ -1995,6 +1985,16 @@
       isPaletteOpen = false;
       render();
       if (anchorHit.type === 'angleMark' || anchorHit.type === 'rightAngleMark') return;
+      return;
+    }
+
+    if (selectedFigure && pointInFigureSelectionBounds(point)) {
+      dragState = {
+        mode: 'figure-move',
+        target: 'figure',
+        startClient: { x: event.clientX, y: event.clientY },
+        offsetStart: { x: figureState.offset.x, y: figureState.offset.y }
+      };
       return;
     }
 

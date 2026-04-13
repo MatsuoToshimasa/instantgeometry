@@ -907,12 +907,12 @@
       dragState = { mode: overlayControl.mode, target: selectedLabel ? 'label' : 'figure', type: selectedLabel ? selectedLabel.type : 'figure', id: selectedLabel ? selectedLabel.id : 'main', startClient: { x: event.clientX, y: event.clientY }, center: dragCenter, fontSizeStart: selectedLabel ? labelFontSize[selectedLabel.type][selectedLabel.id] : null, scaleStart: selectedFigure ? figureState.scale : null, rotationStart: selectedLabel ? labelStyleState[selectedLabel.type][selectedLabel.id].rotation : figureState.rotation, distanceStart: Math.hypot(point.x - dragCenter.x, point.y - dragCenter.y), angleStart: Math.atan2(point.y - dragCenter.y, point.x - dragCenter.x) };
       return;
     }
+    const anchorHit = findAnchorAtPoint(point);
+    if (anchorHit) { selectedLabel = anchorHit; selectedFigure = false; isPaletteOpen = false; render(); return; }
     if (selectedFigure && pointInFigureZone(point)) {
       dragState = { mode: 'figure-move', target: 'figure', startClient: { x: event.clientX, y: event.clientY }, offsetStart: { x: figureState.offset.x, y: figureState.offset.y } };
       return;
     }
-    const anchorHit = findAnchorAtPoint(point);
-    if (anchorHit) { selectedLabel = anchorHit; selectedFigure = false; isPaletteOpen = false; render(); return; }
     if (pointInFigureZone(point)) {
       selectedLabel = null; selectedFigure = true; isPaletteOpen = false;
       dragState = { mode: 'figure-move', target: 'figure', startClient: { x: event.clientX, y: event.clientY }, offsetStart: { x: figureState.offset.x, y: figureState.offset.y } };
