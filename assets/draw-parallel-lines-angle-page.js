@@ -22,6 +22,8 @@
   const rightToggle = document.getElementById('rightDockToggleBtn');
   const ratioBtn = document.getElementById('ratioBtn');
   const resetBtn = document.getElementById('resetBtn');
+  const advancedSettingsBtn = document.getElementById('advancedSettingsBtn');
+  const advancedSettingsBody = document.getElementById('advancedSettingsBody');
   const angleModeBtn = document.getElementById('angleModeBtn');
   const pageBackBtn = document.getElementById('pageBackBtn');
   const downloadButtons = document.querySelectorAll('[data-download-format]');
@@ -70,6 +72,7 @@
   let angleMode = 'degrees';
   let isDockCollapsed = false;
   let isRightDockCollapsed = false;
+  let isAdvancedSettingsOpen = false;
   let selectedLabel = null;
   let paletteOpen = false;
   let dragState = null;
@@ -94,6 +97,12 @@
     rightToggle.setAttribute('aria-expanded', String(!isRightDockCollapsed));
   }
 
+  function updateAdvancedSettingsButton() {
+    advancedSettingsBody.hidden = !isAdvancedSettingsOpen;
+    advancedSettingsBtn.textContent = isAdvancedSettingsOpen ? '閉じる' : '開く';
+    advancedSettingsBtn.setAttribute('aria-expanded', String(isAdvancedSettingsOpen));
+  }
+
   function evaluateExpression(raw) {
     const normalized = String(raw || '').trim().replace(/\s+/g, '').replace(/π/g, 'pi').replace(/√/g, 'sqrt').replace(/(\d+(?:\.\d+)?)deg\b/gi, 'deg($1)');
     if (!normalized) throw new Error('値を入力してください。');
@@ -110,6 +119,7 @@
 
   function parseAngle(raw, label) {
     const value = evaluateExpression(raw);
+    if (!Number.isInteger(value)) throw new Error(label + 'は整数で入力してください。');
     if (!(value > 0 && value < 180)) throw new Error(label + 'は 0° より大きく 180° 未満で入力してください。');
     return value;
   }
@@ -761,12 +771,18 @@
       window.InstantGeometrySharedLabels.clearStyleStore(labelStyles);
       selectedLabel = null;
       paletteOpen = false;
-      exportAspectIndex = 0;
-      angleMode = 'degrees';
+    exportAspectIndex = 0;
+    angleMode = 'degrees';
+    isAdvancedSettingsOpen = false;
     updateRatioButton();
     updateAngleModeButton();
+    updateAdvancedSettingsButton();
     renderLabelToggleButtons();
     render();
+  });
+  advancedSettingsBtn.addEventListener('click', function () {
+    isAdvancedSettingsOpen = !isAdvancedSettingsOpen;
+    updateAdvancedSettingsButton();
   });
   pageBackBtn.addEventListener('click', function () {
     window.history.back();
@@ -800,6 +816,7 @@
 
   updateRatioButton();
   updateAngleModeButton();
+  updateAdvancedSettingsButton();
   updateDockToggleButtons();
   renderLabelToggleButtons();
   render();
