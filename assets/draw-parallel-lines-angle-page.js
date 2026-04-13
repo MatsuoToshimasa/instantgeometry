@@ -540,7 +540,7 @@
       AM: ['PAM', 'QAM', 'AMB'],
       BM: ['RBM', 'SBM', 'AMB']
     };
-    return (map[id] || []).some(angleHasVisual);
+    return window.InstantGeometrySharedOrnaments.hasMappedVisual(id, map, angleHasVisual);
   }
 
   function angleValue(a, b, c) {

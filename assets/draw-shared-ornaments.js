@@ -224,6 +224,10 @@
     return arc;
   }
 
+  function hasMappedVisual(targetId, dependencyMap, predicate) {
+    return (dependencyMap[targetId] || []).some(predicate);
+  }
+
   window.InstantGeometrySharedOrnaments = {
     quadraticPoint: quadraticPoint,
     getSideArcData: getSideArcData,
@@ -234,6 +238,7 @@
     getAngleArcData: getAngleArcData,
     buildAngleMarkerMarkup: buildAngleMarkerMarkup,
     appendSplitQuadraticArc: appendSplitQuadraticArc,
-    drawDomAngleVisual: drawDomAngleVisual
+    drawDomAngleVisual: drawDomAngleVisual,
+    hasMappedVisual: hasMappedVisual
   };
 })();
