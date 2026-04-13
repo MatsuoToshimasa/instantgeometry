@@ -1876,29 +1876,28 @@
       function getFigureSelectionAnchor() {
         if (!selectedFigure || !currentGeometry) return null;
         const centroid = getTriangleCentroid(currentGeometry);
-        const points = [currentGeometry.A, currentGeometry.B, currentGeometry.C].map(function (point) {
-          return rotatePoint(point, centroid, -figureState.rotation);
-        });
-        const A = points[0];
-        const B = points[1];
-        const C = points[2];
-        const bottomY = (A.y + B.y) / 2;
-        const topY = Math.max(A.y, B.y, C.y);
-        const width = Math.max(0.5, Math.hypot(B.x - A.x, B.y - A.y));
-        const height = Math.max(0.5, topY - bottomY);
-        const center = {
-          x: (A.x + B.x) / 2,
-          y: (topY + bottomY) / 2
-        };
-        const worldCenter = rotatePoint(center, centroid, figureState.rotation);
+        const aggregatePoints = [currentGeometry.A, currentGeometry.B, currentGeometry.C];
+        currentLabelAnchors
+          .filter(function (item) { return item && item.screenRect; })
+          .forEach(function (item) {
+            const rect = item.screenRect;
+            aggregatePoints.push(
+              { x: (rect.left - board.origin.scrCoords[1]) / board.unitX, y: (board.origin.scrCoords[2] - rect.top) / board.unitY },
+              { x: (rect.right - board.origin.scrCoords[1]) / board.unitX, y: (board.origin.scrCoords[2] - rect.top) / board.unitY },
+              { x: (rect.right - board.origin.scrCoords[1]) / board.unitX, y: (board.origin.scrCoords[2] - rect.bottom) / board.unitY },
+              { x: (rect.left - board.origin.scrCoords[1]) / board.unitX, y: (board.origin.scrCoords[2] - rect.bottom) / board.unitY }
+            );
+          });
+        const bounds = window.InstantGeometrySharedSelection.computeRotatedBoundsFromPoints(centroid, figureState.rotation, aggregatePoints, 1.2);
         return {
           kind: 'figure',
-          x: worldCenter.x,
-          y: worldCenter.y,
-          width: width,
-          height: height,
+          x: centroid.x,
+          y: centroid.y,
+          width: bounds.width,
+          height: bounds.height,
           color: figureState.color,
-          rotation: figureState.rotation
+          rotation: figureState.rotation,
+          bounds: bounds
         };
       }
 
