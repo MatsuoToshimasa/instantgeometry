@@ -477,7 +477,11 @@
   }
 
   function handleGlobalPointerMove(event) {
-    if (window.InstantGeometrySharedLabels.applyDomPointerMove(event, dragState, selectedLabel, getLabelStyle)) render();
+    if (window.InstantGeometrySharedLabels.applyDomPointerMove(event, dragState, selectedLabel, getLabelStyle, {
+      getLabelRef: function (type, id) { return labelNodes[type + ':' + id]; },
+      getConstraintRect: function () { return exportFrame.getBoundingClientRect(); },
+      margin: 8
+    })) render();
   }
 
   function handleGlobalPointerUp() {

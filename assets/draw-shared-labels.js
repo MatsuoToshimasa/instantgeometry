@@ -172,19 +172,13 @@
     labelLayer.appendChild(labelNode);
     if (deps.constrainToLayer) {
       const margin = Number.isFinite(deps.constrainMargin) ? deps.constrainMargin : 6;
-      const layerRect = typeof deps.getConstraintRect === 'function'
+      const constraintRect = typeof deps.getConstraintRect === 'function'
         ? deps.getConstraintRect()
         : labelLayer.getBoundingClientRect();
-      const rect = labelNode.getBoundingClientRect();
-      let adjustX = 0;
-      let adjustY = 0;
-      if (rect.left < layerRect.left + margin) adjustX = (layerRect.left + margin) - rect.left;
-      if (rect.right > layerRect.right - margin) adjustX = (layerRect.right - margin) - rect.right;
-      if (rect.top < layerRect.top + margin) adjustY = (layerRect.top + margin) - rect.top;
-      if (rect.bottom > layerRect.bottom - margin) adjustY = (layerRect.bottom - margin) - rect.bottom;
-      if (adjustX || adjustY) {
-        style.dx += adjustX;
-        style.dy += adjustY;
+      const adjust = clampDomRectIntoConstraint(labelNode.getBoundingClientRect(), constraintRect, margin);
+      if (adjust.x || adjust.y) {
+        style.dx += adjust.x;
+        style.dy += adjust.y;
         labelNode.style.transform = 'translate(-50%, -50%) translate(' + style.dx + 'px,' + style.dy + 'px) rotate(' + style.rotation + 'deg) scale(' + style.scale + ')';
       }
     }
@@ -209,6 +203,16 @@
       button.addEventListener('contextmenu', options.onContextMenu);
     }
     return button;
+  }
+
+  function clampDomRectIntoConstraint(rect, constraintRect, margin) {
+    let adjustX = 0;
+    let adjustY = 0;
+    if (rect.left < constraintRect.left + margin) adjustX = (constraintRect.left + margin) - rect.left;
+    if (rect.right > constraintRect.right - margin) adjustX = (constraintRect.right - margin) - rect.right;
+    if (rect.top < constraintRect.top + margin) adjustY = (constraintRect.top + margin) - rect.top;
+    if (rect.bottom > constraintRect.bottom - margin) adjustY = (constraintRect.bottom - margin) - rect.bottom;
+    return { x: adjustX, y: adjustY };
   }
 
   function beginDomLabelMove(event, getLabelStyle) {
@@ -270,12 +274,33 @@
     };
   }
 
-  function applyDomPointerMove(event, dragState, selectedLabel, getLabelStyle) {
+  function applyDomPointerMove(event, dragState, selectedLabel, getLabelStyle, options) {
     if (!dragState || !selectedLabel) return false;
     const style = getLabelStyle(selectedLabel.type, selectedLabel.id);
     if (dragState.mode === 'move') {
-      style.dx = dragState.baseDx + (event.clientX - dragState.startX);
-      style.dy = dragState.baseDy + (event.clientY - dragState.startY);
+      const proposedDx = dragState.baseDx + (event.clientX - dragState.startX);
+      const proposedDy = dragState.baseDy + (event.clientY - dragState.startY);
+      if (options && typeof options.getLabelRef === 'function' && typeof options.getConstraintRect === 'function') {
+        const ref = options.getLabelRef(selectedLabel.type, selectedLabel.id);
+        const constraintRect = options.getConstraintRect();
+        if (ref && ref.node && constraintRect) {
+          const currentRect = ref.node.getBoundingClientRect();
+          const deltaX = proposedDx - style.dx;
+          const deltaY = proposedDy - style.dy;
+          const candidateRect = {
+            left: currentRect.left + deltaX,
+            right: currentRect.right + deltaX,
+            top: currentRect.top + deltaY,
+            bottom: currentRect.bottom + deltaY
+          };
+          const adjust = clampDomRectIntoConstraint(candidateRect, constraintRect, options.margin || 6);
+          style.dx = proposedDx + adjust.x;
+          style.dy = proposedDy + adjust.y;
+          return true;
+        }
+      }
+      style.dx = proposedDx;
+      style.dy = proposedDy;
       return true;
     }
     if (dragState.mode === 'rotate') {
@@ -338,6 +363,7 @@
     createSelectableText: createSelectableText,
     createDomSelectableLabel: createDomSelectableLabel,
     createToggleButton: createToggleButton,
+    clampDomRectIntoConstraint: clampDomRectIntoConstraint,
     beginDomLabelMove: beginDomLabelMove,
     applyDomLabelWheel: applyDomLabelWheel,
     beginDomHandleGesture: beginDomHandleGesture,
