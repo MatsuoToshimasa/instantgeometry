@@ -809,7 +809,6 @@
   }
   function renderLabels(geometry) {
     labelLayer.innerHTML = '';
-    currentLabelAnchors = [];
     pointIds.forEach(function (id) {
       if (!labelState.point[id]) return;
       createSelectableText(getLabelPosition('point', id, getDefaultPosition('point', id, geometry)), getPointLabelToken(id), labelFontSize.point[id], { type: 'point', id: id }, { color: '#1f2430' });

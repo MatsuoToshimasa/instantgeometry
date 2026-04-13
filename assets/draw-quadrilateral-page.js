@@ -1389,7 +1389,6 @@
 
   function renderLabels(geometry) {
     labelLayer.innerHTML = '';
-    currentLabelAnchors = [];
 
     ['A', 'B', 'C', 'D'].forEach(function (id) {
       if (!labelState.vertex[id]) return;
