@@ -211,8 +211,8 @@
   function registerSegmentObjectAnchor(type, id, start, end) {
     const screenStart = userToScreenPoint(start);
     const screenEnd = userToScreenPoint(end);
-    const hitWidthPx = 25;
-    const boxWidthPx = 14;
+    const hitWidthPx = 17;
+    const boxWidthPx = 15;
     const dx = screenEnd.x - screenStart.x;
     const dy = screenEnd.y - screenStart.y;
     const len = Math.hypot(dx, dy) || 1;
