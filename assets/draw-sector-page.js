@@ -423,7 +423,21 @@
   }
   function getFigureSelectionAnchor() {
     if (!selectedFigure || !currentGeometry) return null;
-    return { kind: 'figure', x: currentGeometry.centroid.x, y: currentGeometry.centroid.y, width: Math.max(currentGeometry.baseBounds.width, 0.8), height: Math.max(currentGeometry.baseBounds.height, 0.8), color: figureState.color, rotation: figureState.rotation };
+    const center = { x: currentGeometry.centroid.x, y: currentGeometry.centroid.y };
+    const aggregatePoints = Object.keys(currentGeometry.points).map(function (key) { return currentGeometry.points[key]; });
+    currentLabelAnchors
+      .filter(function (item) { return item && item.screenRect; })
+      .forEach(function (item) {
+        const rect = item.screenRect;
+        aggregatePoints.push(
+          { x: (rect.left - board.origin.scrCoords[1]) / board.unitX, y: (board.origin.scrCoords[2] - rect.top) / board.unitY },
+          { x: (rect.right - board.origin.scrCoords[1]) / board.unitX, y: (board.origin.scrCoords[2] - rect.top) / board.unitY },
+          { x: (rect.right - board.origin.scrCoords[1]) / board.unitX, y: (board.origin.scrCoords[2] - rect.bottom) / board.unitY },
+          { x: (rect.left - board.origin.scrCoords[1]) / board.unitX, y: (board.origin.scrCoords[2] - rect.bottom) / board.unitY }
+        );
+      });
+    const bounds = window.InstantGeometrySharedSelection.computeRotatedBoundsFromPoints(center, figureState.rotation, aggregatePoints, 1.2);
+    return { kind: 'figure', x: center.x, y: center.y, width: bounds.width, height: bounds.height, color: figureState.color, rotation: figureState.rotation, bounds: bounds };
   }
   function normalizeAngle(rad) {
     let value = rad;
