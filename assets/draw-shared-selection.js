@@ -440,10 +440,15 @@
     };
   }
 
+  function isNonTransformableSelectionType(type) {
+    return ['segment', 'side', 'diagonal', 'specialSegment'].includes(type);
+  }
+
   window.InstantGeometrySharedSelection = {
     computeRotatedBoundsFromPoints: computeRotatedBoundsFromPoints,
     createAggregateSelectionRef: createAggregateSelectionRef,
     createVirtualSelectionRef: createVirtualSelectionRef,
+    isNonTransformableSelectionType: isNonTransformableSelectionType,
     getPaletteColors: getPaletteColors,
     ensureDomSelectionStyles: ensureDomSelectionStyles,
     renderSelectionOverlay: renderSelectionOverlay,
