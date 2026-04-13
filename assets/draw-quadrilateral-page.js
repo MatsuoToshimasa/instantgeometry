@@ -82,13 +82,16 @@
   const styleDefaults = {
     vertex: { A: style('#1f2430'), B: style('#1f2430'), C: style('#1f2430'), D: style('#1f2430') },
     side: { AB: style('#2a5bd7'), BC: style('#2a5bd7'), CD: style('#2a5bd7'), DA: style('#2a5bd7') },
+    sideObject: { AB: style('#2a5bd7'), BC: style('#2a5bd7'), CD: style('#2a5bd7'), DA: style('#2a5bd7') },
     angle: { A: style('#687086'), B: style('#687086'), C: style('#687086'), D: style('#687086'), AOB: style('#687086'), BOC: style('#687086'), COD: style('#687086'), DOA: style('#687086'), OAB: style('#687086'), OBC: style('#687086'), OCD: style('#687086'), ODA: style('#687086'), OAD: style('#687086'), ODC: style('#687086'), OCB: style('#687086'), OBA: style('#687086') },
     angleMark: { A: style('#687086'), B: style('#687086'), C: style('#687086'), D: style('#687086'), AOB: style('#687086'), BOC: style('#687086'), COD: style('#687086'), DOA: style('#687086'), OAB: style('#687086'), OBC: style('#687086'), OCD: style('#687086'), ODA: style('#687086'), OAD: style('#687086'), ODC: style('#687086'), OCB: style('#687086'), OBA: style('#687086') },
     rightAngleMark: { A: style('#111111'), B: style('#111111'), C: style('#111111'), D: style('#111111'), AOB: style('#111111'), BOC: style('#111111'), COD: style('#111111'), DOA: style('#111111'), OAB: style('#111111'), OBC: style('#111111'), OCD: style('#111111'), ODA: style('#111111'), OAD: style('#111111'), ODC: style('#111111'), OCB: style('#111111'), OBA: style('#111111') },
     area: { main: style('#25603b') },
     specialVertex: { O: style('#1f2430') },
     specialSegment: { OA: style('#7d8db8'), OB: style('#7d8db8'), OC: style('#7d8db8'), OD: style('#7d8db8') },
-    diagonal: { AC: style('#7d8db8'), BD: style('#7d8db8') }
+    specialSegmentObject: { OA: style('#7d8db8'), OB: style('#7d8db8'), OC: style('#7d8db8'), OD: style('#7d8db8') },
+    diagonal: { AC: style('#7d8db8'), BD: style('#7d8db8') },
+    diagonalObject: { AC: style('#7d8db8'), BD: style('#7d8db8') }
   };
   let labelStyleState = JSON.parse(JSON.stringify(styleDefaults));
   const labelPositions = {
@@ -392,9 +395,14 @@
   }
 
   function getLabelStyle(type, id) {
-    return labelStyleState[type] && labelStyleState[type][id]
-      ? labelStyleState[type][id]
-      : { color: '#2a5bd7', rotation: 0 };
+    labelStyleState[type] = labelStyleState[type] || {};
+    if (!labelStyleState[type][id]) {
+      const fallback = styleDefaults[type] && styleDefaults[type][id]
+        ? JSON.parse(JSON.stringify(styleDefaults[type][id]))
+        : { color: '#2a5bd7', rotation: 0 };
+      labelStyleState[type][id] = fallback;
+    }
+    return labelStyleState[type][id];
   }
 
   function getLabelPosition(type, id, basePosition) {
@@ -1459,13 +1467,15 @@
     specialSegmentIds.forEach(function (id) {
       if (!(labelState.specialSegment[id] || segmentLineMode.specialSegment[id] !== 0 || shouldDrawSpecialSegment(id))) return;
       const pair = { OA: [geometry.centroid, P.A], OB: [geometry.centroid, P.B], OC: [geometry.centroid, P.C], OD: [geometry.centroid, P.D] }[id];
+      const segmentColor = getLabelStyle('specialSegmentObject', id).color;
       board.create('segment', [[pair[0].x, pair[0].y], [pair[1].x, pair[1].y]], {
         fixed: true,
-        strokeColor: '#9aa7c7',
+        strokeColor: segmentColor,
         strokeWidth: 1.4,
         dash: 2,
         highlight: false
       });
+      registerSegmentObjectAnchor('specialSegmentObject', id, pair[0], pair[1]);
       if (!labelState.specialSegment[id]) return;
       window.InstantGeometrySharedOrnaments.drawSideArcLabel({
         board: board,
@@ -1526,13 +1536,15 @@
         },
         labelFontSize: labelFontSize
       });
+      const diagonalColor = getLabelStyle('diagonalObject', id).color;
       board.create('segment', [[pair[0].x, pair[0].y], [pair[1].x, pair[1].y]], {
         fixed: true,
-        strokeColor: '#9aa7c7',
+        strokeColor: diagonalColor,
         strokeWidth: 1.6,
         dash: 2,
         highlight: false
       });
+      registerSegmentObjectAnchor('diagonalObject', id, pair[0], pair[1]);
     });
 
     specialAngleIds.forEach(function (id) {
@@ -1748,6 +1760,27 @@
     return null;
   }
 
+  function registerSegmentObjectAnchor(type, id, start, end) {
+    const screenStart = userToScreenPoint(start);
+    const screenEnd = userToScreenPoint(end);
+    const pad = 8;
+    currentLabelAnchors.push({
+      type: type,
+      id: id,
+      x: (start.x + end.x) / 2,
+      y: (start.y + end.y) / 2,
+      screenRect: {
+        left: Math.min(screenStart.x, screenEnd.x) - pad,
+        right: Math.max(screenStart.x, screenEnd.x) + pad,
+        top: Math.min(screenStart.y, screenEnd.y) - pad,
+        bottom: Math.max(screenStart.y, screenEnd.y) + pad
+      },
+      fontSize: 16,
+      rotation: Math.atan2(end.y - start.y, end.x - start.x) * 180 / Math.PI,
+      color: getLabelStyle(type, id).color
+    });
+  }
+
   function renderFigure(geometry) {
     const P = geometry.points;
     const pointA = board.create('point', [P.A.x, P.A.y], { name: '', size: 3, fixed: true, strokeColor: '#111111', fillColor: '#111111' });
@@ -1761,11 +1794,42 @@
       vertices: { visible: false },
       highlight: false
     });
-    const lineStyle = { fixed: true, strokeWidth: 2, strokeColor: figureState.color, highlight: false };
-    if (labelState.side.AB || segmentLineMode.side.AB !== 0) board.create('segment', [pointA, pointB], lineStyle);
-    if (labelState.side.BC || segmentLineMode.side.BC !== 0) board.create('segment', [pointB, pointC], lineStyle);
-    if (labelState.side.CD || segmentLineMode.side.CD !== 0) board.create('segment', [pointC, pointD], lineStyle);
-    if (labelState.side.DA || segmentLineMode.side.DA !== 0) board.create('segment', [pointD, pointA], lineStyle);
+    if (labelState.side.AB || segmentLineMode.side.AB !== 0) {
+      board.create('segment', [pointA, pointB], {
+        fixed: true,
+        strokeWidth: 2,
+        strokeColor: getLabelStyle('sideObject', 'AB').color,
+        highlight: false
+      });
+      registerSegmentObjectAnchor('sideObject', 'AB', P.A, P.B);
+    }
+    if (labelState.side.BC || segmentLineMode.side.BC !== 0) {
+      board.create('segment', [pointB, pointC], {
+        fixed: true,
+        strokeWidth: 2,
+        strokeColor: getLabelStyle('sideObject', 'BC').color,
+        highlight: false
+      });
+      registerSegmentObjectAnchor('sideObject', 'BC', P.B, P.C);
+    }
+    if (labelState.side.CD || segmentLineMode.side.CD !== 0) {
+      board.create('segment', [pointC, pointD], {
+        fixed: true,
+        strokeWidth: 2,
+        strokeColor: getLabelStyle('sideObject', 'CD').color,
+        highlight: false
+      });
+      registerSegmentObjectAnchor('sideObject', 'CD', P.C, P.D);
+    }
+    if (labelState.side.DA || segmentLineMode.side.DA !== 0) {
+      board.create('segment', [pointD, pointA], {
+        fixed: true,
+        strokeWidth: 2,
+        strokeColor: getLabelStyle('sideObject', 'DA').color,
+        highlight: false
+      });
+      registerSegmentObjectAnchor('sideObject', 'DA', P.D, P.A);
+    }
   }
 
   function render() {
