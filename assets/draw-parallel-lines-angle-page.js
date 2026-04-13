@@ -27,6 +27,22 @@
     AM: ['PAM', 'QAM', 'AMB'],
     BM: ['RBM', 'SBM', 'AMB']
   };
+  const DEFAULT_LABEL_STATE = {
+    point: { P: false, Q: false, R: false, S: false, A: false, B: false, M: false },
+    segment: { PQ: false, RS: false, AM: false, BM: false },
+    angle: { PAM: false, QAM: true, AMB: true, RBM: false, SBM: true }
+  };
+  const DEFAULT_CUSTOM_TEXT = {
+    point: { P: '', Q: '', R: '', S: '', A: '', B: '', M: '' },
+    segment: { PQ: '', RS: '', AM: '', BM: '' },
+    angle: { PAM: '', QAM: '', AMB: '', RBM: '', SBM: '' }
+  };
+  const DEFAULT_SEGMENT_LINE_MODE = { PQ: 1, RS: 1, AM: 1, BM: 1 };
+  const DEFAULT_SEGMENT_ARC_MODE = { PQ: 1, RS: 1, AM: 1, BM: 1 };
+  const DEFAULT_ANGLE_MARKER_MODE = { PAM: 0, QAM: 0, AMB: 0, RBM: 0, SBM: 0 };
+  function cloneRecord(record) {
+    return JSON.parse(JSON.stringify(record));
+  }
 
   const inputElements = Array.from(document.querySelectorAll('[data-parallel-input]')).reduce(function (acc, element) {
     acc[element.id] = element;
@@ -58,19 +74,11 @@
     ...Object.keys(ANGLE_POINT_MAP).map(function (id) { return { type: 'angle', id: id }; })
   ];
 
-  const labelState = {
-    point: { P: false, Q: false, R: false, S: false, A: false, B: false, M: false },
-    segment: { PQ: false, RS: false, AM: false, BM: false },
-    angle: { PAM: false, QAM: true, AMB: true, RBM: false, SBM: true }
-  };
-  const customLabelText = {
-    point: { P: '', Q: '', R: '', S: '', A: '', B: '', M: '' },
-    segment: { PQ: '', RS: '', AM: '', BM: '' },
-    angle: { PAM: '', QAM: '', AMB: '', RBM: '', SBM: '' }
-  };
-  const segmentLineMode = { PQ: 1, RS: 1, AM: 1, BM: 1 };
-  const segmentArcMode = { PQ: 1, RS: 1, AM: 1, BM: 1 };
-  const angleMarkerMode = { PAM: 0, QAM: 0, AMB: 0, RBM: 0, SBM: 0 };
+  const labelState = cloneRecord(DEFAULT_LABEL_STATE);
+  const customLabelText = cloneRecord(DEFAULT_CUSTOM_TEXT);
+  const segmentLineMode = Object.assign({}, DEFAULT_SEGMENT_LINE_MODE);
+  const segmentArcMode = Object.assign({}, DEFAULT_SEGMENT_ARC_MODE);
+  const angleMarkerMode = Object.assign({}, DEFAULT_ANGLE_MARKER_MODE);
 
   let svg = null;
   let currentView = null;
@@ -724,18 +732,18 @@
     inputElements.rbLength.value = '5';
     inputElements.theta1.value = '20';
     inputElements.theta2.value = '30';
-    labelState.point = { P: false, Q: false, R: false, S: false, A: false, B: false, M: false };
-    labelState.segment = { PQ: false, RS: false, AM: false, BM: false };
-    labelState.angle = { PAM: false, QAM: true, AMB: true, RBM: false, SBM: true };
-    Object.keys(customLabelText.point).forEach(function (key) { customLabelText.point[key] = ''; });
-    Object.keys(customLabelText.segment).forEach(function (key) { customLabelText.segment[key] = ''; });
-    Object.keys(customLabelText.angle).forEach(function (key) { customLabelText.angle[key] = ''; });
-    Object.keys(segmentLineMode).forEach(function (key) { segmentLineMode[key] = 1; });
-    Object.keys(segmentArcMode).forEach(function (key) { segmentArcMode[key] = 1; });
-      Object.keys(angleMarkerMode).forEach(function (key) { angleMarkerMode[key] = 0; });
-      window.InstantGeometrySharedLabels.clearStyleStore(labelStyles);
-      selectedLabel = null;
-      paletteOpen = false;
+    Object.keys(labelState).forEach(function (type) {
+      Object.assign(labelState[type], DEFAULT_LABEL_STATE[type]);
+    });
+    Object.keys(customLabelText).forEach(function (type) {
+      Object.assign(customLabelText[type], DEFAULT_CUSTOM_TEXT[type]);
+    });
+    Object.assign(segmentLineMode, DEFAULT_SEGMENT_LINE_MODE);
+    Object.assign(segmentArcMode, DEFAULT_SEGMENT_ARC_MODE);
+    Object.assign(angleMarkerMode, DEFAULT_ANGLE_MARKER_MODE);
+    window.InstantGeometrySharedLabels.clearStyleStore(labelStyles);
+    selectedLabel = null;
+    paletteOpen = false;
     exportAspectIndex = 0;
     angleMode = 'degrees';
     isAdvancedSettingsOpen = false;
