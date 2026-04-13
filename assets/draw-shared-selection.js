@@ -5,6 +5,23 @@
     return ['#1f2430', '#2a5bd7', '#c2410c', '#0f766e', '#7c3aed', '#be123c'];
   }
 
+  function ensureDomSelectionStyles() {
+    if (document.getElementById('instant-geometry-dom-selection-styles')) return;
+    const style = document.createElement('style');
+    style.id = 'instant-geometry-dom-selection-styles';
+    style.textContent = ''
+      + '.label-selection-box{position:absolute;border:1.6px dashed #2a5bd7;border-radius:8px;pointer-events:none;z-index:12}'
+      + '.label-handle{position:absolute;width:22px;height:22px;border:none;background:transparent;display:flex;align-items:center;justify-content:center;padding:0;pointer-events:auto;z-index:13;cursor:pointer}'
+      + '.label-handle svg{display:block;overflow:visible}'
+      + '.label-handle.rotate svg circle{fill:#fff;stroke:#2a5bd7;stroke-width:1.6}'
+      + '.label-handle.palette .palette-outer{fill:#fff;stroke:currentColor;stroke-width:1.6}'
+      + '.label-handle.palette .palette-inner{fill:currentColor;stroke:currentColor;stroke-width:1}'
+      + '.label-handle.resize .resize-main,.label-handle.resize .resize-wing{fill:none;stroke:#2a5bd7;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}'
+      + '.palette-pop{position:absolute;pointer-events:auto;z-index:14}'
+      + '.palette-pop button{position:absolute;width:18px;height:18px;border-radius:999px;border:1px solid rgba(31,36,48,.18);cursor:pointer;box-shadow:0 2px 8px rgba(27,39,94,.12)}';
+    document.head.appendChild(style);
+  }
+
   function renderSelectionOverlay(deps) {
     const anchor = deps.anchor;
     if (!anchor) return null;
@@ -179,6 +196,7 @@
   }
 
   function renderDomSelectionOverlay(deps) {
+    ensureDomSelectionStyles();
     const labelLayer = deps.labelLayer;
     const existing = labelLayer.querySelectorAll('.label-selection-box,.label-handle,.palette-pop');
     existing.forEach(function (node) { node.remove(); });
@@ -248,6 +266,7 @@
 
   window.InstantGeometrySharedSelection = {
     getPaletteColors: getPaletteColors,
+    ensureDomSelectionStyles: ensureDomSelectionStyles,
     renderSelectionOverlay: renderSelectionOverlay,
     findSelectionControl: findSelectionControl,
     renderDomSelectionOverlay: renderDomSelectionOverlay
