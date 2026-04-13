@@ -393,6 +393,38 @@
     };
   }
 
+  function getPointLabelAnchor(id, geometry) {
+    const point = geometry.points[id];
+    if (!point || !currentView) return point;
+    if (id === 'A') return { x: point.x - 0.22, y: point.y + 0.24 };
+    if (id === 'B') return { x: point.x + 0.22, y: point.y - 0.24 };
+    if (id === 'M') return { x: point.x + 0.22, y: point.y + 0.24 };
+    if (!['P', 'Q', 'R', 'S'].includes(id)) return point;
+
+    const lineLength = Math.abs(geometry.points.Q.x - geometry.points.P.x);
+    const offset = lineLength / 10;
+    const marginX = lineLength / 25;
+    const marginY = currentView.height * 0.05;
+    const isLeft = id === 'P' || id === 'R';
+    const isTop = id === 'P' || id === 'Q';
+
+    let x = point.x + (isLeft ? -offset : offset);
+    if (x < currentView.x + marginX || x > currentView.x + currentView.width - marginX) {
+      x = point.x + (isLeft ? offset : -offset);
+    }
+
+    return {
+      x: Math.max(currentView.x + marginX, Math.min(currentView.x + currentView.width - marginX, x)),
+      y: Math.max(
+        currentView.y + marginY,
+        Math.min(
+          currentView.y + currentView.height - marginY,
+          point.y + (isTop ? marginY * 0.2 : -marginY * 0.2)
+        )
+      )
+    };
+  }
+
   function createDomLabel(type, id, anchor, text, fontSize) {
     return window.InstantGeometrySharedLabels.createDomSelectableLabel({
       labelLayer: labelLayer,
@@ -691,25 +723,13 @@
       drawPoint(geometry.points.B, '#111111');
       drawPoint(geometry.points.M, '#111111');
 
-      if (labelState.point.P) {
-        const offset = (geometry.points.Q.x - geometry.points.P.x) / 10;
-        createDomLabel('point', 'P', { x: geometry.points.P.x - offset, y: geometry.points.P.y }, getPointLabelText('P'), 28);
-      }
-      if (labelState.point.Q) {
-        const offset = (geometry.points.Q.x - geometry.points.P.x) / 10;
-        createDomLabel('point', 'Q', { x: geometry.points.Q.x + offset, y: geometry.points.Q.y }, getPointLabelText('Q'), 28);
-      }
-      if (labelState.point.R) {
-        const offset = (geometry.points.S.x - geometry.points.R.x) / 10;
-        createDomLabel('point', 'R', { x: geometry.points.R.x - offset, y: geometry.points.R.y }, getPointLabelText('R'), 28);
-      }
-      if (labelState.point.S) {
-        const offset = (geometry.points.S.x - geometry.points.R.x) / 10;
-        createDomLabel('point', 'S', { x: geometry.points.S.x + offset, y: geometry.points.S.y }, getPointLabelText('S'), 28);
-      }
-      if (labelState.point.A) createDomLabel('point', 'A', { x: geometry.points.A.x - 0.22, y: geometry.points.A.y + 0.24 }, getPointLabelText('A'), 28);
-      if (labelState.point.B) createDomLabel('point', 'B', { x: geometry.points.B.x + 0.22, y: geometry.points.B.y - 0.24 }, getPointLabelText('B'), 28);
-      if (labelState.point.M) createDomLabel('point', 'M', { x: geometry.points.M.x + 0.22, y: geometry.points.M.y + 0.24 }, getPointLabelText('M'), 28);
+      if (labelState.point.P) createDomLabel('point', 'P', getPointLabelAnchor('P', geometry), getPointLabelText('P'), 28);
+      if (labelState.point.Q) createDomLabel('point', 'Q', getPointLabelAnchor('Q', geometry), getPointLabelText('Q'), 28);
+      if (labelState.point.R) createDomLabel('point', 'R', getPointLabelAnchor('R', geometry), getPointLabelText('R'), 28);
+      if (labelState.point.S) createDomLabel('point', 'S', getPointLabelAnchor('S', geometry), getPointLabelText('S'), 28);
+      if (labelState.point.A) createDomLabel('point', 'A', getPointLabelAnchor('A', geometry), getPointLabelText('A'), 28);
+      if (labelState.point.B) createDomLabel('point', 'B', getPointLabelAnchor('B', geometry), getPointLabelText('B'), 28);
+      if (labelState.point.M) createDomLabel('point', 'M', getPointLabelAnchor('M', geometry), getPointLabelText('M'), 28);
 
       ['PQ', 'RS', 'AM', 'BM'].forEach(function (id) {
         if (labelState.segment[id]) drawSegmentLabel(id, geometry);
