@@ -92,6 +92,7 @@
   let dragState = null;
   let labelNodes = {};
   let figureSelectionRef = null;
+  let figureSelectionBounds = null;
   let figureState = {
     color: '#2a5bd7',
     rotation: 0,
@@ -405,6 +406,47 @@
     return window.InstantGeometrySharedLabels.ensureLabelStyle(labelStyles, type, id, getDefaultLabelStyle);
   }
 
+  function replaceLabelStyles(snapshot) {
+    window.InstantGeometrySharedLabels.clearStyleStore(labelStyles);
+    Object.keys(snapshot || {}).forEach(function (type) {
+      labelStyles[type] = {};
+      Object.keys(snapshot[type] || {}).forEach(function (id) {
+        labelStyles[type][id] = Object.assign({}, snapshot[type][id]);
+      });
+    });
+  }
+
+  function forEachLabelStyle(callback) {
+    Object.keys(labelStyles).forEach(function (type) {
+      Object.keys(labelStyles[type] || {}).forEach(function (id) {
+        callback(labelStyles[type][id], type, id);
+      });
+    });
+  }
+
+  function applyFigureScaleToLabels(snapshot, ratio) {
+    replaceLabelStyles(snapshot);
+    forEachLabelStyle(function (style) {
+      style.dx *= ratio;
+      style.dy *= ratio;
+      style.scale *= ratio;
+    });
+  }
+
+  function applyFigureRotationToLabels(snapshot, deltaDeg) {
+    replaceLabelStyles(snapshot);
+    const rad = deltaDeg * Math.PI / 180;
+    const cos = Math.cos(rad);
+    const sin = Math.sin(rad);
+    forEachLabelStyle(function (style) {
+      const nextDx = style.dx * cos - style.dy * sin;
+      const nextDy = style.dx * sin + style.dy * cos;
+      style.dx = nextDx;
+      style.dy = nextDy;
+      style.rotation += deltaDeg;
+    });
+  }
+
   function getDefaultLabelStyle(type) {
     return {
       dx: 0,
@@ -532,7 +574,7 @@
         renderSelectionBox();
         return;
       }
-      const center = userToScreenPoint(currentGeometry.centroid);
+      const center = figureSelectionBounds ? figureSelectionBounds.center : userToScreenPoint(currentGeometry.centroid);
       dragState = {
         mode: handle,
         target: 'figure',
@@ -542,7 +584,8 @@
         rotationStart: figureState.rotation,
         distanceStart: Math.hypot(event.clientX - center.x, event.clientY - center.y),
         angleStart: Math.atan2(event.clientY - center.y, event.clientX - center.x),
-        offsetStart: { x: figureState.offset.x, y: figureState.offset.y }
+        offsetStart: { x: figureState.offset.x, y: figureState.offset.y },
+        labelStylesStart: window.InstantGeometrySharedLabels.cloneJsonRecord(labelStyles)
       };
       return;
     }
@@ -576,12 +619,16 @@
         const nextDistance = Math.hypot(event.clientX - dragState.centerScreen.x, event.clientY - dragState.centerScreen.y);
         const ratio = Math.max(0.3, Math.min(4, nextDistance / Math.max(dragState.distanceStart, 1)));
         figureState.scale = dragState.scaleStart * ratio;
+        applyFigureScaleToLabels(dragState.labelStylesStart || {}, ratio);
         render();
         return;
       }
       if (dragState.mode === 'rotate') {
         const currentAngle = Math.atan2(event.clientY - dragState.centerScreen.y, event.clientX - dragState.centerScreen.x);
-        figureState.rotation = dragState.rotationStart + ((currentAngle - dragState.angleStart) * 180 / Math.PI);
+        const nextRotation = dragState.rotationStart + ((currentAngle - dragState.angleStart) * 180 / Math.PI);
+        const delta = nextRotation - dragState.rotationStart;
+        figureState.rotation = nextRotation;
+        applyFigureRotationToLabels(dragState.labelStylesStart || {}, delta);
         render();
         return;
       }
@@ -710,6 +757,7 @@
       );
     });
     const bounds = window.InstantGeometrySharedSelection.computeRotatedBoundsFromPoints(center, figureState.rotation, aggregatePoints, 1.2);
+    figureSelectionBounds = bounds;
     figureSelectionRef = window.InstantGeometrySharedSelection.createVirtualSelectionRef({
       left: bounds.center.x - bounds.width / 2,
       top: bounds.center.y - bounds.height / 2,
@@ -816,6 +864,8 @@
     } catch (error) {
       currentGeometry = null;
       currentView = null;
+      figureSelectionRef = null;
+      figureSelectionBounds = null;
       const fallbackLength = Number.isFinite(evaluateExpressionSafe(inputElements.lineLength && inputElements.lineLength.value)) ? evaluateExpressionSafe(inputElements.lineLength.value) : 14;
       const fallback = {
         points: {

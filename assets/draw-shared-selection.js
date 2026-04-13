@@ -409,15 +409,19 @@
     const maxX = Math.max.apply(null, localPoints.map(function (point) { return point.x; }));
     const minY = Math.min.apply(null, localPoints.map(function (point) { return point.y; }));
     const maxY = Math.max.apply(null, localPoints.map(function (point) { return point.y; }));
+    const localCenter = {
+      x: (minX + maxX) / 2,
+      y: (minY + maxY) / 2
+    };
     const width = Math.max((maxX - minX) * (scaleMultiplier || 1), 1e-6);
     const height = Math.max((maxY - minY) * (scaleMultiplier || 1), 1e-6);
     const halfWidth = width / 2;
     const halfHeight = height / 2;
     const cornersLocal = {
-      topLeft: { x: -halfWidth, y: halfHeight },
-      topRight: { x: halfWidth, y: halfHeight },
-      bottomRight: { x: halfWidth, y: -halfHeight },
-      bottomLeft: { x: -halfWidth, y: -halfHeight }
+      topLeft: { x: localCenter.x - halfWidth, y: localCenter.y + halfHeight },
+      topRight: { x: localCenter.x + halfWidth, y: localCenter.y + halfHeight },
+      bottomRight: { x: localCenter.x + halfWidth, y: localCenter.y - halfHeight },
+      bottomLeft: { x: localCenter.x - halfWidth, y: localCenter.y - halfHeight }
     };
     const rotateForward = function (point) {
       const c = Math.cos(rotation);
@@ -428,7 +432,7 @@
       };
     };
     return {
-      center: { x: center.x, y: center.y },
+      center: rotateForward(localCenter),
       width: width,
       height: height,
       corners: {
