@@ -176,18 +176,36 @@
   function registerSegmentObjectAnchor(type, id, start, end) {
     const screenStart = userToScreenPoint(start);
     const screenEnd = userToScreenPoint(end);
-    const pad = 8;
+    const hitWidthPx = 20;
+    const boxWidthPx = 14;
+    const dx = screenEnd.x - screenStart.x;
+    const dy = screenEnd.y - screenStart.y;
+    const len = Math.hypot(dx, dy) || 1;
+    const nx = -dy / len;
+    const ny = dx / len;
+    const hx = (hitWidthPx / 2) * nx;
+    const hy = (hitWidthPx / 2) * ny;
+    const hitCorners = [
+      { x: screenStart.x + hx, y: screenStart.y + hy },
+      { x: screenEnd.x + hx, y: screenEnd.y + hy },
+      { x: screenEnd.x - hx, y: screenEnd.y - hy },
+      { x: screenStart.x - hx, y: screenStart.y - hy }
+    ];
+    const xs = hitCorners.map(function (p) { return p.x; });
+    const ys = hitCorners.map(function (p) { return p.y; });
     currentLabelAnchors.push({
       type: type,
       id: id,
       x: (start.x + end.x) / 2,
       y: (start.y + end.y) / 2,
       screenRect: {
-        left: Math.min(screenStart.x, screenEnd.x) - pad,
-        right: Math.max(screenStart.x, screenEnd.x) + pad,
-        top: Math.min(screenStart.y, screenEnd.y) - pad,
-        bottom: Math.max(screenStart.y, screenEnd.y) + pad
+        left: Math.min.apply(null, xs),
+        right: Math.max.apply(null, xs),
+        top: Math.min.apply(null, ys),
+        bottom: Math.max.apply(null, ys)
       },
+      boxWidthPx: len,
+      boxHeightPx: boxWidthPx,
       fontSize: 16,
       rotation: Math.atan2(end.y - start.y, end.x - start.x) * 180 / Math.PI,
       color: getLabelStyle(type, id).color
@@ -247,8 +265,12 @@
   }
   function getLabelBounds(anchor) {
     const padPx = 6;
-    const widthPx = anchor.screenRect ? Math.max(10, (anchor.screenRect.right - anchor.screenRect.left) + padPx * 2) : Math.max(10, String(anchor.text || '').length * anchor.fontSize * 0.56) + padPx * 2;
-    const heightPx = anchor.screenRect ? Math.max(10, (anchor.screenRect.bottom - anchor.screenRect.top) + padPx * 2) : Math.max(10, anchor.fontSize) + padPx * 2;
+    const widthPx = anchor.boxWidthPx && anchor.boxHeightPx
+      ? Math.max(10, anchor.boxWidthPx)
+      : anchor.screenRect ? Math.max(10, (anchor.screenRect.right - anchor.screenRect.left) + padPx * 2) : Math.max(10, String(anchor.text || '').length * anchor.fontSize * 0.56) + padPx * 2;
+    const heightPx = anchor.boxWidthPx && anchor.boxHeightPx
+      ? Math.max(10, anchor.boxHeightPx)
+      : anchor.screenRect ? Math.max(10, (anchor.screenRect.bottom - anchor.screenRect.top) + padPx * 2) : Math.max(10, anchor.fontSize) + padPx * 2;
     const width = widthPx / Math.max(Math.abs(board.unitX), 1e-6);
     const height = heightPx / Math.max(Math.abs(board.unitY), 1e-6);
     const center = { x: anchor.x, y: anchor.y };
