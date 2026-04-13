@@ -241,6 +241,54 @@
     });
   }
 
+  async function promptPointLabelSetting(config) {
+    return promptSingleText({
+      title: config.title || '点ラベル設定',
+      firstLabel: config.firstLabel || '文字',
+      value: config.value
+    });
+  }
+
+  async function promptSegmentLabelSetting(config) {
+    const response = await promptTripleSetting({
+      title: config.title || '線分ラベル設定',
+      firstLabel: config.firstLabel || '線分表示（0:線分を非表示 / 1:線分を表示）',
+      firstValue: config.lineValue,
+      secondLabel: config.secondLabel || '弧表示（0:弧を非表示 / 1:弧を表示）',
+      secondValue: config.arcValue,
+      thirdLabel: config.thirdLabel || '文字（空欄で数値表示）',
+      thirdValue: config.textValue,
+      firstBinary: true,
+      secondBinary: true
+    });
+    if (response === null) return null;
+    return {
+      line: normalizeCustomLabelInput(response.first),
+      arc: normalizeCustomLabelInput(response.second),
+      text: normalizeCustomLabelInput(response.third)
+    };
+  }
+
+  async function promptAngleLabelSetting(config) {
+    const response = await promptTripleSetting({
+      title: config.title || '角ラベル設定',
+      firstLabel: config.firstLabel || '角マーク（0:なし / 1:記号なし / 2:○ / 3:| / 4:= / 5:× / 6:△ / 7:塗）',
+      firstValue: config.markerValue,
+      secondLabel: config.secondLabel || '文字（空欄で数値表示）',
+      secondValue: config.textValue,
+      thirdLabel: config.thirdLabel || '直角マーク（0:非表示 / 1:表示）',
+      thirdValue: config.rightAngleValue,
+      thirdDisabled: !!config.thirdDisabled,
+      thirdBinary: !!config.thirdBinary
+    });
+    if (response === null) return null;
+    return {
+      marker: normalizeCustomLabelInput(response.first),
+      text: normalizeCustomLabelInput(response.second),
+      rightAngle: normalizeCustomLabelInput(response.third)
+    };
+  }
+
   function formatAngleCustomText(text, angleMode) {
     const value = normalizeCustomLabelInput(text);
     if (!value) return '';
@@ -252,6 +300,9 @@
     promptDualSetting: promptDualSetting,
     promptSingleText: promptSingleText,
     promptTripleSetting: promptTripleSetting,
+    promptPointLabelSetting: promptPointLabelSetting,
+    promptSegmentLabelSetting: promptSegmentLabelSetting,
+    promptAngleLabelSetting: promptAngleLabelSetting,
     formatAngleCustomText: formatAngleCustomText
   };
 })();

@@ -145,9 +145,7 @@
       if (config.type === 'point') {
         onContextMenu = async function (event) {
           event.preventDefault();
-          const response = await window.InstantGeometrySharedLabelConfig.promptSingleText({
-            title: '点ラベル設定',
-            firstLabel: '文字',
+          const response = await window.InstantGeometrySharedLabelConfig.promptPointLabelSetting({
             value: customLabelText.point[config.id] || config.id
           });
           if (response === null) return;
@@ -158,50 +156,40 @@
       } else if (config.type === 'segment') {
         onContextMenu = async function (event) {
           event.preventDefault();
-          const response = await window.InstantGeometrySharedLabelConfig.promptTripleSetting({
-            title: '線分ラベル設定',
-            firstLabel: '線分表示（0:線分を非表示 / 1:線分を表示）',
-            firstValue: String(segmentLineMode[config.id]),
-            secondLabel: '弧表示（0:弧を非表示 / 1:弧を表示）',
-            secondValue: String(segmentArcMode[config.id]),
-            thirdLabel: '文字（空欄で数値表示）',
-            thirdValue: customLabelText.segment[config.id] || '',
-            firstBinary: true,
-            secondBinary: true
+          const response = await window.InstantGeometrySharedLabelConfig.promptSegmentLabelSetting({
+            lineValue: String(segmentLineMode[config.id]),
+            arcValue: String(segmentArcMode[config.id]),
+            textValue: customLabelText.segment[config.id] || ''
           });
           if (response === null) return;
-          const lineMode = window.InstantGeometrySharedOrnaments.normalizeSegmentArcInput(response.first);
-          const arcMode = window.InstantGeometrySharedOrnaments.normalizeSegmentArcInput(response.second);
+          const lineMode = window.InstantGeometrySharedOrnaments.normalizeSegmentArcInput(response.line);
+          const arcMode = window.InstantGeometrySharedOrnaments.normalizeSegmentArcInput(response.arc);
           if (lineMode === null || arcMode === null) {
             setStatus('線分表示と弧表示は「0 / 1」で指定してください。', true);
             return;
           }
           segmentLineMode[config.id] = lineMode;
           segmentArcMode[config.id] = arcMode;
-          customLabelText.segment[config.id] = String(response.third || '').trim();
+          customLabelText.segment[config.id] = String(response.text || '').trim();
           render();
         };
       } else if (config.type === 'angle') {
         onContextMenu = async function (event) {
           event.preventDefault();
-          const response = await window.InstantGeometrySharedLabelConfig.promptTripleSetting({
-            title: '角ラベル設定',
-            firstLabel: '角マーク（0:なし / 1:記号なし / 2:○ / 3:| / 4:= / 5:× / 6:△ / 7:塗）',
-            firstValue: String(angleMarkerMode[config.id] || 0),
-            secondLabel: '文字（空欄で数値表示）',
-            secondValue: customLabelText.angle[config.id] || '',
-            thirdLabel: '直角マーク（0:非表示 / 1:表示）',
-            thirdValue: '90°以外は設定不可',
+          const response = await window.InstantGeometrySharedLabelConfig.promptAngleLabelSetting({
+            markerValue: String(angleMarkerMode[config.id] || 0),
+            textValue: customLabelText.angle[config.id] || '',
+            rightAngleValue: '90°以外は設定不可',
             thirdDisabled: true
           });
           if (response === null) return;
-          const mode = normalizeAngleMarkerInput(response.first);
+          const mode = normalizeAngleMarkerInput(response.marker);
           if (mode === null) {
             setStatus('角マークは「0 / 1 / 2 / 3 / 4 / 5 / 6 / 7」で指定してください。', true);
             return;
           }
           angleMarkerMode[config.id] = mode;
-          customLabelText.angle[config.id] = String(response.second || '').trim();
+          customLabelText.angle[config.id] = String(response.text || '').trim();
           render();
         };
       }
