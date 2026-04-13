@@ -128,14 +128,14 @@
   }
 
   function getGeometry() {
-    const upperY = -1;
-    const lowerY = 1;
+    const upperY = 1;
+    const lowerY = -1;
     const lineLength = evaluateExpression(inputElements.lineLength.value);
     if (!(lineLength > 0)) throw new Error('PQ＝RS の長さは 0 より大きくしてください。');
     const theta1Deg = parseAngle(inputElements.theta1.value, '∠QAM');
     const theta2Deg = parseAngle(inputElements.theta2.value, '∠SBM');
-    const A = { x: 0, y: lowerY };
-    const B = { x: 0, y: upperY };
+    const A = { x: 0, y: upperY };
+    const B = { x: 0, y: lowerY };
     const dirA = { x: Math.cos(theta1Deg * Math.PI / 180), y: -Math.sin(theta1Deg * Math.PI / 180) };
     const dirB = { x: Math.cos(theta2Deg * Math.PI / 180), y: Math.sin(theta2Deg * Math.PI / 180) };
     const denominator = dirA.x * dirB.y - dirA.y * dirB.x;
@@ -145,13 +145,13 @@
     const u = (diff.x * dirA.y - diff.y * dirA.x) / denominator;
     if (!(t > 0 && u > 0)) throw new Error('指定した値では、M が平行線の間にできません。');
     const M = { x: A.x + dirA.x * t, y: A.y + dirA.y * t };
-    if (!(M.y > upperY && M.y < lowerY)) throw new Error('指定した値では、M が平行線の間にできません。');
+    if (!(M.y < upperY && M.y > lowerY)) throw new Error('指定した値では、M が平行線の間にできません。');
     return {
       points: {
-        P: { x: -lineLength / 2, y: lowerY },
-        Q: { x: lineLength / 2, y: lowerY },
-        R: { x: -lineLength / 2, y: upperY },
-        S: { x: lineLength / 2, y: upperY },
+        P: { x: -lineLength / 2, y: upperY },
+        Q: { x: lineLength / 2, y: upperY },
+        R: { x: -lineLength / 2, y: lowerY },
+        S: { x: lineLength / 2, y: lowerY },
         A: A,
         B: B,
         M: M
