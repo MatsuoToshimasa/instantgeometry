@@ -199,6 +199,31 @@
     deps.svg.appendChild(rightPath);
   }
 
+  function drawDomAngleVisual(deps) {
+    const arc = getAngleArcData(deps.vertex, deps.p1, deps.p2, deps.radius || 0.35);
+    if (deps.showArc) {
+      deps.svg.appendChild(deps.createSvgElement('path', {
+        d: arc.d,
+        stroke: deps.stroke,
+        'stroke-width': deps.strokeWidth || 0.04,
+        fill: 'none'
+      }));
+    }
+    if (deps.showLabel) {
+      deps.createDomLabel('angle', deps.id, {
+        x: deps.vertex.x + (deps.labelRadius || 0.52) * Math.cos(arc.midAngle),
+        y: deps.vertex.y + (deps.labelRadius || 0.52) * Math.sin(arc.midAngle)
+      }, deps.text, deps.fontSize || 26);
+    }
+    if (deps.showMarker && deps.markerMode > 1) {
+      deps.createDomMarkup('angleMarker', deps.id, {
+        x: deps.vertex.x + (deps.markerRadius || 0.34) * Math.cos(arc.midAngle),
+        y: deps.vertex.y + (deps.markerRadius || 0.34) * Math.sin(arc.midAngle)
+      }, buildAngleMarkerMarkup(deps.markerMode), deps.markerSize || 24);
+    }
+    return arc;
+  }
+
   window.InstantGeometrySharedOrnaments = {
     quadraticPoint: quadraticPoint,
     getSideArcData: getSideArcData,
@@ -208,6 +233,7 @@
     normalizeAngleMarkerInput: normalizeAngleMarkerInput,
     getAngleArcData: getAngleArcData,
     buildAngleMarkerMarkup: buildAngleMarkerMarkup,
-    appendSplitQuadraticArc: appendSplitQuadraticArc
+    appendSplitQuadraticArc: appendSplitQuadraticArc,
+    drawDomAngleVisual: drawDomAngleVisual
   };
 })();

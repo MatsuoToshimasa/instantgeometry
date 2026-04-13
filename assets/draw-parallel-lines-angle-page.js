@@ -630,24 +630,40 @@
     const p1 = geometry.points[ids[0]];
     const vertex = geometry.points[ids[1]];
     const p2 = geometry.points[ids[2]];
-    const arc = window.InstantGeometrySharedOrnaments.getAngleArcData(vertex, p1, p2, 0.35);
-    if (angleHasLabel(id) && !angleHasMarker(id)) {
-      const style = getLabelStyle('angle', id);
-      svg.appendChild(createSvgElement('path', { d: arc.d, stroke: style.color, 'stroke-width': 0.04, fill: 'none' }));
-    }
-    if (angleHasLabel(id)) {
-      const text = getAngleLabelText(id, geometry);
-      createDomLabel('angle', id, { x: vertex.x + 0.52 * Math.cos(arc.midAngle), y: vertex.y + 0.52 * Math.sin(arc.midAngle) }, text, 26);
-    }
-    if (angleHasMarker(id)) drawAngleMarker(id, vertex, arc.midAngle);
-  }
-
-  function drawAngleMarker(id, vertex, midAngle) {
-    const mode = Number.isFinite(angleMarkerMode[id]) ? angleMarkerMode[id] : 0;
-    if (mode <= 1) return;
-    const cx = vertex.x + 0.34 * Math.cos(midAngle);
-    const cy = vertex.y + 0.34 * Math.sin(midAngle);
-    createDomAngleMarker(id, { x: cx, y: cy }, mode, 24);
+    const style = getLabelStyle('angle', id);
+    window.InstantGeometrySharedOrnaments.drawDomAngleVisual({
+      svg: svg,
+      createSvgElement: createSvgElement,
+      vertex: vertex,
+      p1: p1,
+      p2: p2,
+      id: id,
+      stroke: style.color,
+      showArc: angleHasLabel(id) && !angleHasMarker(id),
+      showLabel: angleHasLabel(id),
+      text: getAngleLabelText(id, geometry),
+      createDomLabel: createDomLabel,
+      showMarker: angleHasMarker(id),
+      markerMode: Number.isFinite(angleMarkerMode[id]) ? angleMarkerMode[id] : 0,
+      createDomMarkup: function (type, markerId, anchor, markup, size) {
+        return window.InstantGeometrySharedLabels.createDomSelectableMarkup({
+          labelLayer: labelLayer,
+          getLabelStyle: getLabelStyle,
+          toScreenPoint: userToScreenPoint,
+          onPointerDown: handleLabelPointerDown,
+          onWheel: handleLabelWheel,
+          constrainToLayer: true,
+          constrainMargin: 8,
+          getConstraintRect: function () { return exportFrame.getBoundingClientRect(); },
+          storeRef: labelNodes,
+          type: type,
+          id: markerId,
+          anchor: anchor,
+          size: size,
+          markup: markup
+        });
+      }
+    });
   }
 
   function updateExportFrame() {
