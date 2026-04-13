@@ -400,6 +400,8 @@
       toScreenPoint: userToScreenPoint,
       onPointerDown: handleLabelPointerDown,
       onWheel: handleLabelWheel,
+      constrainToLayer: true,
+      constrainMargin: 8,
       storeRef: labelNodes,
       type: type,
       id: id,

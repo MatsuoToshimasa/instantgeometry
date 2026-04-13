@@ -170,6 +170,22 @@
     if (typeof onPointerDown === 'function') labelNode.addEventListener('pointerdown', onPointerDown);
     if (typeof onWheel === 'function') labelNode.addEventListener('wheel', onWheel, { passive: false });
     labelLayer.appendChild(labelNode);
+    if (deps.constrainToLayer) {
+      const margin = Number.isFinite(deps.constrainMargin) ? deps.constrainMargin : 6;
+      const layerRect = labelLayer.getBoundingClientRect();
+      const rect = labelNode.getBoundingClientRect();
+      let adjustX = 0;
+      let adjustY = 0;
+      if (rect.left < layerRect.left + margin) adjustX = (layerRect.left + margin) - rect.left;
+      if (rect.right > layerRect.right - margin) adjustX = (layerRect.right - margin) - rect.right;
+      if (rect.top < layerRect.top + margin) adjustY = (layerRect.top + margin) - rect.top;
+      if (rect.bottom > layerRect.bottom - margin) adjustY = (layerRect.bottom - margin) - rect.bottom;
+      if (adjustX || adjustY) {
+        style.dx += adjustX;
+        style.dy += adjustY;
+        labelNode.style.transform = 'translate(-50%, -50%) translate(' + style.dx + 'px,' + style.dy + 'px) rotate(' + (-style.rotation) + 'deg) scale(' + style.scale + ')';
+      }
+    }
     if (storeRef) {
       storeRef[type + ':' + id] = { node: labelNode, anchor: anchor, fontSize: fontSize, type: type, id: id };
     }
