@@ -299,11 +299,42 @@
     return { rect: rect };
   }
 
+  function renderDomSelectionForState(deps) {
+    const selectedLabel = deps.selectedLabel;
+    if (!selectedLabel) {
+      renderDomSelectionOverlay({
+        labelLayer: deps.labelLayer,
+        labelRef: null
+      });
+      return { selectedLabel: null, paletteOpen: false };
+    }
+    const ref = deps.labelNodes[selectedLabel.type + ':' + selectedLabel.id];
+    if (!ref) {
+      renderDomSelectionOverlay({
+        labelLayer: deps.labelLayer,
+        labelRef: null
+      });
+      return { selectedLabel: null, paletteOpen: false };
+    }
+    renderDomSelectionOverlay({
+      labelLayer: deps.labelLayer,
+      labelRef: ref,
+      color: deps.getLabelStyle(selectedLabel.type, selectedLabel.id).color,
+      rotation: deps.getLabelStyle(selectedLabel.type, selectedLabel.id).rotation,
+      scale: deps.getLabelStyle(selectedLabel.type, selectedLabel.id).scale,
+      paletteOpen: deps.paletteOpen,
+      onHandlePointerDown: deps.onHandlePointerDown,
+      onPaletteColorClick: deps.onPaletteColorClick
+    });
+    return { selectedLabel: selectedLabel, paletteOpen: deps.paletteOpen };
+  }
+
   window.InstantGeometrySharedSelection = {
     getPaletteColors: getPaletteColors,
     ensureDomSelectionStyles: ensureDomSelectionStyles,
     renderSelectionOverlay: renderSelectionOverlay,
     findSelectionControl: findSelectionControl,
-    renderDomSelectionOverlay: renderDomSelectionOverlay
+    renderDomSelectionOverlay: renderDomSelectionOverlay,
+    renderDomSelectionForState: renderDomSelectionForState
   };
 })();

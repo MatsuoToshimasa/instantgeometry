@@ -457,29 +457,11 @@
   }
 
   function renderSelectionBox() {
-    if (!selectedLabel) {
-      window.InstantGeometrySharedSelection.renderDomSelectionOverlay({
-        labelLayer: labelLayer,
-        labelRef: null
-      });
-      return;
-    }
-    const ref = labelNodes[selectedLabel.type + ':' + selectedLabel.id];
-    if (!ref) {
-      selectedLabel = null;
-      paletteOpen = false;
-      window.InstantGeometrySharedSelection.renderDomSelectionOverlay({
-        labelLayer: labelLayer,
-        labelRef: null
-      });
-      return;
-    }
-    window.InstantGeometrySharedSelection.renderDomSelectionOverlay({
+    const state = window.InstantGeometrySharedSelection.renderDomSelectionForState({
       labelLayer: labelLayer,
-      labelRef: ref,
-      color: getLabelStyle(selectedLabel.type, selectedLabel.id).color,
-      rotation: getLabelStyle(selectedLabel.type, selectedLabel.id).rotation,
-      scale: getLabelStyle(selectedLabel.type, selectedLabel.id).scale,
+      selectedLabel: selectedLabel,
+      labelNodes: labelNodes,
+      getLabelStyle: getLabelStyle,
       paletteOpen: paletteOpen,
       onHandlePointerDown: handleControlPointerDown,
       onPaletteColorClick: function (color) {
@@ -488,6 +470,8 @@
         render();
       }
     });
+    selectedLabel = state.selectedLabel;
+    paletteOpen = state.paletteOpen;
   }
 
   function handleLabelPointerDown(event) {
