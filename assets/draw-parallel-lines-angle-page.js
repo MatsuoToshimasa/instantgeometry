@@ -364,7 +364,7 @@
       dy: 0,
       rotation: 0,
       scale: 1,
-      color: type === 'point' ? '#1f2430' : (type === 'angle' ? '#687086' : '#2a5bd7')
+      color: type === 'point' ? '#1f2430' : ((type === 'angle' || type === 'angleMarker') ? '#687086' : '#2a5bd7')
     };
   }
 
@@ -442,6 +442,53 @@
       text: text,
       fontSize: fontSize
     });
+  }
+
+  function createDomAngleMarker(id, anchor, mode, size) {
+    const style = getLabelStyle('angleMarker', id);
+    const screen = userToScreenPoint(anchor);
+    const node = document.createElement('div');
+    node.className = 'floating-label';
+    node.dataset.type = 'angleMarker';
+    node.dataset.id = id;
+    node.style.left = screen.x + 'px';
+    node.style.top = screen.y + 'px';
+    node.style.color = style.color;
+    node.style.width = size + 'px';
+    node.style.height = size + 'px';
+    node.style.display = 'flex';
+    node.style.alignItems = 'center';
+    node.style.justifyContent = 'center';
+    node.style.transform = 'translate(-50%, -50%) translate(' + style.dx + 'px,' + style.dy + 'px) rotate(' + style.rotation + 'deg) scale(' + style.scale + ')';
+    node.innerHTML = buildAngleMarkerMarkup(mode);
+    node.addEventListener('pointerdown', handleLabelPointerDown);
+    node.addEventListener('wheel', handleLabelWheel, { passive: false });
+    labelLayer.appendChild(node);
+    labelNodes['angleMarker:' + id] = { node: node, anchor: anchor, fontSize: size, type: 'angleMarker', id: id };
+    return node;
+  }
+
+  function buildAngleMarkerMarkup(mode) {
+    const common = 'stroke="currentColor" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"';
+    if (mode === 2) {
+      return '<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2" ' + common + '></circle></svg>';
+    }
+    if (mode === 3) {
+      return '<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><line x1="8" y1="16" x2="16" y2="8" ' + common + '></line></svg>';
+    }
+    if (mode === 4) {
+      return '<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><line x1="7" y1="17" x2="15" y2="9" ' + common + '></line><line x1="10" y1="20" x2="18" y2="12" ' + common + '></line></svg>';
+    }
+    if (mode === 5) {
+      return '<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><line x1="8" y1="8" x2="16" y2="16" ' + common + '></line><line x1="16" y1="8" x2="8" y2="16" ' + common + '></line></svg>';
+    }
+    if (mode === 6) {
+      return '<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><polygon points="12,7 8,15 16,15" ' + common + '></polygon></svg>';
+    }
+    if (mode === 7) {
+      return '<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6 A6 6 0 0 1 18 12 L12 12 Z" fill="currentColor" stroke="none"></path></svg>';
+    }
+    return '';
   }
 
   function renderSelectionBox() {
@@ -620,41 +667,7 @@
     if (mode <= 1) return;
     const cx = vertex.x + 0.34 * Math.cos(midAngle);
     const cy = vertex.y + 0.34 * Math.sin(midAngle);
-    const stroke = '#687086';
-    if (mode === 2) {
-      svg.appendChild(createSvgElement('circle', { cx: cx, cy: cy, r: 0.05, stroke: stroke, 'stroke-width': 0.02, fill: 'none' }));
-      return;
-    }
-    if (mode === 3 || mode === 4) {
-      const dx = 0.05 * Math.cos(midAngle + Math.PI / 2);
-      const dy = 0.05 * Math.sin(midAngle + Math.PI / 2);
-      svg.appendChild(createSvgElement('line', { x1: cx - dx, y1: cy - dy, x2: cx + dx, y2: cy + dy, stroke: stroke, 'stroke-width': 0.02 }));
-      if (mode === 4) {
-        svg.appendChild(createSvgElement('line', { x1: cx - dx + 0.045 * Math.cos(midAngle), y1: cy - dy + 0.045 * Math.sin(midAngle), x2: cx + dx + 0.045 * Math.cos(midAngle), y2: cy + dy + 0.045 * Math.sin(midAngle), stroke: stroke, 'stroke-width': 0.02 }));
-      }
-      return;
-    }
-    if (mode === 5) {
-      const dx = 0.045 * Math.cos(midAngle + Math.PI / 4);
-      const dy = 0.045 * Math.sin(midAngle + Math.PI / 4);
-      svg.appendChild(createSvgElement('line', { x1: cx - dx, y1: cy - dy, x2: cx + dx, y2: cy + dy, stroke: stroke, 'stroke-width': 0.02 }));
-      svg.appendChild(createSvgElement('line', { x1: cx - dy, y1: cy + dx, x2: cx + dy, y2: cy - dx, stroke: stroke, 'stroke-width': 0.02 }));
-      return;
-    }
-    if (mode === 6) {
-      const r = 0.065;
-      const points = [
-        [cx, cy - r],
-        [cx - r * 0.866, cy + r * 0.5],
-        [cx + r * 0.866, cy + r * 0.5]
-      ].map(function (point) { return point.join(','); }).join(' ');
-      svg.appendChild(createSvgElement('polygon', { points: points, stroke: stroke, 'stroke-width': 0.02, fill: 'none' }));
-      return;
-    }
-    if (mode === 7) {
-      const path = arcPath(vertex, { x: vertex.x + 0.2 * Math.cos(midAngle - 0.2), y: vertex.y + 0.2 * Math.sin(midAngle - 0.2) }, { x: vertex.x + 0.2 * Math.cos(midAngle + 0.2), y: vertex.y + 0.2 * Math.sin(midAngle + 0.2) }, 0.2);
-      svg.appendChild(createSvgElement('path', { d: path.d + ' L ' + vertex.x + ' ' + vertex.y + ' Z', fill: 'rgba(104,112,134,0.35)', stroke: 'none' }));
-    }
+    createDomAngleMarker(id, { x: cx, y: cy }, mode, 24);
   }
 
   function updateExportFrame() {
