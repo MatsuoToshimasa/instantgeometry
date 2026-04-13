@@ -130,24 +130,18 @@
   function getGeometry() {
     const topY = 1;
     const bottomY = -1;
-    const pqLength = evaluateExpression(inputElements.pqLength.value);
-    const rsLength = evaluateExpression(inputElements.rsLength.value);
-    if (!(pqLength > 0)) throw new Error('上の線分 PQ の長さは 0 より大きくしてください。');
-    if (!(rsLength > 0)) throw new Error('下の線分 RS の長さは 0 より大きくしてください。');
-    const topLeftX = -pqLength / 2;
-    const topRightX = pqLength / 2;
-    const bottomLeftX = -rsLength / 2;
-    const bottomRightX = rsLength / 2;
-    const aX = evaluateExpression(inputElements.aPos.value);
-    const bX = evaluateExpression(inputElements.bPos.value);
+    const lineLength = evaluateExpression(inputElements.lineLength.value);
+    if (!(lineLength > 0)) throw new Error('PQ＝RS の長さは 0 より大きくしてください。');
+    const topLeftX = -lineLength / 2;
+    const topRightX = lineLength / 2;
+    const bottomLeftX = -lineLength / 2;
+    const bottomRightX = lineLength / 2;
     const theta1Deg = parseAngle(inputElements.theta1.value, 'θ1');
     const theta2Deg = parseAngle(inputElements.theta2.value, 'θ2');
-    if (!(aX > topLeftX && aX < topRightX)) throw new Error('点Aの位置は上の線分の内部にしてください。');
-    if (!(bX > bottomLeftX && bX < bottomRightX)) throw new Error('点Bの位置は下の線分の内部にしてください。');
-    const A = { x: aX, y: topY };
-    const B = { x: bX, y: bottomY };
+    const A = { x: 0, y: topY };
+    const B = { x: 0, y: bottomY };
     const dirA = { x: Math.cos(theta1Deg * Math.PI / 180), y: -Math.sin(theta1Deg * Math.PI / 180) };
-    const dirB = { x: -Math.cos(theta2Deg * Math.PI / 180), y: Math.sin(theta2Deg * Math.PI / 180) };
+    const dirB = { x: Math.cos(theta2Deg * Math.PI / 180), y: Math.sin(theta2Deg * Math.PI / 180) };
     const denominator = dirA.x * dirB.y - dirA.y * dirB.x;
     if (Math.abs(denominator) < 1e-9) throw new Error('AM と BM が交わりません。');
     const diff = { x: B.x - A.x, y: B.y - A.y };
@@ -404,14 +398,13 @@
 
       setStatus('図形を描画しました。', false);
     } catch (error) {
-      const fallbackTopLength = Number.isFinite(evaluateExpressionSafe(inputElements.pqLength && inputElements.pqLength.value)) ? evaluateExpressionSafe(inputElements.pqLength.value) : 14;
-      const fallbackBottomLength = Number.isFinite(evaluateExpressionSafe(inputElements.rsLength && inputElements.rsLength.value)) ? evaluateExpressionSafe(inputElements.rsLength.value) : 14;
+      const fallbackLength = Number.isFinite(evaluateExpressionSafe(inputElements.lineLength && inputElements.lineLength.value)) ? evaluateExpressionSafe(inputElements.lineLength.value) : 14;
       const fallback = {
         points: {
-          P: { x: -fallbackTopLength / 2, y: 1 },
-          Q: { x: fallbackTopLength / 2, y: 1 },
-          R: { x: -fallbackBottomLength / 2, y: -1 },
-          S: { x: fallbackBottomLength / 2, y: -1 }
+          P: { x: -fallbackLength / 2, y: 1 },
+          Q: { x: fallbackLength / 2, y: 1 },
+          R: { x: -fallbackLength / 2, y: -1 },
+          S: { x: fallbackLength / 2, y: -1 }
         }
       };
       const fallbackBounds = getBounds(fallback.points);
@@ -446,10 +439,7 @@
     render();
   });
   resetBtn.addEventListener('click', function () {
-    inputElements.pqLength.value = '14';
-    inputElements.rsLength.value = '14';
-    inputElements.aPos.value = '-2.5';
-    inputElements.bPos.value = '2.5';
+    inputElements.lineLength.value = '14';
     inputElements.theta1.value = '20';
     inputElements.theta2.value = '30';
     labelState.point = { P: true, Q: true, R: true, S: true, A: true, B: true, M: true };
