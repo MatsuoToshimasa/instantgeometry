@@ -188,6 +188,56 @@
     return labelNode;
   }
 
+  function createDomSelectableMarkup(deps) {
+    const labelLayer = deps.labelLayer;
+    const getLabelStyle = deps.getLabelStyle;
+    const toScreenPoint = deps.toScreenPoint;
+    const onPointerDown = deps.onPointerDown;
+    const onWheel = deps.onWheel;
+    const storeRef = deps.storeRef;
+    const type = deps.type;
+    const id = deps.id;
+    const anchor = deps.anchor;
+    const size = deps.size;
+    const markup = deps.markup;
+
+    const style = getLabelStyle(type, id);
+    const screen = toScreenPoint(anchor);
+    const node = document.createElement('div');
+    node.className = 'floating-label';
+    node.dataset.type = type;
+    node.dataset.id = id;
+    node.style.left = screen.x + 'px';
+    node.style.top = screen.y + 'px';
+    node.style.color = style.color;
+    node.style.width = size + 'px';
+    node.style.height = size + 'px';
+    node.style.display = 'flex';
+    node.style.alignItems = 'center';
+    node.style.justifyContent = 'center';
+    node.style.transform = 'translate(-50%, -50%) translate(' + style.dx + 'px,' + style.dy + 'px) rotate(' + style.rotation + 'deg) scale(' + style.scale + ')';
+    node.innerHTML = markup;
+    if (typeof onPointerDown === 'function') node.addEventListener('pointerdown', onPointerDown);
+    if (typeof onWheel === 'function') node.addEventListener('wheel', onWheel, { passive: false });
+    labelLayer.appendChild(node);
+    if (deps.constrainToLayer) {
+      const margin = Number.isFinite(deps.constrainMargin) ? deps.constrainMargin : 6;
+      const constraintRect = typeof deps.getConstraintRect === 'function'
+        ? deps.getConstraintRect()
+        : labelLayer.getBoundingClientRect();
+      const adjust = clampDomRectIntoConstraint(node.getBoundingClientRect(), constraintRect, margin);
+      if (adjust.x || adjust.y) {
+        style.dx += adjust.x;
+        style.dy += adjust.y;
+        node.style.transform = 'translate(-50%, -50%) translate(' + style.dx + 'px,' + style.dy + 'px) rotate(' + style.rotation + 'deg) scale(' + style.scale + ')';
+      }
+    }
+    if (storeRef) {
+      storeRef[type + ':' + id] = { node: node, anchor: anchor, fontSize: size, type: type, id: id };
+    }
+    return node;
+  }
+
   function createToggleButton(options) {
     const button = document.createElement('button');
     button.type = 'button';
@@ -362,6 +412,7 @@
     userToScreenPoint: userToScreenPoint,
     createSelectableText: createSelectableText,
     createDomSelectableLabel: createDomSelectableLabel,
+    createDomSelectableMarkup: createDomSelectableMarkup,
     createToggleButton: createToggleButton,
     clampDomRectIntoConstraint: clampDomRectIntoConstraint,
     beginDomLabelMove: beginDomLabelMove,

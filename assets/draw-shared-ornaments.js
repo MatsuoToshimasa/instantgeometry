@@ -180,6 +180,25 @@
     return '';
   }
 
+  function appendSplitQuadraticArc(deps) {
+    const leftPath = deps.createSvgElement('path', {
+      d: 'M ' + deps.P.x + ' ' + deps.P.y + ' Q ' + deps.control.x + ' ' + deps.control.y + ' ' + deps.leftEnd.x + ' ' + deps.leftEnd.y,
+      stroke: deps.stroke,
+      'stroke-width': deps.strokeWidth,
+      'stroke-dasharray': deps.dashArray,
+      fill: 'none'
+    });
+    const rightPath = deps.createSvgElement('path', {
+      d: 'M ' + deps.rightStart.x + ' ' + deps.rightStart.y + ' Q ' + deps.control.x + ' ' + deps.control.y + ' ' + deps.Q.x + ' ' + deps.Q.y,
+      stroke: deps.stroke,
+      'stroke-width': deps.strokeWidth,
+      'stroke-dasharray': deps.dashArray,
+      fill: 'none'
+    });
+    deps.svg.appendChild(leftPath);
+    deps.svg.appendChild(rightPath);
+  }
+
   window.InstantGeometrySharedOrnaments = {
     quadraticPoint: quadraticPoint,
     getSideArcData: getSideArcData,
@@ -188,6 +207,7 @@
     normalizeSegmentArcInput: normalizeSegmentArcInput,
     normalizeAngleMarkerInput: normalizeAngleMarkerInput,
     getAngleArcData: getAngleArcData,
-    buildAngleMarkerMarkup: buildAngleMarkerMarkup
+    buildAngleMarkerMarkup: buildAngleMarkerMarkup,
+    appendSplitQuadraticArc: appendSplitQuadraticArc
   };
 })();

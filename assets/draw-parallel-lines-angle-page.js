@@ -438,27 +438,22 @@
   }
 
   function createDomAngleMarker(id, anchor, mode, size) {
-    const style = getLabelStyle('angleMarker', id);
-    const screen = userToScreenPoint(anchor);
-    const node = document.createElement('div');
-    node.className = 'floating-label';
-    node.dataset.type = 'angleMarker';
-    node.dataset.id = id;
-    node.style.left = screen.x + 'px';
-    node.style.top = screen.y + 'px';
-    node.style.color = style.color;
-    node.style.width = size + 'px';
-    node.style.height = size + 'px';
-    node.style.display = 'flex';
-    node.style.alignItems = 'center';
-    node.style.justifyContent = 'center';
-    node.style.transform = 'translate(-50%, -50%) translate(' + style.dx + 'px,' + style.dy + 'px) rotate(' + style.rotation + 'deg) scale(' + style.scale + ')';
-    node.innerHTML = window.InstantGeometrySharedOrnaments.buildAngleMarkerMarkup(mode);
-    node.addEventListener('pointerdown', handleLabelPointerDown);
-    node.addEventListener('wheel', handleLabelWheel, { passive: false });
-    labelLayer.appendChild(node);
-    labelNodes['angleMarker:' + id] = { node: node, anchor: anchor, fontSize: size, type: 'angleMarker', id: id };
-    return node;
+    return window.InstantGeometrySharedLabels.createDomSelectableMarkup({
+      labelLayer: labelLayer,
+      getLabelStyle: getLabelStyle,
+      toScreenPoint: userToScreenPoint,
+      onPointerDown: handleLabelPointerDown,
+      onWheel: handleLabelWheel,
+      constrainToLayer: true,
+      constrainMargin: 8,
+      getConstraintRect: function () { return exportFrame.getBoundingClientRect(); },
+      storeRef: labelNodes,
+      type: 'angleMarker',
+      id: id,
+      anchor: anchor,
+      size: size,
+      markup: window.InstantGeometrySharedOrnaments.buildAngleMarkerMarkup(mode)
+    });
   }
 
   function renderSelectionBox() {
@@ -574,22 +569,18 @@
     );
     const text = getSegmentLabelText(id, geometry);
     if (segmentArcMode[id]) {
-      const leftPath = createSvgElement('path', {
-        d: 'M ' + p1.x + ' ' + p1.y + ' Q ' + labelGeometry.control.x + ' ' + labelGeometry.control.y + ' ' + labelGeometry.leftEnd.x + ' ' + labelGeometry.leftEnd.y,
+      window.InstantGeometrySharedOrnaments.appendSplitQuadraticArc({
+        svg: svg,
+        createSvgElement: createSvgElement,
+        P: p1,
+        Q: p2,
+        control: labelGeometry.control,
+        leftEnd: labelGeometry.leftEnd,
+        rightStart: labelGeometry.rightStart,
         stroke: style.color,
-        'stroke-width': 0.03,
-        'stroke-dasharray': '0.15 0.1',
-        fill: 'none'
+        strokeWidth: 0.03,
+        dashArray: '0.15 0.1'
       });
-      const rightPath = createSvgElement('path', {
-        d: 'M ' + labelGeometry.rightStart.x + ' ' + labelGeometry.rightStart.y + ' Q ' + labelGeometry.control.x + ' ' + labelGeometry.control.y + ' ' + p2.x + ' ' + p2.y,
-        stroke: style.color,
-        'stroke-width': 0.03,
-        'stroke-dasharray': '0.15 0.1',
-        fill: 'none'
-      });
-      svg.appendChild(leftPath);
-      svg.appendChild(rightPath);
     }
     createDomLabel('segment', id, labelGeometry.centerPoint, text, 28);
   }
