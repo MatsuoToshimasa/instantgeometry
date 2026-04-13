@@ -87,9 +87,17 @@
   let isRightDockCollapsed = false;
   let isAdvancedSettingsOpen = false;
   let selectedLabel = null;
+  let selectedFigure = false;
   let paletteOpen = false;
   let dragState = null;
   let labelNodes = {};
+  let figureSelectionRef = null;
+  let figureState = {
+    color: '#2a5bd7',
+    rotation: 0,
+    scale: 1,
+    offset: { x: 0, y: 0 }
+  };
 
   const labelStyles = window.InstantGeometrySharedLabels.createStyleStore();
   const lineTopY = 1.6;
@@ -289,8 +297,7 @@
     if (!(t > 0 && u > 0)) throw new Error('指定した値では、M が平行線の間にできません。');
     const M = { x: A.x + dirA.x * t, y: A.y + dirA.y * t };
     if (!(M.y < upperY && M.y > lowerY)) throw new Error('指定した値では、M が平行線の間にできません。');
-    return {
-      points: {
+    const basePoints = {
         P: { x: leftX, y: upperY },
         Q: { x: lineLength / 2, y: upperY },
         R: { x: leftX, y: lowerY },
@@ -298,6 +305,35 @@
         A: A,
         B: B,
         M: M
+      };
+    const bounds = getBounds(basePoints);
+    const centroid = {
+      x: (bounds.minX + bounds.maxX) / 2,
+      y: (bounds.minY + bounds.maxY) / 2
+    };
+    const rad = figureState.rotation * Math.PI / 180;
+    const transformedPoints = {};
+    Object.keys(basePoints).forEach(function (id) {
+      const point = basePoints[id];
+      const scaledX = centroid.x + (point.x - centroid.x) * figureState.scale;
+      const scaledY = centroid.y + (point.y - centroid.y) * figureState.scale;
+      const dx = scaledX - centroid.x;
+      const dy = scaledY - centroid.y;
+      transformedPoints[id] = {
+        x: centroid.x + dx * Math.cos(rad) - dy * Math.sin(rad) + figureState.offset.x,
+        y: centroid.y + dx * Math.sin(rad) + dy * Math.cos(rad) + figureState.offset.y
+      };
+    });
+    return {
+      points: transformedPoints,
+      baseCentroid: centroid,
+      centroid: {
+        x: centroid.x + figureState.offset.x,
+        y: centroid.y + figureState.offset.y
+      },
+      baseBounds: {
+        width: Math.max(bounds.maxX - bounds.minX, 0.1),
+        height: Math.max(bounds.maxY - bounds.minY, 0.1)
       }
     };
   }
@@ -346,6 +382,7 @@
     labelLayer.innerHTML = '';
     svg = createSvgElement('svg', { width: '100%', height: '100%', viewBox: '0 0 100 100', preserveAspectRatio: 'xMidYMid meet' });
     box.insertBefore(svg, labelLayer);
+    figureSelectionRef = null;
   }
 
   function drawSegment(p1, p2, color, width, dash) {
@@ -438,6 +475,23 @@
   }
 
   function renderSelectionBox() {
+    if (selectedFigure && figureSelectionRef) {
+      window.InstantGeometrySharedSelection.renderDomSelectionOverlay({
+        labelLayer: labelLayer,
+        labelRef: figureSelectionRef,
+        color: figureState.color,
+        rotation: figureState.rotation,
+        scale: figureState.scale,
+        paletteOpen: paletteOpen,
+        onHandlePointerDown: handleControlPointerDown,
+        onPaletteColorClick: function (color) {
+          figureState.color = color;
+          paletteOpen = false;
+          render();
+        }
+      });
+      return;
+    }
     const state = window.InstantGeometrySharedSelection.renderDomSelectionForState({
       labelLayer: labelLayer,
       selectedLabel: selectedLabel,
@@ -458,6 +512,7 @@
   function handleLabelPointerDown(event) {
     const result = window.InstantGeometrySharedLabels.beginDomLabelMove(event, getLabelStyle);
     selectedLabel = result.selectedLabel;
+    selectedFigure = false;
     paletteOpen = false;
     dragState = result.dragState;
     renderSelectionBox();
@@ -470,6 +525,27 @@
   }
 
   function handleControlPointerDown(event) {
+    if (selectedFigure && figureSelectionRef) {
+      const handle = event.currentTarget && event.currentTarget.dataset ? event.currentTarget.dataset.handle : '';
+      if (handle === 'palette') {
+        paletteOpen = !paletteOpen;
+        renderSelectionBox();
+        return;
+      }
+      const center = userToScreenPoint(currentGeometry.centroid);
+      dragState = {
+        mode: handle,
+        target: 'figure',
+        startClient: { x: event.clientX, y: event.clientY },
+        centerScreen: center,
+        scaleStart: figureState.scale,
+        rotationStart: figureState.rotation,
+        distanceStart: Math.hypot(event.clientX - center.x, event.clientY - center.y),
+        angleStart: Math.atan2(event.clientY - center.y, event.clientX - center.x),
+        offsetStart: { x: figureState.offset.x, y: figureState.offset.y }
+      };
+      return;
+    }
     const result = window.InstantGeometrySharedLabels.beginDomHandleGesture(
       event,
       selectedLabel,
@@ -486,6 +562,30 @@
   }
 
   function handleGlobalPointerMove(event) {
+    if (dragState && dragState.target === 'figure') {
+      if (dragState.mode === 'move') {
+        const delta = screenToUserDelta(event.clientX - dragState.startClient.x, event.clientY - dragState.startClient.y);
+        figureState.offset = {
+          x: dragState.offsetStart.x + delta.x,
+          y: dragState.offsetStart.y - delta.y
+        };
+        render();
+        return;
+      }
+      if (dragState.mode === 'resize') {
+        const nextDistance = Math.hypot(event.clientX - dragState.centerScreen.x, event.clientY - dragState.centerScreen.y);
+        const ratio = Math.max(0.3, Math.min(4, nextDistance / Math.max(dragState.distanceStart, 1)));
+        figureState.scale = dragState.scaleStart * ratio;
+        render();
+        return;
+      }
+      if (dragState.mode === 'rotate') {
+        const currentAngle = Math.atan2(event.clientY - dragState.centerScreen.y, event.clientX - dragState.centerScreen.x);
+        figureState.rotation = dragState.rotationStart + ((currentAngle - dragState.angleStart) * 180 / Math.PI);
+        render();
+        return;
+      }
+    }
     if (window.InstantGeometrySharedLabels.applyDomPointerMove(event, dragState, selectedLabel, getLabelStyle, {
       getLabelRef: function (type, id) { return labelNodes[type + ':' + id]; },
       getConstraintRect: function () { return exportFrame.getBoundingClientRect(); },
@@ -593,6 +693,23 @@
     });
   }
 
+  function createFigureSelectionProxy(geometry) {
+    const center = userToScreenPoint(geometry.centroid);
+    const rect = box.getBoundingClientRect();
+    const width = (geometry.baseBounds.width * figureState.scale / currentView.width) * rect.width;
+    const height = (geometry.baseBounds.height * figureState.scale / currentView.height) * rect.height;
+    const node = document.createElement('div');
+    node.style.position = 'absolute';
+    node.style.left = (center.x - width / 2) + 'px';
+    node.style.top = (center.y - height / 2) + 'px';
+    node.style.width = Math.max(width, 1) + 'px';
+    node.style.height = Math.max(height, 1) + 'px';
+    node.style.pointerEvents = 'none';
+    node.style.opacity = '0';
+    labelLayer.appendChild(node);
+    figureSelectionRef = { node: node };
+  }
+
   function updateExportFrame() {
     const rect = box.getBoundingClientRect();
     const aspect = exportAspects[exportAspectIndex].value;
@@ -666,7 +783,7 @@
       forEachSegmentId(function (id) {
         const ends = FIGURE_DEFINITION.segments[id];
         if (labelState.segment[id] || segmentLineMode[id] || segmentRequiredByAngle(id)) {
-          drawSegment(geometry.points[ends[0]], geometry.points[ends[1]], SEGMENT_COLOR, SEGMENT_STROKE_WIDTH);
+          drawSegment(geometry.points[ends[0]], geometry.points[ends[1]], figureState.color, SEGMENT_STROKE_WIDTH);
         }
       });
       forEachPointId(function (id) {
@@ -684,6 +801,7 @@
         if (angleHasVisual(id)) drawAngleVisual(id, geometry);
       });
 
+      createFigureSelectionProxy(geometry);
       renderSelectionBox();
 
       setStatus('図形を描画しました。', false);
@@ -747,10 +865,17 @@
     Object.assign(angleMarkerMode, DEFAULT_ANGLE_MARKER_MODE);
     window.InstantGeometrySharedLabels.clearStyleStore(labelStyles);
     selectedLabel = null;
+    selectedFigure = false;
     paletteOpen = false;
     exportAspectIndex = 0;
     angleMode = 'degrees';
     isAdvancedSettingsOpen = false;
+    figureState = {
+      color: '#2a5bd7',
+      rotation: 0,
+      scale: 1,
+      offset: { x: 0, y: 0 }
+    };
     updateRatioButton();
     updateAngleModeButton();
     updateAdvancedSettingsButton();
@@ -776,13 +901,31 @@
   labelLayer.addEventListener('pointerdown', function (event) {
     if (event.target === labelLayer) {
       selectedLabel = null;
+      selectedFigure = false;
       paletteOpen = false;
       renderSelectionBox();
     }
   });
   box.addEventListener('pointerdown', function (event) {
     if (event.target === box || event.target === svg) {
+      if (currentGeometry && figureSelectionRef) {
+        const rect = figureSelectionRef.node.getBoundingClientRect();
+        if (event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom) {
+          selectedLabel = null;
+          selectedFigure = true;
+          paletteOpen = false;
+          dragState = {
+            mode: 'move',
+            target: 'figure',
+            startClient: { x: event.clientX, y: event.clientY },
+            offsetStart: { x: figureState.offset.x, y: figureState.offset.y }
+          };
+          renderSelectionBox();
+          return;
+        }
+      }
       selectedLabel = null;
+      selectedFigure = false;
       paletteOpen = false;
       renderSelectionBox();
     }
