@@ -176,6 +176,23 @@
     return labelNode;
   }
 
+  function createToggleButton(options) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = options.className || 'download-btn btn-bd';
+    button.textContent = options.text || '';
+    const pressed = !!options.pressed;
+    button.setAttribute('aria-pressed', String(pressed));
+    if (!pressed) button.style.opacity = '0.55';
+    if (typeof options.onClick === 'function') {
+      button.addEventListener('click', options.onClick);
+    }
+    if (typeof options.onContextMenu === 'function') {
+      button.addEventListener('contextmenu', options.onContextMenu);
+    }
+    return button;
+  }
+
   function createStyleStore() {
     return {};
   }
@@ -221,6 +238,7 @@
     userToScreenPoint: userToScreenPoint,
     createSelectableText: createSelectableText,
     createDomSelectableLabel: createDomSelectableLabel,
+    createToggleButton: createToggleButton,
     createStyleStore: createStyleStore,
     ensureLabelStyle: ensureLabelStyle,
     resetLabelStyle: resetLabelStyle,

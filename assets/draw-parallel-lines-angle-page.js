@@ -129,13 +129,7 @@
     generalLabelToggleGrid.innerHTML = '';
     specialLabelToggleGrid.innerHTML = '';
     generalConfigs.forEach(function (config) {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'download-btn btn-bd';
-      if (!labelState[config.type][config.id]) button.style.opacity = '0.55';
-      button.textContent = getToggleLabel(config);
-      button.setAttribute('aria-pressed', String(!!labelState[config.type][config.id]));
-      button.addEventListener('click', function () {
+      const onClick = function () {
         const nextValue = !labelState[config.type][config.id];
         labelState[config.type][config.id] = nextValue;
         if (nextValue) {
@@ -146,9 +140,10 @@
         }
         render();
         renderLabelToggleButtons();
-      });
+      };
+      let onContextMenu = null;
       if (config.type === 'point') {
-        button.addEventListener('contextmenu', async function (event) {
+        onContextMenu = async function (event) {
           event.preventDefault();
           const response = await window.InstantGeometrySharedLabelConfig.promptSingleText({
             title: '点ラベル設定',
@@ -159,9 +154,9 @@
           customLabelText.point[config.id] = String(response || '').trim();
           render();
           renderLabelToggleButtons();
-        });
+        };
       } else if (config.type === 'segment') {
-        button.addEventListener('contextmenu', async function (event) {
+        onContextMenu = async function (event) {
           event.preventDefault();
           const response = await window.InstantGeometrySharedLabelConfig.promptTripleSetting({
             title: '線分ラベル設定',
@@ -185,9 +180,9 @@
           segmentArcMode[config.id] = arcMode;
           customLabelText.segment[config.id] = String(response.third || '').trim();
           render();
-        });
+        };
       } else if (config.type === 'angle') {
-        button.addEventListener('contextmenu', async function (event) {
+        onContextMenu = async function (event) {
           event.preventDefault();
           const response = await window.InstantGeometrySharedLabelConfig.promptTripleSetting({
             title: '角ラベル設定',
@@ -208,8 +203,15 @@
           angleMarkerMode[config.id] = mode;
           customLabelText.angle[config.id] = String(response.second || '').trim();
           render();
-        });
+        };
       }
+      const button = window.InstantGeometrySharedLabels.createToggleButton({
+        className: 'download-btn btn-bd',
+        text: getToggleLabel(config),
+        pressed: !!labelState[config.type][config.id],
+        onClick: onClick,
+        onContextMenu: onContextMenu
+      });
       generalLabelToggleGrid.appendChild(button);
     });
   }
