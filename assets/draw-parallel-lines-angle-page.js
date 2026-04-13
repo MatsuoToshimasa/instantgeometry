@@ -756,19 +756,19 @@
       drawPoint(geometry.points.M, '#111111');
 
       if (labelState.point.P) {
-        const delta = pixelsToUser(-10, 0);
+        const delta = pixelsToUser(-2, 0);
         createDomLabel('point', 'P', { x: geometry.points.P.x + delta.x, y: geometry.points.P.y }, getPointLabelText('P'), 28);
       }
       if (labelState.point.Q) {
-        const delta = pixelsToUser(10, 0);
+        const delta = pixelsToUser(2, 0);
         createDomLabel('point', 'Q', { x: geometry.points.Q.x + delta.x, y: geometry.points.Q.y }, getPointLabelText('Q'), 28);
       }
       if (labelState.point.R) {
-        const delta = pixelsToUser(-10, 0);
+        const delta = pixelsToUser(-2, 0);
         createDomLabel('point', 'R', { x: geometry.points.R.x + delta.x, y: geometry.points.R.y }, getPointLabelText('R'), 28);
       }
       if (labelState.point.S) {
-        const delta = pixelsToUser(10, 0);
+        const delta = pixelsToUser(2, 0);
         createDomLabel('point', 'S', { x: geometry.points.S.x + delta.x, y: geometry.points.S.y }, getPointLabelText('S'), 28);
       }
       if (labelState.point.A) createDomLabel('point', 'A', { x: geometry.points.A.x - 0.22, y: geometry.points.A.y + 0.24 }, getPointLabelText('A'), 28);
