@@ -3127,7 +3127,7 @@
             render();
             return;
           }
-          if (overlayControl.mode === 'rotate' && selectedLabel && (selectedLabel.type === 'angleMark' || selectedLabel.type === 'rightAngleMark')) {
+          if (overlayControl.mode === 'rotate' && selectedLabel && ((selectedLabel.type === 'angleMark' || selectedLabel.type === 'rightAngleMark') || window.InstantGeometrySharedSelection?.isNonTransformableSelectionType?.(selectedLabel.type))) {
             return;
           }
           const anchorForSelection = selectedLabel ? getSelectedAnchor() : getFigureSelectionAnchor();
@@ -3229,6 +3229,9 @@
         if (dragState.mode === 'resize') {
           const currentDistance = Math.hypot(currentPoint.x - dragState.center.x, currentPoint.y - dragState.center.y);
           if (dragState.target === 'label') {
+            if (window.InstantGeometrySharedSelection?.isNonTransformableSelectionType?.(dragState.type)) {
+              return;
+            }
             const ratio = Math.max(0.3, Math.min(8, currentDistance / Math.max(dragState.distanceStart, 0.01)));
             const minFontSize = dragState.type === 'rightAngleMark' ? 4 : 10;
             labelFontSize[dragState.type][dragState.id] = Math.max(minFontSize, Math.min(320, Math.round(dragState.fontSizeStart * ratio)));
@@ -3261,7 +3264,7 @@
         if (dragState.mode === 'rotate') {
           const currentAngle = Math.atan2(currentPoint.y - dragState.center.y, currentPoint.x - dragState.center.x);
           if (dragState.target === 'label') {
-            if (dragState.type === 'angleMark' || dragState.type === 'rightAngleMark') {
+            if (dragState.type === 'angleMark' || dragState.type === 'rightAngleMark' || window.InstantGeometrySharedSelection?.isNonTransformableSelectionType?.(dragState.type)) {
               return;
             }
             labelStyleState[dragState.type][dragState.id].rotation = dragState.rotationStart + ((currentAngle - dragState.angleStart) * 180 / Math.PI);

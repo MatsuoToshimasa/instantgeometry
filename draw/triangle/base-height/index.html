@@ -3453,7 +3453,7 @@
             render();
             return;
           }
-          if (overlayControl.mode === 'rotate' && selectedLabel && selectedLabel.type === 'perp') {
+          if (overlayControl.mode === 'rotate' && selectedLabel && (selectedLabel.type === 'perp' || window.InstantGeometrySharedSelection?.isNonTransformableSelectionType?.(selectedLabel.type))) {
             return;
           }
           const anchorForSelection = selectedLabel ? getSelectedAnchor() : getFigureSelectionAnchor();
@@ -3560,6 +3560,9 @@
 
         if (dragState.mode === 'resize') {
           if (dragState.target === 'label') {
+            if (window.InstantGeometrySharedSelection?.isNonTransformableSelectionType?.(dragState.type)) {
+              return;
+            }
             if (dragState.type === 'perp' && dragState.perpCornerStart && dragState.perpDirSum) {
               const diagDirRaw = dragState.perpDirSum;
               const diagLen = Math.hypot(diagDirRaw.x, diagDirRaw.y) || 1;
@@ -3605,7 +3608,7 @@
         if (dragState.mode === 'rotate') {
           const currentAngle = Math.atan2(currentPoint.y - dragState.center.y, currentPoint.x - dragState.center.x);
           if (dragState.target === 'label') {
-            if (dragState.type === 'perp' || dragState.type === 'angleMark') {
+            if (dragState.type === 'perp' || dragState.type === 'angleMark' || window.InstantGeometrySharedSelection?.isNonTransformableSelectionType?.(dragState.type)) {
               return;
             }
             labelStyleState[dragState.type][dragState.id].rotation = dragState.rotationStart + ((currentAngle - dragState.angleStart) * 180 / Math.PI);
