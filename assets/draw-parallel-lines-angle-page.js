@@ -49,9 +49,9 @@
   ];
 
   const labelState = {
-    point: { P: true, Q: true, R: true, S: true, A: true, B: true, M: true },
-    segment: { PQ: true, RS: true, AM: true, BM: true },
-    angle: { PAM: false, QAM: false, AMB: false, RBM: false, SBM: false }
+    point: { P: false, Q: false, R: false, S: false, A: false, B: false, M: false },
+    segment: { PQ: false, RS: false, AM: false, BM: false },
+    angle: { PAM: false, QAM: true, AMB: true, RBM: false, SBM: true }
   };
 
   let svg = null;
@@ -438,9 +438,9 @@
     inputElements.lineLength.value = '14';
     inputElements.theta1.value = '20';
     inputElements.theta2.value = '30';
-    labelState.point = { P: true, Q: true, R: true, S: true, A: true, B: true, M: true };
-    labelState.segment = { PQ: true, RS: true, AM: true, BM: true };
-    labelState.angle = { PAM: false, QAM: false, AMB: false, RBM: false, SBM: false };
+    labelState.point = { P: false, Q: false, R: false, S: false, A: false, B: false, M: false };
+    labelState.segment = { PQ: false, RS: false, AM: false, BM: false };
+    labelState.angle = { PAM: false, QAM: true, AMB: true, RBM: false, SBM: true };
     exportAspectIndex = 0;
     angleMode = 'degrees';
     updateRatioButton();
