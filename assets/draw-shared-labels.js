@@ -265,6 +265,28 @@
     return { x: adjustX, y: adjustY };
   }
 
+  function getEndpointLabelAnchor(viewRect, point, segmentLength, options) {
+    const isLeft = !!options.isLeft;
+    const isTop = !!options.isTop;
+    const offset = segmentLength / (options.offsetDivisor || 22);
+    const marginX = segmentLength / (options.marginDivisor || 40);
+    const marginY = viewRect.height * (options.marginYRatio || 0.035);
+    let x = point.x + (isLeft ? -offset : offset);
+    if (x < viewRect.x + marginX || x > viewRect.x + viewRect.width - marginX) {
+      x = point.x + (isLeft ? offset : -offset);
+    }
+    return {
+      x: Math.max(viewRect.x + marginX, Math.min(viewRect.x + viewRect.width - marginX, x)),
+      y: Math.max(
+        viewRect.y + marginY,
+        Math.min(
+          viewRect.y + viewRect.height - marginY,
+          point.y + (isTop ? marginY * 0.2 : -marginY * 0.2)
+        )
+      )
+    };
+  }
+
   function beginDomLabelMove(event, getLabelStyle) {
     event.preventDefault();
     event.stopPropagation();
@@ -415,6 +437,7 @@
     createDomSelectableMarkup: createDomSelectableMarkup,
     createToggleButton: createToggleButton,
     clampDomRectIntoConstraint: clampDomRectIntoConstraint,
+    getEndpointLabelAnchor: getEndpointLabelAnchor,
     beginDomLabelMove: beginDomLabelMove,
     applyDomLabelWheel: applyDomLabelWheel,
     beginDomHandleGesture: beginDomHandleGesture,

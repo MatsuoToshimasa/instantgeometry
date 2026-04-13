@@ -395,27 +395,10 @@
     if (!['P', 'Q', 'R', 'S'].includes(id)) return point;
 
     const lineLength = Math.abs(geometry.points.Q.x - geometry.points.P.x);
-    const offset = lineLength / 22;
-    const marginX = lineLength / 40;
-    const marginY = currentView.height * 0.035;
-    const isLeft = id === 'P' || id === 'R';
-    const isTop = id === 'P' || id === 'Q';
-
-    let x = point.x + (isLeft ? -offset : offset);
-    if (x < currentView.x + marginX || x > currentView.x + currentView.width - marginX) {
-      x = point.x + (isLeft ? offset : -offset);
-    }
-
-    return {
-      x: Math.max(currentView.x + marginX, Math.min(currentView.x + currentView.width - marginX, x)),
-      y: Math.max(
-        currentView.y + marginY,
-        Math.min(
-          currentView.y + currentView.height - marginY,
-          point.y + (isTop ? marginY * 0.2 : -marginY * 0.2)
-        )
-      )
-    };
+    return window.InstantGeometrySharedLabels.getEndpointLabelAnchor(currentView, point, lineLength, {
+      isLeft: id === 'P' || id === 'R',
+      isTop: id === 'P' || id === 'Q'
+    });
   }
 
   function createDomLabel(type, id, anchor, text, fontSize) {
@@ -434,25 +417,6 @@
       anchor: anchor,
       text: text,
       fontSize: fontSize
-    });
-  }
-
-  function createDomAngleMarker(id, anchor, mode, size) {
-    return window.InstantGeometrySharedLabels.createDomSelectableMarkup({
-      labelLayer: labelLayer,
-      getLabelStyle: getLabelStyle,
-      toScreenPoint: userToScreenPoint,
-      onPointerDown: handleLabelPointerDown,
-      onWheel: handleLabelWheel,
-      constrainToLayer: true,
-      constrainMargin: 8,
-      getConstraintRect: function () { return exportFrame.getBoundingClientRect(); },
-      storeRef: labelNodes,
-      type: 'angleMarker',
-      id: id,
-      anchor: anchor,
-      size: size,
-      markup: window.InstantGeometrySharedOrnaments.buildAngleMarkerMarkup(mode)
     });
   }
 
@@ -514,18 +478,6 @@
 
   function handleGlobalPointerUp() {
     dragState = null;
-  }
-
-  function midpoint(p1, p2) {
-    return { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 };
-  }
-
-  function offsetPoint(p1, p2, magnitude) {
-    const mid = midpoint(p1, p2);
-    const dx = p2.x - p1.x;
-    const dy = p2.y - p1.y;
-    const len = Math.hypot(dx, dy) || 1;
-    return { x: mid.x - dy / len * magnitude, y: mid.y + dx / len * magnitude };
   }
 
   function getSegmentLabelPosition(labelType, labelId, defaultPoint) {
