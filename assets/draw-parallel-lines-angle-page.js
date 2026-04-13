@@ -553,6 +553,20 @@
     createDomLabel('segment', id, labelPoint, text, 28);
   }
 
+  function angleHasVisual(id) {
+    return !!labelState.angle[id] || (Number.isFinite(angleMarkerMode[id]) && angleMarkerMode[id] > 0);
+  }
+
+  function segmentRequiredByAngle(id) {
+    const map = {
+      PQ: ['PAM', 'QAM'],
+      RS: ['RBM', 'SBM'],
+      AM: ['PAM', 'QAM', 'AMB'],
+      BM: ['RBM', 'SBM', 'AMB']
+    };
+    return (map[id] || []).some(angleHasVisual);
+  }
+
   function angleValue(a, b, c) {
     const v1x = a.x - b.x;
     const v1y = a.y - b.y;
@@ -580,7 +594,7 @@
     };
   }
 
-  function drawAngleLabel(id, geometry) {
+  function drawAngleVisual(id, geometry) {
     const anglePointMap = {
       PAM: ['P', 'A', 'M'],
       QAM: ['Q', 'A', 'M'],
@@ -594,8 +608,10 @@
     const p2 = geometry.points[ids[2]];
     const arc = arcPath(vertex, p1, p2, 0.35);
     svg.appendChild(createSvgElement('path', { d: arc.d, stroke: '#687086', 'stroke-width': 0.04, fill: 'none' }));
-    const text = getAngleLabelText(id, geometry);
-    createDomLabel('angle', id, { x: vertex.x + 0.52 * Math.cos(arc.midAngle), y: vertex.y + 0.52 * Math.sin(arc.midAngle) }, text, 26);
+    if (labelState.angle[id]) {
+      const text = getAngleLabelText(id, geometry);
+      createDomLabel('angle', id, { x: vertex.x + 0.52 * Math.cos(arc.midAngle), y: vertex.y + 0.52 * Math.sin(arc.midAngle) }, text, 26);
+    }
     drawAngleMarker(id, vertex, arc.midAngle);
   }
 
@@ -711,10 +727,10 @@
       svg.setAttribute('viewBox', [view.x, view.y, view.width, view.height].join(' '));
       updateExportFrame();
 
-      if (labelState.segment.PQ || segmentLineMode.PQ) drawSegment(geometry.points.P, geometry.points.Q, '#2a5bd7', 0.05);
-      if (labelState.segment.RS || segmentLineMode.RS) drawSegment(geometry.points.R, geometry.points.S, '#2a5bd7', 0.05);
-      if (labelState.segment.AM || segmentLineMode.AM) drawSegment(geometry.points.A, geometry.points.M, '#2a5bd7', 0.05);
-      if (labelState.segment.BM || segmentLineMode.BM) drawSegment(geometry.points.B, geometry.points.M, '#2a5bd7', 0.05);
+      if (labelState.segment.PQ || segmentLineMode.PQ || segmentRequiredByAngle('PQ')) drawSegment(geometry.points.P, geometry.points.Q, '#2a5bd7', 0.05);
+      if (labelState.segment.RS || segmentLineMode.RS || segmentRequiredByAngle('RS')) drawSegment(geometry.points.R, geometry.points.S, '#2a5bd7', 0.05);
+      if (labelState.segment.AM || segmentLineMode.AM || segmentRequiredByAngle('AM')) drawSegment(geometry.points.A, geometry.points.M, '#2a5bd7', 0.05);
+      if (labelState.segment.BM || segmentLineMode.BM || segmentRequiredByAngle('BM')) drawSegment(geometry.points.B, geometry.points.M, '#2a5bd7', 0.05);
       drawPoint(geometry.points.P, '#111111');
       drawPoint(geometry.points.Q, '#111111');
       drawPoint(geometry.points.R, '#111111');
@@ -735,7 +751,7 @@
         if (labelState.segment[id]) drawSegmentLabel(id, geometry);
       });
       ['PAM', 'QAM', 'AMB', 'RBM', 'SBM'].forEach(function (id) {
-        if (labelState.angle[id]) drawAngleLabel(id, geometry);
+        if (angleHasVisual(id)) drawAngleVisual(id, geometry);
       });
 
       renderSelectionBox();
