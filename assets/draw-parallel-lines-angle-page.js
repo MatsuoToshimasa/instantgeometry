@@ -600,8 +600,16 @@
     createDomLabel('segment', id, labelPoint, text, 28);
   }
 
+  function angleHasLabel(id) {
+    return !!labelState.angle[id];
+  }
+
+  function angleHasMarker(id) {
+    return Number.isFinite(angleMarkerMode[id]) && angleMarkerMode[id] > 1;
+  }
+
   function angleHasVisual(id) {
-    return !!labelState.angle[id] || (Number.isFinite(angleMarkerMode[id]) && angleMarkerMode[id] > 0);
+    return angleHasLabel(id) || angleHasMarker(id);
   }
 
   function segmentRequiredByAngle(id) {
@@ -655,11 +663,11 @@
     const p2 = geometry.points[ids[2]];
     const arc = arcPath(vertex, p1, p2, 0.35);
     svg.appendChild(createSvgElement('path', { d: arc.d, stroke: '#687086', 'stroke-width': 0.04, fill: 'none' }));
-    if (labelState.angle[id]) {
+    if (angleHasLabel(id)) {
       const text = getAngleLabelText(id, geometry);
       createDomLabel('angle', id, { x: vertex.x + 0.52 * Math.cos(arc.midAngle), y: vertex.y + 0.52 * Math.sin(arc.midAngle) }, text, 26);
     }
-    drawAngleMarker(id, vertex, arc.midAngle);
+    if (angleHasMarker(id)) drawAngleMarker(id, vertex, arc.midAngle);
   }
 
   function drawAngleMarker(id, vertex, midAngle) {
