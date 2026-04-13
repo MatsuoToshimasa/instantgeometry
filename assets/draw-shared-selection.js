@@ -204,13 +204,49 @@
 
     const rect = deps.labelRef.node.getBoundingClientRect();
     const layerRect = labelLayer.getBoundingClientRect();
+    const rotation = Number.isFinite(deps.rotation) ? deps.rotation : 0;
+    const scale = Number.isFinite(deps.scale) ? deps.scale : 1;
+    const baseWidth = deps.labelRef.node.offsetWidth * scale;
+    const baseHeight = deps.labelRef.node.offsetHeight * scale;
+    const centerX = rect.left - layerRect.left + rect.width / 2;
+    const centerY = rect.top - layerRect.top + rect.height / 2;
+    const boxWidth = baseWidth + 6;
+    const boxHeight = baseHeight + 6;
     const boxNode = document.createElement('div');
     boxNode.className = 'label-selection-box';
-    boxNode.style.left = (rect.left - layerRect.left - 3) + 'px';
-    boxNode.style.top = (rect.top - layerRect.top - 3) + 'px';
-    boxNode.style.width = (rect.width + 6) + 'px';
-    boxNode.style.height = (rect.height + 6) + 'px';
+    boxNode.style.left = (centerX - boxWidth / 2) + 'px';
+    boxNode.style.top = (centerY - boxHeight / 2) + 'px';
+    boxNode.style.width = boxWidth + 'px';
+    boxNode.style.height = boxHeight + 'px';
+    boxNode.style.transformOrigin = 'center center';
+    boxNode.style.transform = 'rotate(' + rotation + 'deg)';
     labelLayer.appendChild(boxNode);
+
+    function rotatePoint(point) {
+      const rad = rotation * Math.PI / 180;
+      const dx = point.x - centerX;
+      const dy = point.y - centerY;
+      return {
+        x: centerX + dx * Math.cos(rad) - dy * Math.sin(rad),
+        y: centerY + dx * Math.sin(rad) + dy * Math.cos(rad)
+      };
+    }
+
+    const topLeft = rotatePoint({ x: centerX - boxWidth / 2, y: centerY - boxHeight / 2 });
+    const topRight = rotatePoint({ x: centerX + boxWidth / 2, y: centerY - boxHeight / 2 });
+    const bottomRight = rotatePoint({ x: centerX + boxWidth / 2, y: centerY + boxHeight / 2 });
+    const bottomLeft = rotatePoint({ x: centerX - boxWidth / 2, y: centerY + boxHeight / 2 });
+
+    function extendFromCorner(corner) {
+      const vx = corner.x - centerX;
+      const vy = corner.y - centerY;
+      const len = Math.hypot(vx, vy) || 1;
+      const gap = 14;
+      return {
+        x: corner.x + (vx / len) * gap,
+        y: corner.y + (vy / len) * gap
+      };
+    }
 
     function addHandle(name, left, top) {
       const handle = document.createElement('button');
@@ -232,19 +268,18 @@
       return handle;
     }
 
-    const left = rect.left - layerRect.left - 11;
-    const top = rect.top - layerRect.top - 11;
-    const right = rect.right - layerRect.left - 11;
-    const bottom = rect.bottom - layerRect.top - 11;
-    addHandle('palette', left, bottom);
-    addHandle('rotate', right, top);
-    addHandle('resize', right, bottom);
+    const palettePos = extendFromCorner(bottomLeft);
+    const rotatePos = extendFromCorner(topRight);
+    const resizePos = extendFromCorner(bottomRight);
+    addHandle('palette', palettePos.x - 11, palettePos.y - 11);
+    addHandle('rotate', rotatePos.x - 11, rotatePos.y - 11);
+    addHandle('resize', resizePos.x - 11, resizePos.y - 11);
 
     if (deps.paletteOpen) {
       const pop = document.createElement('div');
       pop.className = 'palette-pop';
-      const cx = left + 11;
-      const cy = bottom + 11;
+      const cx = palettePos.x;
+      const cy = palettePos.y;
       getPaletteColors().forEach(function (color, index) {
         const angle = (30 + ((150 - 30) * index / Math.max(getPaletteColors().length - 1, 1))) * Math.PI / 180;
         const btn = document.createElement('button');

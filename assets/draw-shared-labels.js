@@ -172,7 +172,9 @@
     labelLayer.appendChild(labelNode);
     if (deps.constrainToLayer) {
       const margin = Number.isFinite(deps.constrainMargin) ? deps.constrainMargin : 6;
-      const layerRect = labelLayer.getBoundingClientRect();
+      const layerRect = typeof deps.getConstraintRect === 'function'
+        ? deps.getConstraintRect()
+        : labelLayer.getBoundingClientRect();
       const rect = labelNode.getBoundingClientRect();
       let adjustX = 0;
       let adjustY = 0;

@@ -402,6 +402,7 @@
       onWheel: handleLabelWheel,
       constrainToLayer: true,
       constrainMargin: 8,
+      getConstraintRect: function () { return exportFrame.getBoundingClientRect(); },
       storeRef: labelNodes,
       type: type,
       id: id,
@@ -433,6 +434,8 @@
       labelLayer: labelLayer,
       labelRef: ref,
       color: getLabelStyle(selectedLabel.type, selectedLabel.id).color,
+      rotation: getLabelStyle(selectedLabel.type, selectedLabel.id).rotation,
+      scale: getLabelStyle(selectedLabel.type, selectedLabel.id).scale,
       paletteOpen: paletteOpen,
       onHandlePointerDown: handleControlPointerDown,
       onPaletteColorClick: function (color) {
