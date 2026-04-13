@@ -579,25 +579,49 @@
     return { x: mid.x - dy / len * magnitude, y: mid.y + dx / len * magnitude };
   }
 
+  function getSegmentLabelPosition(labelType, labelId, defaultPoint) {
+    const style = getLabelStyle(labelType, labelId);
+    const delta = screenToUserDelta(style.dx, style.dy);
+    return {
+      x: defaultPoint.x + delta.x,
+      y: defaultPoint.y - delta.y
+    };
+  }
+
   function drawSegmentLabel(id, geometry) {
     const map = { PQ: ['P', 'Q'], RS: ['R', 'S'], AM: ['A', 'M'], BM: ['B', 'M'] };
     const ends = map[id];
     const p1 = geometry.points[ends[0]];
     const p2 = geometry.points[ends[1]];
-    const labelPoint = offsetPoint(p1, p2, id === 'PQ' ? 0.18 : (id === 'RS' ? -0.18 : 0.18));
+    const style = getLabelStyle('segment', id);
+    const labelGeometry = window.InstantGeometrySharedOrnaments.getSideLabelGeometry(
+      p1,
+      p2,
+      geometry.points.M,
+      'segment',
+      id,
+      getSegmentLabelPosition
+    );
     const text = getSegmentLabelText(id, geometry);
-    const control = offsetPoint(p1, p2, id === 'PQ' ? 0.28 : (id === 'RS' ? -0.28 : 0.28));
     if (segmentArcMode[id]) {
-      const path = createSvgElement('path', {
-        d: 'M ' + p1.x + ' ' + p1.y + ' Q ' + control.x + ' ' + control.y + ' ' + p2.x + ' ' + p2.y,
-        stroke: '#2a5bd7',
+      const leftPath = createSvgElement('path', {
+        d: 'M ' + p1.x + ' ' + p1.y + ' Q ' + labelGeometry.control.x + ' ' + labelGeometry.control.y + ' ' + labelGeometry.leftEnd.x + ' ' + labelGeometry.leftEnd.y,
+        stroke: style.color,
         'stroke-width': 0.03,
         'stroke-dasharray': '0.15 0.1',
         fill: 'none'
       });
-      svg.appendChild(path);
+      const rightPath = createSvgElement('path', {
+        d: 'M ' + labelGeometry.rightStart.x + ' ' + labelGeometry.rightStart.y + ' Q ' + labelGeometry.control.x + ' ' + labelGeometry.control.y + ' ' + p2.x + ' ' + p2.y,
+        stroke: style.color,
+        'stroke-width': 0.03,
+        'stroke-dasharray': '0.15 0.1',
+        fill: 'none'
+      });
+      svg.appendChild(leftPath);
+      svg.appendChild(rightPath);
     }
-    createDomLabel('segment', id, labelPoint, text, 28);
+    createDomLabel('segment', id, labelGeometry.centerPoint, text, 28);
   }
 
   function angleHasLabel(id) {
