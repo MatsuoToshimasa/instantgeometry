@@ -849,6 +849,38 @@
     <section class="section">
       <div class="section-head">
         <div>
+          <h2>線と角</h2>
+          <p>平行線や交点、角度関係を使う図形を描画します。</p>
+        </div>
+      </div>
+
+      <div class="cards">
+        <a class="card" href="/draw/parallel-lines-angle/">
+          <div class="card-top">
+            <div class="tag">線と角</div>
+            <div class="arrow">→</div>
+          </div>
+          <h3>平行線と2角</h3>
+          <div class="illust" aria-hidden="true">
+            <svg viewBox="0 0 280 140" width="100%" height="100%">
+              <rect width="280" height="140" fill="#fbfcff"/>
+              <line x1="44" y1="38" x2="236" y2="38" stroke="#2a5bd7" stroke-width="3"/>
+              <line x1="44" y1="104" x2="236" y2="104" stroke="#2a5bd7" stroke-width="3"/>
+              <circle cx="92" cy="38" r="4.5" fill="#111"/>
+              <circle cx="188" cy="104" r="4.5" fill="#111"/>
+              <circle cx="150" cy="62" r="4.5" fill="#111"/>
+              <line x1="92" y1="38" x2="150" y2="62" stroke="#2a5bd7" stroke-width="3"/>
+              <line x1="188" y1="104" x2="150" y2="62" stroke="#2a5bd7" stroke-width="3"/>
+            </svg>
+          </div>
+          <p class="purpose">2本の平行線上の点と角度から交点をもつ図形を描画します。</p>
+        </a>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
           <h2>よく使う入口</h2>
           <p>迷ったらここから始めるのがおすすめです。</p>
         </div>
@@ -893,9 +925,10 @@
           ['四角形', '代表的な四角形や、一般の四角形を描画します。'],
           ['多角形', '五角形以上の多角形を描画します。'],
           ['曲線図形', '円、楕円、扇形などの曲線図形を描画します。'],
+          ['線と角', '平行線や交点、角度関係を使う図形を描画します。'],
           ['よく使う入口', '迷ったらここから始めるのがおすすめです。']
         ],
-        cardTitles: ['三角形（SSS）', '二等辺三角形', '正三角形', '三角形（SAS）', '三角形（ASA）', '三角形（AAS）', '三角形（AAA）', '三角形（3点座標）', '三角形（底辺＋高さ）', '直角三角形（鋭角）', '直角三角形（隣辺）', '直角三角形（対辺）', '正方形', '長方形', '菱形', '台形', '平行四辺形', '平行四辺形（2辺＋角）', '凸四角形', '凹四角形', '等脚台形', '凧形', '五角形', '六角形', '正N角形', '円', '楕円', '扇形', '楕円の扇形', '星型'],
+        cardTitles: ['三角形（SSS）', '二等辺三角形', '正三角形', '三角形（SAS）', '三角形（ASA）', '三角形（AAS）', '三角形（AAA）', '三角形（3点座標）', '三角形（底辺＋高さ）', '直角三角形（鋭角）', '直角三角形（隣辺）', '直角三角形（対辺）', '正方形', '長方形', '菱形', '台形', '平行四辺形', '平行四辺形（2辺＋角）', '凸四角形', '凹四角形', '等脚台形', '凧形', '五角形', '六角形', '正N角形', '円', '楕円', '扇形', '楕円の扇形', '星型', '平行線と2角'],
         cardBodies: [
           '3辺の長さがわかっている三角形を描画します。',
           '等辺と底辺の長さから二等辺三角形を描画します。',
@@ -926,7 +959,8 @@
           '半径1と半径2から楕円を描画します。',
           '半径と中心角から扇形を描画します。',
           '半径1と半径2と中心角から楕円の扇形を描画します。',
-          '一辺と尖り角から対称な五つ星を描画します。'
+          '一辺と尖り角から対称な五つ星を描画します。',
+          '2本の平行線上の点と角度から交点をもつ図形を描画します。'
         ],
         quickTitles: ['三角形（SSS）', '三角形（3点座標）', '円'],
         quickBodies: ['3辺の長さからすぐ描画します。', '座標をそのまま入力して描画します。', '半径からすぐ描画します。']
@@ -942,9 +976,10 @@
           ['Quadrilaterals', 'Draw common quadrilaterals and other four-sided figures.'],
           ['Polygons', 'Draw polygons with five or more sides.'],
           ['Curved Shapes', 'Draw circles, ellipses, sectors, and other curved figures.'],
+          ['Lines and Angles', 'Draw figures based on parallel lines, intersections, and angle relations.'],
           ['Popular Shortcuts', 'If you are not sure where to start, these are good first choices.']
         ],
-        cardTitles: ['Triangle (SSS)', 'Isosceles Triangle', 'Equilateral Triangle', 'Triangle (SAS)', 'Triangle (ASA)', 'Triangle (AAS)', 'Triangle (AAA)', 'Triangle (3 Points)', 'Triangle (Base + Height)', 'Right Triangle (Acute)', 'Right Triangle (Adjacent)', 'Right Triangle (Opposite)', 'Square', 'Rectangle', 'Rhombus', 'Trapezoid', 'Parallelogram', 'Parallelogram (2 Sides + Angle)', 'Convex Quadrilateral', 'Concave Quadrilateral', 'Isosceles Trapezoid', 'Kite', 'Pentagon', 'Hexagon', 'Regular Polygon', 'Circle', 'Ellipse', 'Sector', 'Elliptic Sector', 'Star'],
+        cardTitles: ['Triangle (SSS)', 'Isosceles Triangle', 'Equilateral Triangle', 'Triangle (SAS)', 'Triangle (ASA)', 'Triangle (AAS)', 'Triangle (AAA)', 'Triangle (3 Points)', 'Triangle (Base + Height)', 'Right Triangle (Acute)', 'Right Triangle (Adjacent)', 'Right Triangle (Opposite)', 'Square', 'Rectangle', 'Rhombus', 'Trapezoid', 'Parallelogram', 'Parallelogram (2 Sides + Angle)', 'Convex Quadrilateral', 'Concave Quadrilateral', 'Isosceles Trapezoid', 'Kite', 'Pentagon', 'Hexagon', 'Regular Polygon', 'Circle', 'Ellipse', 'Sector', 'Elliptic Sector', 'Star', 'Parallel Lines and Two Angles'],
         cardBodies: [
           'Draw a triangle from three known side lengths.',
           'Draw an isosceles triangle from its equal side and base.',
@@ -975,7 +1010,8 @@
           'Draw an ellipse from radius 1 and radius 2.',
           'Draw a sector from its radius and central angle.',
           'Draw an elliptic sector from radius 1, radius 2, and the central angle.',
-          'Draw a symmetric five-point star from one side and the tip angle.'
+          'Draw a symmetric five-point star from one side and the tip angle.',
+          'Draw a figure from points on two parallel segments and two given angles.'
         ],
         quickTitles: ['Triangle (SSS)', 'Triangle (3 Points)', 'Circle'],
         quickBodies: ['Start instantly from three side lengths.', 'Start by entering coordinates directly.', 'Start from the radius.']
@@ -991,9 +1027,10 @@
           ['四边形', '绘制常见四边形及一般四边形。'],
           ['多边形', '绘制五边形以上的多边形。'],
           ['曲线图形', '绘制圆、椭圆、扇形等曲线图形。'],
+          ['线与角', '绘制使用平行线、交点和角关系的图形。'],
           ['常用入口', '如果不确定从哪里开始，可以先用这些入口。']
         ],
-        cardTitles: ['三角形（SSS）', '等腰三角形', '正三角形', '三角形（SAS）', '三角形（ASA）', '三角形（AAS）', '三角形（AAA）', '三角形（3点坐标）', '三角形（底边+高度）', '直角三角形（锐角）', '直角三角形（邻边）', '直角三角形（对边）', '正方形', '长方形', '菱形', '梯形', '平行四边形', '平行四边形（两边+夹角）', '凸四边形', '凹四边形', '等腰梯形', '风筝形', '五边形', '六边形', '正N边形', '圆', '椭圆', '扇形', '椭圆扇形', '星形'],
+        cardTitles: ['三角形（SSS）', '等腰三角形', '正三角形', '三角形（SAS）', '三角形（ASA）', '三角形（AAS）', '三角形（AAA）', '三角形（3点坐标）', '三角形（底边+高度）', '直角三角形（锐角）', '直角三角形（邻边）', '直角三角形（对边）', '正方形', '长方形', '菱形', '梯形', '平行四边形', '平行四边形（两边+夹角）', '凸四边形', '凹四边形', '等腰梯形', '风筝形', '五边形', '六边形', '正N边形', '圆', '椭圆', '扇形', '椭圆扇形', '星形', '平行线与两角'],
         cardBodies: [
           '根据三边长度绘制三角形。',
           '根据等边与底边绘制等腰三角形。',
@@ -1024,7 +1061,8 @@
           '根据半径1和半径2绘制椭圆。',
           '根据半径和中心角绘制扇形。',
           '根据半径1、半径2和中心角绘制椭圆扇形。',
-          '根据一条边和尖角绘制对称的五角星。'
+          '根据一条边和尖角绘制对称的五角星。',
+          '根据两条平行线上的点和两个角绘制交点图形。'
         ],
         quickTitles: ['三角形（SSS）', '三角形（3点坐标）', '圆'],
         quickBodies: ['可直接从三边开始。', '可直接输入坐标开始。', '可直接从半径开始。']
@@ -1040,9 +1078,10 @@
           ['Cuadriláteros', 'Dibuja cuadriláteros comunes y otras figuras de cuatro lados.'],
           ['Polígonos', 'Dibuja polígonos de cinco o más lados.'],
           ['Figuras Curvas', 'Dibuja círculos, elipses, sectores y otras figuras curvas.'],
+          ['Líneas y ángulos', 'Dibuja figuras basadas en líneas paralelas, intersecciones y relaciones angulares.'],
           ['Entradas frecuentes', 'Si no sabes por dónde empezar, estas opciones son buenas primeras elecciones.']
         ],
-        cardTitles: ['Triángulo (SSS)', 'Triángulo isósceles', 'Triángulo equilátero', 'Triángulo (SAS)', 'Triángulo (ASA)', 'Triángulo (AAS)', 'Triángulo (AAA)', 'Triángulo (3 puntos)', 'Triángulo (base + altura)', 'Triángulo rectángulo (agudo)', 'Triángulo rectángulo (adyacente)', 'Triángulo rectángulo (opuesto)', 'Cuadrado', 'Rectángulo', 'Rombo', 'Trapecio', 'Paralelogramo', 'Paralelogramo (2 lados + ángulo)', 'Cuadrilátero convexo', 'Cuadrilátero cóncavo', 'Trapecio isósceles', 'Deltoide', 'Pentágono', 'Hexágono', 'Polígono regular', 'Círculo', 'Elipse', 'Sector', 'Sector elíptico', 'Estrella'],
+        cardTitles: ['Triángulo (SSS)', 'Triángulo isósceles', 'Triángulo equilátero', 'Triángulo (SAS)', 'Triángulo (ASA)', 'Triángulo (AAS)', 'Triángulo (AAA)', 'Triángulo (3 puntos)', 'Triángulo (base + altura)', 'Triángulo rectángulo (agudo)', 'Triángulo rectángulo (adyacente)', 'Triángulo rectángulo (opuesto)', 'Cuadrado', 'Rectángulo', 'Rombo', 'Trapecio', 'Paralelogramo', 'Paralelogramo (2 lados + ángulo)', 'Cuadrilátero convexo', 'Cuadrilátero cóncavo', 'Trapecio isósceles', 'Deltoide', 'Pentágono', 'Hexágono', 'Polígono regular', 'Círculo', 'Elipse', 'Sector', 'Sector elíptico', 'Estrella', 'Líneas paralelas y dos ángulos'],
         cardBodies: [
           'Dibuja un triángulo a partir de tres lados conocidos.',
           'Dibuja un triángulo isósceles a partir del lado igual y la base.',
@@ -1073,7 +1112,8 @@
           'Dibuja una elipse a partir del radio 1 y el radio 2.',
           'Dibuja un sector a partir del radio y el ángulo central.',
           'Dibuja un sector elíptico a partir del radio 1, el radio 2 y el ángulo central.',
-          'Dibuja una estrella simétrica de cinco puntas a partir de un lado y el ángulo de la punta.'
+          'Dibuja una estrella simétrica de cinco puntas a partir de un lado y el ángulo de la punta.',
+          'Dibuja una figura a partir de puntos sobre dos segmentos paralelos y dos ángulos dados.'
         ],
         quickTitles: ['Triángulo (SSS)', 'Triángulo (3 puntos)', 'Círculo'],
         quickBodies: ['Empieza de inmediato con tres lados.', 'Empieza introduciendo coordenadas.', 'Empieza con el radio.']
