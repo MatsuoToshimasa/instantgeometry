@@ -904,6 +904,11 @@
             b: { color: '#2a5bd7', rotation: 0 },
             c: { color: '#2a5bd7', rotation: 0 }
           },
+          sideObject: {
+            a: { color: '#2a5bd7', rotation: 0 },
+            b: { color: '#2a5bd7', rotation: 0 },
+            c: { color: '#2a5bd7', rotation: 0 }
+          },
           innerAngle: {
             A: { color: '#687086', rotation: 0 },
             B: { color: '#687086', rotation: 0 },
@@ -1246,9 +1251,11 @@
       }
 
       function getLabelStyle(type, id) {
-        return labelStyleState[type] && labelStyleState[type][id]
-          ? labelStyleState[type][id]
-          : { color: '#2a5bd7', rotation: 0 };
+        labelStyleState[type] = labelStyleState[type] || {};
+        if (!labelStyleState[type][id]) {
+          labelStyleState[type][id] = { color: '#2a5bd7', rotation: 0 };
+        }
+        return labelStyleState[type][id];
       }
 
       function toMathLikeHtml(text) {
@@ -1378,7 +1385,10 @@
         let widthPx = 0;
         let heightPx = 0;
 
-        if (anchor.screenRect) {
+        if (anchor.boxWidthPx && anchor.boxHeightPx) {
+          widthPx = Math.max(10, anchor.boxWidthPx);
+          heightPx = Math.max(10, anchor.boxHeightPx);
+        } else if (anchor.screenRect) {
           widthPx = Math.max(10, (anchor.screenRect.right - anchor.screenRect.left) + padPx * 2);
           heightPx = Math.max(10, (anchor.screenRect.bottom - anchor.screenRect.top) + padPx * 2);
         } else {
@@ -2499,6 +2509,7 @@
       function findNearestLabel(point) {
         function getScreenPaddingByType(type) {
           if (type === 'side') return 0;
+          if (type === 'sideObject') return 0;
           if (type === 'vertex') return 2;
           if (type === 'innerAngle') return 12;
           if (type === 'angleMark') return 12;
@@ -2528,6 +2539,45 @@
           }
         }
         return null;
+      }
+
+      function registerSideObjectAnchor(id, start, end) {
+        const screenStart = userToScreenPoint(start);
+        const screenEnd = userToScreenPoint(end);
+        const hitWidthPx = 25;
+        const boxHeightPx = 14;
+        const dx = screenEnd.x - screenStart.x;
+        const dy = screenEnd.y - screenStart.y;
+        const len = Math.hypot(dx, dy) || 1;
+        const nx = -dy / len;
+        const ny = dx / len;
+        const hx = (hitWidthPx / 2) * nx;
+        const hy = (hitWidthPx / 2) * ny;
+        const hitCorners = [
+          { x: screenStart.x + hx, y: screenStart.y + hy },
+          { x: screenEnd.x + hx, y: screenEnd.y + hy },
+          { x: screenEnd.x - hx, y: screenEnd.y - hy },
+          { x: screenStart.x - hx, y: screenStart.y - hy }
+        ];
+        const xs = hitCorners.map(function (p) { return p.x; });
+        const ys = hitCorners.map(function (p) { return p.y; });
+        currentLabelAnchors.push({
+          type: 'sideObject',
+          id: id,
+          x: (start.x + end.x) / 2,
+          y: (start.y + end.y) / 2,
+          screenRect: {
+            left: Math.min.apply(null, xs),
+            right: Math.max.apply(null, xs),
+            top: Math.min.apply(null, ys),
+            bottom: Math.max.apply(null, ys)
+          },
+          boxWidthPx: len,
+          boxHeightPx: boxHeightPx,
+          fontSize: 16,
+          rotation: Math.atan2(end.y - start.y, end.x - start.x) * 180 / Math.PI,
+          color: getLabelStyle('sideObject', id).color
+        });
       }
 
       function detectInteractiveTarget(coords) {
@@ -2737,10 +2787,33 @@
             vertices: { visible: false },
             highlight: false
           });
-          const edgeStyle = { strokeWidth: 2, strokeColor: figureState.color, fixed: true, highlight: false };
-          if (!hiddenLabelState.side.a || segmentLineMode.side.a !== 0) board.create('segment', [pointB, pointC], edgeStyle);
-          if (!hiddenLabelState.side.b || segmentLineMode.side.b !== 0) board.create('segment', [pointC, pointA], edgeStyle);
-          if (!hiddenLabelState.side.c || segmentLineMode.side.c !== 0) board.create('segment', [pointA, pointB], edgeStyle);
+          if (!hiddenLabelState.side.a || segmentLineMode.side.a !== 0) {
+            board.create('segment', [pointB, pointC], {
+              strokeWidth: 2,
+              strokeColor: getLabelStyle('sideObject', 'a').color,
+              fixed: true,
+              highlight: false
+            });
+            registerSideObjectAnchor('a', triangle.B, triangle.C);
+          }
+          if (!hiddenLabelState.side.b || segmentLineMode.side.b !== 0) {
+            board.create('segment', [pointC, pointA], {
+              strokeWidth: 2,
+              strokeColor: getLabelStyle('sideObject', 'b').color,
+              fixed: true,
+              highlight: false
+            });
+            registerSideObjectAnchor('b', triangle.C, triangle.A);
+          }
+          if (!hiddenLabelState.side.c || segmentLineMode.side.c !== 0) {
+            board.create('segment', [pointA, pointB], {
+              strokeWidth: 2,
+              strokeColor: getLabelStyle('sideObject', 'c').color,
+              fixed: true,
+              highlight: false
+            });
+            registerSideObjectAnchor('c', triangle.A, triangle.B);
+          }
 
           const centroid = {
             x: (triangle.A.x + triangle.B.x + triangle.C.x) / 3,
@@ -2904,7 +2977,7 @@
             return item.type === selected.type && item.id === selected.id;
           });
           if (!anchor) return;
-          if (selected.type === 'angleMark' || selected.type === 'rightAngleMark') {
+          if (selected.type === 'angleMark' || selected.type === 'rightAngleMark' || selected.type === 'sideObject') {
             hoveredLabel = null;
             selectedLabel = selected;
             selectedFigure = false;
