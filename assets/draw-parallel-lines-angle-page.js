@@ -698,16 +698,45 @@
     const rect = box.getBoundingClientRect();
     const width = (geometry.baseBounds.width * figureState.scale / currentView.width) * rect.width;
     const height = (geometry.baseBounds.height * figureState.scale / currentView.height) * rect.height;
-    const node = document.createElement('div');
-    node.style.position = 'absolute';
-    node.style.left = (center.x - width / 2) + 'px';
-    node.style.top = (center.y - height / 2) + 'px';
-    node.style.width = Math.max(width, 1) + 'px';
-    node.style.height = Math.max(height, 1) + 'px';
-    node.style.pointerEvents = 'none';
-    node.style.opacity = '0';
-    labelLayer.appendChild(node);
-    figureSelectionRef = { node: node };
+    const baseRect = {
+      left: rect.left + center.x - width / 2,
+      top: rect.top + center.y - height / 2,
+      width: Math.max(width, 1),
+      height: Math.max(height, 1)
+    };
+    const visibleRects = [baseRect];
+    Object.keys(labelNodes).forEach(function (key) {
+      const ref = labelNodes[key];
+      if (!ref || !ref.node || typeof ref.node.getBoundingClientRect !== 'function') return;
+      const nodeRect = ref.node.getBoundingClientRect();
+      if (!nodeRect.width && !nodeRect.height) return;
+      visibleRects.push({
+        left: nodeRect.left,
+        top: nodeRect.top,
+        width: nodeRect.width,
+        height: nodeRect.height
+      });
+    });
+    const union = visibleRects.reduce(function (acc, item) {
+      if (!acc) return {
+        left: item.left,
+        top: item.top,
+        right: item.left + item.width,
+        bottom: item.top + item.height
+      };
+      return {
+        left: Math.min(acc.left, item.left),
+        top: Math.min(acc.top, item.top),
+        right: Math.max(acc.right, item.left + item.width),
+        bottom: Math.max(acc.bottom, item.top + item.height)
+      };
+    }, null);
+    figureSelectionRef = window.InstantGeometrySharedSelection.createVirtualSelectionRef({
+      left: union.left,
+      top: union.top,
+      width: union.right - union.left,
+      height: union.bottom - union.top
+    });
   }
 
   function updateExportFrame() {

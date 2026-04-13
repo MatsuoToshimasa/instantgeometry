@@ -329,7 +329,28 @@
     return { selectedLabel: selectedLabel, paletteOpen: deps.paletteOpen };
   }
 
+  function createVirtualSelectionRef(rect) {
+    if (!rect) return null;
+    return {
+      node: {
+        offsetWidth: rect.width,
+        offsetHeight: rect.height,
+        getBoundingClientRect: function () {
+          return {
+            left: rect.left,
+            top: rect.top,
+            right: rect.left + rect.width,
+            bottom: rect.top + rect.height,
+            width: rect.width,
+            height: rect.height
+          };
+        }
+      }
+    };
+  }
+
   window.InstantGeometrySharedSelection = {
+    createVirtualSelectionRef: createVirtualSelectionRef,
     getPaletteColors: getPaletteColors,
     ensureDomSelectionStyles: ensureDomSelectionStyles,
     renderSelectionOverlay: renderSelectionOverlay,
