@@ -662,7 +662,9 @@
     const vertex = geometry.points[ids[1]];
     const p2 = geometry.points[ids[2]];
     const arc = arcPath(vertex, p1, p2, 0.35);
-    svg.appendChild(createSvgElement('path', { d: arc.d, stroke: '#687086', 'stroke-width': 0.04, fill: 'none' }));
+    if (angleHasLabel(id) && !angleHasMarker(id)) {
+      svg.appendChild(createSvgElement('path', { d: arc.d, stroke: '#687086', 'stroke-width': 0.04, fill: 'none' }));
+    }
     if (angleHasLabel(id)) {
       const text = getAngleLabelText(id, geometry);
       createDomLabel('angle', id, { x: vertex.x + 0.52 * Math.cos(arc.midAngle), y: vertex.y + 0.52 * Math.sin(arc.midAngle) }, text, 26);
