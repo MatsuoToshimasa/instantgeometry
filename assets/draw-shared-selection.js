@@ -349,7 +349,47 @@
     };
   }
 
+  function createAggregateSelectionRef(baseRect, labelNodes) {
+    if (!baseRect) return null;
+    const visibleRects = [baseRect];
+    Object.keys(labelNodes || {}).forEach(function (key) {
+      const ref = labelNodes[key];
+      if (!ref || !ref.node || typeof ref.node.getBoundingClientRect !== 'function') return;
+      const nodeRect = ref.node.getBoundingClientRect();
+      if (!nodeRect.width && !nodeRect.height) return;
+      visibleRects.push({
+        left: nodeRect.left,
+        top: nodeRect.top,
+        width: nodeRect.width,
+        height: nodeRect.height
+      });
+    });
+    const union = visibleRects.reduce(function (acc, item) {
+      if (!acc) {
+        return {
+          left: item.left,
+          top: item.top,
+          right: item.left + item.width,
+          bottom: item.top + item.height
+        };
+      }
+      return {
+        left: Math.min(acc.left, item.left),
+        top: Math.min(acc.top, item.top),
+        right: Math.max(acc.right, item.left + item.width),
+        bottom: Math.max(acc.bottom, item.top + item.height)
+      };
+    }, null);
+    return createVirtualSelectionRef({
+      left: union.left,
+      top: union.top,
+      width: union.right - union.left,
+      height: union.bottom - union.top
+    });
+  }
+
   window.InstantGeometrySharedSelection = {
+    createAggregateSelectionRef: createAggregateSelectionRef,
     createVirtualSelectionRef: createVirtualSelectionRef,
     getPaletteColors: getPaletteColors,
     ensureDomSelectionStyles: ensureDomSelectionStyles,
