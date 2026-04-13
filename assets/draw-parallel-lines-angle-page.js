@@ -79,6 +79,8 @@
   let labelNodes = {};
 
   const labelStyles = window.InstantGeometrySharedLabels.createStyleStore();
+  const lineTopY = 1.6;
+  const lineBottomY = -1.6;
 
   function setStatus(message, isError) {
     statusBox.textContent = message;
@@ -254,8 +256,8 @@
   }
 
   function getGeometry() {
-    const upperY = 1;
-    const lowerY = -1;
+    const upperY = lineTopY;
+    const lowerY = lineBottomY;
     const lineLength = evaluateExpression(inputElements.lineLength.value);
     if (!(lineLength > 0)) throw new Error('PQ＝RS の長さは 0 より大きくしてください。');
     const paLength = evaluateExpression(inputElements.paLength.value);
@@ -716,10 +718,10 @@
       const fallbackLength = Number.isFinite(evaluateExpressionSafe(inputElements.lineLength && inputElements.lineLength.value)) ? evaluateExpressionSafe(inputElements.lineLength.value) : 14;
       const fallback = {
         points: {
-          P: { x: -fallbackLength / 2, y: 1 },
-          Q: { x: fallbackLength / 2, y: 1 },
-          R: { x: -fallbackLength / 2, y: -1 },
-          S: { x: fallbackLength / 2, y: -1 }
+          P: { x: -fallbackLength / 2, y: lineTopY },
+          Q: { x: fallbackLength / 2, y: lineTopY },
+          R: { x: -fallbackLength / 2, y: lineBottomY },
+          S: { x: fallbackLength / 2, y: lineBottomY }
         }
       };
       const fallbackBounds = getBounds(fallback.points);
@@ -754,9 +756,9 @@
     render();
   });
   resetBtn.addEventListener('click', function () {
-    inputElements.lineLength.value = '14';
-    inputElements.paLength.value = '7';
-    inputElements.rbLength.value = '7';
+    inputElements.lineLength.value = '10';
+    inputElements.paLength.value = '5';
+    inputElements.rbLength.value = '5';
     inputElements.theta1.value = '20';
     inputElements.theta2.value = '30';
     labelState.point = { P: false, Q: false, R: false, S: false, A: false, B: false, M: false };
