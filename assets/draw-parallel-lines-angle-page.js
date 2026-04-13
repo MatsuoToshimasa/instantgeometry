@@ -525,6 +525,20 @@
         rotation: figureState.rotation,
         scale: figureState.scale,
         paletteOpen: paletteOpen,
+        onBoxPointerDown: function (event) {
+          event.preventDefault();
+          event.stopPropagation();
+          selectedLabel = null;
+          selectedFigure = true;
+          paletteOpen = false;
+          dragState = {
+            mode: 'move',
+            target: 'figure',
+            startClient: { x: event.clientX, y: event.clientY },
+            offsetStart: { x: figureState.offset.x, y: figureState.offset.y }
+          };
+          renderSelectionBox();
+        },
         onHandlePointerDown: handleControlPointerDown,
         onPaletteColorClick: function (color) {
           figureState.color = color;

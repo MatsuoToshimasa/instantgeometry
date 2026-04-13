@@ -222,6 +222,9 @@
     boxNode.style.height = boxHeight + 'px';
     boxNode.style.transformOrigin = 'center center';
     boxNode.style.transform = 'rotate(' + rotation + 'deg)';
+    if (typeof deps.onBoxPointerDown === 'function') {
+      boxNode.addEventListener('pointerdown', deps.onBoxPointerDown);
+    }
     labelLayer.appendChild(boxNode);
 
     function rotatePoint(point) {
