@@ -695,15 +695,27 @@
 
   function createFigureSelectionProxy(geometry) {
     const center = userToScreenPoint(geometry.centroid);
-    const rect = box.getBoundingClientRect();
-    const width = (geometry.baseBounds.width * figureState.scale / currentView.width) * rect.width;
-    const height = (geometry.baseBounds.height * figureState.scale / currentView.height) * rect.height;
-    figureSelectionRef = window.InstantGeometrySharedSelection.createAggregateSelectionRef({
-      left: rect.left + center.x - width / 2,
-      top: rect.top + center.y - height / 2,
-      width: Math.max(width, 1),
-      height: Math.max(height, 1)
-    }, labelNodes);
+    const aggregatePoints = Object.keys(geometry.points).map(function (id) {
+      return userToScreenPoint(geometry.points[id]);
+    });
+    Object.keys(labelNodes).forEach(function (key) {
+      const ref = labelNodes[key];
+      if (!ref || !ref.node || typeof ref.node.getBoundingClientRect !== 'function') return;
+      const nodeRect = ref.node.getBoundingClientRect();
+      aggregatePoints.push(
+        { x: nodeRect.left, y: nodeRect.top },
+        { x: nodeRect.right, y: nodeRect.top },
+        { x: nodeRect.right, y: nodeRect.bottom },
+        { x: nodeRect.left, y: nodeRect.bottom }
+      );
+    });
+    const bounds = window.InstantGeometrySharedSelection.computeRotatedBoundsFromPoints(center, figureState.rotation, aggregatePoints, 1.2);
+    figureSelectionRef = window.InstantGeometrySharedSelection.createVirtualSelectionRef({
+      left: bounds.center.x - bounds.width / 2,
+      top: bounds.center.y - bounds.height / 2,
+      width: bounds.width,
+      height: bounds.height
+    });
   }
 
   function updateExportFrame() {

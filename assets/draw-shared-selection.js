@@ -390,7 +390,58 @@
     });
   }
 
+  function computeRotatedBoundsFromPoints(center, rotationDeg, points, scaleMultiplier) {
+    const rotation = (Number.isFinite(rotationDeg) ? rotationDeg : 0) * Math.PI / 180;
+    const cos = Math.cos(-rotation);
+    const sin = Math.sin(-rotation);
+    const localPoints = (points || []).map(function (point) {
+      const dx = point.x - center.x;
+      const dy = point.y - center.y;
+      return {
+        x: dx * cos - dy * sin,
+        y: dx * sin + dy * cos
+      };
+    });
+    if (!localPoints.length) {
+      localPoints.push({ x: 0, y: 0 });
+    }
+    const minX = Math.min.apply(null, localPoints.map(function (point) { return point.x; }));
+    const maxX = Math.max.apply(null, localPoints.map(function (point) { return point.x; }));
+    const minY = Math.min.apply(null, localPoints.map(function (point) { return point.y; }));
+    const maxY = Math.max.apply(null, localPoints.map(function (point) { return point.y; }));
+    const width = Math.max((maxX - minX) * (scaleMultiplier || 1), 1e-6);
+    const height = Math.max((maxY - minY) * (scaleMultiplier || 1), 1e-6);
+    const halfWidth = width / 2;
+    const halfHeight = height / 2;
+    const cornersLocal = {
+      topLeft: { x: -halfWidth, y: halfHeight },
+      topRight: { x: halfWidth, y: halfHeight },
+      bottomRight: { x: halfWidth, y: -halfHeight },
+      bottomLeft: { x: -halfWidth, y: -halfHeight }
+    };
+    const rotateForward = function (point) {
+      const c = Math.cos(rotation);
+      const s = Math.sin(rotation);
+      return {
+        x: center.x + point.x * c - point.y * s,
+        y: center.y + point.x * s + point.y * c
+      };
+    };
+    return {
+      center: { x: center.x, y: center.y },
+      width: width,
+      height: height,
+      corners: {
+        topLeft: rotateForward(cornersLocal.topLeft),
+        topRight: rotateForward(cornersLocal.topRight),
+        bottomRight: rotateForward(cornersLocal.bottomRight),
+        bottomLeft: rotateForward(cornersLocal.bottomLeft)
+      }
+    };
+  }
+
   window.InstantGeometrySharedSelection = {
+    computeRotatedBoundsFromPoints: computeRotatedBoundsFromPoints,
     createAggregateSelectionRef: createAggregateSelectionRef,
     createVirtualSelectionRef: createVirtualSelectionRef,
     getPaletteColors: getPaletteColors,
