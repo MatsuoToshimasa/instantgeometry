@@ -53,6 +53,14 @@
     segment: { PQ: false, RS: false, AM: false, BM: false },
     angle: { PAM: false, QAM: true, AMB: true, RBM: false, SBM: true }
   };
+  const customLabelText = {
+    point: { P: '', Q: '', R: '', S: '', A: '', B: '', M: '' },
+    segment: { PQ: '', RS: '', AM: '', BM: '' },
+    angle: { PAM: '', QAM: '', AMB: '', RBM: '', SBM: '' }
+  };
+  const segmentLineMode = { PQ: 1, RS: 1, AM: 1, BM: 1 };
+  const segmentArcMode = { PQ: 1, RS: 1, AM: 1, BM: 1 };
+  const angleMarkerMode = { PAM: 0, QAM: 0, AMB: 0, RBM: 0, SBM: 0 };
 
   let svg = null;
   let exportAspectIndex = 0;
@@ -123,8 +131,110 @@
         render();
         renderLabelToggleButtons();
       });
+      if (config.type === 'point') {
+        button.addEventListener('contextmenu', async function (event) {
+          event.preventDefault();
+          const response = await window.InstantGeometrySharedLabelConfig.promptSingleText({
+            title: '点ラベル設定',
+            firstLabel: '文字',
+            value: customLabelText.point[config.id] || config.id
+          });
+          if (response === null) return;
+          customLabelText.point[config.id] = String(response || '').trim();
+          render();
+          renderLabelToggleButtons();
+        });
+      } else if (config.type === 'segment') {
+        button.addEventListener('contextmenu', async function (event) {
+          event.preventDefault();
+          const response = await window.InstantGeometrySharedLabelConfig.promptTripleSetting({
+            title: '線分ラベル設定',
+            firstLabel: '線分表示（0:線分を非表示 / 1:線分を表示）',
+            firstValue: String(segmentLineMode[config.id]),
+            secondLabel: '弧表示（0:弧を非表示 / 1:弧を表示）',
+            secondValue: String(segmentArcMode[config.id]),
+            thirdLabel: '文字（空欄で数値表示）',
+            thirdValue: customLabelText.segment[config.id] || '',
+            firstBinary: true,
+            secondBinary: true
+          });
+          if (response === null) return;
+          const lineMode = window.InstantGeometrySharedOrnaments.normalizeSegmentArcInput(response.first);
+          const arcMode = window.InstantGeometrySharedOrnaments.normalizeSegmentArcInput(response.second);
+          if (lineMode === null || arcMode === null) {
+            setStatus('線分表示と弧表示は「0 / 1」で指定してください。', true);
+            return;
+          }
+          segmentLineMode[config.id] = lineMode;
+          segmentArcMode[config.id] = arcMode;
+          customLabelText.segment[config.id] = String(response.third || '').trim();
+          render();
+        });
+      } else if (config.type === 'angle') {
+        button.addEventListener('contextmenu', async function (event) {
+          event.preventDefault();
+          const response = await window.InstantGeometrySharedLabelConfig.promptTripleSetting({
+            title: '角ラベル設定',
+            firstLabel: '角マーク（0:なし / 1:記号なし / 2:○ / 3:| / 4:= / 5:× / 6:△ / 7:塗）',
+            firstValue: String(angleMarkerMode[config.id] || 0),
+            secondLabel: '文字（空欄で数値表示）',
+            secondValue: customLabelText.angle[config.id] || '',
+            thirdLabel: '直角マーク（0:非表示 / 1:表示）',
+            thirdValue: '90°以外は設定不可',
+            thirdDisabled: true
+          });
+          if (response === null) return;
+          const mode = normalizeAngleMarkerInput(response.first);
+          if (mode === null) {
+            setStatus('角マークは「0 / 1 / 2 / 3 / 4 / 5 / 6 / 7」で指定してください。', true);
+            return;
+          }
+          angleMarkerMode[config.id] = mode;
+          customLabelText.angle[config.id] = String(response.second || '').trim();
+          render();
+        });
+      }
       generalLabelToggleGrid.appendChild(button);
     });
+  }
+
+  function normalizeAngleMarkerInput(input) {
+    const value = String(input || '').trim();
+    if (value === '') return 0;
+    if (/^[0-7]$/.test(value)) return Number(value);
+    return null;
+  }
+
+  function getPointLabelText(id) {
+    return String(customLabelText.point[id] || '').trim() || id;
+  }
+
+  function getSegmentLabelText(id, geometry) {
+    const custom = String(customLabelText.segment[id] || '').trim();
+    if (custom) return custom;
+    const map = { PQ: ['P', 'Q'], RS: ['R', 'S'], AM: ['A', 'M'], BM: ['B', 'M'] };
+    const ends = map[id];
+    const p1 = geometry.points[ends[0]];
+    const p2 = geometry.points[ends[1]];
+    return formatNumber(Math.hypot(p2.x - p1.x, p2.y - p1.y));
+  }
+
+  function getAngleLabelText(id, geometry) {
+    const custom = window.InstantGeometrySharedLabelConfig.normalizeCustomLabelInput(customLabelText.angle[id]);
+    if (custom) return window.InstantGeometrySharedLabelConfig.formatAngleCustomText(custom, angleMode);
+    const anglePointMap = {
+      PAM: ['P', 'A', 'M'],
+      QAM: ['Q', 'A', 'M'],
+      AMB: ['A', 'M', 'B'],
+      RBM: ['R', 'B', 'M'],
+      SBM: ['S', 'B', 'M']
+    };
+    const ids = anglePointMap[id];
+    const p1 = geometry.points[ids[0]];
+    const vertex = geometry.points[ids[1]];
+    const p2 = geometry.points[ids[2]];
+    const degrees = angleValue(p1, vertex, p2);
+    return angleMode === 'degrees' ? (formatNumber(degrees) + '°') : formatNumber(degrees * Math.PI / 180);
   }
 
   function getGeometry() {
@@ -237,17 +347,18 @@
     const p1 = geometry.points[ends[0]];
     const p2 = geometry.points[ends[1]];
     const labelPoint = offsetPoint(p1, p2, id === 'PQ' ? 0.18 : (id === 'RS' ? -0.18 : 0.18));
-    const length = Math.hypot(p2.x - p1.x, p2.y - p1.y);
-    const text = formatNumber(length);
+    const text = getSegmentLabelText(id, geometry);
     const control = offsetPoint(p1, p2, id === 'PQ' ? 0.28 : (id === 'RS' ? -0.28 : 0.28));
-    const path = createSvgElement('path', {
-      d: 'M ' + p1.x + ' ' + p1.y + ' Q ' + control.x + ' ' + control.y + ' ' + p2.x + ' ' + p2.y,
-      stroke: '#2a5bd7',
-      'stroke-width': 0.03,
-      'stroke-dasharray': '0.15 0.1',
-      fill: 'none'
-    });
-    svg.appendChild(path);
+    if (segmentArcMode[id]) {
+      const path = createSvgElement('path', {
+        d: 'M ' + p1.x + ' ' + p1.y + ' Q ' + control.x + ' ' + control.y + ' ' + p2.x + ' ' + p2.y,
+        stroke: '#2a5bd7',
+        'stroke-width': 0.03,
+        'stroke-dasharray': '0.15 0.1',
+        fill: 'none'
+      });
+      svg.appendChild(path);
+    }
     drawText(labelPoint, text, '#2a5bd7', '0.34');
   }
 
@@ -292,9 +403,51 @@
     const p2 = geometry.points[ids[2]];
     const arc = arcPath(vertex, p1, p2, 0.35);
     svg.appendChild(createSvgElement('path', { d: arc.d, stroke: '#687086', 'stroke-width': 0.04, fill: 'none' }));
-    const degrees = angleValue(p1, vertex, p2);
-    const text = angleMode === 'degrees' ? (formatNumber(degrees) + '°') : formatNumber(degrees * Math.PI / 180);
+    const text = getAngleLabelText(id, geometry);
     drawText({ x: vertex.x + 0.52 * Math.cos(arc.midAngle), y: vertex.y + 0.52 * Math.sin(arc.midAngle) }, text, '#687086', '0.3');
+    drawAngleMarker(id, vertex, arc.midAngle);
+  }
+
+  function drawAngleMarker(id, vertex, midAngle) {
+    const mode = Number.isFinite(angleMarkerMode[id]) ? angleMarkerMode[id] : 0;
+    if (mode <= 1) return;
+    const cx = vertex.x + 0.34 * Math.cos(midAngle);
+    const cy = vertex.y + 0.34 * Math.sin(midAngle);
+    const stroke = '#687086';
+    if (mode === 2) {
+      svg.appendChild(createSvgElement('circle', { cx: cx, cy: cy, r: 0.05, stroke: stroke, 'stroke-width': 0.02, fill: 'none' }));
+      return;
+    }
+    if (mode === 3 || mode === 4) {
+      const dx = 0.05 * Math.cos(midAngle + Math.PI / 2);
+      const dy = 0.05 * Math.sin(midAngle + Math.PI / 2);
+      svg.appendChild(createSvgElement('line', { x1: cx - dx, y1: cy - dy, x2: cx + dx, y2: cy + dy, stroke: stroke, 'stroke-width': 0.02 }));
+      if (mode === 4) {
+        svg.appendChild(createSvgElement('line', { x1: cx - dx + 0.045 * Math.cos(midAngle), y1: cy - dy + 0.045 * Math.sin(midAngle), x2: cx + dx + 0.045 * Math.cos(midAngle), y2: cy + dy + 0.045 * Math.sin(midAngle), stroke: stroke, 'stroke-width': 0.02 }));
+      }
+      return;
+    }
+    if (mode === 5) {
+      const dx = 0.045 * Math.cos(midAngle + Math.PI / 4);
+      const dy = 0.045 * Math.sin(midAngle + Math.PI / 4);
+      svg.appendChild(createSvgElement('line', { x1: cx - dx, y1: cy - dy, x2: cx + dx, y2: cy + dy, stroke: stroke, 'stroke-width': 0.02 }));
+      svg.appendChild(createSvgElement('line', { x1: cx - dy, y1: cy + dx, x2: cx + dy, y2: cy - dx, stroke: stroke, 'stroke-width': 0.02 }));
+      return;
+    }
+    if (mode === 6) {
+      const r = 0.065;
+      const points = [
+        [cx, cy - r],
+        [cx - r * 0.866, cy + r * 0.5],
+        [cx + r * 0.866, cy + r * 0.5]
+      ].map(function (point) { return point.join(','); }).join(' ');
+      svg.appendChild(createSvgElement('polygon', { points: points, stroke: stroke, 'stroke-width': 0.02, fill: 'none' }));
+      return;
+    }
+    if (mode === 7) {
+      const path = arcPath(vertex, { x: vertex.x + 0.2 * Math.cos(midAngle - 0.2), y: vertex.y + 0.2 * Math.sin(midAngle - 0.2) }, { x: vertex.x + 0.2 * Math.cos(midAngle + 0.2), y: vertex.y + 0.2 * Math.sin(midAngle + 0.2) }, 0.2);
+      svg.appendChild(createSvgElement('path', { d: path.d + ' L ' + vertex.x + ' ' + vertex.y + ' Z', fill: 'rgba(104,112,134,0.35)', stroke: 'none' }));
+    }
   }
 
   function updateExportFrame() {
@@ -365,10 +518,10 @@
       svg.setAttribute('viewBox', [view.x, view.y, view.width, view.height].join(' '));
       updateExportFrame();
 
-      drawSegment(geometry.points.P, geometry.points.Q, '#2a5bd7', 0.05);
-      drawSegment(geometry.points.R, geometry.points.S, '#2a5bd7', 0.05);
-      drawSegment(geometry.points.A, geometry.points.M, '#2a5bd7', 0.05);
-      drawSegment(geometry.points.B, geometry.points.M, '#2a5bd7', 0.05);
+      if (labelState.segment.PQ || segmentLineMode.PQ) drawSegment(geometry.points.P, geometry.points.Q, '#2a5bd7', 0.05);
+      if (labelState.segment.RS || segmentLineMode.RS) drawSegment(geometry.points.R, geometry.points.S, '#2a5bd7', 0.05);
+      if (labelState.segment.AM || segmentLineMode.AM) drawSegment(geometry.points.A, geometry.points.M, '#2a5bd7', 0.05);
+      if (labelState.segment.BM || segmentLineMode.BM) drawSegment(geometry.points.B, geometry.points.M, '#2a5bd7', 0.05);
       drawPoint(geometry.points.P, '#111111');
       drawPoint(geometry.points.Q, '#111111');
       drawPoint(geometry.points.R, '#111111');
@@ -377,13 +530,13 @@
       drawPoint(geometry.points.B, '#111111');
       drawPoint(geometry.points.M, '#111111');
 
-      if (labelState.point.P) drawText({ x: geometry.points.P.x - 0.24, y: geometry.points.P.y - 0.24 }, 'P', '#1f2430', '0.34');
-      if (labelState.point.Q) drawText({ x: geometry.points.Q.x + 0.24, y: geometry.points.Q.y - 0.24 }, 'Q', '#1f2430', '0.34');
-      if (labelState.point.R) drawText({ x: geometry.points.R.x - 0.24, y: geometry.points.R.y + 0.24 }, 'R', '#1f2430', '0.34');
-      if (labelState.point.S) drawText({ x: geometry.points.S.x + 0.24, y: geometry.points.S.y + 0.24 }, 'S', '#1f2430', '0.34');
-      if (labelState.point.A) drawText({ x: geometry.points.A.x - 0.22, y: geometry.points.A.y + 0.24 }, 'A', '#1f2430', '0.34');
-      if (labelState.point.B) drawText({ x: geometry.points.B.x + 0.22, y: geometry.points.B.y - 0.24 }, 'B', '#1f2430', '0.34');
-      if (labelState.point.M) drawText({ x: geometry.points.M.x + 0.22, y: geometry.points.M.y + 0.24 }, 'M', '#1f2430', '0.34');
+      if (labelState.point.P) drawText({ x: geometry.points.P.x - 0.24, y: geometry.points.P.y - 0.24 }, getPointLabelText('P'), '#1f2430', '0.34');
+      if (labelState.point.Q) drawText({ x: geometry.points.Q.x + 0.24, y: geometry.points.Q.y - 0.24 }, getPointLabelText('Q'), '#1f2430', '0.34');
+      if (labelState.point.R) drawText({ x: geometry.points.R.x - 0.24, y: geometry.points.R.y + 0.24 }, getPointLabelText('R'), '#1f2430', '0.34');
+      if (labelState.point.S) drawText({ x: geometry.points.S.x + 0.24, y: geometry.points.S.y + 0.24 }, getPointLabelText('S'), '#1f2430', '0.34');
+      if (labelState.point.A) drawText({ x: geometry.points.A.x - 0.22, y: geometry.points.A.y + 0.24 }, getPointLabelText('A'), '#1f2430', '0.34');
+      if (labelState.point.B) drawText({ x: geometry.points.B.x + 0.22, y: geometry.points.B.y - 0.24 }, getPointLabelText('B'), '#1f2430', '0.34');
+      if (labelState.point.M) drawText({ x: geometry.points.M.x + 0.22, y: geometry.points.M.y + 0.24 }, getPointLabelText('M'), '#1f2430', '0.34');
 
       ['PQ', 'RS', 'AM', 'BM'].forEach(function (id) {
         if (labelState.segment[id]) drawSegmentLabel(id, geometry);
@@ -441,6 +594,12 @@
     labelState.point = { P: false, Q: false, R: false, S: false, A: false, B: false, M: false };
     labelState.segment = { PQ: false, RS: false, AM: false, BM: false };
     labelState.angle = { PAM: false, QAM: true, AMB: true, RBM: false, SBM: true };
+    Object.keys(customLabelText.point).forEach(function (key) { customLabelText.point[key] = ''; });
+    Object.keys(customLabelText.segment).forEach(function (key) { customLabelText.segment[key] = ''; });
+    Object.keys(customLabelText.angle).forEach(function (key) { customLabelText.angle[key] = ''; });
+    Object.keys(segmentLineMode).forEach(function (key) { segmentLineMode[key] = 1; });
+    Object.keys(segmentArcMode).forEach(function (key) { segmentArcMode[key] = 1; });
+    Object.keys(angleMarkerMode).forEach(function (key) { angleMarkerMode[key] = 0; });
     exportAspectIndex = 0;
     angleMode = 'degrees';
     updateRatioButton();
