@@ -195,7 +195,7 @@
             thirdDisabled: true
           });
           if (response === null) return;
-          const mode = normalizeAngleMarkerInput(response.marker);
+          const mode = window.InstantGeometrySharedOrnaments.normalizeAngleMarkerInput(response.marker);
           if (mode === null) {
             setStatus('角マークは「0 / 1 / 2 / 3 / 4 / 5 / 6 / 7」で指定してください。', true);
             return;
@@ -214,13 +214,6 @@
       });
       generalLabelToggleGrid.appendChild(button);
     });
-  }
-
-  function normalizeAngleMarkerInput(input) {
-    const value = String(input || '').trim();
-    if (value === '') return 0;
-    if (/^[0-7]$/.test(value)) return Number(value);
-    return null;
   }
 
   function getPointLabelText(id) {
@@ -460,35 +453,12 @@
     node.style.alignItems = 'center';
     node.style.justifyContent = 'center';
     node.style.transform = 'translate(-50%, -50%) translate(' + style.dx + 'px,' + style.dy + 'px) rotate(' + style.rotation + 'deg) scale(' + style.scale + ')';
-    node.innerHTML = buildAngleMarkerMarkup(mode);
+    node.innerHTML = window.InstantGeometrySharedOrnaments.buildAngleMarkerMarkup(mode);
     node.addEventListener('pointerdown', handleLabelPointerDown);
     node.addEventListener('wheel', handleLabelWheel, { passive: false });
     labelLayer.appendChild(node);
     labelNodes['angleMarker:' + id] = { node: node, anchor: anchor, fontSize: size, type: 'angleMarker', id: id };
     return node;
-  }
-
-  function buildAngleMarkerMarkup(mode) {
-    const common = 'stroke="currentColor" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"';
-    if (mode === 2) {
-      return '<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2" ' + common + '></circle></svg>';
-    }
-    if (mode === 3) {
-      return '<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><line x1="8" y1="16" x2="16" y2="8" ' + common + '></line></svg>';
-    }
-    if (mode === 4) {
-      return '<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><line x1="7" y1="17" x2="15" y2="9" ' + common + '></line><line x1="10" y1="20" x2="18" y2="12" ' + common + '></line></svg>';
-    }
-    if (mode === 5) {
-      return '<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><line x1="8" y1="8" x2="16" y2="16" ' + common + '></line><line x1="16" y1="8" x2="8" y2="16" ' + common + '></line></svg>';
-    }
-    if (mode === 6) {
-      return '<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><polygon points="12,7 8,15 16,15" ' + common + '></polygon></svg>';
-    }
-    if (mode === 7) {
-      return '<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6 A6 6 0 0 1 18 12 L12 12 Z" fill="currentColor" stroke="none"></path></svg>';
-    }
-    return '';
   }
 
   function renderSelectionBox() {
@@ -657,22 +627,6 @@
     return Math.acos(dot) * 180 / Math.PI;
   }
 
-  function arcPath(vertex, p1, p2, radius) {
-    const a1 = Math.atan2(p1.y - vertex.y, p1.x - vertex.x);
-    const a2 = Math.atan2(p2.y - vertex.y, p2.x - vertex.x);
-    let delta = a2 - a1;
-    while (delta <= -Math.PI) delta += Math.PI * 2;
-    while (delta > Math.PI) delta -= Math.PI * 2;
-    const start = { x: vertex.x + radius * Math.cos(a1), y: vertex.y + radius * Math.sin(a1) };
-    const end = { x: vertex.x + radius * Math.cos(a1 + delta), y: vertex.y + radius * Math.sin(a1 + delta) };
-    const largeArc = Math.abs(delta) > Math.PI ? 1 : 0;
-    const sweep = delta > 0 ? 1 : 0;
-    return {
-      d: 'M ' + start.x + ' ' + start.y + ' A ' + radius + ' ' + radius + ' 0 ' + largeArc + ' ' + sweep + ' ' + end.x + ' ' + end.y,
-      midAngle: a1 + delta / 2
-    };
-  }
-
   function drawAngleVisual(id, geometry) {
     const anglePointMap = {
       PAM: ['P', 'A', 'M'],
@@ -685,9 +639,10 @@
     const p1 = geometry.points[ids[0]];
     const vertex = geometry.points[ids[1]];
     const p2 = geometry.points[ids[2]];
-    const arc = arcPath(vertex, p1, p2, 0.35);
+    const arc = window.InstantGeometrySharedOrnaments.getAngleArcData(vertex, p1, p2, 0.35);
     if (angleHasLabel(id) && !angleHasMarker(id)) {
-      svg.appendChild(createSvgElement('path', { d: arc.d, stroke: '#687086', 'stroke-width': 0.04, fill: 'none' }));
+      const style = getLabelStyle('angle', id);
+      svg.appendChild(createSvgElement('path', { d: arc.d, stroke: style.color, 'stroke-width': 0.04, fill: 'none' }));
     }
     if (angleHasLabel(id)) {
       const text = getAngleLabelText(id, geometry);

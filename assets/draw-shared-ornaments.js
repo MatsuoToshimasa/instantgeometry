@@ -128,11 +128,66 @@
     return null;
   }
 
+  function normalizeAngleMarkerInput(input) {
+    const value = String(input || '').trim();
+    if (!value || value === '0' || value === 'なし') return 0;
+    if (value === '1' || value === '記号なし' || value === '弧') return 1;
+    if (value === '2' || value === '○') return 2;
+    if (value === '3' || value === '|' || value === '｜') return 3;
+    if (value === '4' || value === '=') return 4;
+    if (value === '5' || value.toLowerCase() === 'x' || value === '×') return 5;
+    if (value === '6' || value === '△') return 6;
+    if (value === '7' || value === '塗') return 7;
+    return null;
+  }
+
+  function getAngleArcData(vertex, p1, p2, radius) {
+    const a1 = Math.atan2(p1.y - vertex.y, p1.x - vertex.x);
+    const a2 = Math.atan2(p2.y - vertex.y, p2.x - vertex.x);
+    let delta = a2 - a1;
+    while (delta <= -Math.PI) delta += Math.PI * 2;
+    while (delta > Math.PI) delta -= Math.PI * 2;
+    const start = { x: vertex.x + radius * Math.cos(a1), y: vertex.y + radius * Math.sin(a1) };
+    const end = { x: vertex.x + radius * Math.cos(a1 + delta), y: vertex.y + radius * Math.sin(a1 + delta) };
+    const largeArc = Math.abs(delta) > Math.PI ? 1 : 0;
+    const sweep = delta > 0 ? 1 : 0;
+    return {
+      d: 'M ' + start.x + ' ' + start.y + ' A ' + radius + ' ' + radius + ' 0 ' + largeArc + ' ' + sweep + ' ' + end.x + ' ' + end.y,
+      midAngle: a1 + delta / 2
+    };
+  }
+
+  function buildAngleMarkerMarkup(mode) {
+    const common = 'stroke="currentColor" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"';
+    if (mode === 2) {
+      return '<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2" ' + common + '></circle></svg>';
+    }
+    if (mode === 3) {
+      return '<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><line x1="8" y1="16" x2="16" y2="8" ' + common + '></line></svg>';
+    }
+    if (mode === 4) {
+      return '<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><line x1="7" y1="17" x2="15" y2="9" ' + common + '></line><line x1="10" y1="20" x2="18" y2="12" ' + common + '></line></svg>';
+    }
+    if (mode === 5) {
+      return '<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><line x1="8" y1="8" x2="16" y2="16" ' + common + '></line><line x1="16" y1="8" x2="8" y2="16" ' + common + '></line></svg>';
+    }
+    if (mode === 6) {
+      return '<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><polygon points="12,7 8,15 16,15" ' + common + '></polygon></svg>';
+    }
+    if (mode === 7) {
+      return '<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6 A6 6 0 0 1 18 12 L12 12 Z" fill="currentColor" stroke="none"></path></svg>';
+    }
+    return '';
+  }
+
   window.InstantGeometrySharedOrnaments = {
     quadraticPoint: quadraticPoint,
     getSideArcData: getSideArcData,
     getSideLabelGeometry: getSideLabelGeometry,
     drawSideArcLabel: drawSideArcLabel,
-    normalizeSegmentArcInput: normalizeSegmentArcInput
+    normalizeSegmentArcInput: normalizeSegmentArcInput,
+    normalizeAngleMarkerInput: normalizeAngleMarkerInput,
+    getAngleArcData: getAngleArcData,
+    buildAngleMarkerMarkup: buildAngleMarkerMarkup
   };
 })();
