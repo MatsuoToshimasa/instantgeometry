@@ -2521,6 +2521,13 @@
         for (let index = 0; index < currentLabelAnchors.length; index += 1) {
           const label = currentLabelAnchors[index];
           if (label.hidden) continue;
+          if (label.type === 'sideObject') {
+            const bounds = getLabelBounds(label);
+            if (pointInRotatedRect(point, bounds.center, bounds.width, bounds.height, label.rotation, 0)) {
+              return { type: label.type, id: label.id };
+            }
+            continue;
+          }
           if (label.screenRect) {
             const pad = getScreenPaddingByType(label.type);
             if (
@@ -2544,8 +2551,8 @@
       function registerSideObjectAnchor(id, start, end) {
         const screenStart = userToScreenPoint(start);
         const screenEnd = userToScreenPoint(end);
-        const hitWidthPx = 17;
-        const boxHeightPx = 15;
+        const hitWidthPx = 16;
+        const boxHeightPx = 12;
         const dx = screenEnd.x - screenStart.x;
         const dy = screenEnd.y - screenStart.y;
         const len = Math.hypot(dx, dy) || 1;
@@ -2574,6 +2581,7 @@
           },
           boxWidthPx: len,
           boxHeightPx: boxHeightPx,
+          hitHeightPx: hitWidthPx,
           fontSize: 16,
           rotation: Math.atan2(end.y - start.y, end.x - start.x) * 180 / Math.PI,
           color: getLabelStyle('sideObject', id).color
