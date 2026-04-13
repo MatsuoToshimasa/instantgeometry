@@ -442,77 +442,37 @@
   }
 
   function handleLabelPointerDown(event) {
-    event.preventDefault();
-    event.stopPropagation();
-    selectedLabel = { type: event.currentTarget.dataset.type, id: event.currentTarget.dataset.id };
+    const result = window.InstantGeometrySharedLabels.beginDomLabelMove(event, getLabelStyle);
+    selectedLabel = result.selectedLabel;
     paletteOpen = false;
-    const style = getLabelStyle(selectedLabel.type, selectedLabel.id);
-    dragState = {
-      mode: 'move',
-      pointerId: event.pointerId,
-      startX: event.clientX,
-      startY: event.clientY,
-      baseDx: style.dx,
-      baseDy: style.dy
-    };
-    event.currentTarget.setPointerCapture(event.pointerId);
+    dragState = result.dragState;
     renderSelectionBox();
   }
 
   function handleLabelWheel(event) {
-    const node = event.currentTarget;
-    const style = getLabelStyle(node.dataset.type, node.dataset.id);
-    event.preventDefault();
-    selectedLabel = { type: node.dataset.type, id: node.dataset.id };
+    selectedLabel = window.InstantGeometrySharedLabels.applyDomLabelWheel(event, getLabelStyle);
     paletteOpen = false;
-    style.scale = Math.max(0.3, Math.min(6, style.scale * (event.deltaY < 0 ? 1.08 : 0.92)));
     render();
   }
 
   function handleControlPointerDown(event) {
-    event.preventDefault();
-    event.stopPropagation();
-    const handle = event.currentTarget.dataset.handle;
-    if (!selectedLabel) return;
-    const ref = labelNodes[selectedLabel.type + ':' + selectedLabel.id];
-    if (!ref) return;
-    const style = getLabelStyle(selectedLabel.type, selectedLabel.id);
-    const rect = ref.node.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
+    const result = window.InstantGeometrySharedLabels.beginDomHandleGesture(
+      event,
+      selectedLabel,
+      getLabelStyle,
+      function (type, id) { return labelNodes[type + ':' + id]; }
+    );
+    const handle = result.handle;
     if (handle === 'palette') {
       paletteOpen = !paletteOpen;
       renderSelectionBox();
       return;
     }
-    dragState = {
-      mode: handle,
-      pointerId: event.pointerId,
-      centerX: centerX,
-      centerY: centerY,
-      startAngle: Math.atan2(event.clientY - centerY, event.clientX - centerX),
-      baseRotation: style.rotation,
-      startDistance: Math.hypot(event.clientX - centerX, event.clientY - centerY),
-      baseScale: style.scale
-    };
-    event.currentTarget.setPointerCapture(event.pointerId);
+    dragState = result.dragState;
   }
 
   function handleGlobalPointerMove(event) {
-    if (!dragState || !selectedLabel) return;
-    const style = getLabelStyle(selectedLabel.type, selectedLabel.id);
-    if (dragState.mode === 'move') {
-      style.dx = dragState.baseDx + (event.clientX - dragState.startX);
-      style.dy = dragState.baseDy + (event.clientY - dragState.startY);
-    } else if (dragState.mode === 'rotate') {
-      const angle = Math.atan2(event.clientY - dragState.centerY, event.clientX - dragState.centerX);
-      style.rotation = dragState.baseRotation + ((angle - dragState.startAngle) * 180 / Math.PI);
-    } else if (dragState.mode === 'resize') {
-      const distance = Math.hypot(event.clientX - dragState.centerX, event.clientY - dragState.centerY);
-      const ratio = distance / Math.max(dragState.startDistance, 12);
-      style.scale = Math.max(0.3, Math.min(6, dragState.baseScale * ratio));
-    }
-    render();
+    if (window.InstantGeometrySharedLabels.applyDomPointerMove(event, dragState, selectedLabel, getLabelStyle)) render();
   }
 
   function handleGlobalPointerUp() {

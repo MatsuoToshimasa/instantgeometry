@@ -193,6 +193,87 @@
     return button;
   }
 
+  function beginDomLabelMove(event, getLabelStyle) {
+    event.preventDefault();
+    event.stopPropagation();
+    const type = event.currentTarget.dataset.type;
+    const id = event.currentTarget.dataset.id;
+    const style = getLabelStyle(type, id);
+    event.currentTarget.setPointerCapture(event.pointerId);
+    return {
+      selectedLabel: { type: type, id: id },
+      dragState: {
+        mode: 'move',
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startY: event.clientY,
+        baseDx: style.dx,
+        baseDy: style.dy
+      }
+    };
+  }
+
+  function applyDomLabelWheel(event, getLabelStyle) {
+    event.preventDefault();
+    const type = event.currentTarget.dataset.type;
+    const id = event.currentTarget.dataset.id;
+    const style = getLabelStyle(type, id);
+    style.scale = Math.max(0.3, Math.min(6, style.scale * (event.deltaY < 0 ? 1.08 : 0.92)));
+    return { type: type, id: id };
+  }
+
+  function beginDomHandleGesture(event, selectedLabel, getLabelStyle, getLabelRef) {
+    event.preventDefault();
+    event.stopPropagation();
+    const handle = event.currentTarget.dataset.handle;
+    if (!selectedLabel) return { handle: handle, dragState: null };
+    const ref = getLabelRef(selectedLabel.type, selectedLabel.id);
+    if (!ref) return { handle: handle, dragState: null };
+    if (handle === 'palette') {
+      return { handle: handle, dragState: null };
+    }
+    const style = getLabelStyle(selectedLabel.type, selectedLabel.id);
+    const rect = ref.node.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    event.currentTarget.setPointerCapture(event.pointerId);
+    return {
+      handle: handle,
+      dragState: {
+        mode: handle,
+        pointerId: event.pointerId,
+        centerX: centerX,
+        centerY: centerY,
+        startAngle: Math.atan2(event.clientY - centerY, event.clientX - centerX),
+        baseRotation: style.rotation,
+        startDistance: Math.hypot(event.clientX - centerX, event.clientY - centerY),
+        baseScale: style.scale
+      }
+    };
+  }
+
+  function applyDomPointerMove(event, dragState, selectedLabel, getLabelStyle) {
+    if (!dragState || !selectedLabel) return false;
+    const style = getLabelStyle(selectedLabel.type, selectedLabel.id);
+    if (dragState.mode === 'move') {
+      style.dx = dragState.baseDx + (event.clientX - dragState.startX);
+      style.dy = dragState.baseDy + (event.clientY - dragState.startY);
+      return true;
+    }
+    if (dragState.mode === 'rotate') {
+      const angle = Math.atan2(event.clientY - dragState.centerY, event.clientX - dragState.centerX);
+      style.rotation = dragState.baseRotation + ((angle - dragState.startAngle) * 180 / Math.PI);
+      return true;
+    }
+    if (dragState.mode === 'resize') {
+      const distance = Math.hypot(event.clientX - dragState.centerX, event.clientY - dragState.centerY);
+      const ratio = distance / Math.max(dragState.startDistance, 12);
+      style.scale = Math.max(0.3, Math.min(6, dragState.baseScale * ratio));
+      return true;
+    }
+    return false;
+  }
+
   function createStyleStore() {
     return {};
   }
@@ -239,6 +320,10 @@
     createSelectableText: createSelectableText,
     createDomSelectableLabel: createDomSelectableLabel,
     createToggleButton: createToggleButton,
+    beginDomLabelMove: beginDomLabelMove,
+    applyDomLabelWheel: applyDomLabelWheel,
+    beginDomHandleGesture: beginDomHandleGesture,
+    applyDomPointerMove: applyDomPointerMove,
     createStyleStore: createStyleStore,
     ensureLabelStyle: ensureLabelStyle,
     resetLabelStyle: resetLabelStyle,
