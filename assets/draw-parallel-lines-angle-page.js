@@ -26,6 +26,7 @@
   const pageBackBtn = document.getElementById('pageBackBtn');
   const downloadButtons = document.querySelectorAll('[data-download-format]');
   const box = document.getElementById('box');
+  const labelLayer = document.getElementById('labelLayer');
   const exportBackdrop = document.getElementById('exportBackdrop');
   const exportFrame = document.getElementById('exportFrame');
 
@@ -63,10 +64,22 @@
   const angleMarkerMode = { PAM: 0, QAM: 0, AMB: 0, RBM: 0, SBM: 0 };
 
   let svg = null;
+  let currentView = null;
+  let currentGeometry = null;
   let exportAspectIndex = 0;
   let angleMode = 'degrees';
   let isDockCollapsed = false;
   let isRightDockCollapsed = false;
+  let selectedLabel = null;
+  let paletteOpen = false;
+  let dragState = null;
+  let labelNodes = {};
+
+  const labelStyles = {
+    point: {},
+    segment: {},
+    angle: {}
+  };
 
   function setStatus(message, isError) {
     statusBox.textContent = message;
@@ -308,9 +321,11 @@
   }
 
   function clearBox() {
-    box.innerHTML = '';
+    const oldSvg = box.querySelector('svg');
+    if (oldSvg) oldSvg.remove();
+    labelLayer.innerHTML = '';
     svg = createSvgElement('svg', { width: '100%', height: '100%', viewBox: '0 0 100 100', preserveAspectRatio: 'xMidYMid meet' });
-    box.appendChild(svg);
+    box.insertBefore(svg, labelLayer);
   }
 
   function drawSegment(p1, p2, color, width, dash) {
@@ -327,6 +342,201 @@
     const node = createSvgElement('text', { x: p.x, y: p.y, fill: color, 'font-size': size, 'text-anchor': 'middle', 'dominant-baseline': 'middle', 'font-family': '"Times New Roman", serif' });
     node.textContent = text;
     svg.appendChild(node);
+  }
+
+  function getLabelStyle(type, id) {
+    if (!labelStyles[type][id]) {
+      labelStyles[type][id] = { dx: 0, dy: 0, rotation: 0, scale: 1, color: type === 'point' ? '#1f2430' : (type === 'angle' ? '#687086' : '#2a5bd7') };
+    }
+    return labelStyles[type][id];
+  }
+
+  function userToScreenPoint(point) {
+    const rect = box.getBoundingClientRect();
+    if (!currentView) return { x: 0, y: 0 };
+    return {
+      x: ((point.x - currentView.x) / currentView.width) * rect.width,
+      y: ((point.y - currentView.y) / currentView.height) * rect.height
+    };
+  }
+
+  function screenToUserDelta(dx, dy) {
+    const rect = box.getBoundingClientRect();
+    return {
+      x: (dx / Math.max(rect.width, 1)) * currentView.width,
+      y: (dy / Math.max(rect.height, 1)) * currentView.height
+    };
+  }
+
+  function createDomLabel(type, id, anchor, text, fontSize) {
+    const style = getLabelStyle(type, id);
+    const screen = userToScreenPoint(anchor);
+    const node = document.createElement('div');
+    node.className = 'floating-label';
+    node.dataset.type = type;
+    node.dataset.id = id;
+    if (window.katex && typeof window.katex.render === 'function') {
+      try {
+        window.katex.render(window.InstantGeometrySharedLabels.toLatexMath(text), node, { throwOnError: false, output: 'html', strict: 'ignore' });
+      } catch (_) {
+        node.innerHTML = window.InstantGeometrySharedLabels.toMathLikeHtml(text);
+      }
+    } else {
+      node.innerHTML = window.InstantGeometrySharedLabels.toMathLikeHtml(text);
+    }
+    node.style.left = screen.x + 'px';
+    node.style.top = screen.y + 'px';
+    node.style.fontSize = fontSize + 'px';
+    node.style.color = style.color;
+    node.style.transform = 'translate(-50%, -50%) translate(' + style.dx + 'px,' + style.dy + 'px) rotate(' + (-style.rotation) + 'deg) scale(' + style.scale + ')';
+    node.addEventListener('pointerdown', handleLabelPointerDown);
+    node.addEventListener('wheel', handleLabelWheel, { passive: false });
+    labelLayer.appendChild(node);
+    labelNodes[type + ':' + id] = { node: node, anchor: anchor, fontSize: fontSize, type: type, id: id };
+  }
+
+  function renderSelectionBox() {
+    const existing = labelLayer.querySelectorAll('.label-selection-box,.label-handle,.palette-pop');
+    existing.forEach(function (node) { node.remove(); });
+    if (!selectedLabel) return;
+    const ref = labelNodes[selectedLabel.type + ':' + selectedLabel.id];
+    if (!ref) {
+      selectedLabel = null;
+      paletteOpen = false;
+      return;
+    }
+    const rect = ref.node.getBoundingClientRect();
+    const layerRect = labelLayer.getBoundingClientRect();
+    const boxNode = document.createElement('div');
+    boxNode.className = 'label-selection-box';
+    boxNode.style.left = (rect.left - layerRect.left - 3) + 'px';
+    boxNode.style.top = (rect.top - layerRect.top - 3) + 'px';
+    boxNode.style.width = (rect.width + 6) + 'px';
+    boxNode.style.height = (rect.height + 6) + 'px';
+    labelLayer.appendChild(boxNode);
+
+    function addHandle(name, left, top) {
+      const handle = document.createElement('button');
+      handle.type = 'button';
+      handle.className = 'label-handle ' + name;
+      handle.dataset.handle = name;
+      handle.style.left = left + 'px';
+      handle.style.top = top + 'px';
+      handle.addEventListener('pointerdown', handleControlPointerDown);
+      if (name === 'palette') handle.style.color = getLabelStyle(selectedLabel.type, selectedLabel.id).color;
+      labelLayer.appendChild(handle);
+      return handle;
+    }
+
+    const left = rect.left - layerRect.left - 11;
+    const top = rect.top - layerRect.top - 11;
+    const right = rect.right - layerRect.left - 11;
+    const bottom = rect.bottom - layerRect.top - 11;
+    addHandle('palette', left, bottom);
+    addHandle('rotate', right, top);
+    addHandle('resize', right, bottom);
+
+    if (paletteOpen) {
+      const pop = document.createElement('div');
+      pop.className = 'palette-pop';
+      const cx = left + 11;
+      const cy = bottom + 11;
+      const colors = ['#1f2430', '#2a5bd7', '#c2410c', '#0f766e', '#7c3aed', '#be123c'];
+      colors.forEach(function (color, index) {
+        const angle = (Math.PI * 1.2) + (Math.PI * 0.8 * index / Math.max(colors.length - 1, 1));
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.style.background = color;
+        btn.style.left = (cx + Math.cos(angle) * 42 - 9) + 'px';
+        btn.style.top = (cy + Math.sin(angle) * 42 - 9) + 'px';
+        btn.addEventListener('click', function (event) {
+          event.stopPropagation();
+          getLabelStyle(selectedLabel.type, selectedLabel.id).color = color;
+          paletteOpen = false;
+          render();
+        });
+        pop.appendChild(btn);
+      });
+      labelLayer.appendChild(pop);
+    }
+  }
+
+  function handleLabelPointerDown(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    selectedLabel = { type: event.currentTarget.dataset.type, id: event.currentTarget.dataset.id };
+    paletteOpen = false;
+    const style = getLabelStyle(selectedLabel.type, selectedLabel.id);
+    dragState = {
+      mode: 'move',
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      baseDx: style.dx,
+      baseDy: style.dy
+    };
+    event.currentTarget.setPointerCapture(event.pointerId);
+    renderSelectionBox();
+  }
+
+  function handleLabelWheel(event) {
+    const node = event.currentTarget;
+    const style = getLabelStyle(node.dataset.type, node.dataset.id);
+    event.preventDefault();
+    selectedLabel = { type: node.dataset.type, id: node.dataset.id };
+    paletteOpen = false;
+    style.scale = Math.max(0.3, Math.min(6, style.scale * (event.deltaY < 0 ? 1.08 : 0.92)));
+    render();
+  }
+
+  function handleControlPointerDown(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    const handle = event.currentTarget.dataset.handle;
+    if (!selectedLabel) return;
+    const ref = labelNodes[selectedLabel.type + ':' + selectedLabel.id];
+    if (!ref) return;
+    const style = getLabelStyle(selectedLabel.type, selectedLabel.id);
+    const rect = ref.node.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    if (handle === 'palette') {
+      paletteOpen = !paletteOpen;
+      renderSelectionBox();
+      return;
+    }
+    dragState = {
+      mode: handle,
+      pointerId: event.pointerId,
+      centerX: centerX,
+      centerY: centerY,
+      startAngle: Math.atan2(event.clientY - centerY, event.clientX - centerX),
+      baseRotation: style.rotation,
+      startDistance: Math.hypot(event.clientX - centerX, event.clientY - centerY),
+      baseScale: style.scale
+    };
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }
+
+  function handleGlobalPointerMove(event) {
+    if (!dragState || !selectedLabel) return;
+    const style = getLabelStyle(selectedLabel.type, selectedLabel.id);
+    if (dragState.mode === 'move') {
+      style.dx = dragState.baseDx + (event.clientX - dragState.startX);
+      style.dy = dragState.baseDy + (event.clientY - dragState.startY);
+    } else if (dragState.mode === 'rotate') {
+      const angle = Math.atan2(event.clientY - dragState.centerY, event.clientX - dragState.centerX);
+      style.rotation = dragState.baseRotation + ((angle - dragState.startAngle) * 180 / Math.PI);
+    } else if (dragState.mode === 'resize') {
+      const distance = Math.hypot(event.clientX - dragState.centerX, event.clientY - dragState.centerY);
+      const ratio = distance / Math.max(dragState.startDistance, 12);
+      style.scale = Math.max(0.3, Math.min(6, dragState.baseScale * ratio));
+    }
+    render();
+  }
+
+  function handleGlobalPointerUp() {
+    dragState = null;
   }
 
   function midpoint(p1, p2) {
@@ -359,7 +569,7 @@
       });
       svg.appendChild(path);
     }
-    drawText(labelPoint, text, '#2a5bd7', '0.34');
+    createDomLabel('segment', id, labelPoint, text, 28);
   }
 
   function angleValue(a, b, c) {
@@ -404,7 +614,7 @@
     const arc = arcPath(vertex, p1, p2, 0.35);
     svg.appendChild(createSvgElement('path', { d: arc.d, stroke: '#687086', 'stroke-width': 0.04, fill: 'none' }));
     const text = getAngleLabelText(id, geometry);
-    drawText({ x: vertex.x + 0.52 * Math.cos(arc.midAngle), y: vertex.y + 0.52 * Math.sin(arc.midAngle) }, text, '#687086', '0.3');
+    createDomLabel('angle', id, { x: vertex.x + 0.52 * Math.cos(arc.midAngle), y: vertex.y + 0.52 * Math.sin(arc.midAngle) }, text, 26);
     drawAngleMarker(id, vertex, arc.midAngle);
   }
 
@@ -515,6 +725,8 @@
     try {
       const geometry = getGeometry();
       const view = fitViewBox(geometry);
+      currentGeometry = geometry;
+      currentView = view;
       svg.setAttribute('viewBox', [view.x, view.y, view.width, view.height].join(' '));
       updateExportFrame();
 
@@ -530,13 +742,13 @@
       drawPoint(geometry.points.B, '#111111');
       drawPoint(geometry.points.M, '#111111');
 
-      if (labelState.point.P) drawText({ x: geometry.points.P.x - 0.24, y: geometry.points.P.y - 0.24 }, getPointLabelText('P'), '#1f2430', '0.34');
-      if (labelState.point.Q) drawText({ x: geometry.points.Q.x + 0.24, y: geometry.points.Q.y - 0.24 }, getPointLabelText('Q'), '#1f2430', '0.34');
-      if (labelState.point.R) drawText({ x: geometry.points.R.x - 0.24, y: geometry.points.R.y + 0.24 }, getPointLabelText('R'), '#1f2430', '0.34');
-      if (labelState.point.S) drawText({ x: geometry.points.S.x + 0.24, y: geometry.points.S.y + 0.24 }, getPointLabelText('S'), '#1f2430', '0.34');
-      if (labelState.point.A) drawText({ x: geometry.points.A.x - 0.22, y: geometry.points.A.y + 0.24 }, getPointLabelText('A'), '#1f2430', '0.34');
-      if (labelState.point.B) drawText({ x: geometry.points.B.x + 0.22, y: geometry.points.B.y - 0.24 }, getPointLabelText('B'), '#1f2430', '0.34');
-      if (labelState.point.M) drawText({ x: geometry.points.M.x + 0.22, y: geometry.points.M.y + 0.24 }, getPointLabelText('M'), '#1f2430', '0.34');
+      if (labelState.point.P) createDomLabel('point', 'P', { x: geometry.points.P.x - 0.24, y: geometry.points.P.y - 0.24 }, getPointLabelText('P'), 28);
+      if (labelState.point.Q) createDomLabel('point', 'Q', { x: geometry.points.Q.x + 0.24, y: geometry.points.Q.y - 0.24 }, getPointLabelText('Q'), 28);
+      if (labelState.point.R) createDomLabel('point', 'R', { x: geometry.points.R.x - 0.24, y: geometry.points.R.y + 0.24 }, getPointLabelText('R'), 28);
+      if (labelState.point.S) createDomLabel('point', 'S', { x: geometry.points.S.x + 0.24, y: geometry.points.S.y + 0.24 }, getPointLabelText('S'), 28);
+      if (labelState.point.A) createDomLabel('point', 'A', { x: geometry.points.A.x - 0.22, y: geometry.points.A.y + 0.24 }, getPointLabelText('A'), 28);
+      if (labelState.point.B) createDomLabel('point', 'B', { x: geometry.points.B.x + 0.22, y: geometry.points.B.y - 0.24 }, getPointLabelText('B'), 28);
+      if (labelState.point.M) createDomLabel('point', 'M', { x: geometry.points.M.x + 0.22, y: geometry.points.M.y + 0.24 }, getPointLabelText('M'), 28);
 
       ['PQ', 'RS', 'AM', 'BM'].forEach(function (id) {
         if (labelState.segment[id]) drawSegmentLabel(id, geometry);
@@ -545,8 +757,12 @@
         if (labelState.angle[id]) drawAngleLabel(id, geometry);
       });
 
+      renderSelectionBox();
+
       setStatus('図形を描画しました。', false);
     } catch (error) {
+      currentGeometry = null;
+      currentView = null;
       const fallbackLength = Number.isFinite(evaluateExpressionSafe(inputElements.lineLength && inputElements.lineLength.value)) ? evaluateExpressionSafe(inputElements.lineLength.value) : 14;
       const fallback = {
         points: {
@@ -599,9 +815,14 @@
     Object.keys(customLabelText.angle).forEach(function (key) { customLabelText.angle[key] = ''; });
     Object.keys(segmentLineMode).forEach(function (key) { segmentLineMode[key] = 1; });
     Object.keys(segmentArcMode).forEach(function (key) { segmentArcMode[key] = 1; });
-    Object.keys(angleMarkerMode).forEach(function (key) { angleMarkerMode[key] = 0; });
-    exportAspectIndex = 0;
-    angleMode = 'degrees';
+      Object.keys(angleMarkerMode).forEach(function (key) { angleMarkerMode[key] = 0; });
+      Object.keys(labelStyles.point).forEach(function (key) { delete labelStyles.point[key]; });
+      Object.keys(labelStyles.segment).forEach(function (key) { delete labelStyles.segment[key]; });
+      Object.keys(labelStyles.angle).forEach(function (key) { delete labelStyles.angle[key]; });
+      selectedLabel = null;
+      paletteOpen = false;
+      exportAspectIndex = 0;
+      angleMode = 'degrees';
     updateRatioButton();
     updateAngleModeButton();
     renderLabelToggleButtons();
@@ -619,6 +840,23 @@
     });
   });
   window.addEventListener('resize', render);
+  labelLayer.addEventListener('pointerdown', function (event) {
+    if (event.target === labelLayer) {
+      selectedLabel = null;
+      paletteOpen = false;
+      renderSelectionBox();
+    }
+  });
+  box.addEventListener('pointerdown', function (event) {
+    if (event.target === box || event.target === svg) {
+      selectedLabel = null;
+      paletteOpen = false;
+      renderSelectionBox();
+    }
+  });
+  window.addEventListener('pointermove', handleGlobalPointerMove);
+  window.addEventListener('pointerup', handleGlobalPointerUp);
+  window.addEventListener('pointercancel', handleGlobalPointerUp);
 
   updateRatioButton();
   updateAngleModeButton();
