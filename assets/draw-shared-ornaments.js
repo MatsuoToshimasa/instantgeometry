@@ -199,6 +199,34 @@
     deps.svg.appendChild(rightPath);
   }
 
+  function drawDomSegmentLabel(deps) {
+    const style = deps.getLabelStyle(deps.labelType || 'segment', deps.id);
+    const labelGeometry = getSideLabelGeometry(
+      deps.P,
+      deps.Q,
+      deps.center,
+      deps.labelType || 'segment',
+      deps.id,
+      deps.getLabelPosition
+    );
+    if (deps.showArc) {
+      appendSplitQuadraticArc({
+        svg: deps.svg,
+        createSvgElement: deps.createSvgElement,
+        P: deps.P,
+        Q: deps.Q,
+        control: labelGeometry.control,
+        leftEnd: labelGeometry.leftEnd,
+        rightStart: labelGeometry.rightStart,
+        stroke: style.color,
+        strokeWidth: deps.strokeWidth || 0.03,
+        dashArray: deps.dashArray || '0.15 0.1'
+      });
+    }
+    deps.createDomLabel(deps.labelType || 'segment', deps.id, labelGeometry.centerPoint, deps.text, deps.fontSize || 28);
+    return labelGeometry;
+  }
+
   function drawDomAngleVisual(deps) {
     const arc = getAngleArcData(deps.vertex, deps.p1, deps.p2, deps.radius || 0.35);
     if (deps.showArc) {
@@ -238,6 +266,7 @@
     getAngleArcData: getAngleArcData,
     buildAngleMarkerMarkup: buildAngleMarkerMarkup,
     appendSplitQuadraticArc: appendSplitQuadraticArc,
+    drawDomSegmentLabel: drawDomSegmentLabel,
     drawDomAngleVisual: drawDomAngleVisual,
     hasMappedVisual: hasMappedVisual
   };

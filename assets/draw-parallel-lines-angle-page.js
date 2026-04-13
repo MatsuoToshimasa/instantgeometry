@@ -494,31 +494,19 @@
     const ends = map[id];
     const p1 = geometry.points[ends[0]];
     const p2 = geometry.points[ends[1]];
-    const style = getLabelStyle('segment', id);
-    const labelGeometry = window.InstantGeometrySharedOrnaments.getSideLabelGeometry(
-      p1,
-      p2,
-      geometry.points.M,
-      'segment',
-      id,
-      getSegmentLabelPosition
-    );
-    const text = getSegmentLabelText(id, geometry);
-    if (segmentArcMode[id]) {
-      window.InstantGeometrySharedOrnaments.appendSplitQuadraticArc({
-        svg: svg,
-        createSvgElement: createSvgElement,
-        P: p1,
-        Q: p2,
-        control: labelGeometry.control,
-        leftEnd: labelGeometry.leftEnd,
-        rightStart: labelGeometry.rightStart,
-        stroke: style.color,
-        strokeWidth: 0.03,
-        dashArray: '0.15 0.1'
-      });
-    }
-    createDomLabel('segment', id, labelGeometry.centerPoint, text, 28);
+    window.InstantGeometrySharedOrnaments.drawDomSegmentLabel({
+      svg: svg,
+      createSvgElement: createSvgElement,
+      P: p1,
+      Q: p2,
+      center: geometry.points.M,
+      id: id,
+      text: getSegmentLabelText(id, geometry),
+      getLabelStyle: getLabelStyle,
+      getLabelPosition: getSegmentLabelPosition,
+      createDomLabel: createDomLabel,
+      showArc: segmentArcMode[id] !== 0
+    });
   }
 
   function angleHasLabel(id) {
