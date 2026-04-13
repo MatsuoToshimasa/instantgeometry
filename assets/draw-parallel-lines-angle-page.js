@@ -7,25 +7,27 @@
     { label: '1:√2', value: 1 / Math.SQRT2 },
     { label: '√2:1', value: Math.SQRT2 }
   ];
-  const POINT_IDS = ['P', 'Q', 'R', 'S', 'A', 'B', 'M'];
-  const SEGMENT_POINT_MAP = {
-    PQ: ['P', 'Q'],
-    RS: ['R', 'S'],
-    AM: ['A', 'M'],
-    BM: ['B', 'M']
-  };
-  const ANGLE_POINT_MAP = {
-    PAM: ['P', 'A', 'M'],
-    QAM: ['Q', 'A', 'M'],
-    AMB: ['A', 'M', 'B'],
-    RBM: ['R', 'B', 'M'],
-    SBM: ['S', 'B', 'M']
-  };
-  const SEGMENT_ANGLE_DEPENDENCY_MAP = {
-    PQ: ['PAM', 'QAM'],
-    RS: ['RBM', 'SBM'],
-    AM: ['PAM', 'QAM', 'AMB'],
-    BM: ['RBM', 'SBM', 'AMB']
+  const FIGURE_DEFINITION = {
+    points: ['P', 'Q', 'R', 'S', 'A', 'B', 'M'],
+    segments: {
+      PQ: ['P', 'Q'],
+      RS: ['R', 'S'],
+      AM: ['A', 'M'],
+      BM: ['B', 'M']
+    },
+    angles: {
+      PAM: ['P', 'A', 'M'],
+      QAM: ['Q', 'A', 'M'],
+      AMB: ['A', 'M', 'B'],
+      RBM: ['R', 'B', 'M'],
+      SBM: ['S', 'B', 'M']
+    },
+    segmentAngleDependencies: {
+      PQ: ['PAM', 'QAM'],
+      RS: ['RBM', 'SBM'],
+      AM: ['PAM', 'QAM', 'AMB'],
+      BM: ['RBM', 'SBM', 'AMB']
+    }
   };
   const DEFAULT_LABEL_STATE = {
     point: { P: false, Q: false, R: false, S: false, A: false, B: false, M: false },
@@ -40,10 +42,6 @@
   const DEFAULT_SEGMENT_LINE_MODE = { PQ: 1, RS: 1, AM: 1, BM: 1 };
   const DEFAULT_SEGMENT_ARC_MODE = { PQ: 1, RS: 1, AM: 1, BM: 1 };
   const DEFAULT_ANGLE_MARKER_MODE = { PAM: 0, QAM: 0, AMB: 0, RBM: 0, SBM: 0 };
-  function cloneRecord(record) {
-    return JSON.parse(JSON.stringify(record));
-  }
-
   const inputElements = Array.from(document.querySelectorAll('[data-parallel-input]')).reduce(function (acc, element) {
     acc[element.id] = element;
     return acc;
@@ -68,14 +66,10 @@
   const exportBackdrop = document.getElementById('exportBackdrop');
   const exportFrame = document.getElementById('exportFrame');
 
-  const generalConfigs = [
-    ...POINT_IDS.map(function (id) { return { type: 'point', id: id }; }),
-    ...Object.keys(SEGMENT_POINT_MAP).map(function (id) { return { type: 'segment', id: id }; }),
-    ...Object.keys(ANGLE_POINT_MAP).map(function (id) { return { type: 'angle', id: id }; })
-  ];
+  const generalConfigs = window.InstantGeometrySharedLabels.buildGeneralConfigs(FIGURE_DEFINITION);
 
-  const labelState = cloneRecord(DEFAULT_LABEL_STATE);
-  const customLabelText = cloneRecord(DEFAULT_CUSTOM_TEXT);
+  const labelState = window.InstantGeometrySharedLabels.cloneJsonRecord(DEFAULT_LABEL_STATE);
+  const customLabelText = window.InstantGeometrySharedLabels.cloneJsonRecord(DEFAULT_CUSTOM_TEXT);
   const segmentLineMode = Object.assign({}, DEFAULT_SEGMENT_LINE_MODE);
   const segmentArcMode = Object.assign({}, DEFAULT_SEGMENT_ARC_MODE);
   const angleMarkerMode = Object.assign({}, DEFAULT_ANGLE_MARKER_MODE);
@@ -238,7 +232,7 @@
   function getSegmentLabelText(id, geometry) {
     const custom = String(customLabelText.segment[id] || '').trim();
     if (custom) return custom;
-    const ends = SEGMENT_POINT_MAP[id];
+    const ends = FIGURE_DEFINITION.segments[id];
     const p1 = geometry.points[ends[0]];
     const p2 = geometry.points[ends[1]];
     return formatNumber(Math.hypot(p2.x - p1.x, p2.y - p1.y));
@@ -247,7 +241,7 @@
   function getAngleLabelText(id, geometry) {
     const custom = window.InstantGeometrySharedLabelConfig.normalizeCustomLabelInput(customLabelText.angle[id]);
     if (custom) return window.InstantGeometrySharedLabelConfig.formatAngleCustomText(custom, angleMode);
-    const ids = ANGLE_POINT_MAP[id];
+    const ids = FIGURE_DEFINITION.angles[id];
     const p1 = geometry.points[ids[0]];
     const vertex = geometry.points[ids[1]];
     const p2 = geometry.points[ids[2]];
@@ -497,7 +491,7 @@
   }
 
   function drawSegmentLabel(id, geometry) {
-    const ends = SEGMENT_POINT_MAP[id];
+    const ends = FIGURE_DEFINITION.segments[id];
     const p1 = geometry.points[ends[0]];
     const p2 = geometry.points[ends[1]];
     window.InstantGeometrySharedOrnaments.drawDomSegmentLabel({
@@ -528,7 +522,7 @@
   }
 
   function segmentRequiredByAngle(id) {
-    return window.InstantGeometrySharedOrnaments.hasMappedVisual(id, SEGMENT_ANGLE_DEPENDENCY_MAP, angleHasVisual);
+    return window.InstantGeometrySharedOrnaments.hasMappedVisual(id, FIGURE_DEFINITION.segmentAngleDependencies, angleHasVisual);
   }
 
   function angleValue(a, b, c) {
@@ -543,7 +537,7 @@
   }
 
   function drawAngleVisual(id, geometry) {
-    const ids = ANGLE_POINT_MAP[id];
+    const ids = FIGURE_DEFINITION.angles[id];
     const p1 = geometry.points[ids[0]];
     const vertex = geometry.points[ids[1]];
     const p2 = geometry.points[ids[2]];
@@ -673,10 +667,10 @@
       if (labelState.point.B) createDomLabel('point', 'B', getPointLabelAnchor('B', geometry), getPointLabelText('B'), 28);
       if (labelState.point.M) createDomLabel('point', 'M', getPointLabelAnchor('M', geometry), getPointLabelText('M'), 28);
 
-      Object.keys(SEGMENT_POINT_MAP).forEach(function (id) {
+      Object.keys(FIGURE_DEFINITION.segments).forEach(function (id) {
         if (labelState.segment[id]) drawSegmentLabel(id, geometry);
       });
-      Object.keys(ANGLE_POINT_MAP).forEach(function (id) {
+      Object.keys(FIGURE_DEFINITION.angles).forEach(function (id) {
         if (angleHasVisual(id)) drawAngleVisual(id, geometry);
       });
 

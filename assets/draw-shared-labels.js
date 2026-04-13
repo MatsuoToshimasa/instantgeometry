@@ -427,6 +427,17 @@
     });
   }
 
+  function cloneJsonRecord(value) {
+    return JSON.parse(JSON.stringify(value));
+  }
+
+  function buildGeneralConfigs(definition) {
+    return []
+      .concat((definition.points || []).map(function (id) { return { type: 'point', id: id }; }))
+      .concat(Object.keys(definition.segments || {}).map(function (id) { return { type: 'segment', id: id }; }))
+      .concat(Object.keys(definition.angles || {}).map(function (id) { return { type: 'angle', id: id }; }));
+  }
+
   window.InstantGeometrySharedLabels = {
     escapeHtml: escapeHtml,
     toMathLikeHtml: toMathLikeHtml,
@@ -442,6 +453,8 @@
     applyDomLabelWheel: applyDomLabelWheel,
     beginDomHandleGesture: beginDomHandleGesture,
     applyDomPointerMove: applyDomPointerMove,
+    buildGeneralConfigs: buildGeneralConfigs,
+    cloneJsonRecord: cloneJsonRecord,
     createStyleStore: createStyleStore,
     ensureLabelStyle: ensureLabelStyle,
     resetLabelStyle: resetLabelStyle,
