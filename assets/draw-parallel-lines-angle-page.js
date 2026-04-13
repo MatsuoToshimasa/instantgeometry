@@ -373,6 +373,14 @@
     };
   }
 
+  function pixelsToUser(pxX, pxY) {
+    const rect = box.getBoundingClientRect();
+    return {
+      x: (pxX / Math.max(rect.width, 1)) * currentView.width,
+      y: (pxY / Math.max(rect.height, 1)) * currentView.height
+    };
+  }
+
   function createDomLabel(type, id, anchor, text, fontSize) {
     const style = getLabelStyle(type, id);
     const screen = userToScreenPoint(anchor);
@@ -747,10 +755,22 @@
       drawPoint(geometry.points.B, '#111111');
       drawPoint(geometry.points.M, '#111111');
 
-      if (labelState.point.P) createDomLabel('point', 'P', { x: geometry.points.P.x - 0.24, y: geometry.points.P.y - 0.24 }, getPointLabelText('P'), 28);
-      if (labelState.point.Q) createDomLabel('point', 'Q', { x: geometry.points.Q.x + 0.24, y: geometry.points.Q.y - 0.24 }, getPointLabelText('Q'), 28);
-      if (labelState.point.R) createDomLabel('point', 'R', { x: geometry.points.R.x - 0.24, y: geometry.points.R.y + 0.24 }, getPointLabelText('R'), 28);
-      if (labelState.point.S) createDomLabel('point', 'S', { x: geometry.points.S.x + 0.24, y: geometry.points.S.y + 0.24 }, getPointLabelText('S'), 28);
+      if (labelState.point.P) {
+        const delta = pixelsToUser(-10, 0);
+        createDomLabel('point', 'P', { x: geometry.points.P.x + delta.x, y: geometry.points.P.y }, getPointLabelText('P'), 28);
+      }
+      if (labelState.point.Q) {
+        const delta = pixelsToUser(10, 0);
+        createDomLabel('point', 'Q', { x: geometry.points.Q.x + delta.x, y: geometry.points.Q.y }, getPointLabelText('Q'), 28);
+      }
+      if (labelState.point.R) {
+        const delta = pixelsToUser(-10, 0);
+        createDomLabel('point', 'R', { x: geometry.points.R.x + delta.x, y: geometry.points.R.y }, getPointLabelText('R'), 28);
+      }
+      if (labelState.point.S) {
+        const delta = pixelsToUser(10, 0);
+        createDomLabel('point', 'S', { x: geometry.points.S.x + delta.x, y: geometry.points.S.y }, getPointLabelText('S'), 28);
+      }
       if (labelState.point.A) createDomLabel('point', 'A', { x: geometry.points.A.x - 0.22, y: geometry.points.A.y + 0.24 }, getPointLabelText('A'), 28);
       if (labelState.point.B) createDomLabel('point', 'B', { x: geometry.points.B.x + 0.22, y: geometry.points.B.y - 0.24 }, getPointLabelText('B'), 28);
       if (labelState.point.M) createDomLabel('point', 'M', { x: geometry.points.M.x + 0.22, y: geometry.points.M.y + 0.24 }, getPointLabelText('M'), 28);
