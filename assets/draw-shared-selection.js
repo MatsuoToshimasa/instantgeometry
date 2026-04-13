@@ -448,7 +448,7 @@
   }
 
   function isNonTransformableSelectionType(type) {
-    return ['segment', 'side', 'diagonal', 'specialSegment', 'sideObject', 'specialSegmentObject', 'diagonalObject'].includes(type);
+    return ['segment', 'side', 'diagonal', 'specialSegment', 'segmentObject', 'sideObject', 'specialSegmentObject', 'diagonalObject'].includes(type);
   }
 
   window.InstantGeometrySharedSelection = {

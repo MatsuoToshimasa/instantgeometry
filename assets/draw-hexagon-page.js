@@ -70,6 +70,7 @@
   const styleDefaults = {
     point: { A: style('#1f2430'), B: style('#1f2430'), C: style('#1f2430'), D: style('#1f2430'), E: style('#1f2430'), F: style('#1f2430') },
     segment: { AB: style('#2a5bd7'), BC: style('#2a5bd7'), CD: style('#2a5bd7'), DE: style('#2a5bd7'), EF: style('#2a5bd7'), FA: style('#2a5bd7') },
+    segmentObject: { AB: style('#2a5bd7'), BC: style('#2a5bd7'), CD: style('#2a5bd7'), DE: style('#2a5bd7'), EF: style('#2a5bd7'), FA: style('#2a5bd7') },
     angle: { A: style('#687086'), B: style('#687086'), C: style('#687086'), D: style('#687086'), E: style('#687086'), F: style('#687086') },
     angleMark: { A: style('#687086'), B: style('#687086'), C: style('#687086'), D: style('#687086'), E: style('#687086'), F: style('#687086') },
     rightAngleMark: { A: style('#111111'), B: style('#111111'), C: style('#111111'), D: style('#111111'), E: style('#111111'), F: style('#111111') },
@@ -198,7 +199,35 @@
   function getAngleName(id) { return '∠' + getPointLabelToken(id); }
   function normalizeAngleMarkerInput(input) { const value = String(input || '').trim(); return /^[0-7]$/.test(value) ? Number(value) : null; }
   function normalizeRightAngleMarkerInput(input) { const value = String(input || '').trim(); return value === '0' || value === '1' ? Number(value) : null; }
-  function getLabelStyle(type, id) { return labelStyleState[type] && labelStyleState[type][id] ? labelStyleState[type][id] : { color: '#2a5bd7', rotation: 0 }; }
+  function getLabelStyle(type, id) {
+    labelStyleState[type] = labelStyleState[type] || {};
+    if (!labelStyleState[type][id]) {
+      labelStyleState[type][id] = styleDefaults[type] && styleDefaults[type][id]
+        ? JSON.parse(JSON.stringify(styleDefaults[type][id]))
+        : { color: '#2a5bd7', rotation: 0 };
+    }
+    return labelStyleState[type][id];
+  }
+  function registerSegmentObjectAnchor(type, id, start, end) {
+    const screenStart = userToScreenPoint(start);
+    const screenEnd = userToScreenPoint(end);
+    const pad = 8;
+    currentLabelAnchors.push({
+      type: type,
+      id: id,
+      x: (start.x + end.x) / 2,
+      y: (start.y + end.y) / 2,
+      screenRect: {
+        left: Math.min(screenStart.x, screenEnd.x) - pad,
+        right: Math.max(screenStart.x, screenEnd.x) + pad,
+        top: Math.min(screenStart.y, screenEnd.y) - pad,
+        bottom: Math.max(screenStart.y, screenEnd.y) + pad
+      },
+      fontSize: 16,
+      rotation: Math.atan2(end.y - start.y, end.x - start.x) * 180 / Math.PI,
+      color: getLabelStyle(type, id).color
+    });
+  }
   function getLabelPosition(type, id, basePosition) {
     const stored = labelPositions[type][id];
     if (stored && Number.isFinite(stored.x) && Number.isFinite(stored.y)) return stored;
@@ -683,9 +712,18 @@
     const P = geometry.points;
     const points = pointIds.map(function (id) { return board.create('point', [P[id].x, P[id].y], { name: '', size: 3, fixed: true, strokeColor: '#111111', fillColor: '#111111' }); });
     board.create('polygon', points, { borders: { visible: false, fixed: true, highlight: false }, fillColor: hexToRgba(figureState.color, 0.08), fillOpacity: 0, vertices: { visible: false }, highlight: false });
-    const lineStyle = { fixed: true, strokeWidth: 2, strokeColor: figureState.color, highlight: false };
     const pairMap = { AB: [points[0], points[1]], BC: [points[1], points[2]], CD: [points[2], points[3]], DE: [points[3], points[4]], EF: [points[4], points[5]], FA: [points[5], points[0]] };
-    segmentIds.forEach(function (id) { if (labelState.segment[id] || segmentLineMode[id] !== 0) board.create('segment', pairMap[id], lineStyle); });
+    segmentIds.forEach(function (id) {
+      if (labelState.segment[id] || segmentLineMode[id] !== 0) {
+        board.create('segment', pairMap[id], {
+          fixed: true,
+          strokeWidth: 2,
+          strokeColor: getLabelStyle('segmentObject', id).color,
+          highlight: false
+        });
+        registerSegmentObjectAnchor('segmentObject', id, P[id.charAt(0)], P[id.charAt(1)]);
+      }
+    });
   }
   function drawAngleDecoration(id, geometry) {
     const mode = Number.isFinite(angleMarkerMode[id]) ? angleMarkerMode[id] : 0;

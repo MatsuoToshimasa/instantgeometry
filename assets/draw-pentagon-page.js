@@ -129,7 +129,9 @@
   const styleDefaults = {
     point: { A: style('#1f2430'), B: style('#1f2430'), C: style('#1f2430'), D: style('#1f2430'), E: style('#1f2430') },
     segment: { AB: style('#2a5bd7'), BC: style('#2a5bd7'), CD: style('#2a5bd7'), DE: style('#2a5bd7'), EA: style('#2a5bd7') },
+    segmentObject: { AB: style('#2a5bd7'), BC: style('#2a5bd7'), CD: style('#2a5bd7'), DE: style('#2a5bd7'), EA: style('#2a5bd7') },
     diagonal: { AC: style('#7d8db8'), AD: style('#7d8db8'), BD: style('#7d8db8'), BE: style('#7d8db8'), CE: style('#7d8db8') },
+    diagonalObject: { AC: style('#7d8db8'), AD: style('#7d8db8'), BD: style('#7d8db8'), BE: style('#7d8db8'), CE: style('#7d8db8') },
     specialPoint: { P: style('#1f2430'), Q: style('#1f2430'), R: style('#1f2430'), S: style('#1f2430'), T: style('#1f2430') },
     angle: {
       A: style('#687086'), B: style('#687086'), C: style('#687086'), D: style('#687086'), E: style('#687086'),
@@ -373,7 +375,34 @@
   }
 
   function getLabelStyle(type, id) {
-    return labelStyleState[type] && labelStyleState[type][id] ? labelStyleState[type][id] : { color: '#2a5bd7', rotation: 0 };
+    labelStyleState[type] = labelStyleState[type] || {};
+    if (!labelStyleState[type][id]) {
+      labelStyleState[type][id] = styleDefaults[type] && styleDefaults[type][id]
+        ? JSON.parse(JSON.stringify(styleDefaults[type][id]))
+        : { color: '#2a5bd7', rotation: 0 };
+    }
+    return labelStyleState[type][id];
+  }
+
+  function registerSegmentObjectAnchor(type, id, start, end) {
+    const screenStart = userToScreenPoint(start);
+    const screenEnd = userToScreenPoint(end);
+    const pad = 8;
+    currentLabelAnchors.push({
+      type: type,
+      id: id,
+      x: (start.x + end.x) / 2,
+      y: (start.y + end.y) / 2,
+      screenRect: {
+        left: Math.min(screenStart.x, screenEnd.x) - pad,
+        right: Math.max(screenStart.x, screenEnd.x) + pad,
+        top: Math.min(screenStart.y, screenEnd.y) - pad,
+        bottom: Math.max(screenStart.y, screenEnd.y) + pad
+      },
+      fontSize: 16,
+      rotation: Math.atan2(end.y - start.y, end.x - start.x) * 180 / Math.PI,
+      color: getLabelStyle(type, id).color
+    });
   }
 
   function getLabelPosition(type, id, basePosition) {
@@ -1113,7 +1142,13 @@
     };
     segmentIds.forEach(function (id) {
       if (labelState.segment[id] || segmentLineMode[id] !== 0 || shouldDrawSegmentFromAngles(id)) {
-        board.create('segment', pairMap[id], lineStyle);
+        board.create('segment', pairMap[id], {
+          fixed: true,
+          strokeWidth: 2,
+          strokeColor: getLabelStyle('segmentObject', id).color,
+          highlight: false
+        });
+        registerSegmentObjectAnchor('segmentObject', id, geometry.points[id.charAt(0)], geometry.points[id.charAt(1)]);
       }
     });
     diagonalIds.forEach(function (id) {
@@ -1121,10 +1156,11 @@
         board.create('segment', pairMap[id], {
           fixed: true,
           strokeWidth: 1.6,
-          strokeColor: '#9aa7c7',
+          strokeColor: getLabelStyle('diagonalObject', id).color,
           dash: 2,
           highlight: false
         });
+        registerSegmentObjectAnchor('diagonalObject', id, geometry.points[id.charAt(0)], geometry.points[id.charAt(1)]);
       }
     });
   }

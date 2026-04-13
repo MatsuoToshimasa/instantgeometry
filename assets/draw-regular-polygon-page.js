@@ -166,7 +166,33 @@
   function getAngleName(id) { return '∠' + getPointLabelToken(id); }
   function normalizeAngleMarkerInput(input) { const value = String(input || '').trim(); return /^[0-7]$/.test(value) ? Number(value) : null; }
   function normalizeRightAngleMarkerInput(input) { const value = String(input || '').trim(); return value === '0' || value === '1' ? Number(value) : null; }
-  function getLabelStyle(type, id) { return labelStyleState[type] && labelStyleState[type][id] ? labelStyleState[type][id] : { color: '#2a5bd7', rotation: 0 }; }
+  function getLabelStyle(type, id) {
+    labelStyleState[type] = labelStyleState[type] || {};
+    if (!labelStyleState[type][id]) {
+      labelStyleState[type][id] = { color: type === 'segmentObject' ? '#2a5bd7' : '#2a5bd7', rotation: 0 };
+    }
+    return labelStyleState[type][id];
+  }
+  function registerSegmentObjectAnchor(type, id, start, end) {
+    const screenStart = userToScreenPoint(start);
+    const screenEnd = userToScreenPoint(end);
+    const pad = 8;
+    currentLabelAnchors.push({
+      type: type,
+      id: id,
+      x: (start.x + end.x) / 2,
+      y: (start.y + end.y) / 2,
+      screenRect: {
+        left: Math.min(screenStart.x, screenEnd.x) - pad,
+        right: Math.max(screenStart.x, screenEnd.x) + pad,
+        top: Math.min(screenStart.y, screenEnd.y) - pad,
+        bottom: Math.max(screenStart.y, screenEnd.y) + pad
+      },
+      fontSize: 16,
+      rotation: Math.atan2(end.y - start.y, end.x - start.x) * 180 / Math.PI,
+      color: getLabelStyle(type, id).color
+    });
+  }
 
   function ensurePointState(id) {
     if (!(id in labelState.point)) labelState.point[id] = true;
@@ -636,9 +662,16 @@
       return board.create('point', [geometry.points[id].x, geometry.points[id].y], { name: '', size: 3, fixed: true, strokeColor: '#111111', fillColor: '#111111' });
     });
     board.create('polygon', points, { borders: { visible: false, fixed: true, highlight: false }, fillColor: hexToRgba(figureState.color, 0.08), fillOpacity: 0, vertices: { visible: false }, highlight: false });
-    const lineStyle = { fixed: true, strokeWidth: 2, strokeColor: figureState.color, highlight: false };
     geometry.segmentIds.forEach(function (segmentId, index) {
-      if (labelState.segment[segmentId] || segmentLineMode[segmentId] !== 0) board.create('segment', [points[index], points[(index + 1) % points.length]], lineStyle);
+      if (labelState.segment[segmentId] || segmentLineMode[segmentId] !== 0) {
+        board.create('segment', [points[index], points[(index + 1) % points.length]], {
+          fixed: true,
+          strokeWidth: 2,
+          strokeColor: getLabelStyle('segmentObject', segmentId).color,
+          highlight: false
+        });
+        registerSegmentObjectAnchor('segmentObject', segmentId, geometry.points[segmentId.charAt(0)], geometry.points[segmentId.charAt(1)]);
+      }
     });
   }
   function drawAngleDecoration(id, geometry) {
