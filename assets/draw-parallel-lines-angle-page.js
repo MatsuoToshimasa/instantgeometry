@@ -409,76 +409,35 @@
   }
 
   function renderSelectionBox() {
-    const existing = labelLayer.querySelectorAll('.label-selection-box,.label-handle,.palette-pop');
-    existing.forEach(function (node) { node.remove(); });
-    if (!selectedLabel) return;
+    if (!selectedLabel) {
+      window.InstantGeometrySharedSelection.renderDomSelectionOverlay({
+        labelLayer: labelLayer,
+        labelRef: null
+      });
+      return;
+    }
     const ref = labelNodes[selectedLabel.type + ':' + selectedLabel.id];
     if (!ref) {
       selectedLabel = null;
       paletteOpen = false;
+      window.InstantGeometrySharedSelection.renderDomSelectionOverlay({
+        labelLayer: labelLayer,
+        labelRef: null
+      });
       return;
     }
-    const rect = ref.node.getBoundingClientRect();
-    const layerRect = labelLayer.getBoundingClientRect();
-    const boxNode = document.createElement('div');
-    boxNode.className = 'label-selection-box';
-    boxNode.style.left = (rect.left - layerRect.left - 3) + 'px';
-    boxNode.style.top = (rect.top - layerRect.top - 3) + 'px';
-    boxNode.style.width = (rect.width + 6) + 'px';
-    boxNode.style.height = (rect.height + 6) + 'px';
-    labelLayer.appendChild(boxNode);
-
-    function addHandle(name, left, top) {
-      const handle = document.createElement('button');
-      handle.type = 'button';
-      handle.className = 'label-handle ' + name;
-      handle.dataset.handle = name;
-      handle.style.left = left + 'px';
-      handle.style.top = top + 'px';
-      handle.addEventListener('pointerdown', handleControlPointerDown);
-      if (name === 'palette') {
-        handle.style.color = getLabelStyle(selectedLabel.type, selectedLabel.id).color;
-        handle.innerHTML = '<svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle class="palette-outer" cx="11" cy="11" r="8"></circle><circle class="palette-inner" cx="11" cy="11" r="4"></circle></svg>';
-      } else if (name === 'rotate') {
-        handle.innerHTML = '<svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle></svg>';
-      } else if (name === 'resize') {
-        handle.innerHTML = '<svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><path class="resize-main" d="M6 16 L16 6"></path><path class="resize-wing" d="M6 16 L6 11"></path><path class="resize-wing" d="M6 16 L11 16"></path><path class="resize-wing" d="M16 6 L16 11"></path><path class="resize-wing" d="M16 6 L11 6"></path></svg>';
+    window.InstantGeometrySharedSelection.renderDomSelectionOverlay({
+      labelLayer: labelLayer,
+      labelRef: ref,
+      color: getLabelStyle(selectedLabel.type, selectedLabel.id).color,
+      paletteOpen: paletteOpen,
+      onHandlePointerDown: handleControlPointerDown,
+      onPaletteColorClick: function (color) {
+        getLabelStyle(selectedLabel.type, selectedLabel.id).color = color;
+        paletteOpen = false;
+        render();
       }
-      labelLayer.appendChild(handle);
-      return handle;
-    }
-
-    const left = rect.left - layerRect.left - 11;
-    const top = rect.top - layerRect.top - 11;
-    const right = rect.right - layerRect.left - 11;
-    const bottom = rect.bottom - layerRect.top - 11;
-    addHandle('palette', left, bottom);
-    addHandle('rotate', right, top);
-    addHandle('resize', right, bottom);
-
-    if (paletteOpen) {
-      const pop = document.createElement('div');
-      pop.className = 'palette-pop';
-      const cx = left + 11;
-      const cy = bottom + 11;
-      const colors = ['#1f2430', '#2a5bd7', '#c2410c', '#0f766e', '#7c3aed', '#be123c'];
-      colors.forEach(function (color, index) {
-        const angle = (Math.PI * 1.2) + (Math.PI * 0.8 * index / Math.max(colors.length - 1, 1));
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.style.background = color;
-        btn.style.left = (cx + Math.cos(angle) * 42 - 9) + 'px';
-        btn.style.top = (cy + Math.sin(angle) * 42 - 9) + 'px';
-        btn.addEventListener('click', function (event) {
-          event.stopPropagation();
-          getLabelStyle(selectedLabel.type, selectedLabel.id).color = color;
-          paletteOpen = false;
-          render();
-        });
-        pop.appendChild(btn);
-      });
-      labelLayer.appendChild(pop);
-    }
+    });
   }
 
   function handleLabelPointerDown(event) {
