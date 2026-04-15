@@ -572,7 +572,7 @@
 
     .settings-table th:nth-child(2),
     .settings-table td:nth-child(2){
-      width:170px;
+      width:132px;
     }
 
     .settings-table th:nth-child(3),
@@ -631,19 +631,57 @@
     .settings-label-cell{
       display:flex;
       align-items:center;
-      gap:6px;
+      gap:4px;
       min-width:0;
     }
 
-    .settings-label-cell .settings-select{
-      width:84px;
-      min-width:84px;
-      flex:0 0 84px;
+    .settings-label-mode{
+      display:inline-flex;
+      align-items:center;
+      gap:2px;
+      flex:0 0 auto;
+      padding:2px;
+      border:1px solid #cfd7ea;
+      border-radius:9px;
+      background:#f8faff;
+    }
+
+    .settings-label-mode-btn{
+      min-width:24px;
+      height:24px;
+      padding:0 6px;
+      border:none;
+      border-radius:7px;
+      background:transparent;
+      color:#5b6477;
+      font-size:11px;
+      font-weight:700;
+      cursor:pointer;
+    }
+
+    .settings-label-mode-btn.is-active{
+      background:#2a5bd7;
+      color:#ffffff;
+    }
+
+    .settings-label-mode-btn:hover{
+      background:#dfe8ff;
+      color:#1f3d94;
+    }
+
+    .settings-label-mode-btn.is-active:hover{
+      background:#2a5bd7;
+      color:#ffffff;
     }
 
     .settings-label-cell .settings-input{
       min-width:0;
       flex:1 1 auto;
+      display:none;
+    }
+
+    .settings-label-cell.is-text .settings-input{
+      display:block;
     }
 
     @media (max-width: 980px){
@@ -1780,29 +1818,41 @@
         function createLabelCell(type, id) {
           const wrapper = document.createElement('div');
           wrapper.className = 'settings-label-cell';
-          const modeSelect = createSelect([
-            { value: 'number', label: '数字' },
-            { value: 'text', label: '文字' },
-            { value: 'hidden', label: '非表示' }
-          ], getLabelMode(type, id), function (event) {
-            pushHistorySnapshot();
-            applyLabelMode(type, id, event.target.value);
-            renderLabelToggleButtons();
-            render();
+          const mode = getLabelMode(type, id);
+          wrapper.classList.toggle('is-text', mode === 'text');
+          const modeGroup = document.createElement('div');
+          modeGroup.className = 'settings-label-mode';
+          [
+            { value: 'number', label: '数' },
+            { value: 'text', label: '文' },
+            { value: 'hidden', label: '無' }
+          ].forEach(function (option) {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'settings-label-mode-btn' + (mode === option.value ? ' is-active' : '');
+            button.textContent = option.label;
+            button.addEventListener('click', function () {
+              if (getLabelMode(type, id) === option.value) return;
+              pushHistorySnapshot();
+              applyLabelMode(type, id, option.value);
+              renderLabelToggleButtons();
+              render();
+            });
+            modeGroup.appendChild(button);
           });
           const textInput = document.createElement('input');
           textInput.type = 'text';
           textInput.className = 'settings-input';
           textInput.placeholder = '文字入力';
           textInput.value = getCustomLabelValue(type, id);
-          textInput.disabled = getLabelMode(type, id) !== 'text';
+          textInput.disabled = mode !== 'text';
           textInput.addEventListener('input', function (event) {
             pushHistorySnapshot();
             setCustomLabelValue(type, id, event.target.value);
             renderLabelToggleButtons();
             render();
           });
-          wrapper.appendChild(modeSelect);
+          wrapper.appendChild(modeGroup);
           wrapper.appendChild(textInput);
           return wrapper;
         }
