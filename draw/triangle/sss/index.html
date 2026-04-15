@@ -529,6 +529,99 @@
       gap:6px;
     }
 
+    .settings-stack{
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+
+    .settings-section{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+
+    .settings-table-wrap{
+      overflow:auto;
+      border:1px solid #e7eaf3;
+      border-radius:12px;
+      background:#ffffff;
+    }
+
+    .settings-table{
+      width:100%;
+      border-collapse:collapse;
+      font-size:12px;
+    }
+
+    .settings-table th,
+    .settings-table td{
+      padding:8px 7px;
+      border-bottom:1px solid #edf1f8;
+      text-align:left;
+      vertical-align:middle;
+      white-space:nowrap;
+    }
+
+    .settings-table th{
+      position:sticky;
+      top:0;
+      z-index:1;
+      background:#f8faff;
+      color:#5b6477;
+      font-size:11px;
+      font-weight:700;
+      letter-spacing:.03em;
+    }
+
+    .settings-table tr:last-child td{
+      border-bottom:none;
+    }
+
+    .settings-select,
+    .settings-input{
+      width:100%;
+      min-width:68px;
+      border:1px solid #cfd7ea;
+      border-radius:9px;
+      background:#ffffff;
+      color:#24304d;
+      font-size:12px;
+      padding:6px 8px;
+      box-sizing:border-box;
+    }
+
+    .settings-input[disabled]{
+      background:#f3f5fa;
+      color:#8b93a6;
+      cursor:not-allowed;
+    }
+
+    .settings-color{
+      width:36px;
+      height:28px;
+      padding:0;
+      border:none;
+      background:transparent;
+      cursor:pointer;
+    }
+
+    .settings-label-cell{
+      display:flex;
+      align-items:center;
+      gap:6px;
+      min-width:180px;
+    }
+
+    .settings-label-cell .settings-select{
+      width:92px;
+      min-width:92px;
+    }
+
+    .settings-label-cell .settings-input{
+      min-width:82px;
+    }
+
     @media (max-width: 980px){
       .left-dock{
         width:min(320px,calc(100vw - 88px));
@@ -652,10 +745,8 @@
       </div>
       <div class="label-toggles">
         <div class="toggle-card">
-          <p class="toggle-title">一般ラベル</p>
-          <div class="toggle-grid" id="generalLabelToggleGrid"></div>
-          <p class="toggle-title" style="margin-top:12px;">特別ラベル</p>
-          <div class="toggle-grid" id="specialLabelToggleGrid"></div>
+          <p class="toggle-title">対象設定</p>
+          <div class="settings-stack" id="settingsTablesHost"></div>
         </div>
       </div>
     </aside>
@@ -828,8 +919,7 @@
       const sideBInput = document.getElementById('sideB');
       const sideCInput = document.getElementById('sideC');
       const statusBox = document.getElementById('statusBox');
-      const generalLabelToggleGrid = document.getElementById('generalLabelToggleGrid');
-      const specialLabelToggleGrid = document.getElementById('specialLabelToggleGrid');
+      const settingsTablesHost = document.getElementById('settingsTablesHost');
       const downloadButtons = document.querySelectorAll('[data-download-format]');
       const leftDock = document.getElementById('leftDock');
       const dockToggleBtn = document.getElementById('dockToggleBtn');
@@ -863,10 +953,17 @@
         rightAngleMark: { A: 26, B: 26, C: 26 },
         area: { main: 48 }
       };
-      const angleMarkerMode = { A: 0, B: 0, C: 0 };
+      const angleMarkerMode = { A: 1, B: 1, C: 1 };
       const rightAngleMarkerMode = { A: 0, B: 0, C: 0 };
       const segmentArcMode = { side: { a: 1, b: 1, c: 1 } };
-      const segmentLineMode = { side: { a: 1, b: 1, c: 1 } };
+      const segmentLineMode = { side: { a: 'solid', b: 'solid', c: 'solid' } };
+      const pointMarkerMode = { A: 'filled', B: 'filled', C: 'filled' };
+      const anchorMode = {
+        vertex: { A: 0, B: 0, C: 0 },
+        innerAngle: { A: 0, B: 0, C: 0 },
+        area: { main: 0 }
+      };
+      const areaFillMode = { main: 'outline' };
       const customLabelText = {
         side: { a: '', b: '', c: '' },
         innerAngle: { A: '', B: '', C: '' },
@@ -1466,6 +1563,139 @@
         });
       }
 
+      function getVertexDefaultText(id) {
+        return id;
+      }
+
+      function getLabelMode(type, id) {
+        if (hiddenLabelState[type][id]) return 'hidden';
+        if (type === 'vertex') {
+          return String(vertexLabelText[id] || getVertexDefaultText(id)).trim() === getVertexDefaultText(id) ? 'number' : 'text';
+        }
+        const value =
+          type === 'side' ? customLabelText.side[id]
+            : type === 'innerAngle' ? customLabelText.innerAngle[id]
+              : type === 'area' ? customLabelText.area[id]
+                : '';
+        return String(value || '').trim() ? 'text' : 'number';
+      }
+
+      function getCustomLabelValue(type, id) {
+        if (type === 'vertex') {
+          const value = String(vertexLabelText[id] || '').trim();
+          return value === getVertexDefaultText(id) ? '' : value;
+        }
+        if (type === 'side') return customLabelText.side[id] || '';
+        if (type === 'innerAngle') return customLabelText.innerAngle[id] || '';
+        if (type === 'area') return customLabelText.area[id] || '';
+        return '';
+      }
+
+      function setCustomLabelValue(type, id, value) {
+        const normalized = String(value || '').trim();
+        hiddenLabelState[type][id] = false;
+        if (type === 'vertex') {
+          vertexLabelText[id] = normalized || getVertexDefaultText(id);
+          return;
+        }
+        if (type === 'side') customLabelText.side[id] = normalized;
+        if (type === 'innerAngle') customLabelText.innerAngle[id] = normalized;
+        if (type === 'area') customLabelText.area[id] = normalized;
+      }
+
+      function applyLabelMode(type, id, mode) {
+        if (mode === 'hidden') {
+          hiddenLabelState[type][id] = true;
+          if (type === 'side') segmentArcMode.side[id] = 0;
+          if (anchorMode[type] && Object.prototype.hasOwnProperty.call(anchorMode[type], id)) anchorMode[type][id] = 0;
+          return;
+        }
+        hiddenLabelState[type][id] = false;
+        if (mode === 'number') {
+          if (type === 'vertex') {
+            vertexLabelText[id] = getVertexDefaultText(id);
+          } else if (type === 'side') {
+            customLabelText.side[id] = '';
+          } else if (type === 'innerAngle') {
+            customLabelText.innerAngle[id] = '';
+          } else if (type === 'area') {
+            customLabelText.area[id] = '';
+          }
+        }
+      }
+
+      function getAnchorEnabled(type, id) {
+        if (type === 'side') return segmentArcMode.side[id] !== 0;
+        if (anchorMode[type] && Object.prototype.hasOwnProperty.call(anchorMode[type], id)) {
+          return anchorMode[type][id] !== 0;
+        }
+        return false;
+      }
+
+      function setAnchorEnabled(type, id, enabled) {
+        if (type === 'side') {
+          segmentArcMode.side[id] = enabled ? 1 : 0;
+          return;
+        }
+        if (anchorMode[type] && Object.prototype.hasOwnProperty.call(anchorMode[type], id)) {
+          anchorMode[type][id] = enabled ? 1 : 0;
+        }
+      }
+
+      function getAngleKind(id) {
+        if (rightAngleMarkerMode[id]) return 'right';
+        const mode = Number.isFinite(angleMarkerMode[id]) ? angleMarkerMode[id] : 1;
+        return ({
+          1: 'plain',
+          2: 'circle',
+          3: 'single',
+          4: 'double',
+          5: 'cross',
+          6: 'triangle',
+          7: 'filled'
+        })[mode] || 'plain';
+      }
+
+      function setAngleKind(id, kind) {
+        rightAngleMarkerMode[id] = kind === 'right' ? 1 : 0;
+        angleMarkerMode[id] = ({
+          plain: 1,
+          circle: 2,
+          single: 3,
+          double: 4,
+          cross: 5,
+          triangle: 6,
+          filled: 7,
+          right: 0
+        })[kind] || 1;
+      }
+
+      function setRowColor(type, id, color) {
+        const normalized = /^#[0-9a-f]{6}$/i.test(color) ? color : '#2a5bd7';
+        if (type === 'vertex') {
+          labelStyleState.vertex[id].color = normalized;
+          return;
+        }
+        if (type === 'side') {
+          labelStyleState.side[id].color = normalized;
+          labelStyleState.sideObject[id].color = normalized;
+          return;
+        }
+        if (type === 'innerAngle') {
+          labelStyleState.innerAngle[id].color = normalized;
+          labelStyleState.angleMark[id].color = normalized;
+          labelStyleState.rightAngleMark[id].color = normalized;
+          return;
+        }
+        if (type === 'area') {
+          labelStyleState.area[id].color = normalized;
+        }
+      }
+
+      function getRowColor(type, id) {
+        return getLabelStyle(type, id).color || '#2a5bd7';
+      }
+
       function setStatus(message, isError) {
         statusBox.textContent = message;
         statusBox.classList.toggle('error', Boolean(isError));
@@ -1491,192 +1721,213 @@
       }
 
       function renderLabelToggleButtons() {
-        if (!generalLabelToggleGrid || !specialLabelToggleGrid) return;
-        generalLabelToggleGrid.innerHTML = '';
-        specialLabelToggleGrid.innerHTML = '';
+        if (!settingsTablesHost) return;
+        settingsTablesHost.innerHTML = '';
 
-        function normalizeAngleMarkerInput(input) {
-          const value = String(input || '').trim();
-          if (!value || value === '0' || value === 'なし') return 0;
-          if (value === '1' || value === '記号なし' || value === '弧') return 1;
-          if (value === '2' || value === '○') return 2;
-          if (value === '3' || value === '|' || value === '｜') return 3;
-          if (value === '4' || value === '=') return 4;
-          if (value === '5' || value.toLowerCase() === 'x' || value === '×') return 5;
-          if (value === '6' || value === '△') return 6;
-          if (value === '7' || value === '塗') return 7;
-          return null;
+        function createCell(tagName, text) {
+          const element = document.createElement(tagName);
+          if (typeof text === 'string') element.textContent = text;
+          return element;
         }
 
-        function normalizeRightAngleMarkerInput(input) {
-          const value = String(input || '').trim();
-          if (!value || value === '0' || value === '非表示') return 0;
-          if (value === '1' || value === '表示') return 1;
-          return null;
+        function createSelect(options, value, onChange) {
+          const select = document.createElement('select');
+          select.className = 'settings-select';
+          options.forEach(function (option) {
+            const node = document.createElement('option');
+            node.value = option.value;
+            node.textContent = option.label;
+            select.appendChild(node);
+          });
+          select.value = value;
+          select.addEventListener('change', onChange);
+          return select;
         }
 
-        function getCurrentAngleDegrees(angleId) {
-          if (!currentGeometry) return null;
-          if (angleId === 'A') return currentGeometry.angleA;
-          if (angleId === 'B') return currentGeometry.angleB;
-          if (angleId === 'C') return currentGeometry.angleC;
-          return null;
+        function createColorInput(value, onChange) {
+          const input = document.createElement('input');
+          input.type = 'color';
+          input.className = 'settings-color';
+          input.value = value;
+          input.addEventListener('input', onChange);
+          return input;
         }
 
-        function getVertexTokenByKey(vertexKey) {
-          const raw = String(vertexLabelText[vertexKey] || vertexKey).trim().toUpperCase();
-          return /^[A-Z]+$/.test(raw) ? raw : vertexKey;
-        }
-
-        function getToggleShortLabel(config) {
-          if (config.type === 'vertex') return getVertexTokenByKey(config.id);
-          if (config.type === 'side') return getVertexTokenByKey(config.id.toUpperCase()).toLowerCase();
-          if (config.type === 'innerAngle') return '∠' + getVertexTokenByKey(config.id);
-          if (config.type === 'area') return '△ABC';
-          return config.type + ' ' + config.id;
-        }
-
-        function buildToggleButton(config) {
-          const button = document.createElement('button');
-          const hidden = hiddenLabelState[config.type][config.id];
-          button.type = 'button';
-          button.className = 'download-btn btn-bd';
-          button.textContent = getToggleShortLabel(config);
-          button.setAttribute('aria-pressed', String(!hidden));
-          if (hidden) button.style.opacity = '0.55';
-          button.addEventListener('click', function () {
+        function createLabelCell(type, id) {
+          const wrapper = document.createElement('div');
+          wrapper.className = 'settings-label-cell';
+          const modeSelect = createSelect([
+            { value: 'number', label: '数字' },
+            { value: 'text', label: '文字' },
+            { value: 'hidden', label: '非表示' }
+          ], getLabelMode(type, id), function (event) {
             pushHistorySnapshot();
-            toggleHiddenLabel(config.type, config.id);
+            applyLabelMode(type, id, event.target.value);
             renderLabelToggleButtons();
             render();
           });
-          if (config.type === 'vertex') {
-            button.addEventListener('contextmenu', async function (event) {
-              event.preventDefault();
-              const current = vertexLabelText[config.id] || config.id;
-              const response = await window.InstantGeometrySharedLabelConfig.promptSingleText({
-                title: '点ラベル設定',
-                firstLabel: '文字（A-Z のみ）',
-                value: current
-              });
-              if (response === null) return;
-              const normalized = String(response).trim().toUpperCase();
-              pushHistorySnapshot();
-              if (!normalized) {
-                vertexLabelText[config.id] = config.id;
-              } else if (/^[A-Z]+$/.test(normalized)) {
-                vertexLabelText[config.id] = normalized.slice(0, 12);
-              } else {
-                setStatus('点ラベルは英字大文字（A-Z）のみ入力できます。', true);
-                return;
-              }
-              renderLabelToggleButtons();
-              render();
-            });
-          } else if (config.type === 'innerAngle') {
-            button.addEventListener('contextmenu', async function (event) {
-              event.preventDefault();
-              const currentMode = Number.isFinite(angleMarkerMode[config.id]) ? angleMarkerMode[config.id] : 0;
-              const currentAngle = getCurrentAngleDegrees(config.id);
-              const canUseRightMarker = Number.isFinite(currentAngle) && Math.abs(currentAngle - 90) < 1e-3;
-              const currentRightMode = Number.isFinite(rightAngleMarkerMode[config.id]) ? rightAngleMarkerMode[config.id] : 0;
-              const response = await window.InstantGeometrySharedLabelConfig.promptTripleSetting({
-                title: '角ラベル設定',
-                firstLabel: '角マーク（0:なし / 1:記号なし / 2:○ / 3:| / 4:= / 5:× / 6:△ / 7:塗）',
-                firstValue: String(currentMode),
-                secondLabel: '文字（空欄で数値表示）',
-                secondValue: customLabelText.innerAngle[config.id] || '',
-                thirdLabel: '直角マーク（0:非表示 / 1:表示）',
-                thirdValue: canUseRightMarker ? String(currentRightMode) : '90°以外は設定不可',
-                thirdDisabled: !canUseRightMarker
-              });
-              if (response === null) return;
-              const mode = normalizeAngleMarkerInput(response.first);
-              if (mode === null) {
-                setStatus('角マークは「0 / 1 / 2 / 3 / 4 / 5 / 6 / 7」で指定してください。', true);
-                return;
-              }
-              pushHistorySnapshot();
-              angleMarkerMode[config.id] = mode;
-              customLabelText.innerAngle[config.id] = response.second;
-              if (canUseRightMarker) {
-                const rightMode = normalizeRightAngleMarkerInput(response.third);
-                if (rightMode === null) {
-                  setStatus('直角マークは「0 / 1」で指定してください。', true);
-                  return;
-                }
-                rightAngleMarkerMode[config.id] = rightMode;
-              } else {
-                rightAngleMarkerMode[config.id] = 0;
-              }
-              labelState.rightAngleMark[config.id] = !!rightAngleMarkerMode[config.id];
-              hiddenLabelState.rightAngleMark[config.id] = !labelState.rightAngleMark[config.id];
-              if (!labelState.rightAngleMark[config.id] && selectedLabel && selectedLabel.type === 'rightAngleMark' && selectedLabel.id === config.id) {
-                selectedLabel = null;
-                isPaletteOpen = false;
-              }
-              hiddenLabelState.angleMark[config.id] = (mode === 0);
-              if (labelState.rightAngleMark[config.id]) {
-                labelPositions.rightAngleMark[config.id] = null;
-              }
-              render();
-            });
-          } else if (config.type === 'side') {
-            button.addEventListener('contextmenu', async function (event) {
-              event.preventDefault();
-              const currentLineMode = Number.isFinite(segmentLineMode.side[config.id]) ? segmentLineMode.side[config.id] : 1;
-              const currentArcMode = Number.isFinite(segmentArcMode.side[config.id]) ? segmentArcMode.side[config.id] : 1;
-              const response = await window.InstantGeometrySharedLabelConfig.promptTripleSetting({
-                title: '線分ラベル設定',
-                firstLabel: '線分表示（0:線分を非表示 / 1:線分を表示）',
-                firstValue: String(currentLineMode),
-                secondLabel: '弧表示（0:弧を非表示 / 1:弧を表示）',
-                secondValue: String(currentArcMode),
-                thirdLabel: '文字（空欄で数値表示）',
-                thirdValue: customLabelText.side[config.id] || '',
-                firstBinary: true,
-                secondBinary: true
-              });
-              if (response === null) return;
-              const lineMode = window.InstantGeometrySharedOrnaments.normalizeSegmentArcInput(response.first);
-              if (lineMode === null) {
-                setStatus('線分表示は「0 / 1」で指定してください。', true);
-                return;
-              }
-              const arcMode = window.InstantGeometrySharedOrnaments.normalizeSegmentArcInput(response.second);
-              if (arcMode === null) {
-                setStatus('線分ラベルの弧表示は「0 / 1」で指定してください。', true);
-                return;
-              }
-              pushHistorySnapshot();
-              segmentLineMode.side[config.id] = lineMode;
-              segmentArcMode.side[config.id] = arcMode;
-              customLabelText.side[config.id] = response.third;
-              render();
-            });
-          } else if (config.type === 'area') {
-            button.addEventListener('contextmenu', async function (event) {
-              event.preventDefault();
-              const response = await window.InstantGeometrySharedLabelConfig.promptSingleText({
-                title: '面積ラベル設定',
-                firstLabel: '文字（空欄で数値表示）',
-                value: customLabelText.area.main || ''
-              });
-              if (response === null) return;
-              pushHistorySnapshot();
-              customLabelText.area.main = response;
-              render();
-            });
-          }
-          return button;
+          const textInput = document.createElement('input');
+          textInput.type = 'text';
+          textInput.className = 'settings-input';
+          textInput.placeholder = '文字入力';
+          textInput.value = getCustomLabelValue(type, id);
+          textInput.disabled = getLabelMode(type, id) !== 'text';
+          textInput.addEventListener('input', function (event) {
+            pushHistorySnapshot();
+            setCustomLabelValue(type, id, event.target.value);
+            renderLabelToggleButtons();
+            render();
+          });
+          wrapper.appendChild(modeSelect);
+          wrapper.appendChild(textInput);
+          return wrapper;
         }
 
-        getGeneralToggleConfigs().forEach(function (config) {
-          generalLabelToggleGrid.appendChild(buildToggleButton(config));
-        });
-        getSpecialToggleConfigs().forEach(function (config) {
-          specialLabelToggleGrid.appendChild(buildToggleButton(config));
-        });
+        function appendSection(title, headers, rows) {
+          const section = document.createElement('section');
+          section.className = 'settings-section';
+          const heading = document.createElement('p');
+          heading.className = 'toggle-title';
+          heading.textContent = title;
+          section.appendChild(heading);
+          const wrap = document.createElement('div');
+          wrap.className = 'settings-table-wrap';
+          const table = document.createElement('table');
+          table.className = 'settings-table';
+          const thead = document.createElement('thead');
+          const headRow = document.createElement('tr');
+          headers.forEach(function (header) {
+            headRow.appendChild(createCell('th', header));
+          });
+          thead.appendChild(headRow);
+          table.appendChild(thead);
+          const tbody = document.createElement('tbody');
+          rows.forEach(function (cells) {
+            const row = document.createElement('tr');
+            cells.forEach(function (cell) {
+              const td = document.createElement('td');
+              if (typeof cell === 'string') {
+                td.textContent = cell;
+              } else if (cell) {
+                td.appendChild(cell);
+              }
+              row.appendChild(td);
+            });
+            tbody.appendChild(row);
+          });
+          table.appendChild(tbody);
+          wrap.appendChild(table);
+          section.appendChild(wrap);
+          settingsTablesHost.appendChild(section);
+        }
+
+        function buildOnOffSelect(type, id) {
+          const select = createSelect([
+            { value: '0', label: 'OFF' },
+            { value: '1', label: 'ON' }
+          ], getAnchorEnabled(type, id) ? '1' : '0', function (event) {
+            pushHistorySnapshot();
+            setAnchorEnabled(type, id, event.target.value === '1');
+            renderLabelToggleButtons();
+            render();
+          });
+          select.disabled = getLabelMode(type, id) === 'hidden';
+          return select;
+        }
+
+        appendSection('点', ['対象', 'ラベル', 'ひも', '色', '点の種類'], ['A', 'B', 'C'].map(function (id) {
+          return [
+            id,
+            createLabelCell('vertex', id),
+            buildOnOffSelect('vertex', id),
+            createColorInput(getRowColor('vertex', id), function (event) {
+              pushHistorySnapshot();
+              setRowColor('vertex', id, event.target.value);
+              render();
+            }),
+            createSelect([
+              { value: 'filled', label: '黒丸' },
+              { value: 'outline', label: '白丸' },
+              { value: 'double', label: '二重丸' }
+            ], pointMarkerMode[id], function (event) {
+              pushHistorySnapshot();
+              pointMarkerMode[id] = event.target.value;
+              render();
+            })
+          ];
+        }));
+
+        appendSection('線分', ['対象', 'ラベル', 'ひも', '色', '線分の種類'], [
+          { id: 'a', name: 'BC' },
+          { id: 'b', name: 'CA' },
+          { id: 'c', name: 'AB' }
+        ].map(function (item) {
+          return [
+            item.name,
+            createLabelCell('side', item.id),
+            buildOnOffSelect('side', item.id),
+            createColorInput(getRowColor('side', item.id), function (event) {
+              pushHistorySnapshot();
+              setRowColor('side', item.id, event.target.value);
+              render();
+            }),
+            createSelect([
+              { value: 'solid', label: '実線' },
+              { value: 'dotted', label: '点線' },
+              { value: 'dashed', label: '破線' }
+            ], segmentLineMode.side[item.id], function (event) {
+              pushHistorySnapshot();
+              segmentLineMode.side[item.id] = event.target.value;
+              render();
+            })
+          ];
+        }));
+
+        appendSection('角', ['対象', 'ラベル', 'ひも', '色', '角の種類'], ['A', 'B', 'C'].map(function (id) {
+          return [
+            '∠' + id,
+            createLabelCell('innerAngle', id),
+            buildOnOffSelect('innerAngle', id),
+            createColorInput(getRowColor('innerAngle', id), function (event) {
+              pushHistorySnapshot();
+              setRowColor('innerAngle', id, event.target.value);
+              render();
+            }),
+            createSelect([
+              { value: 'plain', label: '無印' },
+              { value: 'circle', label: '丸付き' },
+              { value: 'single', label: '一本線' },
+              { value: 'double', label: '二重線' },
+              { value: 'cross', label: '×付き' },
+              { value: 'triangle', label: '△付き' },
+              { value: 'filled', label: '塗り' },
+              { value: 'right', label: '直角' }
+            ], getAngleKind(id), function (event) {
+              pushHistorySnapshot();
+              setAngleKind(id, event.target.value);
+              render();
+            })
+          ];
+        }));
+
+        appendSection('面', ['対象', 'ラベル', 'ひも', '色', '面の種類'], [[
+          '△ABC',
+          createLabelCell('area', 'main'),
+          buildOnOffSelect('area', 'main'),
+          createColorInput(getRowColor('area', 'main'), function (event) {
+            pushHistorySnapshot();
+            setRowColor('area', 'main', event.target.value);
+            render();
+          }),
+          createSelect([
+            { value: 'outline', label: '輪郭のみ' },
+            { value: 'fill', label: '塗り' }
+          ], areaFillMode.main, function (event) {
+            pushHistorySnapshot();
+            areaFillMode.main = event.target.value;
+            render();
+          })
+        ]]);
       }
 
       function getSelectedAnchor() {
@@ -1965,6 +2216,9 @@
           rightAngleMarkerMode: cloneStateValue(rightAngleMarkerMode),
           segmentArcMode: cloneStateValue(segmentArcMode),
           segmentLineMode: cloneStateValue(segmentLineMode),
+          pointMarkerMode: cloneStateValue(pointMarkerMode),
+          anchorMode: cloneStateValue(anchorMode),
+          areaFillMode: cloneStateValue(areaFillMode),
           customLabelText: cloneStateValue(customLabelText)
         };
       }
@@ -1997,6 +2251,19 @@
         }
         if (state.segmentLineMode && state.segmentLineMode.side) {
           Object.assign(segmentLineMode.side, cloneStateValue(state.segmentLineMode.side));
+        }
+        if (state.pointMarkerMode) {
+          Object.assign(pointMarkerMode, cloneStateValue(state.pointMarkerMode));
+        }
+        if (state.anchorMode) {
+          Object.keys(anchorMode).forEach(function (type) {
+            if (state.anchorMode[type]) {
+              Object.assign(anchorMode[type], cloneStateValue(state.anchorMode[type]));
+            }
+          });
+        }
+        if (state.areaFillMode) {
+          Object.assign(areaFillMode, cloneStateValue(state.areaFillMode));
         }
         if (state.customLabelText) {
           if (state.customLabelText.side) Object.assign(customLabelText.side, cloneStateValue(state.customLabelText.side));
@@ -2588,6 +2855,80 @@
         });
       }
 
+      function getSegmentDash(kind) {
+        if (kind === 'dotted') return 1;
+        if (kind === 'dashed') return 2;
+        return 0;
+      }
+
+      function createPointObject(id, point) {
+        const color = getLabelStyle('vertex', id).color || '#1f2430';
+        const kind = pointMarkerMode[id] || 'filled';
+        const base = board.create('point', [point.x, point.y], {
+          name: '',
+          size: 3,
+          fixed: true,
+          face: 'o',
+          strokeColor: color,
+          fillColor: kind === 'filled' ? color : '#ffffff',
+          strokeWidth: kind === 'filled' ? 1.5 : 2,
+          highlight: false
+        });
+        if (kind === 'double') {
+          board.create('curve', [
+            function (t) { return point.x + 0.1 * Math.cos(t); },
+            function (t) { return point.y + 0.1 * Math.sin(t); },
+            0,
+            Math.PI * 2
+          ], {
+            fixed: true,
+            strokeWidth: 1.4,
+            strokeColor: color,
+            highlight: false
+          });
+        }
+        return base;
+      }
+
+      function drawAnchorLine(start, end, color) {
+        if (!start || !end) return;
+        board.create('segment', [[start.x, start.y], [end.x, end.y]], {
+          fixed: true,
+          strokeWidth: 1.2,
+          strokeColor: color,
+          highlight: false
+        });
+      }
+
+      function drawDerivedAnchors(triangle, centroid) {
+        function findAnchor(type, id) {
+          return currentLabelAnchors.find(function (item) {
+            return item.type === type && item.id === id && !item.hidden;
+          }) || null;
+        }
+
+        ['A', 'B', 'C'].forEach(function (id) {
+          if (!getAnchorEnabled('vertex', id)) return;
+          const anchor = findAnchor('vertex', id);
+          if (!anchor) return;
+          drawAnchorLine(triangle[id], { x: anchor.x, y: anchor.y }, getRowColor('vertex', id));
+        });
+
+        ['A', 'B', 'C'].forEach(function (id) {
+          if (!getAnchorEnabled('innerAngle', id)) return;
+          const anchor = findAnchor('innerAngle', id);
+          if (!anchor) return;
+          drawAnchorLine(getCentroidVertexInternalPoint(centroid, triangle[id]), { x: anchor.x, y: anchor.y }, getRowColor('innerAngle', id));
+        });
+
+        if (getAnchorEnabled('area', 'main')) {
+          const anchor = findAnchor('area', 'main');
+          if (anchor) {
+            drawAnchorLine({ x: centroid.x, y: centroid.y }, { x: anchor.x, y: anchor.y }, getRowColor('area', 'main'));
+          }
+        }
+      }
+
       function detectInteractiveTarget(coords) {
         if (!currentGeometry) return null;
         const A = currentGeometry.A;
@@ -2785,43 +3126,41 @@
             lastFitSignature = fitSignature;
           }
 
-          const pointA = board.create('point', [triangle.A.x, triangle.A.y], { name: '', size: 3, fixed: true, strokeColor: '#111111', fillColor: '#111111' });
-          const pointB = board.create('point', [triangle.B.x, triangle.B.y], { name: '', size: 3, fixed: true, strokeColor: '#111111', fillColor: '#111111' });
-          const pointC = board.create('point', [triangle.C.x, triangle.C.y], { name: '', size: 3, fixed: true, strokeColor: '#111111', fillColor: '#111111' });
+          const pointA = createPointObject('A', triangle.A);
+          const pointB = createPointObject('B', triangle.B);
+          const pointC = createPointObject('C', triangle.C);
 
           const polygon = board.create('polygon', [pointA, pointB, pointC], {
             borders: { visible: false, fixed: true, highlight: false },
-            fillColor: hexToRgba(figureState.color, 0.1),
+            fillColor: hexToRgba(getRowColor('area', 'main'), areaFillMode.main === 'fill' ? 0.16 : 0),
+            fillOpacity: areaFillMode.main === 'fill' ? 0.16 : 0,
             vertices: { visible: false },
             highlight: false
           });
-          if (!hiddenLabelState.side.a || segmentLineMode.side.a !== 0) {
-            board.create('segment', [pointB, pointC], {
-              strokeWidth: 2,
-              strokeColor: getLabelStyle('sideObject', 'a').color,
-              fixed: true,
-              highlight: false
-            });
-            registerSideObjectAnchor('a', triangle.B, triangle.C);
-          }
-          if (!hiddenLabelState.side.b || segmentLineMode.side.b !== 0) {
-            board.create('segment', [pointC, pointA], {
-              strokeWidth: 2,
-              strokeColor: getLabelStyle('sideObject', 'b').color,
-              fixed: true,
-              highlight: false
-            });
-            registerSideObjectAnchor('b', triangle.C, triangle.A);
-          }
-          if (!hiddenLabelState.side.c || segmentLineMode.side.c !== 0) {
-            board.create('segment', [pointA, pointB], {
-              strokeWidth: 2,
-              strokeColor: getLabelStyle('sideObject', 'c').color,
-              fixed: true,
-              highlight: false
-            });
-            registerSideObjectAnchor('c', triangle.A, triangle.B);
-          }
+          board.create('segment', [pointB, pointC], {
+            strokeWidth: 2,
+            strokeColor: getLabelStyle('sideObject', 'a').color,
+            dash: getSegmentDash(segmentLineMode.side.a),
+            fixed: true,
+            highlight: false
+          });
+          registerSideObjectAnchor('a', triangle.B, triangle.C);
+          board.create('segment', [pointC, pointA], {
+            strokeWidth: 2,
+            strokeColor: getLabelStyle('sideObject', 'b').color,
+            dash: getSegmentDash(segmentLineMode.side.b),
+            fixed: true,
+            highlight: false
+          });
+          registerSideObjectAnchor('b', triangle.C, triangle.A);
+          board.create('segment', [pointA, pointB], {
+            strokeWidth: 2,
+            strokeColor: getLabelStyle('sideObject', 'c').color,
+            dash: getSegmentDash(segmentLineMode.side.c),
+            fixed: true,
+            highlight: false
+          });
+          registerSideObjectAnchor('c', triangle.A, triangle.B);
 
           const centroid = {
             x: (triangle.A.x + triangle.B.x + triangle.C.x) / 3,
@@ -2829,13 +3168,13 @@
           };
 
           if (labelState.vertex.A && !hiddenLabelState.vertex.A) {
-            createSelectableText(getLabelPosition('vertex', 'A', getCentroidVertexExternalPoint(centroid, triangle.A)), vertexLabelText.A || 'A', labelFontSize.vertex.A, { type: 'vertex', id: 'A' }, { color: '#1f2430' });
+            createSelectableText(getLabelPosition('vertex', 'A', getCentroidVertexExternalPoint(centroid, triangle.A)), vertexLabelText.A || 'A', labelFontSize.vertex.A, { type: 'vertex', id: 'A' }, { color: getRowColor('vertex', 'A') });
           }
           if (labelState.vertex.B && !hiddenLabelState.vertex.B) {
-            createSelectableText(getLabelPosition('vertex', 'B', getCentroidVertexExternalPoint(centroid, triangle.B)), vertexLabelText.B || 'B', labelFontSize.vertex.B, { type: 'vertex', id: 'B' }, { color: '#1f2430' });
+            createSelectableText(getLabelPosition('vertex', 'B', getCentroidVertexExternalPoint(centroid, triangle.B)), vertexLabelText.B || 'B', labelFontSize.vertex.B, { type: 'vertex', id: 'B' }, { color: getRowColor('vertex', 'B') });
           }
           if (labelState.vertex.C && !hiddenLabelState.vertex.C) {
-            createSelectableText(getLabelPosition('vertex', 'C', getCentroidVertexExternalPoint(centroid, triangle.C)), vertexLabelText.C || 'C', labelFontSize.vertex.C, { type: 'vertex', id: 'C' }, { color: '#1f2430' });
+            createSelectableText(getLabelPosition('vertex', 'C', getCentroidVertexExternalPoint(centroid, triangle.C)), vertexLabelText.C || 'C', labelFontSize.vertex.C, { type: 'vertex', id: 'C' }, { color: getRowColor('vertex', 'C') });
           }
 
           if (labelState.side.a && !hiddenLabelState.side.a) {
@@ -2848,23 +3187,22 @@
             drawSideArcLabel(triangle.A, triangle.B, centroid, getCustomSideText('c', cExpr.label || formatNumber(c)), 'c');
           }
 
-          const innerLabelColor = '#687086';
           if (labelState.innerAngle.A && !hiddenLabelState.innerAngle.A) {
-            createSelectableText(getLabelPosition('innerAngle', 'A', getCentroidVertexInternalPoint(centroid, triangle.A)), getCustomAngleText('A', formatAngleValue(triangle.angleA)), labelFontSize.innerAngle.A, { type: 'innerAngle', id: 'A' }, { color: innerLabelColor });
+            createSelectableText(getLabelPosition('innerAngle', 'A', getCentroidVertexInternalPoint(centroid, triangle.A)), getCustomAngleText('A', formatAngleValue(triangle.angleA)), labelFontSize.innerAngle.A, { type: 'innerAngle', id: 'A' }, { color: getRowColor('innerAngle', 'A') });
           }
           if (labelState.innerAngle.B && !hiddenLabelState.innerAngle.B) {
-            createSelectableText(getLabelPosition('innerAngle', 'B', getCentroidVertexInternalPoint(centroid, triangle.B)), getCustomAngleText('B', formatAngleValue(triangle.angleB)), labelFontSize.innerAngle.B, { type: 'innerAngle', id: 'B' }, { color: innerLabelColor });
+            createSelectableText(getLabelPosition('innerAngle', 'B', getCentroidVertexInternalPoint(centroid, triangle.B)), getCustomAngleText('B', formatAngleValue(triangle.angleB)), labelFontSize.innerAngle.B, { type: 'innerAngle', id: 'B' }, { color: getRowColor('innerAngle', 'B') });
           }
           if (labelState.innerAngle.C && !hiddenLabelState.innerAngle.C) {
-            createSelectableText(getLabelPosition('innerAngle', 'C', getCentroidVertexInternalPoint(centroid, triangle.C)), getCustomAngleText('C', formatAngleValue(triangle.angleC)), labelFontSize.innerAngle.C, { type: 'innerAngle', id: 'C' }, { color: innerLabelColor });
+            createSelectableText(getLabelPosition('innerAngle', 'C', getCentroidVertexInternalPoint(centroid, triangle.C)), getCustomAngleText('C', formatAngleValue(triangle.angleC)), labelFontSize.innerAngle.C, { type: 'innerAngle', id: 'C' }, { color: getRowColor('innerAngle', 'C') });
           }
           ['A', 'B', 'C'].forEach(function (angleId) {
-            if (labelState.angleMark[angleId] && !hiddenLabelState.angleMark[angleId]) {
+            if (getAngleKind(angleId) !== 'right') {
               drawAngleDecoration(angleId, triangle);
             }
           });
           ['A', 'B', 'C'].forEach(function (angleId) {
-            if (labelState.rightAngleMark[angleId] && !hiddenLabelState.rightAngleMark[angleId]) {
+            if (getAngleKind(angleId) === 'right' && Math.abs((triangle['angle' + angleId] || 0) - 90) < 1e-3) {
               drawRightAngleDecoration(angleId, triangle);
             }
           });
@@ -2875,9 +3213,11 @@
               getCustomAreaText(areaText),
               labelFontSize.area.main,
               { type: 'area', id: 'main' },
-              { color: '#25603b', threshold: 0.8 }
+              { color: getRowColor('area', 'main'), threshold: 0.8 }
             );
           }
+
+          drawDerivedAnchors(triangle, centroid);
 
           renderSelectionOverlay(getSelectedAnchor() || getFigureSelectionAnchor());
           setStatus(t('sss.status.rendered', '三角形を描画しました。図形をクリックしてラベルを追加できます。'), false);
@@ -3193,14 +3533,21 @@
         labelFontSize.angleMark = { A: 26, B: 26, C: 26 };
         labelFontSize.rightAngleMark = { A: 26, B: 26, C: 26 };
         labelFontSize.area = { main: 48 };
-        angleMarkerMode.A = 0;
-        angleMarkerMode.B = 0;
-        angleMarkerMode.C = 0;
+        angleMarkerMode.A = 1;
+        angleMarkerMode.B = 1;
+        angleMarkerMode.C = 1;
         rightAngleMarkerMode.A = 0;
         rightAngleMarkerMode.B = 0;
         rightAngleMarkerMode.C = 0;
         segmentArcMode.side = { a: 1, b: 1, c: 1 };
-        segmentLineMode.side = { a: 1, b: 1, c: 1 };
+        segmentLineMode.side = { a: 'solid', b: 'solid', c: 'solid' };
+        pointMarkerMode.A = 'filled';
+        pointMarkerMode.B = 'filled';
+        pointMarkerMode.C = 'filled';
+        anchorMode.vertex = { A: 0, B: 0, C: 0 };
+        anchorMode.innerAngle = { A: 0, B: 0, C: 0 };
+        anchorMode.area = { main: 0 };
+        areaFillMode.main = 'outline';
         customLabelText.side = { a: '', b: '', c: '' };
         customLabelText.innerAngle = { A: '', B: '', C: '' };
         customLabelText.area = { main: '' };
