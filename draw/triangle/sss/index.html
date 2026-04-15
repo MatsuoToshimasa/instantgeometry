@@ -577,7 +577,7 @@
 
     .settings-table th:nth-child(3),
     .settings-table td:nth-child(3){
-      width:66px;
+      width:52px;
     }
 
     .settings-table th:nth-child(4),
@@ -670,6 +670,44 @@
     }
 
     .settings-label-mode-btn.is-active:hover{
+      background:#2a5bd7;
+      color:#ffffff;
+    }
+
+    .settings-binary-mode{
+      display:inline-flex;
+      align-items:center;
+      gap:2px;
+      padding:2px;
+      border:1px solid #cfd7ea;
+      border-radius:9px;
+      background:#f8faff;
+    }
+
+    .settings-binary-btn{
+      min-width:20px;
+      height:24px;
+      padding:0 5px;
+      border:none;
+      border-radius:7px;
+      background:transparent;
+      color:#5b6477;
+      font-size:11px;
+      font-weight:700;
+      cursor:pointer;
+    }
+
+    .settings-binary-btn.is-active{
+      background:#2a5bd7;
+      color:#ffffff;
+    }
+
+    .settings-binary-btn:hover{
+      background:#dfe8ff;
+      color:#1f3d94;
+    }
+
+    .settings-binary-btn.is-active:hover{
       background:#2a5bd7;
       color:#ffffff;
     }
@@ -1896,17 +1934,29 @@
         }
 
         function buildOnOffSelect(type, id) {
-          const select = createSelect([
-            { value: '0', label: 'OFF' },
-            { value: '1', label: 'ON' }
-          ], getAnchorEnabled(type, id) ? '1' : '0', function (event) {
-            pushHistorySnapshot();
-            setAnchorEnabled(type, id, event.target.value === '1');
-            renderLabelToggleButtons();
-            render();
+          const wrapper = document.createElement('div');
+          wrapper.className = 'settings-binary-mode';
+          const disabled = getLabelMode(type, id) === 'hidden';
+          [
+            { value: '0', label: '切' },
+            { value: '1', label: '入' }
+          ].forEach(function (option) {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'settings-binary-btn' + ((getAnchorEnabled(type, id) ? '1' : '0') === option.value ? ' is-active' : '');
+            button.textContent = option.label;
+            button.disabled = disabled;
+            button.addEventListener('click', function () {
+              if (disabled) return;
+              if ((getAnchorEnabled(type, id) ? '1' : '0') === option.value) return;
+              pushHistorySnapshot();
+              setAnchorEnabled(type, id, option.value === '1');
+              renderLabelToggleButtons();
+              render();
+            });
+            wrapper.appendChild(button);
           });
-          select.disabled = getLabelMode(type, id) === 'hidden';
-          return select;
+          return wrapper;
         }
 
         appendSection('点', ['対象', 'ラベル', 'ひも', '色', '点の種類'], ['A', 'B', 'C'].map(function (id) {
@@ -1920,9 +1970,9 @@
               render();
             }),
             createSelect([
-              { value: 'filled', label: '黒丸' },
-              { value: 'outline', label: '白丸' },
-              { value: 'double', label: '二重丸' }
+              { value: 'filled', label: '黒' },
+              { value: 'outline', label: '白' },
+              { value: 'double', label: '二' }
             ], pointMarkerMode[id], function (event) {
               pushHistorySnapshot();
               pointMarkerMode[id] = event.target.value;
@@ -1946,9 +1996,9 @@
               render();
             }),
             createSelect([
-              { value: 'solid', label: '実線' },
-              { value: 'dotted', label: '点線' },
-              { value: 'dashed', label: '破線' }
+              { value: 'solid', label: '実' },
+              { value: 'dotted', label: '点' },
+              { value: 'dashed', label: '破' }
             ], segmentLineMode.side[item.id], function (event) {
               pushHistorySnapshot();
               segmentLineMode.side[item.id] = event.target.value;
@@ -1968,14 +2018,14 @@
               render();
             }),
             createSelect([
-              { value: 'plain', label: '無印' },
-              { value: 'circle', label: '丸付き' },
-              { value: 'single', label: '一本線' },
-              { value: 'double', label: '二重線' },
-              { value: 'cross', label: '×付き' },
-              { value: 'triangle', label: '△付き' },
-              { value: 'filled', label: '塗り' },
-              { value: 'right', label: '直角' }
+              { value: 'plain', label: '無' },
+              { value: 'circle', label: '丸' },
+              { value: 'single', label: '1' },
+              { value: 'double', label: '2' },
+              { value: 'cross', label: '×' },
+              { value: 'triangle', label: '△' },
+              { value: 'filled', label: '塗' },
+              { value: 'right', label: '直' }
             ], getAngleKind(id), function (event) {
               pushHistorySnapshot();
               setAngleKind(id, event.target.value);
@@ -1994,8 +2044,8 @@
             render();
           }),
           createSelect([
-            { value: 'outline', label: '輪郭のみ' },
-            { value: 'fill', label: '塗り' }
+            { value: 'outline', label: '輪' },
+            { value: 'fill', label: '塗' }
           ], areaFillMode.main, function (event) {
             pushHistorySnapshot();
             areaFillMode.main = event.target.value;
