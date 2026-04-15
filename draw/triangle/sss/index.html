@@ -1070,6 +1070,7 @@
         area: { main: '' }
       };
       const vertexLabelText = { A: 'A', B: 'B', C: 'C' };
+      const vertexLabelMode = { A: 'text', B: 'text', C: 'text' };
 
       const hiddenLabelState = {
         vertex: { A: false, B: false, C: false },
@@ -1670,7 +1671,7 @@
       function getLabelMode(type, id) {
         if (hiddenLabelState[type][id]) return 'hidden';
         if (type === 'vertex') {
-          return String(vertexLabelText[id] || getVertexDefaultText(id)).trim() === getVertexDefaultText(id) ? 'number' : 'text';
+          return vertexLabelMode[id] || 'text';
         }
         const value =
           type === 'side' ? customLabelText.side[id]
@@ -1683,7 +1684,7 @@
       function getCustomLabelValue(type, id) {
         if (type === 'vertex') {
           const value = String(vertexLabelText[id] || '').trim();
-          return value === getVertexDefaultText(id) ? '' : value;
+          return value || getVertexDefaultText(id);
         }
         if (type === 'side') return customLabelText.side[id] || '';
         if (type === 'innerAngle') return customLabelText.innerAngle[id] || '';
@@ -1695,6 +1696,7 @@
         const normalized = String(value || '').trim();
         hiddenLabelState[type][id] = false;
         if (type === 'vertex') {
+          vertexLabelMode[id] = 'text';
           vertexLabelText[id] = normalized || getVertexDefaultText(id);
           return;
         }
@@ -1711,10 +1713,13 @@
           return;
         }
         hiddenLabelState[type][id] = false;
+        if (type === 'vertex') {
+          vertexLabelMode[id] = mode === 'hidden' ? 'hidden' : 'text';
+          vertexLabelText[id] = getVertexDefaultText(id);
+          return;
+        }
         if (mode === 'number') {
-          if (type === 'vertex') {
-            vertexLabelText[id] = getVertexDefaultText(id);
-          } else if (type === 'side') {
+          if (type === 'side') {
             customLabelText.side[id] = '';
           } else if (type === 'innerAngle') {
             customLabelText.innerAngle[id] = '';
@@ -2325,6 +2330,7 @@
             c: sideCInput.value
           },
           vertexLabelText: cloneStateValue(vertexLabelText),
+          vertexLabelMode: cloneStateValue(vertexLabelMode),
           labelState: cloneStateValue(labelState),
           hiddenLabelState: cloneStateValue(hiddenLabelState),
           labelPositions: cloneStateValue(labelPositions),
@@ -2352,6 +2358,7 @@
         sideBInput.value = state.sideValues.b;
         sideCInput.value = state.sideValues.c;
         Object.assign(vertexLabelText, cloneStateValue(state.vertexLabelText || vertexLabelText));
+        Object.assign(vertexLabelMode, cloneStateValue(state.vertexLabelMode || vertexLabelMode));
         Object.keys(labelState).forEach(function (type) {
           Object.assign(labelState[type], cloneStateValue(state.labelState[type]));
           Object.assign(hiddenLabelState[type], cloneStateValue(state.hiddenLabelState[type]));
@@ -3668,6 +3675,9 @@
         pointMarkerMode.A = 'filled';
         pointMarkerMode.B = 'filled';
         pointMarkerMode.C = 'filled';
+        vertexLabelMode.A = 'text';
+        vertexLabelMode.B = 'text';
+        vertexLabelMode.C = 'text';
         anchorMode.vertex = { A: 0, B: 0, C: 0 };
         anchorMode.innerAngle = { A: 0, B: 0, C: 0 };
         anchorMode.area = { main: 0 };
