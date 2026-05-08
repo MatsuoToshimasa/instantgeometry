@@ -44,6 +44,22 @@ async function findCustomerByEmail(email) {
   return customers.data[0]?.id || '';
 }
 
+export async function saveProfileForUser(userId, values) {
+  const { data, error } = await supabaseAdmin
+    .from('profiles')
+    .update(values)
+    .eq('user_id', userId)
+    .select('user_id');
+
+  if (error) throw error;
+  if (Array.isArray(data) && data.length > 0) return;
+
+  const { error: insertError } = await supabaseAdmin
+    .from('profiles')
+    .insert({ user_id: userId, ...values });
+  if (insertError) throw insertError;
+}
+
 export async function getOrCreateStripeCustomer(user) {
   const userId = user.id;
   const email = user.email || '';
@@ -59,10 +75,7 @@ export async function getOrCreateStripeCustomer(user) {
 
   const existingCustomerId = await findCustomerByEmail(email);
   if (existingCustomerId) {
-    const { error } = await supabaseAdmin
-      .from('profiles')
-      .upsert({ user_id: userId, stripe_customer_id: existingCustomerId }, { onConflict: 'user_id' });
-    if (error) throw error;
+    await saveProfileForUser(userId, { stripe_customer_id: existingCustomerId });
     return existingCustomerId;
   }
 
@@ -73,10 +86,7 @@ export async function getOrCreateStripeCustomer(user) {
     }
   });
 
-  const { error } = await supabaseAdmin
-    .from('profiles')
-    .upsert({ user_id: userId, stripe_customer_id: customer.id }, { onConflict: 'user_id' });
-  if (error) throw error;
+  await saveProfileForUser(userId, { stripe_customer_id: customer.id });
 
   return customer.id;
 }

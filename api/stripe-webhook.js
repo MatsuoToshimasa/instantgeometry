@@ -1,7 +1,7 @@
 import {
   isActiveSubscriptionStatus,
+  saveProfileForUser,
   stripe,
-  supabaseAdmin,
   updateProfileForCustomer
 } from './_stripe-helpers.js';
 
@@ -33,10 +33,7 @@ async function handleCheckoutCompleted(session) {
     is_pro: true
   };
 
-  const { error } = await supabaseAdmin
-    .from('profiles')
-    .upsert({ user_id: userId, ...values }, { onConflict: 'user_id' });
-  if (error) throw error;
+  await saveProfileForUser(userId, values);
 }
 
 async function handleSubscriptionChange(subscription) {
