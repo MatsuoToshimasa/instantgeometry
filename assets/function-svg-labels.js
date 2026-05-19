@@ -3,6 +3,8 @@
 
   const NS = 'http://www.w3.org/2000/svg';
   const PROCESSED = 'data-rich-label-source';
+  const KATEX_CSS_ID = 'instantgeometry-function-katex-css';
+  const KATEX_JS_ID = 'instantgeometry-function-katex-js';
 
   function svg(tag, attrs) {
     const node = document.createElementNS(NS, tag);
@@ -30,6 +32,149 @@
       .replace(/\bmu\b/g, 'μ')
       .replace(/\bsigma\b/g, 'σ')
       .replace(/\bomega\b/g, 'ω');
+  }
+
+  function escapeHtml(value) {
+    return String(value || '').replace(/[&<>"']/g, function (ch) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch];
+    });
+  }
+
+  function ensureKatexAssets(onReady) {
+    if (window.katex && typeof window.katex.render === 'function') {
+      if (typeof onReady === 'function') onReady();
+      return;
+    }
+    if (!document.getElementById(KATEX_CSS_ID)) {
+      const link = document.createElement('link');
+      link.id = KATEX_CSS_ID;
+      link.rel = 'stylesheet';
+      link.href = 'https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css';
+      document.head.appendChild(link);
+    }
+    let script = document.getElementById(KATEX_JS_ID);
+    if (!script) {
+      script = document.createElement('script');
+      script.id = KATEX_JS_ID;
+      script.defer = true;
+      script.src = 'https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js';
+      document.head.appendChild(script);
+    }
+    if (typeof onReady === 'function') script.addEventListener('load', onReady, { once: true });
+  }
+
+  function toLatex(raw) {
+    let text = normalizeMathText(raw).trim();
+    const superscripts = { '⁰': '0', '¹': '1', '²': '2', '³': '3', '⁴': '4', '⁵': '5', '⁶': '6', '⁷': '7', '⁸': '8', '⁹': '9', '⁺': '+', '⁻': '-', '⁽': '(', '⁾': ')' };
+    const subscripts = { '₀': '0', '₁': '1', '₂': '2', '₃': '3', '₄': '4', '₅': '5', '₆': '6', '₇': '7', '₈': '8', '₉': '9', '₊': '+', '₋': '-', '₍': '(', '₎': ')' };
+    text = text
+      .replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻⁽⁾]+/g, function (match) {
+        return '^{' + match.split('').map(function (ch) { return superscripts[ch] || ch; }).join('') + '}';
+      })
+      .replace(/[₀₁₂₃₄₅₆₇₈₉₊₋₍₎]+/g, function (match) {
+        return '_{' + match.split('').map(function (ch) { return subscripts[ch] || ch; }).join('') + '}';
+      })
+      .replace(/√\(([^()]+)\)/g, '\\sqrt{$1}')
+      .replace(/√([0-9a-zA-Zπθαβγδλμσω]+)/g, '\\sqrt{$1}')
+      .replace(/([A-Za-z0-9])\^(-?[A-Za-z0-9]+)/g, '$1^{$2}')
+      .replace(/([A-Za-z0-9])_([A-Za-z0-9]+)/g, '$1_{$2}')
+      .replace(/->|→/g, '\\to ')
+      .replace(/∞/g, '\\infty ')
+      .replace(/∝/g, '\\propto ')
+      .replace(/≤/g, '\\le ')
+      .replace(/≥/g, '\\ge ')
+      .replace(/≠/g, '\\ne ')
+      .replace(/±/g, '\\pm ')
+      .replace(/×/g, '\\times ')
+      .replace(/·/g, '\\cdot ')
+      .replace(/π/g, '\\pi ')
+      .replace(/θ/g, '\\theta ')
+      .replace(/α/g, '\\alpha ')
+      .replace(/β/g, '\\beta ')
+      .replace(/γ/g, '\\gamma ')
+      .replace(/δ/g, '\\delta ')
+      .replace(/λ/g, '\\lambda ')
+      .replace(/μ/g, '\\mu ')
+      .replace(/σ/g, '\\sigma ')
+      .replace(/ω/g, '\\omega ')
+      .replace(/\b(sin|cos|tan|cot|sec|csc|ln|log|lim)\b/g, '\\$1 ');
+    return text;
+  }
+
+  function fontColorFor(source) {
+    const fill = source.getAttribute('fill');
+    if (fill && fill !== 'none' && fill !== 'currentColor') return fill;
+    if (source.classList.contains('muted')) return '#687086';
+    if (source.classList.contains('function-tick-label') || source.classList.contains('complex-tick-label') || source.classList.contains('la-tick-label')) return '#657089';
+    return '#1f2430';
+  }
+
+  function renderKatexInto(container, text, source) {
+    const latex = toLatex(text);
+    container.innerHTML = '';
+    if (window.katex && typeof window.katex.render === 'function') {
+      try {
+        window.katex.render(latex, container, {
+          throwOnError: false,
+          output: 'html',
+          strict: 'ignore'
+        });
+      } catch (_) {
+        container.innerHTML = '<span class="katex"><span class="katex-html">' + escapeHtml(text) + '</span></span>';
+      }
+    } else {
+      container.innerHTML = '<span class="katex"><span class="katex-html">' + escapeHtml(text) + '</span></span>';
+    }
+    container.style.fontSize = fontSizeFor(source) + 'px';
+    container.style.lineHeight = '1.15';
+    container.style.color = fontColorFor(source);
+    container.style.fontWeight = source.classList.contains('muted') ? '750' : '800';
+    container.style.whiteSpace = 'nowrap';
+  }
+
+  function measureKatex(text, source) {
+    const size = fontSizeFor(source);
+    const probe = document.createElement('div');
+    probe.style.position = 'absolute';
+    probe.style.left = '-10000px';
+    probe.style.top = '-10000px';
+    probe.style.visibility = 'hidden';
+    probe.style.pointerEvents = 'none';
+    renderKatexInto(probe, text, source);
+    document.body.appendChild(probe);
+    const rect = probe.getBoundingClientRect();
+    document.body.removeChild(probe);
+    const fallbackWidth = Math.max(size * 0.8, String(text || '').length * size * 0.62);
+    return {
+      width: Math.ceil(Math.max(rect.width || 0, fallbackWidth)) + Math.ceil(size * 0.30),
+      height: Math.ceil(Math.max(rect.height || 0, size * 1.15)) + Math.ceil(size * 0.22)
+    };
+  }
+
+  function createKatexObject(source, text, x, y) {
+    const size = fontSizeFor(source);
+    const measured = measureKatex(text, source);
+    const foreignObject = svg('foreignObject', {
+      x: x - measured.width / 2,
+      y: y - measured.height / 2 - size * 0.16,
+      width: measured.width,
+      height: measured.height,
+      class: 'function-rich-label function-katex-label' + (source.classList.contains('muted') ? ' muted' : ''),
+      'data-rich-label': '1',
+      overflow: 'visible',
+      'pointer-events': 'none'
+    });
+    const div = document.createElement('div');
+    div.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
+    div.className = 'function-katex-label-inner';
+    div.style.display = 'flex';
+    div.style.alignItems = 'center';
+    div.style.justifyContent = 'center';
+    div.style.width = measured.width + 'px';
+    div.style.height = measured.height + 'px';
+    renderKatexInto(div, text, source);
+    foreignObject.appendChild(div);
+    return foreignObject;
   }
 
   function createTextNode(text, size, className) {
@@ -521,7 +666,7 @@
   }
 
   function shouldRenderRich(text) {
-    return /[\/√_^|]|->|[₀₁₂₃₄₅₆₇₈₉]|sum\(|int\(|lim\(|root\(|vec\(|mat\[|sin|cos|tan|cot|sec|csc|log|ln|alpha|beta|gamma|delta|lambda|mu|sigma|omega|theta|pi/.test(String(text || ''));
+    return String(text || '').trim().length > 0;
   }
 
   function fontSizeFor(source) {
@@ -540,25 +685,34 @@
     const x = Number(source.getAttribute('x'));
     const y = Number(source.getAttribute('y'));
     if (!Number.isFinite(x) || !Number.isFinite(y)) return;
-    const size = fontSizeFor(source);
-    const layout = parseMathLayout(stage, text, size);
-    const group = svg('g', {
-      class: 'function-rich-label' + (source.classList.contains('muted') ? ' muted' : ''),
-      'data-rich-label': '1',
-      'pointer-events': 'none',
-      transform: 'translate(' + x + ' ' + (y - size * 0.34) + ')'
-    });
-    group.appendChild(layout.node);
-    source.parentNode.insertBefore(group, source.nextSibling);
+    const label = createKatexObject(source, text, x, y);
+    source.parentNode.insertBefore(label, source.nextSibling);
     source.setAttribute(PROCESSED, '1');
+    source.setAttribute('opacity', '.001');
     source.classList.add('function-rich-label-source');
   }
 
   function renderStage(stage) {
-    stage.querySelectorAll('text.function-label').forEach(renderSource);
+    stage.querySelectorAll([
+      'text.function-label',
+      'text.function-tick-label',
+      'text.complex-label',
+      'text.complex-tick-label',
+      'text.la-label',
+      'text.la-tick-label',
+      'text.la-axis-label'
+    ].join(',')).forEach(renderSource);
   }
 
   function install() {
+    ensureKatexAssets(function () {
+      Array.from(document.querySelectorAll('text[' + PROCESSED + '="1"]')).forEach(function (source) {
+        const rendered = source.nextSibling;
+        if (rendered && rendered.getAttribute && rendered.getAttribute('data-rich-label') === '1') rendered.remove();
+        source.removeAttribute(PROCESSED);
+      });
+      Array.from(document.querySelectorAll('svg.stage, svg.function-stage, svg.function-complex-stage')).forEach(renderStage);
+    });
     const stages = Array.from(document.querySelectorAll('svg.stage, svg.function-stage, svg.function-complex-stage'));
     if (!stages.length) return;
     let scheduled = false;

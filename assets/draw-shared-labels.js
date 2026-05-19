@@ -240,6 +240,10 @@
         return false;
       }
     }
+    if (node) {
+      node.innerHTML = '<span class="katex"><span class="katex-html">' + toMathLikeHtml(text) + '</span></span>';
+      return true;
+    }
     return false;
   }
 

@@ -1469,10 +1469,62 @@
         'text-anchor': 'middle',
         'dominant-baseline': 'middle'
       });
-      const textNode = createSvg('text', textAttrs);
-      textNode.textContent = parsed.value;
-      group.appendChild(textNode);
+      if (window.InstantGeometrySharedLabels && typeof window.InstantGeometrySharedLabels.createSvgKatexLabel === 'function') {
+        const katexNode = window.InstantGeometrySharedLabels.createSvgKatexLabel({
+          createSvg: createSvg,
+          text: parsed.value,
+          attrs: textAttrs,
+          kind: attrs['data-label-kind'] || attrs['data-kind'],
+          id: attrs['data-label-id'] || attrs['data-id']
+        });
+        if (katexNode) group.appendChild(katexNode);
+      }
+      if (!group.querySelector('foreignObject')) {
+        const textNode = createSvg('text', textAttrs);
+        textNode.textContent = parsed.value;
+        group.appendChild(textNode);
+      }
       return group;
+    }
+
+    function promoteSvgTextLabelToKatex(element, kind, id) {
+      if (!element || element.tagName.toLowerCase() !== 'text') return;
+      const text = String(element.textContent || '').trim();
+      if (!text || element.dataset.katexPromoted === 'true') return;
+      element.dataset.katexPromoted = 'true';
+      window.requestAnimationFrame(function () {
+        if (!element.parentNode || !window.InstantGeometrySharedLabels || typeof window.InstantGeometrySharedLabels.createSvgKatexLabel !== 'function') return;
+        const attrs = {};
+        Array.from(element.attributes).forEach(function (attr) {
+          attrs[attr.name] = attr.value;
+        });
+        attrs.x = attrs.x || element.getAttribute('x') || '0';
+        attrs.y = attrs.y || element.getAttribute('y') || '0';
+        attrs['data-label-kind'] = attrs['data-label-kind'] || kind;
+        attrs['data-label-id'] = attrs['data-label-id'] || id;
+        const katexNode = window.InstantGeometrySharedLabels.createSvgKatexLabel({
+          createSvg: createSvg,
+          text: text,
+          attrs: attrs,
+          kind: kind,
+          id: id
+        });
+        if (!katexNode) return;
+        katexNode.setAttribute('data-kind', kind);
+        katexNode.setAttribute('data-id', id);
+        katexNode.style.cursor = 'pointer';
+        katexNode.addEventListener('pointerdown', function (event) {
+          beginLabelMoveDrag(event, kind, id);
+        });
+        katexNode.addEventListener('click', function (event) {
+          event.stopPropagation();
+          if (moveMode) return;
+          openSheet(kind, { id: id });
+        });
+        element.classList.add('triangle-katex-source-hidden');
+        element.setAttribute('opacity', '0');
+        element.parentNode.insertBefore(katexNode, element.nextSibling);
+      });
     }
 
     function getLabelNodePoint(element) {
@@ -1534,6 +1586,7 @@
       element.style.cursor = 'pointer';
       element.setAttribute('data-kind', kind);
       element.setAttribute('data-id', id);
+      promoteSvgTextLabelToKatex(element, kind, id);
       const labelPoint = getLabelNodePoint(element);
       if (labelPoint) {
         const key = labelKey(kind, id);

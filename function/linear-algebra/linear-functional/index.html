@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>線形汎関数 R² → R | Instant Geometry</title>
+  <meta name="description" content="f(x,y)=ax+by を入力平面、出力メーター、色、3D表示で確認します。" />
+  <link rel="stylesheet" href="../../../assets/triangle-mobile-page.css" />
+  <link rel="stylesheet" href="../../../assets/function-linear-page.css" />
+  <link rel="stylesheet" href="../../../assets/linear-algebra-page.css" />
+  <script src="/assets/save-quota.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+</head>
+<body>
+  <div class="app linear-algebra-app">
+    <header class="topbar"><div class="topbar-tools"><button class="btn" id="backBtn" type="button">戻る</button><button class="btn icon-btn" id="settingsBtn" type="button" aria-label="設定">⚙</button></div><h1 class="topbar-title">線形汎関数 R² → R</h1><button class="btn" id="saveBtn" type="button">保存</button></header>
+    <section class="stage-wrap function-stage-wrap" id="captureRoot"><div class="status" id="statusBox">f(x,y)=ax+by を表示します。</div><svg class="stage linear-algebra-stage" id="stage" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet" aria-label="線形汎関数の描画画面"></svg></section>
+    <div class="linear-algebra-readout" id="readout"></div>
+    <footer class="bottom-bar four-fields" id="bottomBar"></footer>
+  </div>
+  <div class="sheet-backdrop" id="sheetBackdrop"></div>
+  <section class="sheet" id="editSheet" aria-hidden="true"><div class="sheet-header"><h2 class="sheet-title" id="sheetTitle">設定</h2><button class="sheet-close" id="sheetClose" type="button" aria-label="閉じる">×</button></div><div class="sheet-body" id="sheetBody"></div></section>
+  <section class="sheet" id="saveSheet" aria-hidden="true"><div class="sheet-header"><h2 class="sheet-title">保存</h2><button class="sheet-close" id="saveSheetClose" type="button" aria-label="閉じる">×</button></div><div class="sheet-body"><div class="save-grid"><button class="btn" id="savePngBtn" type="button">PNG</button><button class="btn" id="saveTransparentBtn" type="button">透過PNG</button><button class="btn" id="savePdfBtn" type="button">PDF</button></div></div></section>
+  <script>window.InstantGeometryLinearAlgebraConfig = { mapType: 'r2-to-r', defaultViewMode: 'split', slug: 'linear-algebra-linear-functional', fields: [{ id: 'a', label: '係数 a', value: 1 }, { id: 'b', label: '係数 b', value: 2 }, { id: 'px', label: 'P x', value: 2 }, { id: 'py', label: 'P y', value: 1 }] };</script>
+  <script src="../../../assets/linear-algebra-page.js"></script><script src="../../../assets/function-svg-labels.js"></script>
+  <script src="../../../assets/site-auto-i18n.js"></script>
+</body>
+</html>

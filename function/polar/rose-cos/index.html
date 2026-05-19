@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>バラ曲線 cos | Instant Geometry</title>
+  <meta name="description" content="極座標 r = a cos(nθ) のバラ曲線を描画します。" />
+  <link rel="stylesheet" href="../../../assets/triangle-mobile-page.css" />
+  <link rel="stylesheet" href="../../../assets/function-linear-page.css" />
+  <script src="/assets/save-quota.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+</head>
+<body>
+  <div class="app function-linear-app">
+    <header class="topbar"><div class="topbar-tools"><button class="btn" id="backBtn" type="button">戻る</button><button class="btn icon-btn" id="settingsBtn" type="button" aria-label="設定">⚙</button></div><h1 class="topbar-title">バラ曲線 cos</h1><button class="btn" id="saveBtn" type="button">保存</button></header>
+    <section class="stage-wrap function-stage-wrap" id="captureRoot"><div class="status" id="statusBox">r = a cos(nθ) を描画します。</div><svg class="stage function-stage" id="stage" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet" aria-label="バラ曲線 cos の描画画面"></svg></section>
+    <footer class="bottom-bar two-fields"><div class="field"><div class="field-label">大きさ a</div><input class="field-input" id="axisA" type="text" inputmode="decimal" value="6" /></div><div class="field"><div class="field-label">係数 n</div><input class="field-input" id="axisB" type="text" inputmode="decimal" value="4" /></div></footer>
+  </div>
+  <div class="sheet-backdrop" id="sheetBackdrop"></div><section class="sheet" id="editSheet" aria-hidden="true"><div class="sheet-header"><h2 class="sheet-title" id="sheetTitle">設定</h2><button class="sheet-close" id="sheetClose" type="button" aria-label="閉じる">×</button></div><div class="sheet-body" id="sheetBody"></div></section><section class="sheet" id="saveSheet" aria-hidden="true"><div class="sheet-header"><h2 class="sheet-title">保存</h2><button class="sheet-close" id="saveSheetClose" type="button" aria-label="閉じる">×</button></div><div class="sheet-body"><div class="save-grid"><button class="btn" id="savePngBtn" type="button">PNG</button><button class="btn" id="saveTransparentBtn" type="button">透過PNG</button><button class="btn" id="savePdfBtn" type="button">PDF</button></div></div></section>
+  <script src="../../../assets/mobile-angle-ornaments.js?v=angle-modal-1"></script><script src="../../../assets/function-view-settings.js"></script>
+  <script>window.InstantGeometryAdvancedFunctionConfig = { kind: 'polar', polarType: 'rose-cos', saveBase: 'function-polar-rose-cos', statusText: 'r = a cos(nθ) を描画します。', params: ['a','b'], defaults: { a: 6, b: 4 }, defaultCoordinateMode: 'polar', defaultViewWidth: 16, defaultViewHeight: 16, labels: { a: '大きさ a', b: '係数 n' } };</script>
+  <script src="../../../assets/function-advanced-page.js"></script>
+  <script src="../../../assets/function-svg-labels.js"></script><script src="../../../assets/site-auto-i18n.js"></script>
+</body>
+</html>

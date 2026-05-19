@@ -368,9 +368,21 @@
     } else {
       group.appendChild(createSvg('rect', { x: x - width / 2, y: y - height / 2, width: width, height: height, rx: 5, ry: 5, fill: '#fff', stroke: stroke, 'stroke-width': 2.3 }));
     }
-    const textNode = createSvg('text', Object.assign({}, attrs, { class: null, 'data-kind': null, 'data-id': null }));
-    textNode.textContent = parsed.value;
-    group.appendChild(textNode);
+    if (window.InstantGeometrySharedLabels && typeof window.InstantGeometrySharedLabels.createSvgKatexLabel === 'function') {
+      const katexNode = window.InstantGeometrySharedLabels.createSvgKatexLabel({
+        createSvg: createSvg,
+        text: parsed.value,
+        attrs: Object.assign({}, attrs, { class: null, 'data-kind': null, 'data-id': null }),
+        kind: attrs['data-label-kind'] || attrs['data-kind'],
+        id: attrs['data-label-id'] || attrs['data-id']
+      });
+      if (katexNode) group.appendChild(katexNode);
+    }
+    if (!group.querySelector('foreignObject')) {
+      const textNode = createSvg('text', Object.assign({}, attrs, { class: null, 'data-kind': null, 'data-id': null }));
+      textNode.textContent = parsed.value;
+      group.appendChild(textNode);
+    }
     return group;
   }
 

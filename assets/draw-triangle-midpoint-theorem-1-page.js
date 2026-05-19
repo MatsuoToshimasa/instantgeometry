@@ -490,14 +490,37 @@
       } else {
         group.appendChild(createSvg('rect', { x: x - width / 2, y: y - height / 2, width: width, height: height, rx: 5, ry: 5, fill: '#ffffff', stroke: stroke, 'stroke-width': Math.max(2, fontSize * 0.055) }));
       }
-      const textNode = createSvg('text', merged);
-      textNode.textContent = parsed.value;
-      group.appendChild(textNode);
+      if (window.InstantGeometrySharedLabels && typeof window.InstantGeometrySharedLabels.createSvgKatexLabel === 'function') {
+        const katexNode = window.InstantGeometrySharedLabels.createSvgKatexLabel({
+          createSvg: createSvg,
+          text: parsed.value,
+          attrs: Object.assign({}, merged, { class: null, 'data-kind': null, 'data-id': null }),
+          kind: merged['data-label-kind'] || merged['data-kind'],
+          id: merged['data-label-id'] || merged['data-id']
+        });
+        if (katexNode) group.appendChild(katexNode);
+      }
+      if (!group.querySelector('foreignObject')) {
+        const textNode = createSvg('text', merged);
+        textNode.textContent = parsed.value;
+        group.appendChild(textNode);
+      }
       stage.appendChild(group);
       return group;
     }
-    const node = createSvg('text', merged);
-    node.textContent = text;
+    let node = window.InstantGeometrySharedLabels && typeof window.InstantGeometrySharedLabels.createSvgKatexLabel === 'function'
+      ? window.InstantGeometrySharedLabels.createSvgKatexLabel({
+        createSvg: createSvg,
+        text: text,
+        attrs: merged,
+        kind: merged['data-label-kind'] || merged['data-kind'],
+        id: merged['data-label-id'] || merged['data-id']
+      })
+      : null;
+    if (!node) {
+      node = createSvg('text', merged);
+      node.textContent = text;
+    }
     stage.appendChild(node);
     return node;
   }

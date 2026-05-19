@@ -45,14 +45,26 @@
   }
 
   function addText(stage, text, x, y, className) {
-    const node = svg('text', {
+    const attrs = {
       x: x,
       y: y,
       class: 'shape-label ' + (className || ''),
       'text-anchor': 'middle',
       'dominant-baseline': 'middle'
-    });
-    node.textContent = text;
+    };
+    let node = window.InstantGeometrySharedLabels && typeof window.InstantGeometrySharedLabels.createSvgKatexLabel === 'function'
+      ? window.InstantGeometrySharedLabels.createSvgKatexLabel({
+        createSvg: svg,
+        text: text,
+        attrs: attrs,
+        kind: className === 'area-label' ? 'area' : 'point',
+        id: text
+      })
+      : null;
+    if (!node) {
+      node = svg('text', attrs);
+      node.textContent = text;
+    }
     stage.appendChild(node);
   }
 

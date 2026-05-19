@@ -131,6 +131,11 @@
       node.textContent = text;
       return;
     }
+    const kind = getLabelKind(node);
+    if (window.InstantGeometrySharedLabels && typeof window.InstantGeometrySharedLabels.renderKatexLabelContent === 'function') {
+      node.innerHTML = '';
+      if (window.InstantGeometrySharedLabels.renderKatexLabelContent(node, text, kind)) return;
+    }
     if (window.InstantGeometrySharedLabels && typeof window.InstantGeometrySharedLabels.toMathLikeHtml === 'function') {
       node.innerHTML = window.InstantGeometrySharedLabels.toMathLikeHtml(text);
       return;

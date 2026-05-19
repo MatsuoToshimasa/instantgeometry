@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>カイ二乗分布 | Instant Geometry</title>
+  <meta name="description" content="自由度 k から、カイ二乗分布の確率密度関数を描画します。" />
+  <link rel="stylesheet" href="../../../assets/triangle-mobile-page.css" />
+  <link rel="stylesheet" href="../../../assets/function-linear-page.css" />
+  <script src="/assets/save-quota.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+</head>
+<body>
+  <div class="app function-linear-app">
+    <header class="topbar"><div class="topbar-tools"><button class="btn" id="backBtn" type="button">戻る</button><button class="btn icon-btn" id="settingsBtn" type="button" aria-label="設定">⚙</button></div><h1 class="topbar-title">カイ二乗分布</h1><button class="btn" id="saveBtn" type="button">保存</button></header>
+    <section class="stage-wrap function-stage-wrap" id="captureRoot"><div class="status" id="statusBox">自由度 k からカイ二乗分布を描画します。</div><svg class="stage function-stage" id="stage" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet" aria-label="カイ二乗分布の描画画面"></svg></section>
+    <footer class="bottom-bar two-fields"><div class="field"><div class="field-label">自由度 k</div><input class="field-input" id="axisA" type="text" inputmode="decimal" value="4" /></div><div class="field"><div class="field-label">右端 z</div><input class="field-input" id="axisB" type="text" inputmode="decimal" value="5" /></div></footer>
+  </div>
+  <div class="sheet-backdrop" id="sheetBackdrop"></div><section class="sheet" id="editSheet" aria-hidden="true"><div class="sheet-header"><h2 class="sheet-title" id="sheetTitle">設定</h2><button class="sheet-close" id="sheetClose" type="button" aria-label="閉じる">×</button></div><div class="sheet-body" id="sheetBody"></div></section><section class="sheet" id="saveSheet" aria-hidden="true"><div class="sheet-header"><h2 class="sheet-title">保存</h2><button class="sheet-close" id="saveSheetClose" type="button" aria-label="閉じる">×</button></div><div class="sheet-body"><div class="save-grid"><button class="btn" id="savePngBtn" type="button">PNG</button><button class="btn" id="saveTransparentBtn" type="button">透過PNG</button><button class="btn" id="savePdfBtn" type="button">PDF</button></div></div></section>
+  <script src="../../../assets/mobile-angle-ornaments.js?v=angle-modal-1"></script><script src="../../../assets/function-view-settings.js"></script>
+  <script>window.InstantGeometryAdvancedFunctionConfig = { kind: 'chi-square-distribution', saveBase: 'function-probability-chi-square', statusText: '自由度 k と右端 z から P(X ≤ z) を描画します。', params: ['a','b'], defaults: { a: 4, b: 5 }, cumulativeParam: 'b', tickLabelInterval: 1, defaultViewCenterX: 5, defaultViewCenterY: 0.16, defaultViewWidth: 12, defaultViewHeight: 0.4, labels: { a: '自由度 k', b: '右端 z' } };</script>
+  <script src="../../../assets/function-advanced-page.js"></script>
+  <script src="../../../assets/function-svg-labels.js"></script><script src="../../../assets/site-auto-i18n.js"></script>
+</body>
+</html>

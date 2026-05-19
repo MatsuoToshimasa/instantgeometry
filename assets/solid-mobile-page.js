@@ -941,6 +941,26 @@
       if (window.InstantGeometrySharedLabels && typeof window.InstantGeometrySharedLabels.renderKatexLabelContent === 'function') {
         if (window.InstantGeometrySharedLabels.renderKatexLabelContent(node, text, labelType)) return;
       }
+      if (window.katex && typeof window.katex.render === 'function' && window.InstantGeometrySharedLabels && typeof window.InstantGeometrySharedLabels.labelTextToLatex === 'function') {
+        try {
+          window.katex.render(window.InstantGeometrySharedLabels.labelTextToLatex(text, labelType), node, {
+            throwOnError: false,
+            output: 'html',
+            strict: 'ignore'
+          });
+          return;
+        } catch (_) {}
+      }
+      if (window.katex && typeof window.katex.render === 'function') {
+        try {
+          window.katex.render(String(text || ''), node, {
+            throwOnError: false,
+            output: 'html',
+            strict: 'ignore'
+          });
+          return;
+        } catch (_) {}
+      }
       if (window.InstantGeometrySharedLabels && typeof window.InstantGeometrySharedLabels.toMathLikeHtml === 'function') {
         node.innerHTML = window.InstantGeometrySharedLabels.toMathLikeHtml(text);
       } else {

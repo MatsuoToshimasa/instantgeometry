@@ -2825,7 +2825,13 @@
       document.body.appendChild(measure);
       const rect = measure.getBoundingClientRect();
       measure.remove();
-      if (!Number.isFinite(rect.width) || !Number.isFinite(rect.height) || rect.width <= 0 || rect.height <= 0) return null;
+      if (!Number.isFinite(rect.width) || !Number.isFinite(rect.height) || rect.width <= 0 || rect.height <= 0) {
+        const textLength = String(latex || '').replace(/\\[a-zA-Z]+|[{}]/g, '').length || 1;
+        return {
+          width: Math.ceil(Math.max(fontSize * 0.8, textLength * fontSize * 0.58)),
+          height: Math.ceil(fontSize * 1.25)
+        };
+      }
       return {
         width: Math.ceil(rect.width) + Math.ceil(fontSize * 0.28),
         height: Math.ceil(rect.height) + Math.ceil(fontSize * 0.20)
@@ -2877,13 +2883,25 @@
       div.style.fontSize = fontSize + 'px';
       div.style.color = color;
       try {
-        window.katex.render(latex, div, {
-          throwOnError: false,
-          output: 'html',
-          strict: 'ignore'
-        });
+        if (window.katex && typeof window.katex.render === 'function') {
+          window.katex.render(latex, div, {
+            throwOnError: false,
+            output: 'html',
+            strict: 'ignore'
+          });
+        } else {
+          div.innerHTML = '<span class="katex"><span class="katex-html">' + String(text || '').replace(/[&<>"']/g, function (ch) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch];
+          }) + '</span></span>';
+        }
       } catch (_) {
-        return null;
+        try {
+          div.innerHTML = '<span class="katex"><span class="katex-html">' + String(text || '').replace(/[&<>"']/g, function (ch) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch];
+          }) + '</span></span>';
+        } catch (error) {
+          return null;
+        }
       }
       foreignObject.appendChild(div);
       foreignObject.style.visibility = 'hidden';
@@ -2896,6 +2914,42 @@
         id: labelId,
         node: div.cloneNode(true)
       });
+      return foreignObject;
+    }
+
+    function createFallbackKatexLabel(text, attrs) {
+      const x = Number(attrs.x) || 0;
+      const y = Number(attrs.y) || 0;
+      const fontSize = Number(attrs['font-size']) || 48;
+      const labelKind = attrs['data-label-kind'] || '';
+      const labelId = attrs['data-label-id'] || '';
+      const color = attrs.fill || '#1f2430';
+      const width = Math.max(fontSize * 1.2, String(text || '').length * fontSize * 0.72);
+      const height = fontSize * 1.32;
+      const foreignObject = createSvg('foreignObject', {
+        x: x - width / 2,
+        y: y - height / 2,
+        width: width,
+        height: height,
+        class: 'triangle-katex-foreign',
+        overflow: 'visible',
+        'data-label-kind': labelKind,
+        'data-label-id': labelId
+      });
+      const div = document.createElement('div');
+      div.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
+      div.className = 'triangle-katex-label';
+      div.style.fontSize = fontSize + 'px';
+      div.style.color = color;
+      if (window.InstantGeometrySharedLabels && typeof window.InstantGeometrySharedLabels.renderKatexLabelContent === 'function') {
+        window.InstantGeometrySharedLabels.renderKatexLabelContent(div, text, labelKind);
+      }
+      if (!div.querySelector('.katex')) {
+        div.innerHTML = '<span class="katex"><span class="katex-html">' + String(text || '').replace(/[&<>"']/g, function (ch) {
+          return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch];
+        }) + '</span></span>';
+      }
+      foreignObject.appendChild(div);
       return foreignObject;
     }
 
@@ -3000,14 +3054,16 @@
         } else {
           group.appendChild(createSvg('rect', { x: x - width / 2, y: y - height / 2, width: width, height: height, fill: '#ffffff', stroke: stroke, 'stroke-width': Math.max(2, fontSize * 0.055) }));
         }
-        const textNode = createSvg('text', Object.assign({}, attrs, { 'text-anchor': 'middle', 'dominant-baseline': 'middle' }));
-        textNode.textContent = parsed.value;
-        group.appendChild(textNode);
+        const textNode = createKatexLabel(parsed.value, Object.assign({}, attrs, { 'text-anchor': 'middle', 'dominant-baseline': 'middle' }))
+          || createFallbackKatexLabel(parsed.value, Object.assign({}, attrs, { 'text-anchor': 'middle', 'dominant-baseline': 'middle' }));
+        if (textNode) group.appendChild(textNode);
         return group;
       }
-      if ((attrs['data-label-kind'] && window.katex && typeof window.katex.render === 'function') || shouldUseKatexLabel(text)) {
+      if (attrs['data-label-kind'] || shouldUseKatexLabel(text)) {
         const katexNode = createKatexLabel(text, attrs);
         if (katexNode) return katexNode;
+        const fallbackKatexNode = createFallbackKatexLabel(text, attrs);
+        if (fallbackKatexNode) return fallbackKatexNode;
       }
       if (window.InstantGeometrySvgLabels && window.InstantGeometrySvgLabels.parseMathLayout && /[\/√_^]|sqrt|pi|π/.test(String(text || ''))) {
         const x = Number(attrs.x) || 0;
@@ -3041,6 +3097,42 @@
       const textNode = createSvg('text', attrs);
       textNode.textContent = text;
       return textNode;
+    }
+
+    function promoteSvgTextLabelToKatex(element, kind, id) {
+      if (!element || element.tagName.toLowerCase() !== 'text') return;
+      const text = String(element.textContent || '').trim();
+      if (!text) return;
+      if (element.dataset && element.dataset.katexPromoted === 'true') return;
+      if (element.dataset) element.dataset.katexPromoted = 'true';
+      window.requestAnimationFrame(function () {
+        if (!element.parentNode) return;
+        const attrs = {};
+        Array.from(element.attributes).forEach(function (attr) {
+          attrs[attr.name] = attr.value;
+        });
+        attrs.x = attrs.x || element.getAttribute('x') || '0';
+        attrs.y = attrs.y || element.getAttribute('y') || '0';
+        attrs['data-label-kind'] = attrs['data-label-kind'] || kind;
+        attrs['data-label-id'] = attrs['data-label-id'] || id;
+        const katexNode = createKatexLabel(text, attrs) || createFallbackKatexLabel(text, attrs);
+        if (!katexNode) return;
+        katexNode.setAttribute('data-kind', kind);
+        katexNode.setAttribute('data-id', id);
+        katexNode.setAttribute('data-label-target', 'true');
+        katexNode.style.cursor = 'pointer';
+        katexNode.addEventListener('click', function (event) {
+          event.stopPropagation();
+          if (moveMode) return;
+          openSheet(kind, { id: id });
+        });
+        katexNode.addEventListener('pointerdown', function (event) {
+          startLabelMoveDrag(kind, id, event);
+        });
+        element.classList.add('triangle-katex-source-hidden');
+        element.setAttribute('opacity', '0');
+        element.parentNode.insertBefore(katexNode, element.nextSibling);
+      });
     }
 
     function applyModalValue(kind, payload, editor, kindValue, arcVisibleValue, colorValue, angleArcScaleValue) {
@@ -3473,6 +3565,7 @@
       element.style.cursor = 'pointer';
       element.setAttribute('data-kind', kind);
       element.setAttribute('data-id', id);
+      promoteSvgTextLabelToKatex(element, kind, id);
       if (isTransparentHitElement(element)) {
         applyHitDebugStyle(element, kind);
       }
