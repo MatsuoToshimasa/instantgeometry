@@ -46,11 +46,28 @@
     angleArcScales: { AMN: 1, ANM: 1, ABC: 1, ACB: 1 },
     areaInputs: { AMN: '', MNCB: '' },
     areaColors: { AMN: '#2a5bd7', MNCB: '#2a5bd7' },
-    labelColors: {}
+    labelColors: {},
+    labelOffsets: {}
   };
   state.labelScales = state.labelScales || {};
 
   let currentGeometry = null;
+  let moveMode = null;
+  let moveDrag = null;
+  const moveToolbar = document.createElement('div');
+  moveToolbar.className = 'move-toolbar';
+  moveToolbar.setAttribute('aria-hidden', 'true');
+  const moveCancelBtn = document.createElement('button');
+  moveCancelBtn.className = 'btn';
+  moveCancelBtn.type = 'button';
+  moveCancelBtn.textContent = 'キャンセル';
+  const moveDoneBtn = document.createElement('button');
+  moveDoneBtn.className = 'btn action-primary';
+  moveDoneBtn.type = 'button';
+  moveDoneBtn.textContent = '完了';
+  moveToolbar.appendChild(moveCancelBtn);
+  moveToolbar.appendChild(moveDoneBtn);
+  document.body.appendChild(moveToolbar);
 
   const LabelEngine = window.InstantGeometryDrawLabelEngine || window.InstantGeometryTriangleLabelEngine || null;
   let labelController = null;
@@ -66,6 +83,79 @@
 
   function setLabelScale(kind, id, value) {
     state.labelScales[labelKey(kind, id)] = Math.max(0.1, Math.min(4, Number(value) || 1));
+  }
+
+  function getLabelOffset(kind, id) {
+    return state.labelOffsets[labelKey(kind, id)] || { x: 0, y: 0 };
+  }
+
+  function setLabelOffset(kind, id, value) {
+    state.labelOffsets[labelKey(kind, id)] = {
+      x: Number(value && value.x) || 0,
+      y: Number(value && value.y) || 0
+    };
+  }
+
+  function isMoveTarget(kind, id) {
+    return Boolean(moveMode && moveMode.kind === kind && moveMode.id === id);
+  }
+
+  function stagePointFromEvent(event) {
+    const rect = stage.getBoundingClientRect();
+    return {
+      x: ((event.clientX - rect.left) / (rect.width || 1)) * 1000,
+      y: ((event.clientY - rect.top) / (rect.height || 1)) * 1000
+    };
+  }
+
+  function updateMoveModeUi() {
+    const active = Boolean(moveMode);
+    document.body.classList.toggle('label-move-active', active);
+    captureRoot.classList.toggle('label-move-active', active);
+    moveToolbar.classList.toggle('open', active);
+    moveToolbar.setAttribute('aria-hidden', active ? 'false' : 'true');
+  }
+
+  function enterMoveMode(kind, id) {
+    const originalOffset = getLabelOffset(kind, id);
+    moveMode = {
+      kind: kind,
+      id: id,
+      originalOffset: { x: originalOffset.x, y: originalOffset.y }
+    };
+    closeSheets();
+    updateMoveModeUi();
+    setStatus('ラベルをドラッグして位置を調整してください。', false);
+    render();
+  }
+
+  function finishMoveMode(restoreOffset) {
+    if (!moveMode) return;
+    const previous = moveMode;
+    if (restoreOffset) setLabelOffset(previous.kind, previous.id, previous.originalOffset);
+    moveMode = null;
+    moveDrag = null;
+    updateMoveModeUi();
+    render();
+    if (!restoreOffset && labelController) labelController.openEditSheet(previous.kind, previous.id);
+  }
+
+  function attachMoveTarget(node, kind, id) {
+    if (!isMoveTarget(kind, id)) return;
+    node.classList.add('label-move-target');
+    node.addEventListener('pointerdown', function (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      const point = stagePointFromEvent(event);
+      const offset = getLabelOffset(kind, id);
+      moveDrag = {
+        kind: kind,
+        id: id,
+        start: point,
+        offset: { x: offset.x, y: offset.y }
+      };
+      if (node.setPointerCapture) node.setPointerCapture(event.pointerId);
+    });
   }
 
   function scaledFontSize(kind, id, baseSize) {
@@ -189,13 +279,13 @@
       sheetBackdrop: sheetBackdrop,
       closeSheets: closeSheets,
       render: render,
-      labelMoveEnabled: false,
-      
+      labelMoveEnabled: true,
+      onMove: enterMoveMode,
       onError: function (error) {
         setStatus(error.message || '入力を確認してください。', true);
       },
       getModalSpec: function (kind, id, modalType) {
-        return LabelEngine.getStandardModalSpec(modalType, { moveAction: false });
+        return LabelEngine.getStandardModalSpec(modalType);
       },
       getTitle: function (kind, id) {
         if (kind === 'point') return '点ラベル';
@@ -233,7 +323,7 @@
   }
 
   function removeUnsupportedMoveButton() {
-    if (false) return;
+    if (true) return;
     Array.from(sheetBody.querySelectorAll('button')).forEach(function (button) {
       if (button.textContent.trim() === '移動') button.remove();
     });
@@ -494,9 +584,13 @@
   }
 
   function drawText(P, text, attrs) {
+    const kind = attrs && (attrs['data-label-kind'] || attrs['data-kind']);
+    const id = attrs && (attrs['data-label-id'] || attrs['data-id']);
+    const offset = kind && id ? getLabelOffset(kind, id) : { x: 0, y: 0 };
+    const movedPoint = { x: P.x + offset.x, y: P.y + offset.y };
     const merged = Object.assign({
-      x: P.x,
-      y: P.y,
+      x: movedPoint.x,
+      y: movedPoint.y,
       'text-anchor': 'middle',
       'dominant-baseline': 'middle',
       'font-size': 54,
@@ -512,6 +606,7 @@
         id: merged['data-label-id'] || merged['data-id']
       });
       if (katexNode) {
+        if (kind && id) attachMoveTarget(katexNode, kind, id);
         stage.appendChild(katexNode);
         return katexNode;
       }
@@ -531,6 +626,7 @@
     } else {
       node.textContent = text;
     }
+    if (kind && id) attachMoveTarget(node, kind, id);
     stage.appendChild(node);
     return node;
   }
@@ -1250,6 +1346,7 @@
   ratioAInput.addEventListener('input', render);
   ratioBInput.addEventListener('input', render);
   stage.addEventListener('click', function (event) {
+    if (moveMode) return;
     const target = event.target.closest && event.target.closest('[data-kind][data-id]');
     if (!target || !stage.contains(target)) return;
     const kind = target.getAttribute('data-kind');
@@ -1270,6 +1367,20 @@
   });
   savePdfBtn.addEventListener('click', async function () {
     try { await saveWithQuota('pdf'); closeSheets(); } catch (error) { setStatus(error.message || '保存に失敗しました。', true); }
+  });
+  moveCancelBtn.addEventListener('click', function () { finishMoveMode(true); });
+  moveDoneBtn.addEventListener('click', function () { finishMoveMode(false); });
+  window.addEventListener('pointermove', function (event) {
+    if (!moveDrag) return;
+    const point = stagePointFromEvent(event);
+    setLabelOffset(moveDrag.kind, moveDrag.id, {
+      x: moveDrag.offset.x + point.x - moveDrag.start.x,
+      y: moveDrag.offset.y + point.y - moveDrag.start.y
+    });
+    render();
+  });
+  window.addEventListener('pointerup', function () {
+    moveDrag = null;
   });
 
   render();

@@ -535,9 +535,10 @@
         sheetBody.appendChild(built.field);
       }
 
-      const hasGuideField = modalSpec.guideField && (!cfg.hasGuideField || cfg.hasGuideField(kind, id));
-      if (hasGuideField && cfg.getGuideVisible) {
-        const built = buildCheckbox(modalSpec.guideLabel, cfg.getGuideVisible(kind, id));
+      const hasGuideField = Boolean(modalSpec.guideField);
+      if (hasGuideField) {
+        const guideValue = cfg.getGuideVisible ? cfg.getGuideVisible(kind, id) : true;
+        const built = buildCheckbox(modalSpec.guideLabel, guideValue);
         guideCheckbox = built.input;
         sheetBody.appendChild(built.field);
       }
@@ -579,9 +580,10 @@
         sheetBody.appendChild(labelSizeBuilt.field);
       }
 
-      const hasColorField = modalSpec.colorField && (!cfg.hasColorField || cfg.hasColorField(kind, id, modalType, normalizedTarget));
-      if (hasColorField && cfg.getColor) {
-        colorPalette = buildColorPalette(modalSpec.colorLabel || '色', cfg.getColor(kind, id));
+      const hasColorField = Boolean(modalSpec.colorField);
+      if (hasColorField) {
+        const currentColor = cfg.getColor ? cfg.getColor(kind, id) : '#2a5bd7';
+        colorPalette = buildColorPalette(modalSpec.colorLabel || '色', currentColor);
         sheetBody.appendChild(colorPalette.field);
       }
 

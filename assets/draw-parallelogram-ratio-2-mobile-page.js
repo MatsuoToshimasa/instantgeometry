@@ -52,11 +52,28 @@
     segmentKinds: {},
     segmentArcVisible: {},
     areaInputs: { ABG: '', BEG: '', EFHG: '', FCDH: '', AGH: '', AHD: '' },
-    areaColors: {}
+    areaColors: {},
+    labelOffsets: {}
   };
   state.labelScales = state.labelScales || {};
   let geometry = null;
   let view = null;
+  let moveMode = null;
+  let moveDrag = null;
+  const moveToolbar = document.createElement('div');
+  moveToolbar.className = 'move-toolbar';
+  moveToolbar.setAttribute('aria-hidden', 'true');
+  const moveCancelBtn = document.createElement('button');
+  moveCancelBtn.className = 'btn';
+  moveCancelBtn.type = 'button';
+  moveCancelBtn.textContent = 'キャンセル';
+  const moveDoneBtn = document.createElement('button');
+  moveDoneBtn.className = 'btn action-primary';
+  moveDoneBtn.type = 'button';
+  moveDoneBtn.textContent = '完了';
+  moveToolbar.appendChild(moveCancelBtn);
+  moveToolbar.appendChild(moveDoneBtn);
+  document.body.appendChild(moveToolbar);
 
   const LabelEngine = window.InstantGeometryDrawLabelEngine || window.InstantGeometryTriangleLabelEngine || null;
   let labelController = null;
@@ -72,6 +89,79 @@
 
   function setLabelScale(kind, id, value) {
     state.labelScales[labelKey(kind, id)] = Math.max(0.1, Math.min(4, Number(value) || 1));
+  }
+
+  function getLabelOffset(kind, id) {
+    return state.labelOffsets[labelKey(kind, id)] || { x: 0, y: 0 };
+  }
+
+  function setLabelOffset(kind, id, value) {
+    state.labelOffsets[labelKey(kind, id)] = {
+      x: Number(value && value.x) || 0,
+      y: Number(value && value.y) || 0
+    };
+  }
+
+  function isMoveTarget(kind, id) {
+    return Boolean(moveMode && moveMode.kind === kind && moveMode.id === id);
+  }
+
+  function stagePointFromEvent(event) {
+    const rect = stage.getBoundingClientRect();
+    return {
+      x: ((event.clientX - rect.left) / (rect.width || 1)) * 1000,
+      y: ((event.clientY - rect.top) / (rect.height || 1)) * 1000
+    };
+  }
+
+  function updateMoveModeUi() {
+    const active = Boolean(moveMode);
+    document.body.classList.toggle('label-move-active', active);
+    captureRoot.classList.toggle('label-move-active', active);
+    moveToolbar.classList.toggle('open', active);
+    moveToolbar.setAttribute('aria-hidden', active ? 'false' : 'true');
+  }
+
+  function enterMoveMode(kind, id) {
+    const originalOffset = getLabelOffset(kind, id);
+    moveMode = {
+      kind: kind,
+      id: id,
+      originalOffset: { x: originalOffset.x, y: originalOffset.y }
+    };
+    closeSheets();
+    updateMoveModeUi();
+    setStatus('ラベルをドラッグして位置を調整してください。', false);
+    render();
+  }
+
+  function finishMoveMode(restoreOffset) {
+    if (!moveMode) return;
+    const previous = moveMode;
+    if (restoreOffset) setLabelOffset(previous.kind, previous.id, previous.originalOffset);
+    moveMode = null;
+    moveDrag = null;
+    updateMoveModeUi();
+    render();
+    if (!restoreOffset && labelController) labelController.openEditSheet(previous.kind, previous.id);
+  }
+
+  function attachMoveTarget(node, kind, id) {
+    if (!isMoveTarget(kind, id)) return;
+    node.classList.add('label-move-target');
+    node.addEventListener('pointerdown', function (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      const point = stagePointFromEvent(event);
+      const offset = getLabelOffset(kind, id);
+      moveDrag = {
+        kind: kind,
+        id: id,
+        start: point,
+        offset: { x: offset.x, y: offset.y }
+      };
+      if (node.setPointerCapture) node.setPointerCapture(event.pointerId);
+    });
   }
 
   function scaledFontSize(kind, id, baseSize) {
@@ -139,12 +229,13 @@
       sheetBackdrop: sheetBackdrop,
       closeSheets: closeSheets,
       render: render,
-      labelMoveEnabled: false,
+      labelMoveEnabled: true,
+      onMove: enterMoveMode,
       onError: function (error) {
         setStatus(error.message || '入力を確認してください。', true);
       },
       getModalSpec: function (kind, id, modalType) {
-        return LabelEngine.getStandardModalSpec(modalType, { moveAction: false });
+        return LabelEngine.getStandardModalSpec(modalType);
       },
       getTitle: function (kind, id) {
         if (kind === 'point') return '点ラベル';
@@ -181,6 +272,7 @@
   }
 
   function removeUnsupportedMoveButton() {
+    if (true) return;
     Array.from(sheetBody.querySelectorAll('button')).forEach(function (button) {
       if (button.textContent.trim() === '移動') button.remove();
     });
@@ -617,9 +709,10 @@
 
   function drawText(kind, id, text, x, y, className) {
     if (!text) return;
+    const offset = getLabelOffset(kind, id);
     const node = createLabelNode(text, {
-      x: formatNumber(x),
-      y: formatNumber(y),
+      x: formatNumber(x + offset.x),
+      y: formatNumber(y + offset.y),
       'text-anchor': 'middle',
       'dominant-baseline': 'middle',
       'font-size': scaledFontSize(kind, id, className === 'point-label' ? 42 : 38),
@@ -633,8 +726,10 @@
     });
     node.addEventListener('click', function (event) {
       event.stopPropagation();
+      if (moveMode) return;
       openLabelSheet(kind, id);
     });
+    attachMoveTarget(node, kind, id);
     stage.appendChild(node);
   }
 
@@ -1060,6 +1155,7 @@
   }
 
   stage.addEventListener('click', function (event) {
+    if (moveMode) return;
     const target = event.target.closest('[data-kind][data-id]');
     if (!target) return;
     const kind = target.getAttribute('data-kind');
@@ -1082,6 +1178,20 @@
   savePdfBtn.addEventListener('click', async function () { try { await saveWithQuota('pdf'); closeSheets(); } catch (error) { setStatus(error.message, true); } });
   [beInput, efInput, fcInput].forEach(function (input) {
     input.addEventListener('input', render);
+  });
+  moveCancelBtn.addEventListener('click', function () { finishMoveMode(true); });
+  moveDoneBtn.addEventListener('click', function () { finishMoveMode(false); });
+  window.addEventListener('pointermove', function (event) {
+    if (!moveDrag) return;
+    const point = stagePointFromEvent(event);
+    setLabelOffset(moveDrag.kind, moveDrag.id, {
+      x: moveDrag.offset.x + point.x - moveDrag.start.x,
+      y: moveDrag.offset.y + point.y - moveDrag.start.y
+    });
+    render();
+  });
+  window.addEventListener('pointerup', function () {
+    moveDrag = null;
   });
 
   render();
