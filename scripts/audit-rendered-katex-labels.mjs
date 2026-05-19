@@ -8,8 +8,11 @@ const FINDINGS = [];
 const CONCURRENCY = Math.max(1, Number(process.env.KATEX_LABEL_AUDIT_CONCURRENCY || 4));
 const PAGE_TIMEOUT_MS = Math.max(2000, Number(process.env.KATEX_LABEL_AUDIT_PAGE_TIMEOUT_MS || 5000));
 const ACTION_TIMEOUT_MS = Math.max(1000, Number(process.env.KATEX_LABEL_AUDIT_ACTION_TIMEOUT_MS || 2500));
+const PAGE_HARD_TIMEOUT_MS = Math.max(PAGE_TIMEOUT_MS + ACTION_TIMEOUT_MS, Number(process.env.KATEX_LABEL_AUDIT_HARD_TIMEOUT_MS || 15000));
+const RENDER_SETTLE_MS = Math.max(0, Number(process.env.KATEX_LABEL_AUDIT_RENDER_SETTLE_MS || 450));
 const JSON_OUTPUT = process.argv.includes('--json');
 const REAL_KATEX = process.argv.includes('--real-katex');
+const BROWSER_NAME = (process.argv.find((arg) => arg.startsWith('--browser=')) || '--browser=chromium').slice('--browser='.length);
 
 const MIME_TYPES = new Map([
   ['.html', 'text/html; charset=utf-8'],
@@ -89,8 +92,14 @@ function createStaticServer() {
   });
 }
 
-function getBrowserLaunchOptions() {
+function getBrowserLaunchOptions(browserName) {
   const options = { headless: true };
+  if (browserName === 'webkit') {
+    const executablePath = process.env.PLAYWRIGHT_WEBKIT_EXECUTABLE || findLatestPlaywrightExecutable('webkit-', 'pw_run.sh');
+    if (executablePath) options.executablePath = executablePath;
+    return options;
+  }
+  if (browserName !== 'chromium') return options;
   const executablePath = process.env.PLAYWRIGHT_CHROME_EXECUTABLE
     || [
       '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
@@ -98,6 +107,26 @@ function getBrowserLaunchOptions() {
     ].find((candidate) => fs.existsSync(candidate));
   if (executablePath) options.executablePath = executablePath;
   return options;
+}
+
+function findLatestPlaywrightExecutable(prefix, relativeExecutable) {
+  const roots = [
+    path.join(process.env.HOME || '', 'Library/Caches/ms-playwright'),
+    path.join(process.env.HOME || '', '.cache/ms-playwright')
+  ];
+  for (const cacheRoot of roots) {
+    try {
+      const entries = fs.readdirSync(cacheRoot, { withFileTypes: true })
+        .filter((entry) => entry.isDirectory() && entry.name.startsWith(prefix))
+        .map((entry) => entry.name)
+        .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+      for (let index = entries.length - 1; index >= 0; index -= 1) {
+        const candidate = path.join(cacheRoot, entries[index], relativeExecutable);
+        if (fs.existsSync(candidate)) return candidate;
+      }
+    } catch (_) {}
+  }
+  return '';
 }
 
 async function importPlaywright() {
@@ -108,13 +137,29 @@ async function importPlaywright() {
   }
 }
 
+function getBrowserLauncher(playwright) {
+  if (BROWSER_NAME === 'webkit') return playwright.webkit;
+  if (BROWSER_NAME === 'firefox') return playwright.firefox;
+  if (BROWSER_NAME === 'chromium') return playwright.chromium;
+  throw new Error(`Unsupported browser: ${BROWSER_NAME}`);
+}
+
 function addFinding(pagePath, message, detail = {}) {
   FINDINGS.push({ page: pagePath, message, ...detail });
 }
 
+function withTimeout(promise, ms, message) {
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(message)), ms);
+  });
+  if (timer && typeof timer.unref === 'function') timer.unref();
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
+
 async function auditPage(page, pageInfo, baseUrl) {
   await page.goto(`${baseUrl}${pageInfo.path}?lang=ja&debugHit=1`, { waitUntil: 'domcontentloaded', timeout: PAGE_TIMEOUT_MS });
-  await page.waitForTimeout(450);
+  await page.waitForTimeout(RENDER_SETTLE_MS);
 
   const result = await page.evaluate(() => {
     const isVisible = (node) => {
@@ -209,8 +254,8 @@ const pages = discoverPages();
 const server = await createStaticServer();
 const address = server.address();
 const baseUrl = `http://127.0.0.1:${address.port}`;
-const { chromium } = await importPlaywright();
-const browser = await chromium.launch(getBrowserLaunchOptions());
+const playwright = await importPlaywright();
+const browser = await getBrowserLauncher(playwright).launch(getBrowserLaunchOptions(BROWSER_NAME));
 let checked = 0;
 try {
   await runPool(pages, async (pageInfo) => {
@@ -239,7 +284,11 @@ try {
       else route.abort();
     });
     try {
-      await auditPage(page, pageInfo, baseUrl);
+      await withTimeout(
+        auditPage(page, pageInfo, baseUrl),
+        PAGE_HARD_TIMEOUT_MS,
+        `audit timed out after ${PAGE_HARD_TIMEOUT_MS}ms`
+      );
     } catch (error) {
       addFinding(pageInfo.path, 'audit failed', { error: String(error && error.message ? error.message : error) });
     } finally {
@@ -256,6 +305,7 @@ try {
 if (!JSON_OUTPUT) {
   process.stdout.write(`\rChecked ${checked}/${pages.length}`.padEnd(120) + '\n');
   console.log('Rendered KaTeX label audit');
+  console.log(`Browser: ${BROWSER_NAME}`);
   console.log(`Pages checked: ${pages.length}`);
   console.log(`Findings: ${FINDINGS.length}`);
   FINDINGS.slice(0, 200).forEach((finding) => {
