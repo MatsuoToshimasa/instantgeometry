@@ -1072,6 +1072,35 @@
       ]);
     }
 
+    function buildLabelSizeField(kind, id) {
+      if (window.InstantGeometryDrawLabelEngine && typeof window.InstantGeometryDrawLabelEngine.buildRangeField === 'function') {
+        return window.InstantGeometryDrawLabelEngine.buildRangeField(
+          'ラベルサイズ',
+          Math.round(getLabelScale(kind, id) * 100),
+          10,
+          400,
+          10,
+          function (scaleValue) { return scaleValue + '%'; }
+        );
+      }
+      return buildSelect('ラベルサイズ', '100', [
+        { value: '100', label: '100%' },
+        { value: '150', label: '150%' },
+        { value: '200', label: '200%' }
+      ]);
+    }
+
+    function buildColorField(kind, id) {
+      if (window.InstantGeometryDrawLabelEngine && typeof window.InstantGeometryDrawLabelEngine.buildColorPalette === 'function') {
+        return window.InstantGeometryDrawLabelEngine.buildColorPalette('色', getLabelColor(kind, id));
+      }
+      return buildSelect('色', getLabelColor(kind, id), [
+        { value: '#2a5bd7', label: '青' },
+        { value: '#111827', label: '黒' },
+        { value: '#e53935', label: '赤' }
+      ]);
+    }
+
     function buildLabelEditor(labelText, value) {
       if (window.InstantGeometryDrawLabelEngine && typeof window.InstantGeometryDrawLabelEngine.buildLabelEditor === 'function') {
         return window.InstantGeometryDrawLabelEngine.buildLabelEditor(labelText, value, true);
@@ -4416,6 +4445,8 @@
     });
     pointIds.forEach(function (id) { pointInputs[id] = ''; });
     const labelOffsets = { segment: {}, point: {} };
+    const labelScales = { segment: {}, point: {} };
+    const labelColors = { segment: {}, point: {} };
     const currentLabelBases = {};
     let moveMode = null;
     let moveDrag = null;
@@ -4477,6 +4508,25 @@
       currentLabelBases[labelKey(kind, id)] = { x: basePosition.x, y: basePosition.y };
       const offset = getLabelOffset(kind, id);
       return { x: basePosition.x + offset.x, y: basePosition.y + offset.y };
+    }
+
+    function getLabelScale(kind, id) {
+      const value = labelScales[kind] && Number(labelScales[kind][id]);
+      return Number.isFinite(value) && value > 0 ? value : 1;
+    }
+
+    function setLabelScale(kind, id, value) {
+      if (!labelScales[kind]) labelScales[kind] = {};
+      labelScales[kind][id] = Math.max(0.1, Math.min(4, Number(value) || 1));
+    }
+
+    function getLabelColor(kind, id, fallback) {
+      return labelColors[kind] && labelColors[kind][id] ? labelColors[kind][id] : (fallback || (kind === 'point' ? '#1f2430' : '#2a5bd7'));
+    }
+
+    function setLabelColor(kind, id, value) {
+      if (!labelColors[kind]) labelColors[kind] = {};
+      labelColors[kind][id] = value || (kind === 'point' ? '#1f2430' : '#2a5bd7');
     }
 
     function isMoveTarget(kind, id) {
@@ -4692,6 +4742,35 @@
         { value: '4', label: '小数第4位' },
         { value: '5', label: '小数第5位' },
         { value: '6', label: '小数第6位' }
+      ]);
+    }
+
+    function buildLabelSizeField(kind, id) {
+      if (window.InstantGeometryDrawLabelEngine && typeof window.InstantGeometryDrawLabelEngine.buildRangeField === 'function') {
+        return window.InstantGeometryDrawLabelEngine.buildRangeField(
+          'ラベルサイズ',
+          Math.round(getLabelScale(kind, id) * 100),
+          10,
+          400,
+          10,
+          function (scaleValue) { return scaleValue + '%'; }
+        );
+      }
+      return buildSelect('ラベルサイズ', '100', [
+        { value: '100', label: '100%' },
+        { value: '150', label: '150%' },
+        { value: '200', label: '200%' }
+      ]);
+    }
+
+    function buildColorField(kind, id) {
+      if (window.InstantGeometryDrawLabelEngine && typeof window.InstantGeometryDrawLabelEngine.buildColorPalette === 'function') {
+        return window.InstantGeometryDrawLabelEngine.buildColorPalette('色', getLabelColor(kind, id));
+      }
+      return buildSelect('色', getLabelColor(kind, id), [
+        { value: '#2a5bd7', label: '青' },
+        { value: '#111827', label: '黒' },
+        { value: '#e53935', label: '赤' }
       ]);
     }
 
@@ -4994,7 +5073,7 @@
       closeSheets();
       if (!editSheet || !sheetTitle || !sheetBody) return;
       sheetTitle.textContent = '線分 ' + id;
-      const kindBuilt = buildSelect('種類', segmentKinds[id] || 'plain', [
+      const kindBuilt = buildSelect('線分マーク', segmentKinds[id] || 'plain', [
         { value: 'plain', label: '通常' },
         { value: 'circle', label: '丸付き' },
         { value: 'single', label: '一本線付き' },
@@ -5009,10 +5088,14 @@
         { value: 'parallel-double-reverse', label: '平行＋二重線付き（逆向き）' }
       ]);
       sheetBody.appendChild(kindBuilt.field);
-      const checkboxBuilt = buildCheckbox('弧を表示', segmentArcVisible[id] !== false);
+      const checkboxBuilt = buildCheckbox('ガイドを表示', segmentArcVisible[id] !== false);
       sheetBody.appendChild(checkboxBuilt.field);
       const labelEditor = buildLabelEditor('ラベル', segmentInputs[id]);
       sheetBody.appendChild(labelEditor.field);
+      const labelSizeBuilt = buildLabelSizeField('segment', id);
+      sheetBody.appendChild(labelSizeBuilt.field);
+      const colorBuilt = buildColorField('segment', id);
+      sheetBody.appendChild(colorBuilt.field);
       const decimalBuilt = buildDecimalPlacesSelect(decimalPlaces);
       sheetBody.appendChild(decimalBuilt.field);
 
@@ -5033,6 +5116,10 @@
         decimalPlaces = setActiveDecimalPlaces(decimalBuilt.select.value);
         segmentKinds[id] = kindBuilt.select.value;
         segmentArcVisible[id] = !!checkboxBuilt.input.checked;
+        if (labelSizeBuilt.input) setLabelScale('segment', id, Number(labelSizeBuilt.input.value) / 100);
+        else if (labelSizeBuilt.select) setLabelScale('segment', id, Number(labelSizeBuilt.select.value) / 100);
+        if (colorBuilt.value) setLabelColor('segment', id, colorBuilt.value);
+        else if (colorBuilt.select) setLabelColor('segment', id, colorBuilt.select.value);
         if (labelEditor.mode.value === 'hidden') {
           segmentInputs[id] = '';
           segmentArcVisible[id] = false;

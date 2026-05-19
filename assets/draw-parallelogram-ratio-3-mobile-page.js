@@ -177,11 +177,7 @@
     });
   }
 
-  function removeUnsupportedMoveButton() {
-    Array.from(sheetBody.querySelectorAll('button')).forEach(function (button) {
-      if (button.textContent.trim() === '移動') button.remove();
-    });
-  }
+  function removeUnsupportedMoveButton() {}
 
   if (window.MutationObserver && sheetBody) {
     new MutationObserver(removeUnsupportedMoveButton).observe(sheetBody, { childList: true, subtree: true });

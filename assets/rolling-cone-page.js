@@ -237,6 +237,8 @@
         class: 'rolling-hit',
         tabindex: '0',
         role: 'button',
+        'data-kind': 'segment',
+        'data-id': id,
         'aria-label': '線分' + id + 'を編集'
       });
       hit.addEventListener('click', function () { openSegmentModal(id); });
@@ -417,6 +419,8 @@
       label.style.cursor = 'pointer';
       label.setAttribute('tabindex', '0');
       label.setAttribute('role', 'button');
+      label.setAttribute('data-kind', 'segment');
+      label.setAttribute('data-id', id);
       label.setAttribute('aria-label', '線分' + id + 'を編集');
       wireMeasureLabel(label, id, offset);
       stage.appendChild(label);
@@ -487,6 +491,8 @@
       if (isMoveTarget('point', id)) node.classList.add('is-moving', 'label-move-target');
       node.setAttribute('tabindex', '0');
       node.setAttribute('role', 'button');
+      node.setAttribute('data-kind', 'point');
+      node.setAttribute('data-id', id);
       node.setAttribute('aria-label', '点' + text + 'を編集');
       node.addEventListener('pointerdown', function (event) {
         if (!isMoveTarget('point', id)) return;
@@ -524,6 +530,8 @@
         class: 'rolling-point-hit',
         tabindex: '0',
         role: 'button',
+        'data-kind': 'point',
+        'data-id': id,
         'aria-label': '点' + labelText + 'を編集'
       });
       hit.addEventListener('click', function (event) {

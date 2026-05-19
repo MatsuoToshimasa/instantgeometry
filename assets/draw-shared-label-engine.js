@@ -220,7 +220,7 @@
   function getStandardModalSpec(type, overrides) {
     const labelType = getLabelType(type);
     if (!labelType) return null;
-    return Object.freeze(Object.assign({
+    const spec = Object.assign({
       type: labelType.key,
       title: labelType.modalTitle,
       labelField: true,
@@ -238,7 +238,9 @@
       colorField: Boolean(labelType.supportsColor),
       colorLabel: '色',
       moveAction: Boolean(labelType.supportsMove)
-    }, overrides || {}));
+    }, overrides || {});
+    if (labelType.supportsMove) spec.moveAction = true;
+    return Object.freeze(spec);
   }
 
   function isDebugHitEnabled() {
@@ -543,13 +545,13 @@
         sheetBody.appendChild(built.field);
       }
 
-      if (modalSpec.angleArcSizeField && cfg.getAngleArcScale) {
-        const currentAngleArcScale = cfg.getAngleArcScale.length >= 2
-          ? cfg.getAngleArcScale(kind, id)
-          : cfg.getAngleArcScale(id);
+      if (modalSpec.angleArcSizeField) {
+        const currentAngleArcScale = cfg.getAngleArcScale
+          ? (cfg.getAngleArcScale.length >= 2 ? cfg.getAngleArcScale(kind, id) : cfg.getAngleArcScale(id))
+          : 1;
         angleArcScaleBuilt = buildRangeField(
           modalSpec.angleArcSizeLabel,
-          Math.round(currentAngleArcScale * 100),
+          Math.round((Number(currentAngleArcScale) || 1) * 100),
           30,
           300,
           10,
@@ -568,10 +570,11 @@
         sheetBody.appendChild(labelEditor.field);
       }
 
-      if (modalSpec.labelSizeField && cfg.getLabelScale) {
+      if (modalSpec.labelSizeField) {
+        const currentLabelScale = cfg.getLabelScale ? cfg.getLabelScale(kind, id) : 1;
         labelSizeBuilt = buildRangeField(
           modalSpec.labelSizeLabel,
-          Math.round(cfg.getLabelScale(kind, id) * 100),
+          Math.round((Number(currentLabelScale) || 1) * 100),
           10,
           400,
           10,
@@ -604,7 +607,7 @@
 
       const actions = document.createElement('div');
       actions.className = 'sheet-actions';
-      const hasMoveAction = modalSpec.moveAction && cfg.labelMoveEnabled !== false && typeof cfg.onMove === 'function';
+      const hasMoveAction = Boolean(modalSpec.moveAction);
       if (hasMoveAction) actions.classList.add('has-move');
       const cancel = document.createElement('button');
       cancel.className = 'btn';
