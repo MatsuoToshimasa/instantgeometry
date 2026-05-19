@@ -46,12 +46,34 @@
     angleKinds: { MAQ: 'plain', NMA: 'plain', BNM: 'plain', RBN: 'plain' }
   };
   state.labelScales = state.labelScales || {};
+  state.labelColors = state.labelColors || {};
+  state.labelOffsets = state.labelOffsets || {};
+  state.angleArcScales = state.angleArcScales || {};
+  Object.keys(ANGLES).forEach(function (id) {
+    if (!state.angleArcScales[id]) state.angleArcScales[id] = 1;
+  });
 
   let geometry = null;
   let view = null;
 
   const LabelEngine = window.InstantGeometryDrawLabelEngine || window.InstantGeometryTriangleLabelEngine || null;
   let labelController = null;
+  let moveMode = null;
+  let moveDrag = null;
+  const moveToolbar = document.createElement('div');
+  moveToolbar.className = 'move-toolbar';
+  moveToolbar.setAttribute('aria-hidden', 'true');
+  const moveCancelBtn = document.createElement('button');
+  moveCancelBtn.className = 'btn';
+  moveCancelBtn.type = 'button';
+  moveCancelBtn.textContent = 'キャンセル';
+  const moveDoneBtn = document.createElement('button');
+  moveDoneBtn.className = 'btn action-primary';
+  moveDoneBtn.type = 'button';
+  moveDoneBtn.textContent = '完了';
+  moveToolbar.appendChild(moveCancelBtn);
+  moveToolbar.appendChild(moveDoneBtn);
+  document.body.appendChild(moveToolbar);
 
   function labelKey(kind, id) {
     return kind + ':' + id;
@@ -64,6 +86,105 @@
 
   function setLabelScale(kind, id, value) {
     state.labelScales[labelKey(kind, id)] = Math.max(0.1, Math.min(4, Number(value) || 1));
+  }
+
+  function defaultLabelColor(kind, fallback) {
+    if (kind === 'point') return '#1f2430';
+    if (kind === 'segment') return '#2a5bd7';
+    if (kind === 'angle') return '#687086';
+    return fallback || '#1f2430';
+  }
+
+  function getLabelColor(kind, id, fallback) {
+    return state.labelColors[labelKey(kind, id)] || defaultLabelColor(kind, fallback);
+  }
+
+  function setLabelColor(kind, id, value) {
+    state.labelColors[labelKey(kind, id)] = value || defaultLabelColor(kind);
+  }
+
+  function getAngleArcScale(kind, id) {
+    if (kind !== 'angle') return 1;
+    const value = Number(state.angleArcScales[id]);
+    return Number.isFinite(value) && value > 0 ? value : 1;
+  }
+
+  function setAngleArcScale(kind, id, value) {
+    if (kind !== 'angle') return;
+    state.angleArcScales[id] = Math.max(0.3, Math.min(3, Number(value) || 1));
+  }
+
+  function getLabelOffset(kind, id) {
+    return state.labelOffsets[labelKey(kind, id)] || { x: 0, y: 0 };
+  }
+
+  function setLabelOffset(kind, id, value) {
+    state.labelOffsets[labelKey(kind, id)] = {
+      x: Number(value && value.x) || 0,
+      y: Number(value && value.y) || 0
+    };
+  }
+
+  function isMoveTarget(kind, id) {
+    return Boolean(moveMode && moveMode.kind === kind && moveMode.id === id);
+  }
+
+  function stagePointFromEvent(event) {
+    const rect = stage.getBoundingClientRect();
+    return {
+      x: ((event.clientX - rect.left) / (rect.width || 1)) * 1000,
+      y: ((event.clientY - rect.top) / (rect.height || 1)) * 1000
+    };
+  }
+
+  function updateMoveModeUi() {
+    const active = Boolean(moveMode);
+    document.body.classList.toggle('label-move-active', active);
+    captureRoot.classList.toggle('label-move-active', active);
+    moveToolbar.classList.toggle('open', active);
+    moveToolbar.setAttribute('aria-hidden', active ? 'false' : 'true');
+  }
+
+  function enterMoveMode(kind, id) {
+    const originalOffset = getLabelOffset(kind, id);
+    moveMode = {
+      kind: kind,
+      id: id,
+      originalOffset: { x: originalOffset.x, y: originalOffset.y }
+    };
+    closeSheets();
+    updateMoveModeUi();
+    setStatus('ラベルをドラッグして位置を調整してください。', false);
+    render();
+  }
+
+  function finishMoveMode(restoreOffset) {
+    if (!moveMode) return;
+    const previous = moveMode;
+    if (restoreOffset) setLabelOffset(previous.kind, previous.id, previous.originalOffset);
+    moveMode = null;
+    moveDrag = null;
+    updateMoveModeUi();
+    render();
+    if (!restoreOffset && labelController) labelController.openEditSheet(previous.kind, previous.id);
+  }
+
+  function attachMoveTarget(node, kind, id) {
+    if (!isMoveTarget(kind, id)) return;
+    node.classList.add('label-move-target');
+    node.addEventListener('pointerdown', function (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      const point = stagePointFromEvent(event);
+      const offset = getLabelOffset(kind, id);
+      moveDrag = {
+        kind: kind,
+        id: id,
+        start: point,
+        offset: { x: offset.x, y: offset.y }
+      };
+      if (node.setPointerCapture) node.setPointerCapture(event.pointerId);
+    });
   }
 
   function scaledFontSize(kind, id, baseSize) {
@@ -129,12 +250,14 @@
       sheetBackdrop: sheetBackdrop,
       closeSheets: closeSheets,
       render: render,
-      labelMoveEnabled: false,
       onError: function (error) {
         setStatus(error.message || '入力を確認してください。', true);
       },
       getModalSpec: function (kind, id, modalType) {
-        return LabelEngine.getStandardModalSpec(modalType, { moveAction: false });
+        return LabelEngine.getStandardModalSpec(modalType);
+      },
+      onMove: function (kind, id) {
+        enterMoveMode(kind, id);
       },
       getTitle: function (kind, id) {
         return kind === 'point' ? '点ラベル' : kind === 'segment' ? '線分ラベル' : '角ラベル';
@@ -143,6 +266,10 @@
       setLabelValue: setControllerLabelValue,
       getLabelScale: getLabelScale,
       setLabelScale: setLabelScale,
+      getAngleArcScale: getAngleArcScale,
+      setAngleArcScale: setAngleArcScale,
+      getColor: getLabelColor,
+      setColor: setLabelColor,
       hasGuideField: function (kind) {
         return kind === 'segment';
       },
@@ -159,7 +286,7 @@
         else if (kind === 'angle') state.angleKinds[id] = value;
       },
       hasColorField: function () {
-        return false;
+        return true;
       }
     });
   }
@@ -504,23 +631,13 @@
   }
 
 
-  function removeUnsupportedMoveButton() {
-    Array.from(sheetBody.querySelectorAll('button')).forEach(function (button) {
-      if (button.textContent.trim() === '移動') button.remove();
-    });
-  }
-
-  if (window.MutationObserver && sheetBody) {
-    new MutationObserver(removeUnsupportedMoveButton).observe(sheetBody, { childList: true, subtree: true });
-  }
-
   function attachHit(element, kind, id) {
     element.style.cursor = 'pointer';
     element.addEventListener('click', function (event) {
       event.stopPropagation();
+      if (moveMode) return;
       if (labelController && typeof labelController.openEditSheet === 'function') {
         labelController.openEditSheet(kind, id);
-        removeUnsupportedMoveButton();
         return;
       }
       openEditSheet(kind, id);
@@ -587,7 +704,14 @@
   }
 
   function drawText(point, text, attrs) {
-    const node = createLabelNode(point, text, attrs);
+    const kind = attrs && (attrs['data-label-kind'] || attrs['data-kind']);
+    const id = attrs && (attrs['data-label-id'] || attrs['data-id']);
+    const offset = kind && id ? getLabelOffset(kind, id) : { x: 0, y: 0 };
+    const movedPoint = { x: point.x + offset.x, y: point.y + offset.y };
+    const mergedAttrs = Object.assign({}, attrs || {});
+    if (kind && id) mergedAttrs.fill = getLabelColor(kind, id, mergedAttrs.fill);
+    const node = createLabelNode(movedPoint, text, mergedAttrs);
+    if (kind && id) attachMoveTarget(node, kind, id);
     stage.appendChild(node);
     return node;
   }
@@ -637,7 +761,7 @@
       Object.keys(ANGLES).forEach(function (id) {
         const ids = ANGLES[id];
         const kind = state.angleKinds[id] || 'plain';
-        const arc = arcPoints(geometry.points[ids[1]], geometry.points[ids[0]], geometry.points[ids[2]], 0.48).map(fitPoint);
+        const arc = arcPoints(geometry.points[ids[1]], geometry.points[ids[0]], geometry.points[ids[2]], 0.48 * getAngleArcScale('angle', id)).map(fitPoint);
         if (window.InstantGeometryMobileAngleOrnaments.normalizeAngleKind(kind, geometry.angles[id]) !== kind) {
           state.angleKinds[id] = 'plain';
         }
@@ -974,6 +1098,20 @@
   });
   [rbnInput, bnmInput, nmaInput, maqInput].forEach(function (input) {
     if (input) input.addEventListener('input', render);
+  });
+  moveCancelBtn.addEventListener('click', function () { finishMoveMode(true); });
+  moveDoneBtn.addEventListener('click', function () { finishMoveMode(false); });
+  window.addEventListener('pointermove', function (event) {
+    if (!moveDrag) return;
+    const point = stagePointFromEvent(event);
+    setLabelOffset(moveDrag.kind, moveDrag.id, {
+      x: moveDrag.offset.x + point.x - moveDrag.start.x,
+      y: moveDrag.offset.y + point.y - moveDrag.start.y
+    });
+    render();
+  });
+  window.addEventListener('pointerup', function () {
+    moveDrag = null;
   });
 
   render();
