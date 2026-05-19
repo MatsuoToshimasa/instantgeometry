@@ -879,10 +879,16 @@
       const input = String(angleInputs[id] || '');
       if (!input) return '';
       if (isRatioLabelValue(input)) return input;
-      if (isNumericLabelValue(input)) return fmt(fallbackValue) + '°';
+      if (isNumericLabelValue(input)) return formatAngleValue(fallbackValue);
       const custom = input.trim();
       if (custom) return custom;
-      return fmt(fallbackValue) + '°';
+      return formatAngleValue(fallbackValue);
+    }
+
+    function formatAngleValue(degrees) {
+      const settings = window.InstantGeometryDrawSettings;
+      if (settings && typeof settings.formatAngleDegrees === 'function') return settings.formatAngleDegrees(degrees);
+      return fmt(degrees) + '°';
     }
 
     function areaText(id, fallbackValue) {

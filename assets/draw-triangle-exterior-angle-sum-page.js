@@ -171,8 +171,8 @@
   }
 
   function formatAngleValue(degrees) {
-    if (window.InstantGeometryDrawSettings && typeof window.InstantGeometryDrawSettings.formatAngle === 'function') {
-      return window.InstantGeometryDrawSettings.formatAngle(formatNumber(degrees));
+    if (window.InstantGeometryDrawSettings && typeof window.InstantGeometryDrawSettings.formatAngleDegrees === 'function') {
+      return window.InstantGeometryDrawSettings.formatAngleDegrees(degrees);
     }
     return formatNumber(degrees) + '°';
   }

@@ -666,7 +666,13 @@
     if (isRatioLabelValue(raw)) return raw;
     if (!isNumericLabelValue(raw)) return raw;
     const ids = ANGLES[id];
-    return formatNumber(angleDegrees(currentGeometry.unitPoints[ids[0]], currentGeometry.unitPoints[ids[1]], currentGeometry.unitPoints[ids[2]])) + '°';
+    return formatAngleValue(angleDegrees(currentGeometry.unitPoints[ids[0]], currentGeometry.unitPoints[ids[1]], currentGeometry.unitPoints[ids[2]]));
+  }
+
+  function formatAngleValue(degrees) {
+    const settings = window.InstantGeometryDrawSettings;
+    if (settings && typeof settings.formatAngleDegrees === 'function') return settings.formatAngleDegrees(degrees);
+    return formatNumber(degrees) + '°';
   }
 
   function getAreaText(id) {

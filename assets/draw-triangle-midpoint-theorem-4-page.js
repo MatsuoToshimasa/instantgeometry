@@ -758,7 +758,13 @@
     if (isRatioLabelValue(raw)) return raw;
     if (!isNumericLabelValue(raw)) return raw;
     const config = ANGLE_LABELS[id];
-    return formatNumber(angleDegrees(points[config.points[0]], points[config.points[1]], points[config.points[2]])) + '°';
+    return formatAngleValue(angleDegrees(points[config.points[0]], points[config.points[1]], points[config.points[2]]));
+  }
+
+  function formatAngleValue(degrees) {
+    const settings = window.InstantGeometryDrawSettings;
+    if (settings && typeof settings.formatAngleDegrees === 'function') return settings.formatAngleDegrees(degrees);
+    return formatNumber(degrees) + '°';
   }
 
   function areaRegions(points, values) {

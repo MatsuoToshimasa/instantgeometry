@@ -10,6 +10,10 @@ const PAGE_TIMEOUT_MS = Math.max(2000, Number(process.env.SETTINGS_EFFECT_AUDIT_
 const ACTION_TIMEOUT_MS = Math.max(1000, Number(process.env.SETTINGS_EFFECT_AUDIT_ACTION_TIMEOUT_MS || 2500));
 const JSON_OUTPUT = process.argv.includes('--json');
 
+const DRAW_SETTINGS_CONSTITUTION = Object.freeze({
+  angleUnit: 'Every rendered angle label must follow the global angle unit setting: degrees labels use degree notation, radians labels must not keep degree notation.'
+});
+
 const MIME_TYPES = new Map([
   ['.html', 'text/html; charset=utf-8'],
   ['.js', 'text/javascript; charset=utf-8'],
@@ -112,6 +116,10 @@ function numericLabel(value) {
   return /^-?[0-9]+(?:\.[0-9]+)?(?:°|cm²|m²|km²|cm|m|km)?$/.test(String(value.text || '').trim());
 }
 
+function isDegreeAngleText(text) {
+  return /(?:°|\\circ|\^\{\\circ\})/.test(String(text || '').trim());
+}
+
 async function auditPage(page, pageInfo, baseUrl) {
   await page.goto(`${baseUrl}${pageInfo.path}?lang=ja&debugHit=1`, { waitUntil: 'domcontentloaded', timeout: PAGE_TIMEOUT_MS });
   await page.waitForTimeout(550);
@@ -180,13 +188,20 @@ async function auditPage(page, pageInfo, baseUrl) {
   }
   const beforeSegment = result.before.filter((item) => ['segment', 'side', 'measure', 'arc'].includes(item.kind) && numericLabel(item));
   const beforeArea = result.before.filter((item) => item.kind === 'area' && numericLabel(item));
-  const beforeAngle = result.before.filter((item) => item.kind === 'angle' && /°$/.test(item.text));
+  const beforeAngle = result.before.filter((item) => item.kind === 'angle' && isDegreeAngleText(item.text));
   const beforePi = result.before.filter((item) => /π/.test(item.text));
   const beforeDecimal = result.before.filter((item) => /[0-9]\.[0-9]+/.test(item.text));
 
   if (beforeSegment.length && !includesAny(result.afterUnits, /(?:cm(?:\s|$)|\\mathrm\{cm\})/)) addFinding(pageInfo.path, 'distance unit did not affect rendered segment/arc labels', { sample: beforeSegment.slice(0, 3), afterSample: result.afterUnits.filter((item) => ['segment', 'side', 'measure', 'arc'].includes(item.kind)).slice(0, 5) });
   if (beforeArea.length && !includesAny(result.afterUnits, /(?:cm²|\\mathrm\{cm\^2\})/)) addFinding(pageInfo.path, 'distance unit did not affect rendered area labels', { sample: beforeArea.slice(0, 3) });
-  if (beforeAngle.length && !result.afterRadians.some((item) => item.kind === 'angle' && !/°$/.test(item.text))) addFinding(pageInfo.path, 'angle unit did not affect rendered angle labels', { sample: beforeAngle.slice(0, 3) });
+  if (beforeAngle.length && !result.afterRadians.some((item) => item.kind === 'angle' && !isDegreeAngleText(item.text))) addFinding(pageInfo.path, 'angle unit did not affect rendered angle labels', { sample: beforeAngle.slice(0, 3) });
+  const remainingDegreeAngles = result.afterRadians.filter((item) => item.kind === 'angle' && isDegreeAngleText(item.text));
+  if (remainingDegreeAngles.length) {
+    addFinding(pageInfo.path, 'angle labels still use degree notation after switching to radians', {
+      rule: DRAW_SETTINGS_CONSTITUTION.angleUnit,
+      sample: remainingDegreeAngles.slice(0, 5)
+    });
+  }
   if (beforePi.length && !result.afterDecimalPi.some((item) => !/π/.test(item.text))) addFinding(pageInfo.path, 'pi mode did not affect rendered pi labels', { sample: beforePi.slice(0, 3) });
   if (beforeDecimal.length && !result.afterDecimalPlaces.some((item) => /[0-9]/.test(item.text) && !/[0-9]\.[0-9]+/.test(item.text))) addFinding(pageInfo.path, 'decimal places did not affect rendered decimal labels', { sample: beforeDecimal.slice(0, 3) });
 }

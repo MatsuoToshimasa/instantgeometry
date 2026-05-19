@@ -941,7 +941,7 @@
       if (!raw) return null;
       if (isRatioLabelValue(raw)) return raw;
       if (isNumericLabelValue(raw) && state.angleDisplay && state.angleDisplay[id]) return state.angleDisplay[id];
-      if (isNumericLabelValue(raw) && geometry) return formatNumber(geometry.angles[id]) + '°';
+      if (isNumericLabelValue(raw) && geometry) return formatAngleValue(geometry.angles[id]);
       return raw;
     }
 
@@ -949,8 +949,14 @@
       const raw = String(state.extraAngleInputs[angle.id] || '');
       if (!raw) return null;
       if (isRatioLabelValue(raw)) return raw;
-      if (isNumericLabelValue(raw)) return formatNumber(angle.value) + '°';
+      if (isNumericLabelValue(raw)) return formatAngleValue(angle.value);
       return raw;
+    }
+
+    function formatAngleValue(degrees) {
+      const settings = window.InstantGeometryDrawSettings;
+      if (settings && typeof settings.formatAngleDegrees === 'function') return settings.formatAngleDegrees(degrees);
+      return formatNumber(degrees) + '°';
     }
 
     function getAreaLabelValue() {

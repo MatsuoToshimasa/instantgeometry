@@ -664,7 +664,13 @@
     if (!raw) return null;
     if (isRatioLabelValue(raw)) return raw;
     if (!isNumericLabelValue(raw)) return raw;
-    return formatNumber(geometry.angles[id]) + '°';
+    return formatAngleValue(geometry.angles[id]);
+  }
+
+  function formatAngleValue(degrees) {
+    const settings = window.InstantGeometryDrawSettings;
+    if (settings && typeof settings.formatAngleDegrees === 'function') return settings.formatAngleDegrees(degrees);
+    return formatNumber(degrees) + '°';
   }
 
   function createLabelNode(point, text, attrs) {

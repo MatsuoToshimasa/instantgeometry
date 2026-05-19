@@ -575,8 +575,14 @@
   function labelForAngle(id, value) {
     const mode = getLabelMode(state.angleInputs[id]);
     if (mode === 'hidden') return '';
-    if (mode === 'numeric') return formatNumber(value) + '°';
+    if (mode === 'numeric') return formatAngleValue(value);
     return state.angleInputs[id];
+  }
+
+  function formatAngleValue(degrees) {
+    const settings = window.InstantGeometryDrawSettings;
+    if (settings && typeof settings.formatAngleDegrees === 'function') return settings.formatAngleDegrees(degrees);
+    return formatNumber(degrees) + '°';
   }
 
   function labelForSegment(id) {

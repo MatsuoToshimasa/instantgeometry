@@ -365,6 +365,12 @@
     return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(2).replace(/0+$/, '').replace(/\.$/, '');
   }
 
+  function formatAngleValue(degrees) {
+    const settings = window.InstantGeometryDrawSettings;
+    if (settings && typeof settings.formatAngleDegrees === 'function') return settings.formatAngleDegrees(degrees);
+    return formatNumber(degrees) + '°';
+  }
+
   function toDegrees(rad) {
     return rad * 180 / Math.PI;
   }
@@ -643,7 +649,7 @@
   function triangleRenderResult(points, labels, toggles, extraLines, sideTexts) {
     const anglesObj = triangleAngles(points[0], points[1], points[2]);
     const angleTexts = [anglesObj.A, anglesObj.B, 180 - anglesObj.A - anglesObj.B].map(function (value) {
-      return formatNumber(value) + '°';
+      return formatAngleValue(value);
     });
 
     return {
@@ -981,7 +987,7 @@
       notes: [
         { label: tt('長半径'), value: a.label || formatNumber(a.value) },
         { label: tt('短半径'), value: b.label || formatNumber(b.value) },
-        { label: tt('回転角'), value: formatNumber(angle.value) + '°' }
+        { label: tt('回転角'), value: formatAngleValue(angle.value) }
       ],
       status: tt('楕円を描画しました。')
     };
