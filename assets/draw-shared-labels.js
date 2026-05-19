@@ -187,7 +187,8 @@
       'data-kind': attrs['data-kind'] || kind,
       'data-id': attrs['data-id'] || id,
       'data-label-kind': kind,
-      'data-label-id': id
+      'data-label-id': id,
+      'data-ig-raw-label': text
     };
     const foreignObject = createSvgNode('foreignObject', Object.assign({
       x: x - measured.width / 2,

@@ -176,10 +176,29 @@
   }
 
   function formatNumber(value) {
+    if (window.InstantGeometryDrawSettings && typeof window.InstantGeometryDrawSettings.formatNumber === 'function') {
+      return window.InstantGeometryDrawSettings.formatNumber(value);
+    }
     const digits = activeDecimalPlaces;
     const factor = Math.pow(10, digits);
     const rounded = Math.round(value * factor) / factor;
     return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(digits).replace(/0+$/, '').replace(/\.$/, '');
+  }
+
+  function formatMeasureNumber(value) {
+    const text = formatNumber(value);
+    if (window.InstantGeometryDrawSettings && typeof window.InstantGeometryDrawSettings.formatLength === 'function') {
+      return window.InstantGeometryDrawSettings.formatLength(text);
+    }
+    return text;
+  }
+
+  function formatAreaNumber(value) {
+    const text = formatNumber(value);
+    if (window.InstantGeometryDrawSettings && typeof window.InstantGeometryDrawSettings.formatArea === 'function') {
+      return window.InstantGeometryDrawSettings.formatArea(text);
+    }
+    return text;
   }
 
   function stripOuterParens(value) {
@@ -385,6 +404,9 @@
   }
 
   function formatAngle(value) {
+    if (window.InstantGeometryDrawSettings && typeof window.InstantGeometryDrawSettings.formatAngleDegrees === 'function') {
+      return window.InstantGeometryDrawSettings.formatAngleDegrees(value);
+    }
     return formatNumber(value) + '°';
   }
 
@@ -394,8 +416,16 @@
     if (isRatioLabelValue(text)) return text;
     if (isRawNumericLabelValue(text) && rawLabel) return rawLabel;
     if (isDecimalNumericLabelValue(text)) return (formatter || formatNumber)(geometryValue);
-    if (isNumericLabelValue(text)) return exactLabel || (formatter || formatNumber)(geometryValue);
-    if (isRawNumericLabelValue(text)) return exactLabel || (formatter || formatNumber)(geometryValue);
+    if (isNumericLabelValue(text)) {
+      if (exactLabel && formatter === formatMeasureNumber) return window.InstantGeometryDrawSettings && typeof window.InstantGeometryDrawSettings.formatLength === 'function' ? window.InstantGeometryDrawSettings.formatLength(exactLabel) : exactLabel;
+      if (exactLabel && formatter === formatAreaNumber) return window.InstantGeometryDrawSettings && typeof window.InstantGeometryDrawSettings.formatArea === 'function' ? window.InstantGeometryDrawSettings.formatArea(exactLabel) : exactLabel;
+      return exactLabel || (formatter || formatNumber)(geometryValue);
+    }
+    if (isRawNumericLabelValue(text)) {
+      if (exactLabel && formatter === formatMeasureNumber) return window.InstantGeometryDrawSettings && typeof window.InstantGeometryDrawSettings.formatLength === 'function' ? window.InstantGeometryDrawSettings.formatLength(exactLabel) : exactLabel;
+      if (exactLabel && formatter === formatAreaNumber) return window.InstantGeometryDrawSettings && typeof window.InstantGeometryDrawSettings.formatArea === 'function' ? window.InstantGeometryDrawSettings.formatArea(exactLabel) : exactLabel;
+      return exactLabel || (formatter || formatNumber)(geometryValue);
+    }
     return text;
   }
 
@@ -2723,7 +2753,7 @@
       const raw = String(state.extraAreaInputs[area.id] || '');
       if (!raw) return '';
       if (isRatioLabelValue(raw)) return raw;
-      if ((isNumericLabelValue(raw) || isRawNumericLabelValue(raw) || isDecimalNumericLabelValue(raw)) && area.value !== undefined) return formatNumber(area.value);
+      if ((isNumericLabelValue(raw) || isRawNumericLabelValue(raw) || isDecimalNumericLabelValue(raw)) && area.value !== undefined) return formatAreaNumber(area.value);
       return raw;
     }
 
@@ -2779,7 +2809,7 @@
       const text = textForLabel(
         state.measureInputs[id],
         currentGeometry.measures[id],
-        null,
+        formatMeasureNumber,
         currentGeometry.measureDisplay && currentGeometry.measureDisplay[id],
         rawInput
       );
@@ -2993,7 +3023,7 @@
       renderPointLabels(points);
       if (showArea) {
         const labelY = points.O.y - Math.max(radiusO, radiusOp) - 52;
-        appendText('area', 'main', textForLabel(state.areaInput, currentGeometry.area), (points.O.x + points.Op.x) / 2, labelY, 'area-label');
+        appendText('area', 'main', textForLabel(state.areaInput, currentGeometry.area, formatAreaNumber), (points.O.x + points.Op.x) / 2, labelY, 'area-label');
       }
     }
 
@@ -3047,7 +3077,7 @@
         renderFittedAreaLabel(
           'area',
           'main',
-          textForLabel(state.areaInput, currentGeometry.area),
+          textForLabel(state.areaInput, currentGeometry.area, formatAreaNumber),
           ellipseArcPoints(layout, currentGeometry.radiusX, currentGeometry.radiusY, Math.PI * 2),
           state.areaColor || '#2a5bd7',
           58
@@ -3107,10 +3137,10 @@
         const bLine = measureLine('b', points);
         appendMeasureLabel('b', bLine, { x: points.O.x - 34, y: points.O.y - currentGeometry.radiusY * layout.scale / 2 }, points);
       }
-      appendText('measure', 'arcAB', textForLabel(state.measureInputs.arcAB, currentGeometry.measures.arcAB || '', formatNumber), arcLabelPoint.x, arcLabelPoint.y, 'arc-label');
+      appendText('measure', 'arcAB', textForLabel(state.measureInputs.arcAB, currentGeometry.measures.arcAB || '', formatMeasureNumber), arcLabelPoint.x, arcLabelPoint.y, 'arc-label');
       appendText('angle', 'AOB', textForLabel(state.angleInputs.AOB, currentGeometry.angleDegrees, formatAngle), anglePoint.x, anglePoint.y, 'angle-label');
       if (showArea) {
-        renderFittedAreaLabel('area', 'main', textForLabel(state.areaInput, currentGeometry.area), [points.O, points.A].concat(arcPoints).concat([points.B]), state.areaColor || '#2a5bd7', 58);
+        renderFittedAreaLabel('area', 'main', textForLabel(state.areaInput, currentGeometry.area, formatAreaNumber), [points.O, points.A].concat(arcPoints).concat([points.B]), state.areaColor || '#2a5bd7', 58);
       }
     }
 
@@ -3220,9 +3250,9 @@
       appendMeasureLabel('OB', obLine, { x: points.O.x - 34, y: (points.O.y + points.B.y) / 2 }, points);
       appendMeasureLabel('arcOA', oaLine, { x: oaArcLabelPoint.x, y: oaArcLabelPoint.y + 34 }, points);
       appendMeasureLabel('arcOB', obLine, { x: obArcLabelPoint.x + 34, y: obArcLabelPoint.y }, points);
-      appendText('measure', 'arcAB', textForLabel(state.measureInputs.arcAB, currentGeometry.measures.arcAB, formatNumber), arcLabelPoint.x, arcLabelPoint.y, 'arc-label');
+      appendText('measure', 'arcAB', textForLabel(state.measureInputs.arcAB, currentGeometry.measures.arcAB, formatMeasureNumber), arcLabelPoint.x, arcLabelPoint.y, 'arc-label');
       appendText('angle', 'AOB', textForLabel(state.angleInputs.AOB, currentGeometry.angleDegrees, formatAngle), anglePoint.x, anglePoint.y, 'angle-label');
-      if (showArea) renderFittedAreaLabel('area', 'main', textForLabel(state.areaInput, currentGeometry.area), [points.O, points.A].concat(arcPoints).concat([points.B]), state.areaColor || '#2a5bd7', 58);
+      if (showArea) renderFittedAreaLabel('area', 'main', textForLabel(state.areaInput, currentGeometry.area, formatAreaNumber), [points.O, points.A].concat(arcPoints).concat([points.B]), state.areaColor || '#2a5bd7', 58);
       currentGeometry.extraAreas.forEach(renderExtraAreaLabel);
     }
 
@@ -3680,14 +3710,14 @@
 
       appendMeasureLabel('r', rLine, { x: (rLine.P.x + rLine.Q.x) / 2, y: rLine.P.y + 42 }, points);
       appendMeasureLabel('a', aLine, { x: (aLine.P.x + aLine.Q.x) / 2, y: aLine.P.y + 42 }, points);
-      appendText('measure', 'l', textForLabel(state.measureInputs.l, currentGeometry.measures.l, formatNumber), lLabelPoint.x, lLabelPoint.y, 'arc-label');
+      appendText('measure', 'l', textForLabel(state.measureInputs.l, currentGeometry.measures.l, formatMeasureNumber), lLabelPoint.x, lLabelPoint.y, 'arc-label');
 
       const labels = state.pointInputs || {};
       appendText('point', 'O', labels.O, points.O.x - 32, points.O.y - 32, '');
       appendText('point', 'A', labels.A, points.A.x, points.A.y + 38, '');
       appendText('point', 'B', labels.B, points.B.x + 34, points.B.y + 30, '');
       if (showArea) {
-        appendText('area', 'main', textForLabel(state.areaInput, currentGeometry.area), points.O.x, points.O.y + bigRadius * 0.58, 'area-label');
+        appendText('area', 'main', textForLabel(state.areaInput, currentGeometry.area, formatAreaNumber), points.O.x, points.O.y + bigRadius * 0.58, 'area-label');
       }
       currentGeometry.extraAreas.forEach(renderExtraAreaLabel);
     }
@@ -3983,9 +4013,9 @@
       appendMeasureLabel('AB', { P: points.A, Q: points.B }, innerSideLabelPoint(points.A, points.B, points.C), points);
       appendMeasureLabel('AC', { P: points.A, Q: points.C }, innerSideLabelPoint(points.A, points.C, points.B), points);
       appendMeasureLabel('BC', { P: points.B, Q: points.C }, { x: centerBC.x, y: centerBC.y + 42 }, points);
-      appendText('measure', 'arcAB', textForLabel(state.measureInputs.arcAB, currentGeometry.measures.arcAB, formatNumber), smallAB[Math.floor(smallAB.length / 2)].x - 18, smallAB[Math.floor(smallAB.length / 2)].y - 18, 'arc-label');
-      appendText('measure', 'arcAC', textForLabel(state.measureInputs.arcAC, currentGeometry.measures.arcAC, formatNumber), smallAC[Math.floor(smallAC.length / 2)].x + 18, smallAC[Math.floor(smallAC.length / 2)].y - 18, 'arc-label');
-      appendText('measure', 'arcBC', textForLabel(state.measureInputs.arcBC, currentGeometry.measures.arcBC, formatNumber), points.A.x, points.A.y + radiusBC * 0.16, 'arc-label');
+      appendText('measure', 'arcAB', textForLabel(state.measureInputs.arcAB, currentGeometry.measures.arcAB, formatMeasureNumber), smallAB[Math.floor(smallAB.length / 2)].x - 18, smallAB[Math.floor(smallAB.length / 2)].y - 18, 'arc-label');
+      appendText('measure', 'arcAC', textForLabel(state.measureInputs.arcAC, currentGeometry.measures.arcAC, formatMeasureNumber), smallAC[Math.floor(smallAC.length / 2)].x + 18, smallAC[Math.floor(smallAC.length / 2)].y - 18, 'arc-label');
+      appendText('measure', 'arcBC', textForLabel(state.measureInputs.arcBC, currentGeometry.measures.arcBC, formatMeasureNumber), points.A.x, points.A.y + radiusBC * 0.16, 'arc-label');
       appendText('angle', 'BAC', textForLabel(state.angleInputs.BAC, 90, formatAngle), points.A.x, points.A.y + angleRadius * 1.18, 'angle-label');
       currentGeometry.extraAreas.forEach(renderExtraAreaLabel);
     }
@@ -4732,8 +4762,8 @@
       appendMeasureLabel('ED', { P: points.E, Q: points.D }, { x: (points.E.x + points.D.x) / 2 + 26, y: (points.E.y + points.D.y) / 2 - 12 }, points);
       appendMeasureLabel('CD', { P: points.C, Q: points.D }, { x: points.C.x + 44, y: (points.C.y + points.D.y) / 2 }, points);
       appendMeasureLabel('DA', { P: points.D, Q: points.A }, { x: (points.D.x + points.A.x) / 2, y: points.D.y - 42 }, points);
-      appendText('measure', 'arcCE', textForLabel(state.measureInputs.arcCE, currentGeometry.measures.arcCE), (E.x + points.C.x) / 2 + 34, (E.y + points.C.y) / 2 + 16, 'measure-label');
-      appendText('measure', 'arcEA', textForLabel(state.measureInputs.arcEA, currentGeometry.measures.arcEA), (E.x + points.A.x) / 2 - 34, (E.y + points.A.y) / 2 - 16, 'measure-label');
+      appendText('measure', 'arcCE', textForLabel(state.measureInputs.arcCE, currentGeometry.measures.arcCE, formatMeasureNumber), (E.x + points.C.x) / 2 + 34, (E.y + points.C.y) / 2 + 16, 'measure-label');
+      appendText('measure', 'arcEA', textForLabel(state.measureInputs.arcEA, currentGeometry.measures.arcEA, formatMeasureNumber), (E.x + points.A.x) / 2 - 34, (E.y + points.A.y) / 2 - 16, 'measure-label');
 
       ['A', 'B', 'C', 'D', 'P', 'E'].forEach(function (id) {
         stage.appendChild(createSvg('circle', {
@@ -5393,6 +5423,9 @@
 
     function render() {
       try {
+        if (window.InstantGeometryDrawSettings && typeof window.InstantGeometryDrawSettings.getDecimalPlaces === 'function') {
+          state.decimalPlaces = window.InstantGeometryDrawSettings.getDecimalPlaces();
+        }
         setActiveDecimalPlaces(state.decimalPlaces);
         currentLabelBases = {};
         Object.keys(controlInputs).forEach(function (key) {
@@ -5909,6 +5942,8 @@
     savePdfBtn.addEventListener('click', async function () {
       try { await saveWithQuota('pdf'); closeSheets(); } catch (error) { setStatus(error.message || '保存に失敗しました。', true); }
     });
+    document.addEventListener('instant-geometry-settings:changed', render);
+    document.addEventListener('instant-geometry-draw-settings:ready', render);
 
     render();
   }

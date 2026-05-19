@@ -124,6 +124,12 @@
   function setStatus(message, isError) { statusBox.textContent = message; statusBox.classList.toggle('error', !!isError); }
   function updateRatioButton() { ratioBtn.textContent = '画面比 ' + exportAspects[exportAspectIndex].label; }
   function updateUnitButton() { unitBtn.textContent = unitOptions[unitIndex] ? '長さ' + unitOptions[unitIndex] : '単位なし'; }
+  function syncDrawSettingsState() {
+    const api = window.InstantGeometryDrawSettings;
+    if (!api || typeof api.get !== 'function') return;
+    if (typeof api.getDistanceUnitIndex === 'function') unitIndex = api.getDistanceUnitIndex(unitOptions);
+    updateUnitButton();
+  }
   function updateDockToggleButtons() {
     leftToggle.textContent = isDockCollapsed ? '›' : '‹';
     leftToggle.setAttribute('aria-expanded', String(!isDockCollapsed));
@@ -144,10 +150,17 @@
     }
   }
   function formatNumber(value) {
+    if (window.InstantGeometryDrawSettings && typeof window.InstantGeometryDrawSettings.formatNumber === 'function') {
+      return window.InstantGeometryDrawSettings.formatNumber(value);
+    }
     const rounded = Math.round(value * 100) / 100;
     return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(2).replace(/0+$/, '').replace(/\.$/, '');
   }
   function appendUnit(text, square) {
+    if (window.InstantGeometryDrawSettings) {
+      if (square && typeof window.InstantGeometryDrawSettings.formatArea === 'function') return window.InstantGeometryDrawSettings.formatArea(text);
+      if (!square && typeof window.InstantGeometryDrawSettings.formatLength === 'function') return window.InstantGeometryDrawSettings.formatLength(text);
+    }
     const unit = unitOptions[unitIndex];
     return unit ? (text + unit + (square ? '²' : '')) : text;
   }
@@ -711,7 +724,7 @@
     pointLabelText.O = 'O';
     figureState = { color: '#2a5bd7', rotation: 0, scale: 1, offset: { x: 0, y: 0 } };
     selectedLabel = null; selectedFigure = false; isPaletteOpen = false;
-    updateRatioButton(); updateUnitButton(); renderLabelToggleButtons(); lastFitSignature = ''; render();
+    syncDrawSettingsState(); updateRatioButton(); renderLabelToggleButtons(); lastFitSignature = ''; render();
   });
   unitBtn.addEventListener('click', function () { unitIndex = (unitIndex + 1) % unitOptions.length; updateUnitButton(); render(); });
   leftToggle.addEventListener('click', function () { isDockCollapsed = !isDockCollapsed; leftDock.classList.toggle('is-collapsed', isDockCollapsed); updateDockToggleButtons(); });
@@ -719,9 +732,19 @@
   pageBackBtn.addEventListener('click', function () { window.history.back(); });
   downloadButtons.forEach(function (button) { button.addEventListener('click', function () { handleDownloadWithQuota(button.dataset.downloadFormat); }); });
   window.addEventListener('resize', function () { updateExportFrame(); lastFitSignature = ''; render(); });
+  document.addEventListener('instant-geometry-settings:changed', function () {
+    syncDrawSettingsState();
+    lastFitSignature = '';
+    render();
+  });
+  document.addEventListener('instant-geometry-draw-settings:ready', function () {
+    syncDrawSettingsState();
+    lastFitSignature = '';
+    render();
+  });
 
   updateRatioButton();
-  updateUnitButton();
+  syncDrawSettingsState();
   updateDockToggleButtons();
   renderLabelToggleButtons();
   render();

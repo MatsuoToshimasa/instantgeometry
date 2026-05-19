@@ -65,11 +65,14 @@
   }
 
   function getLabelKind(node) {
-    const kind = node.dataset && (node.dataset.kind || node.dataset.type);
+    const kind = node.dataset && (node.dataset.kind || node.dataset.type || node.dataset.labelKind);
     if (kind) return kind;
+    const attrKind = node.getAttribute && (node.getAttribute('data-kind') || node.getAttribute('data-label-kind') || node.getAttribute('data-type'));
+    if (attrKind) return attrKind;
     if (node.classList) {
       if (node.classList.contains('segment-label') || node.classList.contains('measure-label')) return 'segment';
-      if (node.classList.contains('angle-label') || node.classList.contains('arc-label')) return 'angle';
+      if (node.classList.contains('angle-label')) return 'angle';
+      if (node.classList.contains('arc-label')) return 'arc';
       if (node.classList.contains('area-label')) return 'area';
     }
     return '';
@@ -83,6 +86,21 @@
     const raw = String(text || '').trim();
     if (!raw || !unit || hasUnit(raw)) return raw;
     return raw + unit;
+  }
+
+  function currentDistanceUnit() {
+    return settings.distanceUnit === 'none' ? '' : settings.distanceUnit;
+  }
+
+  function distanceUnitIndex(options) {
+    const list = Array.isArray(options) ? options : [];
+    const unit = currentDistanceUnit();
+    const index = list.indexOf(unit);
+    return index >= 0 ? index : 0;
+  }
+
+  function currentAngleMode() {
+    return settings.angleUnit === 'radians' ? 'radians' : 'degrees';
   }
 
   function formatNumber(value) {
@@ -111,6 +129,10 @@
     return match ? Number(match[1]) : null;
   }
 
+  function stripKnownUnit(text) {
+    return String(text || '').trim().replace(/\s*(km²|cm²|m²|km|cm|m|°|rad)$/g, '');
+  }
+
   function formatAngle(text) {
     const raw = String(text || '').trim();
     if (!raw) return raw;
@@ -119,11 +141,26 @@
     return settings.angleUnit === 'degrees' ? formatNumber(degrees) + '°' : formatPiRadians(degrees);
   }
 
+  function formatPiText(text) {
+    const raw = String(text || '').trim();
+    if (!raw || !/π/.test(raw)) return raw;
+    if (settings.piMode === 'symbol') return raw;
+    return raw.replace(/(?:(-?[0-9]+(?:\.[0-9]+)?)?)π(?:\/([1-9][0-9]*))?/g, function (_, coefficient, denominator) {
+      const multiplier = coefficient === '' || coefficient == null ? 1 : Number(coefficient);
+      const divisor = denominator ? Number(denominator) : 1;
+      if (!Number.isFinite(multiplier) || !Number.isFinite(divisor) || divisor === 0) return _;
+      return formatNumber(multiplier * PI_APPROXIMATION / divisor);
+    });
+  }
+
   function formatByKind(raw, kind) {
-    if (kind === 'segment' || kind === 'side' || kind === 'measure') return withUnit(raw, settings.distanceUnit === 'none' ? '' : settings.distanceUnit);
-    if (kind === 'area') return withUnit(raw, areaUnit());
+    const source = stripKnownUnit(raw);
+    if (kind === 'segment' || kind === 'side' || kind === 'measure' || kind === 'arc') {
+      return withUnit(formatPiText(source), settings.distanceUnit === 'none' ? '' : settings.distanceUnit);
+    }
+    if (kind === 'area') return withUnit(formatPiText(source), areaUnit());
     if (kind === 'angle') return formatAngle(raw);
-    return String(raw || '');
+    return formatPiText(raw);
   }
 
   function setNodeText(node, text) {
@@ -132,15 +169,18 @@
       return;
     }
     const kind = getLabelKind(node);
+    const renderTarget = node.tagName && String(node.tagName).toLowerCase() === 'foreignobject'
+      ? (node.querySelector('[xmlns="http://www.w3.org/1999/xhtml"], .draw-katex-label, .triangle-katex-label') || node.firstElementChild || node)
+      : node;
     if (window.InstantGeometrySharedLabels && typeof window.InstantGeometrySharedLabels.renderKatexLabelContent === 'function') {
-      node.innerHTML = '';
-      if (window.InstantGeometrySharedLabels.renderKatexLabelContent(node, text, kind)) return;
+      renderTarget.innerHTML = '';
+      if (window.InstantGeometrySharedLabels.renderKatexLabelContent(renderTarget, text, kind)) return;
     }
     if (window.InstantGeometrySharedLabels && typeof window.InstantGeometrySharedLabels.toMathLikeHtml === 'function') {
-      node.innerHTML = window.InstantGeometrySharedLabels.toMathLikeHtml(text);
+      renderTarget.innerHTML = window.InstantGeometrySharedLabels.toMathLikeHtml(text);
       return;
     }
-    node.textContent = text;
+    renderTarget.textContent = text;
   }
 
   function rememberRaw(node) {
@@ -153,7 +193,20 @@
 
   function applyLabels() {
     if (!isDrawPage() || !document.body) return;
-    const nodes = document.querySelectorAll('text[data-kind], text.segment-label, text.measure-label, text.angle-label, text.arc-label, text.area-label, .floating-label[data-type], .floating-label[data-kind]');
+    const nodes = document.querySelectorAll([
+      'text[data-kind]',
+      'text[data-label-kind]',
+      'text.segment-label',
+      'text.measure-label',
+      'text.angle-label',
+      'text.arc-label',
+      'text.area-label',
+      'foreignObject[data-kind]',
+      'foreignObject[data-label-kind]',
+      '.floating-label[data-type]',
+      '.floating-label[data-kind]',
+      '.floating-label[data-label-kind]'
+    ].join(','));
     nodes.forEach(function (node) {
       const kind = getLabelKind(node);
       if (!kind || kind === 'point') return;
@@ -359,8 +412,12 @@
     apply: applyLabels,
     formatNumber: formatNumber,
     formatAngle: formatAngle,
-    formatLength: function (text) { return withUnit(text, settings.distanceUnit === 'none' ? '' : settings.distanceUnit); },
-    formatArea: function (text) { return withUnit(text, areaUnit()); },
+    formatAngleDegrees: function (degrees) { return formatAngle(formatNumber(degrees) + '°'); },
+    formatLength: function (text) { return withUnit(stripKnownUnit(formatPiText(text)), currentDistanceUnit()); },
+    formatArea: function (text) { return withUnit(stripKnownUnit(formatPiText(text)), areaUnit()); },
+    getDistanceUnit: currentDistanceUnit,
+    getDistanceUnitIndex: distanceUnitIndex,
+    getAngleMode: currentAngleMode,
     getDecimalPlaces: function () { return clampDecimalPlaces(settings.decimalPlaces); },
     hasGlobalDecimalPlaces: true
   };

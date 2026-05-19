@@ -118,6 +118,12 @@
   function updateAngleModeButton() {
     angleModeBtn.textContent = angleMode === 'degrees' ? '度数法' : '弧度法';
   }
+  function syncDrawSettingsState() {
+    const api = window.InstantGeometryDrawSettings;
+    if (!api || typeof api.get !== 'function') return;
+    if (typeof api.getAngleMode === 'function') angleMode = api.getAngleMode();
+    updateAngleModeButton();
+  }
   function updateDockToggleButtons() {
     leftToggle.textContent = isDockCollapsed ? '›' : '‹';
     leftToggle.setAttribute('aria-expanded', String(!isDockCollapsed));
@@ -153,6 +159,9 @@
   }
 
   function formatNumber(value) {
+    if (window.InstantGeometryDrawSettings && typeof window.InstantGeometryDrawSettings.formatNumber === 'function') {
+      return window.InstantGeometryDrawSettings.formatNumber(value);
+    }
     const rounded = Math.round(value * 100) / 100;
     return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(2).replace(/0+$/, '').replace(/\.$/, '');
   }
@@ -978,7 +987,7 @@
   });
   angleModeBtn.addEventListener('click', function () {
     angleMode = angleMode === 'degrees' ? 'radians' : 'degrees';
-    updateAngleModeButton();
+    syncDrawSettingsState();
     render();
   });
   resetBtn.addEventListener('click', function () {
@@ -1031,6 +1040,14 @@
     });
   });
   window.addEventListener('resize', render);
+  document.addEventListener('instant-geometry-settings:changed', function () {
+    syncDrawSettingsState();
+    render();
+  });
+  document.addEventListener('instant-geometry-draw-settings:ready', function () {
+    syncDrawSettingsState();
+    render();
+  });
   labelLayer.addEventListener('pointerdown', function (event) {
     if (event.target === labelLayer) {
       selectedLabel = null;
@@ -1068,7 +1085,7 @@
   window.addEventListener('pointercancel', handleGlobalPointerUp);
 
   updateRatioButton();
-  updateAngleModeButton();
+  syncDrawSettingsState();
   updateAdvancedSettingsButton();
   updateDockToggleButtons();
   renderLabelToggleButtons();

@@ -291,6 +291,15 @@
     angleModeBtn.textContent = angleMode === 'degrees' ? '度数法' : '弧度法';
   }
 
+  function syncDrawSettingsState() {
+    const api = window.InstantGeometryDrawSettings;
+    if (!api || typeof api.get !== 'function') return;
+    if (typeof api.getDistanceUnitIndex === 'function') unitIndex = api.getDistanceUnitIndex(unitOptions);
+    if (typeof api.getAngleMode === 'function') angleMode = api.getAngleMode();
+    updateUnitButton();
+    updateAngleModeButton();
+  }
+
   function updateDockToggleButtons() {
     leftToggle.textContent = isDockCollapsed ? '›' : '‹';
     leftToggle.setAttribute('aria-expanded', String(!isDockCollapsed));
@@ -329,15 +338,25 @@
   }
 
   function formatNumber(value) {
+    if (window.InstantGeometryDrawSettings && typeof window.InstantGeometryDrawSettings.formatNumber === 'function') {
+      return window.InstantGeometryDrawSettings.formatNumber(value);
+    }
     const rounded = Math.round(value * 100) / 100;
     return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(2).replace(/0+$/, '').replace(/\.$/, '');
   }
 
   function getCurrentUnit() {
+    if (window.InstantGeometryDrawSettings && typeof window.InstantGeometryDrawSettings.getDistanceUnit === 'function') {
+      return window.InstantGeometryDrawSettings.getDistanceUnit();
+    }
     return unitOptions[unitIndex];
   }
 
   function appendUnit(text, square) {
+    if (window.InstantGeometryDrawSettings) {
+      if (square && typeof window.InstantGeometryDrawSettings.formatArea === 'function') return window.InstantGeometryDrawSettings.formatArea(text);
+      if (!square && typeof window.InstantGeometryDrawSettings.formatLength === 'function') return window.InstantGeometryDrawSettings.formatLength(text);
+    }
     const unit = getCurrentUnit();
     if (!unit) return text;
     return text + unit + (square ? '²' : '');
@@ -1740,9 +1759,8 @@
     selectedLabel = null;
     selectedFigure = false;
     isPaletteOpen = false;
+    syncDrawSettingsState();
     updateRatioButton();
-    updateUnitButton();
-    updateAngleModeButton();
     renderLabelToggleButtons();
     lastFitSignature = '';
     render();
@@ -1787,10 +1805,19 @@
     lastFitSignature = '';
     render();
   });
+  document.addEventListener('instant-geometry-settings:changed', function () {
+    syncDrawSettingsState();
+    lastFitSignature = '';
+    render();
+  });
+  document.addEventListener('instant-geometry-draw-settings:ready', function () {
+    syncDrawSettingsState();
+    lastFitSignature = '';
+    render();
+  });
 
   updateRatioButton();
-  updateUnitButton();
-  updateAngleModeButton();
+  syncDrawSettingsState();
   updateDockToggleButtons();
   renderLabelToggleButtons();
   render();
