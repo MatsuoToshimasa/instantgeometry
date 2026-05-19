@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>四角柱 | Instant Geometry</title>
+  <link rel="stylesheet" href="../../../assets/conic-mobile-page.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" />
+  <script src="/assets/save-quota.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <style>
+    .solid-outline{fill:none;stroke:#2a5bd7;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+    .solid-hidden{fill:none;stroke:#687086;stroke-width:2.4;stroke-linecap:round;stroke-dasharray:10 8}
+    .solid-hit{fill:none;stroke:transparent;stroke-width:34;stroke-linecap:round;cursor:pointer;pointer-events:stroke}
+    .solid-area-hit{stroke:none;cursor:pointer;pointer-events:fill}
+    .solid-point-hit{fill:transparent;stroke:transparent;cursor:pointer;pointer-events:all}
+    #labelLayer{position:absolute;inset:0;z-index:4;pointer-events:none;overflow:hidden}
+    .floating-label{position:absolute;left:0;top:0;transform-origin:center center;white-space:nowrap;line-height:1;will-change:transform;user-select:none;pointer-events:auto;font-style:normal;font-weight:700;text-rendering:geometricPrecision;-webkit-font-smoothing:antialiased;cursor:pointer;color:#2a5bd7;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif}
+    .floating-label:focus,.floating-label:focus-visible,.solid-hit:focus,.solid-hit:focus-visible,.solid-angle-hit:focus,.solid-angle-hit:focus-visible,.solid-area-hit:focus,.solid-area-hit:focus-visible,.solid-point-hit:focus,.solid-point-hit:focus-visible{outline:none;box-shadow:none}
+    .floating-label .math-unit{font-size:.82em;margin-left:.04em}
+    .stage-wrap.label-move-active #labelLayer .floating-label{opacity:.34;pointer-events:none}
+    .stage-wrap.label-move-active #labelLayer .floating-label.label-move-target{opacity:1;pointer-events:auto;cursor:grab}
+    .stage-wrap.label-move-active #labelLayer .floating-label.label-move-target:active{cursor:grabbing}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <button class="btn" id="backBtn" type="button">戻る</button>
+      <h1 class="topbar-title">四角柱</h1>
+      <button class="btn" id="saveBtn" type="button">保存</button>
+    </header>
+
+    <section class="stage-wrap" id="captureRoot">
+      <div class="status" id="statusBox">EF, FG, GH, HE, AE を入力すると、四角柱を描画します。</div>
+      <svg class="stage" id="stage" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet" aria-label="四角柱の描画画面"></svg>
+      <div id="labelLayer" aria-hidden="true"></div>
+    </section>
+
+    <footer class="bottom-bar five-fields">
+      <div class="field">
+        <div class="field-label">EF</div>
+        <input class="field-input" id="efInput" type="text" inputmode="decimal" value="4" />
+      </div>
+      <div class="field">
+        <div class="field-label">FG</div>
+        <input class="field-input" id="fgInput" type="text" inputmode="decimal" value="5" />
+      </div>
+      <div class="field">
+        <div class="field-label">GH</div>
+        <input class="field-input" id="ghInput" type="text" inputmode="decimal" value="4" />
+      </div>
+      <div class="field">
+        <div class="field-label">HE</div>
+        <input class="field-input" id="heInput" type="text" inputmode="decimal" value="5" />
+      </div>
+      <div class="field">
+        <div class="field-label">AE</div>
+        <input class="field-input" id="aeInput" type="text" inputmode="decimal" value="7" />
+      </div>
+    </footer>
+  </div>
+
+  <div class="sheet-backdrop" id="sheetBackdrop"></div>
+  <section class="sheet" id="editSheet" aria-hidden="true">
+    <div class="sheet-header">
+      <h2 class="sheet-title" id="sheetTitle">設定</h2>
+      <button class="sheet-close" id="sheetClose" type="button" aria-label="閉じる">×</button>
+    </div>
+    <div class="sheet-body" id="sheetBody"></div>
+  </section>
+
+  <section class="sheet" id="saveSheet" aria-hidden="true">
+    <div class="sheet-header">
+      <h2 class="sheet-title">保存</h2>
+      <button class="sheet-close" id="saveSheetClose" type="button" aria-label="閉じる">x</button>
+    </div>
+    <div class="sheet-body">
+      <div class="save-grid">
+        <button class="btn" id="savePngBtn" type="button">PNG</button>
+        <button class="btn" id="saveTransparentBtn" type="button">透過PNG</button>
+        <button class="btn" id="savePdfBtn" type="button">PDF</button>
+      </div>
+    </div>
+  </section>
+
+  <script src="../../../assets/draw-shared-labels.js?v=shared-katex-2"></script>
+  <script src="../../../assets/mobile-angle-ornaments.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script src="../../../assets/draw-label-taxonomy.js?v=taxonomy-1"></script>
+  <script src="../../../assets/draw-shared-label-engine.js?v=controller-1"></script>
+  <script src="../../../assets/solid-mobile-page.js"></script>
+  <script>
+    window.InstantGeometrySolidMobile.createQuadrangularPrismPage({
+      efInputId: 'efInput',
+      fgInputId: 'fgInput',
+      ghInputId: 'ghInput',
+      heInputId: 'heInput',
+      aeInputId: 'aeInput',
+      fileBase: 'solid-quadrangular-prism'
+    });
+  </script>
+  <script src="/assets/site-auto-i18n.js"></script>
+</body>
+</html>

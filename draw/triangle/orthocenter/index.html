@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>垂心 | Instant Geometry</title>
+  <link rel="stylesheet" href="../../../assets/triangle-mobile-page.css?v=triangle-katex-7" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" />
+  <script src="/assets/save-quota.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <button class="btn" id="backBtn" type="button">戻る</button>
+      <h1 class="topbar-title">垂心</h1>
+      <button class="btn" id="saveBtn" type="button">保存</button>
+    </header>
+
+    <section class="stage-wrap" id="captureRoot">
+      <div class="status" id="statusBox">3辺から三角形の垂心を描画します。</div>
+      <svg class="stage" id="stage" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet" aria-label="垂心の描画画面"></svg>
+    </section>
+
+    <footer class="bottom-bar">
+      <div class="field">
+        <div class="field-label">辺 a（BC）</div>
+        <input class="field-input" id="sideA" type="text" inputmode="text" value="5" />
+      </div>
+      <div class="field">
+        <div class="field-label">辺 b（CA）</div>
+        <input class="field-input" id="sideB" type="text" inputmode="text" value="6" />
+      </div>
+      <div class="field">
+        <div class="field-label">辺 c（AB）</div>
+        <input class="field-input" id="sideC" type="text" inputmode="text" value="7" />
+      </div>
+    </footer>
+  </div>
+
+  <div class="sheet-backdrop" id="sheetBackdrop"></div>
+  <section class="sheet" id="editSheet" aria-hidden="true">
+    <div class="sheet-header">
+      <h2 class="sheet-title" id="sheetTitle">設定</h2>
+      <button class="sheet-close" id="sheetClose" type="button" aria-label="閉じる">×</button>
+    </div>
+    <div class="sheet-body" id="sheetBody"></div>
+  </section>
+
+  <section class="sheet" id="saveSheet" aria-hidden="true">
+    <div class="sheet-header">
+      <h2 class="sheet-title">保存</h2>
+      <button class="sheet-close" id="saveSheetClose" type="button" aria-label="閉じる">×</button>
+    </div>
+    <div class="sheet-body">
+      <div class="save-grid">
+        <button class="btn" id="savePngBtn" type="button">PNG</button>
+        <button class="btn" id="saveTransparentBtn" type="button">透過PNG</button>
+        <button class="btn" id="savePdfBtn" type="button">PDF</button>
+      </div>
+    </div>
+  </section>
+
+  <script src="../../../assets/mobile-angle-ornaments.js?v=triangle-katex-1"></script>
+  <script src="../../../assets/function-svg-labels.js?v=triangle-katex-1"></script>
+  <script src="../../../assets/draw-shared-labels.js?v=shared-katex-2"></script>
+  <script src="../../../assets/draw-label-taxonomy.js?v=taxonomy-1"></script>
+  <script src="../../../assets/draw-shared-label-engine.js?v=controller-1"></script>
+  <script src="../../../assets/triangle-mobile-page.js?v=controller-17"></script>
+  <script>
+    window.InstantGeometryTriangleMobile.createPage({
+      readyMessage: '入力をもとに垂心を描画しています。',
+      fileBase: 'triangle-orthocenter',
+      centerType: 'orthocenter',
+      centerLabel: 'H',
+      controlInputIds: {
+        a: 'sideA',
+        b: 'sideB',
+        c: 'sideC'
+      },
+      initialState: {
+        sides: { a: 5, b: 6, c: 7 },
+        pointInputs: { A: 'A', B: 'B', C: 'C', H: 'H', P: '', Q: '', R: '' },
+        sideInputs: { a: ' ', b: ' ', c: ' ' },
+        sideKinds: { a: 'plain', b: 'plain', c: 'plain' },
+        sideArcVisible: { a: true, b: true, c: true },
+        angleInputs: { A: '', B: '', C: '' },
+        angleKinds: { A: 'hidden', B: 'hidden', C: 'hidden' },
+        extraAreaInputs: { ABH: '', BCH: '', CAH: '' },
+        areaValue: ' '
+      },
+      readControls: function (inputs, parseNatural) {
+        return {
+          a: parseNatural(inputs.a.value, '辺 a'),
+          b: parseNatural(inputs.b.value, '辺 b'),
+          c: parseNatural(inputs.c.value, '辺 c')
+        };
+      },
+      applyControlsToState: function (state, parsed) {
+        state.sides.a = parsed.a;
+        state.sides.b = parsed.b;
+        state.sides.c = parsed.c;
+      },
+      computeGeometry: function (state, parsed, helpers) {
+        return helpers.computeTriangleFromSides(parsed.a, parsed.b, parsed.c);
+      },
+      formatAreaLabel: function (state, geometry, helpers) {
+        return helpers.formatHeronArea(state.sides.a, state.sides.b, state.sides.c);
+      },
+      extraAreas: function (context) {
+        const geometry = context.geometry;
+        const H = window.InstantGeometryTriangleMobile.helpers.triangleCenterPoint(geometry, 'orthocenter');
+        function areaValue(P, Q, R) {
+          return function (helpers) {
+            return helpers.formatPreferredNumber(helpers.pointTriangleArea(P, Q, R));
+          };
+        }
+        return [
+          {
+            id: 'ABH',
+            name: '△ABH',
+            points: [geometry.A, geometry.B, H],
+            labelPoint: {
+              x: (geometry.A.x + geometry.B.x + H.x) / 3,
+              y: (geometry.A.y + geometry.B.y + H.y) / 3
+            },
+            value: areaValue(geometry.A, geometry.B, H)
+          },
+          {
+            id: 'BCH',
+            name: '△BCH',
+            points: [geometry.B, geometry.C, H],
+            labelPoint: {
+              x: (geometry.B.x + geometry.C.x + H.x) / 3,
+              y: (geometry.B.y + geometry.C.y + H.y) / 3
+            },
+            value: areaValue(geometry.B, geometry.C, H)
+          },
+          {
+            id: 'CAH',
+            name: '△CAH',
+            points: [geometry.C, geometry.A, H],
+            labelPoint: {
+              x: (geometry.C.x + geometry.A.x + H.x) / 3,
+              y: (geometry.C.y + geometry.A.y + H.y) / 3
+            },
+            value: areaValue(geometry.C, geometry.A, H)
+          }
+        ];
+      },
+      extraPoints: function (context) {
+        const geometry = context.geometry;
+        const H = window.InstantGeometryTriangleMobile.helpers.triangleCenterPoint(geometry, 'orthocenter');
+        function foot(point, P, Q) {
+          const dx = Q.x - P.x;
+          const dy = Q.y - P.y;
+          const len2 = dx * dx + dy * dy || 1;
+          const t = ((point.x - P.x) * dx + (point.y - P.y) * dy) / len2;
+          return { x: P.x + dx * t, y: P.y + dy * t };
+        }
+        return [
+          { id: 'P', point: foot(H, geometry.A, geometry.B) },
+          { id: 'Q', point: foot(H, geometry.B, geometry.C) },
+          { id: 'R', point: foot(H, geometry.C, geometry.A) }
+        ];
+      },
+      drawAuxiliary: function (ctx) {
+        const geometry = ctx.geometry;
+        const H = window.InstantGeometryTriangleMobile.helpers.triangleCenterPoint(geometry, 'orthocenter');
+        function foot(point, P, Q) {
+          const dx = Q.x - P.x;
+          const dy = Q.y - P.y;
+          const len2 = dx * dx + dy * dy || 1;
+          const t = ((point.x - P.x) * dx + (point.y - P.y) * dy) / len2;
+          return { x: P.x + dx * t, y: P.y + dy * t };
+        }
+        [
+          { id: 'P', point: foot(H, geometry.A, geometry.B), rightPoint: geometry.B },
+          { id: 'Q', point: foot(H, geometry.B, geometry.C), rightPoint: geometry.C },
+          { id: 'R', point: foot(H, geometry.C, geometry.A), rightPoint: geometry.A }
+        ].forEach(function (entry) {
+          const tH = ctx.fitPoint(H);
+          const tPoint = ctx.fitPoint(entry.point);
+          ctx.stage.appendChild(ctx.createSvg('line', {
+            x1: tH.x,
+            y1: tH.y,
+            x2: tPoint.x,
+            y2: tPoint.y,
+            stroke: '#25603b',
+            'stroke-width': '2.4',
+            'stroke-linecap': 'round',
+            'stroke-dasharray': '7 7'
+          }));
+          ctx.drawRightAngleAtPoint(tPoint, tH, ctx.fitPoint(entry.rightPoint));
+        });
+      },
+      sideNumericMode: function () {
+        return 'control';
+      },
+      angleNumericMode: function () {
+        return 'readonly';
+      },
+      updateSideControl: function (id, value, state, inputs) {
+        inputs[id].value = String(value);
+        state.sides[id] = value;
+      },
+      updateAngleControl: function () {}
+    });
+  </script>
+  <script src="/assets/site-auto-i18n.js?v=triangle-katex-1"></script>
+</body>
+</html>

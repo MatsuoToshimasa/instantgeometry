@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>凸四角形と対角線 | Instant Geometry</title>
+  <link rel="stylesheet" href="../../../assets/quadrilateral-mobile-page.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" />
+  <script src="/assets/save-quota.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <button class="btn" id="backBtn" type="button">戻る</button>
+      <h1 class="topbar-title">凸四角形と対角線</h1>
+      <button class="btn" id="saveBtn" type="button">保存</button>
+    </header>
+
+    <section class="stage-wrap" id="captureRoot">
+      <div class="status error" id="statusBox">4辺から、対角線AC・BDをもつ凸四角形を描画します。</div>
+      <svg class="stage" id="stage" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet" aria-label="凸四角形と対角線の描画画面"></svg>
+    </section>
+
+    <footer class="bottom-bar">
+      <div class="field">
+        <div class="field-label">AB</div>
+        <input class="field-input" id="abInput" type="text" inputmode="decimal" value="7" />
+      </div>
+      <div class="field">
+        <div class="field-label">BC</div>
+        <input class="field-input" id="bcInput" type="text" inputmode="decimal" value="8" />
+      </div>
+      <div class="field">
+        <div class="field-label">CD</div>
+        <input class="field-input" id="cdInput" type="text" inputmode="decimal" value="6" />
+      </div>
+      <div class="field">
+        <div class="field-label">DA</div>
+        <input class="field-input" id="daInput" type="text" inputmode="decimal" value="5" />
+      </div>
+    </footer>
+  </div>
+
+  <div class="sheet-backdrop" id="sheetBackdrop"></div>
+  <section class="sheet" id="editSheet" aria-hidden="true">
+    <div class="sheet-header">
+      <h2 class="sheet-title" id="sheetTitle">設定</h2>
+      <button class="sheet-close" id="sheetClose" type="button" aria-label="閉じる">×</button>
+    </div>
+    <div class="sheet-body" id="sheetBody"></div>
+  </section>
+
+  <section class="sheet" id="saveSheet" aria-hidden="true">
+    <div class="sheet-header">
+      <h2 class="sheet-title">保存</h2>
+      <button class="sheet-close" id="saveSheetClose" type="button" aria-label="閉じる">×</button>
+    </div>
+    <div class="sheet-body">
+      <div class="save-grid">
+        <button class="btn" id="savePngBtn" type="button">PNG</button>
+        <button class="btn" id="saveTransparentBtn" type="button">透過PNG</button>
+        <button class="btn" id="savePdfBtn" type="button">PDF</button>
+      </div>
+    </div>
+  </section>
+
+  <script src="../../../assets/mobile-angle-ornaments.js?v=angle-modal-1"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script src="../../../assets/draw-shared-labels.js?v=shared-katex-2"></script>
+  <script src="../../../assets/draw-label-taxonomy.js?v=taxonomy-1"></script>
+  <script src="../../../assets/draw-shared-label-engine.js?v=controller-1"></script>
+  <script src="../../../assets/quadrilateral-mobile-page.js"></script>
+  <script>
+    window.InstantGeometryQuadrilateralMobile.createPage({
+      readyMessage: '入力をもとに凸四角形と対角線を描画しています。',
+      fileBase: 'quadrilateral-convex-diagonal',
+      showArea: false,
+      useRootSideLabels: false,
+      controlInputIds: {
+        AB: 'abInput',
+        BC: 'bcInput',
+        CD: 'cdInput',
+        DA: 'daInput'
+      },
+      initialState: {
+        pointInputs: { A: 'A', B: 'B', C: 'C', D: 'D', E: '' },
+        sides: { AB: 0, BC: 0, CD: 0, DA: 0, AC: 0, BD: 0 },
+        sideInputs: { AB: ' ', BC: ' ', CD: ' ', DA: ' ', AC: '', BD: '' },
+        sideKinds: { AB: 'plain', BC: 'plain', CD: 'plain', DA: 'plain', AC: 'plain', BD: 'plain' },
+        sideArcVisible: { AB: true, BC: true, CD: true, DA: true, AC: false, BD: false },
+        angleInputs: { A: '', B: '', C: '', D: '' },
+        angleKinds: { A: 'hidden', B: 'hidden', C: 'hidden', D: 'hidden' },
+        extraAngleInputs: {
+          AEB: '', BEC: '', CED: '', DEA: '',
+          EAB: '', EBC: '', ECD: '', EDA: '',
+          EDC: '', ECB: '', EBA: '', EAD: ''
+        },
+        extraAngleKinds: {
+          AEB: 'hidden', BEC: 'hidden', CED: 'hidden', DEA: 'hidden',
+          EAB: 'hidden', EBC: 'hidden', ECD: 'hidden', EDA: 'hidden',
+          EDC: 'hidden', ECB: 'hidden', EBA: 'hidden', EAD: 'hidden'
+        },
+        extraAreaInputs: { AEB: '', BEC: '', CED: '', DEA: '' },
+        extraAreaColors: { AEB: '#2a5bd7', BEC: '#2a5bd7', CED: '#2a5bd7', DEA: '#2a5bd7' }
+      },
+      readControls: function (inputs, parsePositiveNumber) {
+        return {
+          AB: parsePositiveNumber(inputs.AB.value, 'AB'),
+          BC: parsePositiveNumber(inputs.BC.value, 'BC'),
+          CD: parsePositiveNumber(inputs.CD.value, 'CD'),
+          DA: parsePositiveNumber(inputs.DA.value, 'DA')
+        };
+      },
+      applyControlsToState: function () {},
+      computeGeometry: function (state, parsed, helpers) {
+        function lineIntersection(P, Q, R, S) {
+          const vx = Q.x - P.x;
+          const vy = Q.y - P.y;
+          const wx = S.x - R.x;
+          const wy = S.y - R.y;
+          const denom = vx * wy - vy * wx;
+          if (Math.abs(denom) < 1e-9) return { x: 0, y: 0 };
+          const t = ((R.x - P.x) * wy - (R.y - P.y) * wx) / denom;
+          return { x: P.x + vx * t, y: P.y + vy * t };
+        }
+
+        function circleIntersection(P, r, Q, s, preferLower) {
+          const dx = Q.x - P.x;
+          const dy = Q.y - P.y;
+          const d = Math.hypot(dx, dy);
+          if (!(d > 1e-9) || d > r + s || d < Math.abs(r - s)) {
+            throw new Error('この4辺では凸四角形を作れません。');
+          }
+          const a = (r * r - s * s + d * d) / (2 * d);
+          const h = Math.sqrt(Math.max(0, r * r - a * a));
+          const mx = P.x + a * dx / d;
+          const my = P.y + a * dy / d;
+          const nx = -dy / d;
+          const ny = dx / d;
+          const p1 = { x: mx + nx * h, y: my + ny * h };
+          const p2 = { x: mx - nx * h, y: my - ny * h };
+          return preferLower
+            ? (p1.y < p2.y ? p1 : p2)
+            : (p1.x > p2.x ? p1 : p2);
+        }
+
+        const lower = Math.max(Math.abs(parsed.AB - parsed.DA), Math.abs(parsed.BC - parsed.CD)) + 1e-6;
+        const upper = Math.min(parsed.AB + parsed.DA, parsed.BC + parsed.CD) - 1e-6;
+        if (!(lower < upper)) throw new Error('この4辺では凸四角形を作れません。');
+        const diagonalBD = (lower + upper) / 2;
+        const A = { x: 0, y: parsed.AB };
+        const B = { x: 0, y: 0 };
+        const D = circleIntersection(B, diagonalBD, A, parsed.DA, false);
+        const C = circleIntersection(B, parsed.BC, D, parsed.CD, true);
+        if (!(D.x > 0 && C.x > 0 && C.y < D.y)) throw new Error('この4辺では凸四角形を作れません。');
+
+        const geometry = helpers.finalizeGeometry({ A: A, B: B, C: C, D: D });
+        geometry.E = lineIntersection(geometry.A, geometry.C, geometry.B, geometry.D);
+        geometry.sides.AC = helpers.segmentLength(geometry.A, geometry.C);
+        geometry.sides.BD = helpers.segmentLength(geometry.B, geometry.D);
+        state.sideDisplay = {
+          AB: helpers.formatNumber(parsed.AB),
+          BC: helpers.formatNumber(parsed.BC),
+          CD: helpers.formatNumber(parsed.CD),
+          DA: helpers.formatNumber(parsed.DA),
+          AC: helpers.formatLengthBetween(geometry.A, geometry.C),
+          BD: helpers.formatLengthBetween(geometry.B, geometry.D)
+        };
+        return geometry;
+      },
+      extraAngles: function (context) {
+        const g = context.geometry;
+        function angleDegrees(P, V, Q) {
+          const ux = P.x - V.x;
+          const uy = P.y - V.y;
+          const vx = Q.x - V.x;
+          const vy = Q.y - V.y;
+          const denom = (Math.hypot(ux, uy) || 1) * (Math.hypot(vx, vy) || 1);
+          return Math.acos(Math.max(-1, Math.min(1, (ux * vx + uy * vy) / denom))) * 180 / Math.PI;
+        }
+        function labelPoint(P, V, Q, rate) {
+          const ux = P.x - V.x;
+          const uy = P.y - V.y;
+          const vx = Q.x - V.x;
+          const vy = Q.y - V.y;
+          const ul = Math.hypot(ux, uy) || 1;
+          const vl = Math.hypot(vx, vy) || 1;
+          const bx = ux / ul + vx / vl;
+          const by = uy / ul + vy / vl;
+          const bl = Math.hypot(bx, by) || 1;
+          const scale = Math.min(g.sides.AB, g.sides.BC, g.sides.CD, g.sides.DA) * (rate || 0.3);
+          return { x: V.x + bx / bl * scale, y: V.y + by / bl * scale };
+        }
+        const defs = {
+          AEB: ['A', 'E', 'B'], BEC: ['B', 'E', 'C'], CED: ['C', 'E', 'D'], DEA: ['D', 'E', 'A'],
+          EAB: ['E', 'A', 'B'], EBC: ['E', 'B', 'C'], ECD: ['E', 'C', 'D'], EDA: ['E', 'D', 'A'],
+          EDC: ['E', 'D', 'C'], ECB: ['E', 'C', 'B'], EBA: ['E', 'B', 'A'], EAD: ['E', 'A', 'D']
+        };
+        return Object.keys(defs).map(function (id) {
+          const names = defs[id];
+          const P = g[names[0]];
+          const V = g[names[1]];
+          const Q = g[names[2]];
+          return {
+            id: id,
+            name: '∠' + id,
+            p1: P,
+            vertex: V,
+            p2: Q,
+            value: angleDegrees(P, V, Q),
+            labelPoint: labelPoint(P, V, Q, names[1] === 'E' ? 0.2 : 0.3),
+            arcRadius: Math.min(g.sides.AB, g.sides.BC, g.sides.CD, g.sides.DA) * (names[1] === 'E' ? 0.12 : 0.18),
+            hitRadius: Math.min(g.sides.AB, g.sides.BC, g.sides.CD, g.sides.DA) * 0.38
+          };
+        });
+      },
+      extraAreas: function (context) {
+        const g = context.geometry;
+        return [
+          { id: 'AEB', name: '△AEB', points: [g.A, g.E, g.B], color: '#2a5bd7' },
+          { id: 'BEC', name: '△BEC', points: [g.B, g.E, g.C], color: '#2a5bd7' },
+          { id: 'CED', name: '△CED', points: [g.C, g.E, g.D], color: '#2a5bd7' },
+          { id: 'DEA', name: '△DEA', points: [g.D, g.E, g.A], color: '#2a5bd7' }
+        ];
+      },
+      drawAuxiliary: function (helpers) {
+        const state = helpers.state;
+        const geometry = helpers.geometry;
+        const createSvg = helpers.createSvg;
+        [['AC', 'A', 'C'], ['BD', 'B', 'D']].forEach(function (entry) {
+          const id = entry[0];
+          const P = helpers.fitPoint(geometry[entry[1]]);
+          const Q = helpers.fitPoint(geometry[entry[2]]);
+          const line = createSvg('line', {
+            x1: P.x,
+            y1: P.y,
+            x2: Q.x,
+            y2: Q.y,
+            stroke: '#687086',
+            'stroke-width': '3',
+            'stroke-linecap': 'round'
+          });
+          helpers.attachHit(line, 'side', id);
+          helpers.stage.appendChild(line);
+          helpers.drawSideKind(state.sideKinds[id], P, Q);
+          const hit = createSvg('line', {
+            x1: P.x,
+            y1: P.y,
+            x2: Q.x,
+            y2: Q.y,
+            stroke: 'transparent',
+            'stroke-width': '28',
+            'stroke-linecap': 'round'
+          });
+          helpers.attachHit(hit, 'side', id);
+          helpers.stage.appendChild(hit);
+        });
+      },
+      sideNumericMode: function (id) {
+        return id === 'AB' || id === 'BC' || id === 'CD' || id === 'DA' ? 'control' : 'readonly';
+      },
+      angleNumericMode: function () {
+        return 'readonly';
+      },
+      updateSideControl: function (id, value, state, inputs) {
+        if (inputs[id]) inputs[id].value = String(value);
+      },
+      updateAngleControl: function () {}
+    });
+  </script>
+  <script src="/assets/site-auto-i18n.js"></script>
+</body>
+</html>

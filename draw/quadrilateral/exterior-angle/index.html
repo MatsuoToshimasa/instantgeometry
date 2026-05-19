@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>四角形と外角 | Instant Geometry</title>
+  <link rel="stylesheet" href="../../../assets/quadrilateral-mobile-page.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" />
+  <script src="/assets/save-quota.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <button class="btn" id="backBtn" type="button">戻る</button>
+      <h1 class="topbar-title">四角形と外角</h1>
+      <button class="btn" id="saveBtn" type="button">保存</button>
+    </header>
+
+    <section class="stage-wrap" id="captureRoot">
+      <div class="status" id="statusBox">四角形 ABCD と、BC の延長上にある外角 ∠ECD を描画します。</div>
+      <svg class="stage" id="stage" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet" aria-label="四角形と外角の描画画面"></svg>
+    </section>
+
+    <footer class="bottom-bar">
+      <div class="field">
+        <div class="field-label">角A</div>
+        <input class="field-input" id="angleAInput" type="text" inputmode="decimal" value="105" />
+      </div>
+      <div class="field">
+        <div class="field-label">角B</div>
+        <input class="field-input" id="angleBInput" type="text" inputmode="decimal" value="75" />
+      </div>
+      <div class="field">
+        <div class="field-label">角D</div>
+        <input class="field-input" id="angleDInput" type="text" inputmode="decimal" value="110" />
+      </div>
+    </footer>
+  </div>
+
+  <div class="sheet-backdrop" id="sheetBackdrop"></div>
+  <section class="sheet" id="editSheet" aria-hidden="true">
+    <div class="sheet-header">
+      <h2 class="sheet-title" id="sheetTitle">設定</h2>
+      <button class="sheet-close" id="sheetClose" type="button" aria-label="閉じる">×</button>
+    </div>
+    <div class="sheet-body" id="sheetBody"></div>
+  </section>
+
+  <section class="sheet" id="saveSheet" aria-hidden="true">
+    <div class="sheet-header">
+      <h2 class="sheet-title">保存</h2>
+      <button class="sheet-close" id="saveSheetClose" type="button" aria-label="閉じる">×</button>
+    </div>
+    <div class="sheet-body">
+      <div class="save-grid">
+        <button class="btn" id="savePngBtn" type="button">PNG</button>
+        <button class="btn" id="saveTransparentBtn" type="button">透過PNG</button>
+        <button class="btn" id="savePdfBtn" type="button">PDF</button>
+      </div>
+    </div>
+  </section>
+
+  <script src="../../../assets/mobile-angle-ornaments.js?v=angle-modal-1"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script src="../../../assets/draw-shared-labels.js?v=shared-katex-2"></script>
+  <script src="../../../assets/draw-label-taxonomy.js?v=taxonomy-1"></script>
+  <script src="../../../assets/draw-shared-label-engine.js?v=controller-1"></script>
+  <script src="../../../assets/quadrilateral-mobile-page.js"></script>
+  <script>
+    function angleBetween(prev, vertex, next) {
+      const ux = prev.x - vertex.x;
+      const uy = prev.y - vertex.y;
+      const vx = next.x - vertex.x;
+      const vy = next.y - vertex.y;
+      const denom = (Math.hypot(ux, uy) || 1) * (Math.hypot(vx, vy) || 1);
+      const cosine = Math.max(-1, Math.min(1, (ux * vx + uy * vy) / denom));
+      return Math.acos(cosine) * 180 / Math.PI;
+    }
+
+    function extensionPoint(geometry) {
+      const dx = geometry.C.x - geometry.B.x;
+      const dy = geometry.C.y - geometry.B.y;
+      const len = Math.hypot(dx, dy) || 1;
+      return {
+        x: geometry.C.x + dx / len * 2.2,
+        y: geometry.C.y + dy / len * 2.2
+      };
+    }
+
+    function orientDaTopBcBottom(points) {
+      const angle = Math.atan2(points.D.y - points.A.y, points.D.x - points.A.x);
+      const cos = Math.cos(-angle);
+      const sin = Math.sin(-angle);
+      const rotated = {};
+      ['A', 'B', 'C', 'D'].forEach(function (id) {
+        const point = points[id];
+        rotated[id] = {
+          x: point.x * cos - point.y * sin,
+          y: -(point.x * sin + point.y * cos)
+        };
+      });
+      const topY = (rotated.A.y + rotated.D.y) / 2;
+      const bottomY = (rotated.B.y + rotated.C.y) / 2;
+      if (bottomY > topY) {
+        ['A', 'B', 'C', 'D'].forEach(function (id) {
+          rotated[id].y *= -1;
+        });
+      }
+      return rotated;
+    }
+
+    window.InstantGeometryQuadrilateralMobile.createPage({
+      readyMessage: '四角形と外角を描画しています。',
+      fileBase: 'quadrilateral-exterior-angle',
+      angleArcRadius: 0.26,
+      angleHitArcRadius: 0.62,
+      controlInputIds: {
+        A: 'angleAInput',
+        B: 'angleBInput',
+        D: 'angleDInput'
+      },
+      initialState: {
+        pointInputs: { A: 'A', B: 'B', C: 'C', D: 'D' },
+        sides: { AB: 0, BC: 0, CD: 0, DA: 0 },
+        sideInputs: { AB: '', BC: '', CD: '', DA: '' },
+        sideKinds: { AB: 'plain', BC: 'plain', CD: 'plain', DA: 'plain' },
+        sideArcVisible: { AB: false, BC: false, CD: false, DA: false },
+        angleInputs: { A: ' ', B: ' ', C: ' ', D: ' ' },
+        angleDisplay: { A: '105°', B: '75°', C: '70°', D: '110°' },
+        angleKinds: { A: 'plain', B: 'plain', C: 'plain', D: 'plain' },
+        extraAngleInputs: { ECD: ' ' },
+        extraAngleKinds: { ECD: 'plain' },
+        areaValue: ''
+      },
+      readControls: function (inputs, parsePositiveNumber) {
+        const parsed = {
+          A: parsePositiveNumber(inputs.A.value, '角A'),
+          B: parsePositiveNumber(inputs.B.value, '角B'),
+          D: parsePositiveNumber(inputs.D.value, '角D')
+        };
+        Object.keys(parsed).forEach(function (id) {
+          if (!(parsed[id] > 0 && parsed[id] < 180)) {
+            throw new Error('角' + id + 'を 0° より大きく 180° 未満で入力してください。');
+          }
+        });
+        parsed.C = 360 - parsed.A - parsed.B - parsed.D;
+        if (!(parsed.C > 0 && parsed.C < 180)) {
+          throw new Error('角C = 360° - 角A - 角B - 角D が 0° より大きく 180° 未満になるようにしてください。');
+        }
+        return parsed;
+      },
+      applyControlsToState: function (state, parsed) {
+        state.angleDisplay = {
+          A: parsed.A + '°',
+          B: parsed.B + '°',
+          C: parsed.C + '°',
+          D: parsed.D + '°'
+        };
+      },
+      computeGeometry: function (state, parsed, helpers) {
+        const points = helpers.buildQuadrilateralFromAngles(parsed);
+        return helpers.finalizeGeometry(helpers.scalePointsToMinSide(orientDaTopBcBottom(points), 5));
+      },
+      extraAngles: function (context) {
+        const geometry = context.geometry;
+        const E = extensionPoint(geometry);
+        return [{
+          id: 'ECD',
+          name: '∠ECD',
+          value: angleBetween(E, geometry.C, geometry.D),
+          vertex: geometry.C,
+          p1: E,
+          p2: geometry.D,
+          labelPoint: {
+            x: geometry.C.x + (E.x - geometry.C.x) * 0.34 + (geometry.D.x - geometry.C.x) * 0.18,
+            y: geometry.C.y + (E.y - geometry.C.y) * 0.34 + (geometry.D.y - geometry.C.y) * 0.18
+          }
+        }];
+      },
+      drawAuxiliary: function (ctx) {
+        const E = extensionPoint(ctx.geometry);
+        const tC = ctx.screen.C;
+        const tE = ctx.fitPoint(E);
+        ctx.stage.appendChild(ctx.createSvg('line', {
+          x1: tC.x,
+          y1: tC.y,
+          x2: tE.x,
+          y2: tE.y,
+          stroke: '#2a5bd7',
+          'stroke-width': '3',
+          'stroke-linecap': 'round'
+        }));
+        ctx.stage.appendChild(ctx.createSvg('line', {
+          x1: tC.x,
+          y1: tC.y,
+          x2: tE.x,
+          y2: tE.y,
+          stroke: 'transparent',
+          'stroke-width': '28',
+          'stroke-linecap': 'round'
+        }));
+        ctx.stage.appendChild(ctx.createSvg('circle', {
+          cx: tE.x,
+          cy: tE.y,
+          r: 8,
+          fill: '#1f2430'
+        }));
+        ctx.stage.appendChild(ctx.createLabelNode('E', {
+          x: tE.x + 48,
+          y: tE.y + 22,
+          'text-anchor': 'middle',
+          'dominant-baseline': 'middle',
+          'font-size': '60',
+          'font-weight': '700',
+          fill: '#1f2430'
+        }));
+      },
+      sideNumericMode: function () {
+        return 'readonly';
+      },
+      angleNumericMode: function () {
+        return 'control';
+      },
+      updateSideControl: function () {},
+      updateAngleControl: function (id, value, state, inputs) {
+        if (inputs[id]) inputs[id].value = String(value);
+        state.angleDisplay[id] = value + '°';
+      }
+    });
+  </script>
+  <script src="/assets/site-auto-i18n.js"></script>
+</body>
+</html>

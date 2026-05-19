@@ -30,6 +30,9 @@
   const unitBtn = document.getElementById('unitBtn');
   const pageBackBtn = document.getElementById('pageBackBtn');
   const downloadButtons = document.querySelectorAll('[data-download-format]');
+  if (window.InstantGeometrySaveQuota && downloadButtons[0]) {
+    window.InstantGeometrySaveQuota.createIndicator({ target: downloadButtons[0] });
+  }
   const box = document.getElementById('box');
   const exportBackdrop = document.getElementById('exportBackdrop');
   const exportFrame = document.getElementById('exportFrame');
@@ -106,8 +109,13 @@
   let angleMode = 'degrees';
   let unitIndex = 1;
   let zoomScale = 1;
+  const mobileQuery = window.matchMedia ? window.matchMedia('(max-width: 820px)') : null;
+  function isMobileLayout() {
+    return !!((mobileQuery && mobileQuery.matches) || window.innerWidth <= 820 || document.documentElement.clientWidth <= 820);
+  }
   let isDockCollapsed = false;
-  let isRightDockCollapsed = false;
+  let isRightDockCollapsed = isMobileLayout();
+  let hasManualRightDockChoice = false;
   let isPaletteOpen = false;
   let lastFitSignature = '';
   let figureState = { color: '#2a5bd7', rotation: 0, scale: 1, offset: { x: 0, y: 0 } };
@@ -898,6 +906,20 @@
     }
   }
 
+  async function handleDownloadWithQuota(format) {
+    try {
+      if (!window.InstantGeometrySaveQuota) {
+        await handleDownload(format);
+        return;
+      }
+      await window.InstantGeometrySaveQuota.runWithQuota(function () {
+        return handleDownload(format);
+      });
+    } catch (error) {
+      setStatus(error.message || '保存に失敗しました。', true);
+    }
+  }
+
   labelLayer.addEventListener('pointerdown', function (event) {
     const target = event.target.closest('.floating-label');
     if (!target) return;
@@ -1026,10 +1048,27 @@
   unitBtn.addEventListener('click', function () { unitIndex = (unitIndex + 1) % unitOptions.length; updateUnitButton(); render(); });
   angleModeBtn.addEventListener('click', function () { angleMode = angleMode === 'degrees' ? 'radians' : 'degrees'; updateAngleModeButton(); render(); });
   leftToggle.addEventListener('click', function () { isDockCollapsed = !isDockCollapsed; leftDock.classList.toggle('is-collapsed', isDockCollapsed); updateDockToggleButtons(); });
-  rightToggle.addEventListener('click', function () { isRightDockCollapsed = !isRightDockCollapsed; rightDock.classList.toggle('is-collapsed', isRightDockCollapsed); updateDockToggleButtons(); });
-  pageBackBtn.addEventListener('click', function () { window.history.back(); });
-  downloadButtons.forEach(function (button) { button.addEventListener('click', function () { handleDownload(button.dataset.downloadFormat); }); });
-  window.addEventListener('resize', function () { updateExportFrame(); lastFitSignature = ''; render(); });
+  rightToggle.addEventListener('click', function () { hasManualRightDockChoice = true; isRightDockCollapsed = !isRightDockCollapsed; rightDock.classList.toggle('is-collapsed', isRightDockCollapsed); updateDockToggleButtons(); });
+  pageBackBtn.addEventListener('click', function () {
+    if (window.history.length > 1) {
+      window.history.back();
+      return;
+    }
+    const target = new URL('/draw/', window.location.origin);
+    const lang = new URL(window.location.href).searchParams.get('lang');
+    if (lang) target.searchParams.set('lang', lang);
+    window.location.href = target.toString();
+  });
+  downloadButtons.forEach(function (button) { button.addEventListener('click', function () { handleDownloadWithQuota(button.dataset.downloadFormat); }); });
+  window.addEventListener('resize', function () {
+    if (!hasManualRightDockChoice) {
+      isRightDockCollapsed = isMobileLayout();
+      rightDock.classList.toggle('is-collapsed', isRightDockCollapsed);
+      updateDockToggleButtons();
+    }
+    updateExportFrame(); lastFitSignature = ''; render();
+  });
 
+  rightDock.classList.toggle('is-collapsed', isRightDockCollapsed);
   updateRatioButton(); updateUnitButton(); updateAngleModeButton(); updateDockToggleButtons(); renderLabelToggleButtons(); render();
 })();

@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>台形（対角線） | Instant Geometry</title>
+  <link rel="stylesheet" href="../../../assets/quadrilateral-mobile-page.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" />
+  <script src="/assets/save-quota.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <button class="btn" id="backBtn" type="button">戻る</button>
+      <h1 class="topbar-title">台形（対角線）</h1>
+      <button class="btn" id="saveBtn" type="button">保存</button>
+    </header>
+
+    <section class="stage-wrap" id="captureRoot">
+      <div class="status error" id="statusBox">上底・下底・高さ・左のずれを入力すると、対角線の交点Oをもつ台形を自動で描画します。</div>
+      <svg class="stage" id="stage" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet" aria-label="台形（対角線）の描画画面"></svg>
+    </section>
+
+    <footer class="bottom-bar">
+      <div class="field">
+        <div class="field-label">上底</div>
+        <input class="field-input" id="topBaseInput" type="text" inputmode="decimal" value="4" />
+      </div>
+      <div class="field">
+        <div class="field-label">下底</div>
+        <input class="field-input" id="bottomBaseInput" type="text" inputmode="decimal" value="8" />
+      </div>
+      <div class="field">
+        <div class="field-label">高さ</div>
+        <input class="field-input" id="heightInput" type="text" inputmode="decimal" value="5" />
+      </div>
+      <div class="field">
+        <div class="field-label">左のずれ</div>
+        <input class="field-input" id="shiftInput" type="text" inputmode="decimal" value="1.5" />
+      </div>
+    </footer>
+  </div>
+
+  <div class="sheet-backdrop" id="sheetBackdrop"></div>
+  <section class="sheet" id="editSheet" aria-hidden="true">
+    <div class="sheet-header">
+      <h2 class="sheet-title" id="sheetTitle">設定</h2>
+      <button class="sheet-close" id="sheetClose" type="button" aria-label="閉じる">×</button>
+    </div>
+    <div class="sheet-body" id="sheetBody"></div>
+  </section>
+
+  <section class="sheet" id="saveSheet" aria-hidden="true">
+    <div class="sheet-header">
+      <h2 class="sheet-title">保存</h2>
+      <button class="sheet-close" id="saveSheetClose" type="button" aria-label="閉じる">×</button>
+    </div>
+    <div class="sheet-body">
+      <div class="save-grid">
+        <button class="btn" id="savePngBtn" type="button">PNG</button>
+        <button class="btn" id="saveTransparentBtn" type="button">透過PNG</button>
+        <button class="btn" id="savePdfBtn" type="button">PDF</button>
+      </div>
+    </div>
+  </section>
+
+  <script src="../../../assets/mobile-angle-ornaments.js?v=angle-modal-1"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script src="../../../assets/draw-shared-labels.js?v=shared-katex-2"></script>
+  <script src="../../../assets/draw-label-taxonomy.js?v=taxonomy-1"></script>
+  <script src="../../../assets/draw-shared-label-engine.js?v=controller-1"></script>
+  <script src="../../../assets/quadrilateral-mobile-page.js"></script>
+  <script>
+    window.InstantGeometryQuadrilateralMobile.createPage({
+      readyMessage: '入力をもとに台形（対角線）を描画しています。',
+      fileBase: 'quadrilateral-trapezoid-diagonal',
+      showArea: false,
+      useRootSideLabels: true,
+      controlInputIds: {
+        topBase: 'topBaseInput',
+        bottomBase: 'bottomBaseInput',
+        height: 'heightInput',
+        shift: 'shiftInput'
+      },
+      initialState: {
+        pointInputs: { A: 'A', B: 'B', C: 'C', D: 'D', O: 'O' },
+        sides: { AB: 0, BC: 8, CD: 0, DA: 4, OA: 0, OB: 0, OC: 0, OD: 0 },
+        sideInputs: { AB: '', BC: ' ', CD: '', DA: ' ', OA: '', OB: '', OC: '', OD: '' },
+        sideKinds: { AB: 'plain', BC: 'plain', CD: 'plain', DA: 'plain', OA: 'plain', OB: 'plain', OC: 'plain', OD: 'plain' },
+        sideArcVisible: { AB: false, BC: true, CD: false, DA: true, OA: false, OB: false, OC: false, OD: false },
+        angleInputs: { A: '', B: '', C: '', D: '' },
+        angleKinds: { A: 'hidden', B: 'hidden', C: 'hidden', D: 'hidden' },
+        extraAreaInputs: { OAB: '', OBC: '', OCD: '', ODA: '' }
+      },
+      readControls: function (inputs, parsePositiveNumber) {
+        return {
+          topBase: parsePositiveNumber(inputs.topBase.value, '上底'),
+          bottomBase: parsePositiveNumber(inputs.bottomBase.value, '下底'),
+          height: parsePositiveNumber(inputs.height.value, '高さ'),
+          shift: parsePositiveNumber(inputs.shift.value, '左のずれ')
+        };
+      },
+      applyControlsToState: function () {},
+      computeGeometry: function (state, parsed, helpers) {
+        const geometry = helpers.finalizeGeometry({
+          A: { x: (-parsed.topBase / 2) + (parsed.shift / 2), y: parsed.height / 2 },
+          B: { x: -parsed.bottomBase / 2, y: -parsed.height / 2 },
+          C: { x: parsed.bottomBase / 2, y: -parsed.height / 2 },
+          D: { x: (parsed.topBase / 2) + (parsed.shift / 2), y: parsed.height / 2 }
+        });
+        function lineIntersection(P, Q, R, S) {
+          const vx = Q.x - P.x;
+          const vy = Q.y - P.y;
+          const wx = S.x - R.x;
+          const wy = S.y - R.y;
+          const denom = vx * wy - vy * wx;
+          if (Math.abs(denom) < 1e-9) return geometry.center;
+          const t = ((R.x - P.x) * wy - (R.y - P.y) * wx) / denom;
+          return { x: P.x + vx * t, y: P.y + vy * t };
+        }
+        geometry.O = lineIntersection(geometry.A, geometry.C, geometry.B, geometry.D);
+        return geometry;
+      },
+      extraAreas: function (context) {
+        const geometry = context.geometry;
+        const O = geometry.O || geometry.center;
+        function triangleArea(P, Q, R) {
+          return Math.abs((P.x * (Q.y - R.y) + Q.x * (R.y - P.y) + R.x * (P.y - Q.y)) / 2);
+        }
+        function triangleCentroid(P, Q, R) {
+          return {
+            x: (P.x + Q.x + R.x) / 3,
+            y: (P.y + Q.y + R.y) / 3
+          };
+        }
+        return [
+          {
+            id: 'OAB',
+            name: '△OAB',
+            points: [O, geometry.A, geometry.B],
+            labelPoint: triangleCentroid(O, geometry.A, geometry.B),
+            value: triangleArea(O, geometry.A, geometry.B)
+          },
+          {
+            id: 'OBC',
+            name: '△OBC',
+            points: [O, geometry.B, geometry.C],
+            labelPoint: triangleCentroid(O, geometry.B, geometry.C),
+            value: triangleArea(O, geometry.B, geometry.C)
+          },
+          {
+            id: 'OCD',
+            name: '△OCD',
+            points: [O, geometry.C, geometry.D],
+            labelPoint: triangleCentroid(O, geometry.C, geometry.D),
+            value: triangleArea(O, geometry.C, geometry.D)
+          },
+          {
+            id: 'ODA',
+            name: '△ODA',
+            points: [O, geometry.D, geometry.A],
+            labelPoint: triangleCentroid(O, geometry.D, geometry.A),
+            value: triangleArea(O, geometry.D, geometry.A)
+          }
+        ];
+      },
+      drawAuxiliary: function (helpers) {
+        const state = helpers.state;
+        const geometry = helpers.geometry;
+        const O = geometry.O || geometry.center;
+        const tO = helpers.fitPoint(O);
+        const createSvg = helpers.createSvg;
+
+        function distance(P, Q) {
+          return Math.hypot(P.x - Q.x, P.y - Q.y);
+        }
+
+        ['A', 'B', 'C', 'D'].forEach(function (pointId) {
+          const id = 'O' + pointId;
+          state.sides[id] = distance(O, geometry[pointId]);
+          state.sideDisplay = state.sideDisplay || {};
+          state.sideDisplay[id] = helpers.formatLengthBetween(O, geometry[pointId]);
+          const endpoint = helpers.screen[pointId];
+          const line = createSvg('line', {
+            x1: tO.x,
+            y1: tO.y,
+            x2: endpoint.x,
+            y2: endpoint.y,
+            stroke: '#687086',
+            'stroke-width': '3',
+            'stroke-dasharray': '8 7',
+            'stroke-linecap': 'round'
+          });
+          helpers.attachHit(line, 'side', id);
+          helpers.stage.appendChild(line);
+          const hit = createSvg('line', {
+            x1: tO.x,
+            y1: tO.y,
+            x2: endpoint.x,
+            y2: endpoint.y,
+            stroke: 'transparent',
+            'stroke-width': '28',
+            'stroke-linecap': 'round'
+          });
+          helpers.attachHit(hit, 'side', id);
+          helpers.stage.appendChild(hit);
+          helpers.drawSideKind(state.sideKinds[id], tO, endpoint);
+        });
+
+        const dot = createSvg('circle', { cx: tO.x, cy: tO.y, r: 8, fill: '#1f2430' });
+        helpers.attachHit(dot, 'point', 'O');
+        helpers.stage.appendChild(dot);
+        const oLabel = String(state.pointInputs.O || '').trim();
+        if (oLabel) {
+          const textNode = createSvg('text', {
+            x: tO.x + 34,
+            y: tO.y - 34,
+            'text-anchor': 'middle',
+            'dominant-baseline': 'middle',
+            'font-size': '56',
+            'font-weight': '700',
+            fill: '#1f2430'
+          });
+          textNode.textContent = oLabel;
+          helpers.attachHit(textNode, 'point', 'O');
+          helpers.stage.appendChild(textNode);
+        }
+      },
+      sideNumericMode: function () {
+        return 'readonly';
+      },
+      angleNumericMode: function () {
+        return 'readonly';
+      },
+      updateSideControl: function () {},
+      updateAngleControl: function () {}
+    });
+  </script>
+  <script src="/assets/site-auto-i18n.js"></script>
+</body>
+</html>

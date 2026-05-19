@@ -711,12 +711,28 @@
     apply: apply
   };
 
+  function loadDrawSettings() {
+    if (!/(^|\/)draw(?:\/|$)/.test(window.location.pathname)) return;
+    if (window.InstantGeometryDrawSettings || document.querySelector('script[data-instant-geometry-draw-settings]')) return;
+    const loader = document.currentScript || Array.from(document.scripts).find(function (node) {
+      return /(?:^|\/)site-auto-i18n\.js(?:\?|$)/.test(node.src || '');
+    });
+    const script = document.createElement('script');
+    script.src = loader && loader.src ? new URL('draw-settings.js?v=settings-contract-1', loader.src).href : '/assets/draw-settings.js?v=settings-contract-1';
+    script.dataset.instantGeometryDrawSettings = '1';
+    document.head.appendChild(script);
+  }
+
   document.addEventListener('site-components:ready', apply);
   document.addEventListener('site-language:changed', apply);
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', apply);
+    document.addEventListener('DOMContentLoaded', function () {
+      apply();
+      loadDrawSettings();
+    });
   } else {
     apply();
+    loadDrawSettings();
   }
 
   const observer = new MutationObserver(scheduleApply);

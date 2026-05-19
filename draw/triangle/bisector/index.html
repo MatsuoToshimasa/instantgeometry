@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>三角形と２等分線 | Instant Geometry</title>
+  <link rel="stylesheet" href="../../../assets/triangle-mobile-page.css?v=triangle-katex-6" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" />
+  <script src="/assets/save-quota.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <button class="btn" id="backBtn" type="button">戻る</button>
+      <h1 class="topbar-title">三角形と２等分線</h1>
+      <button class="btn" id="saveBtn" type="button">保存</button>
+    </header>
+
+    <section class="stage-wrap" id="captureRoot">
+      <div class="status" id="statusBox">AB、AC、BD から三角形 ABC と角Aの二等分線 AD を描画します。</div>
+      <svg class="stage" id="stage" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet" aria-label="三角形と２等分線の描画画面"></svg>
+    </section>
+
+    <footer class="bottom-bar">
+      <div class="field">
+        <div class="field-label">AB</div>
+        <input class="field-input" id="abInput" type="text" inputmode="text" value="6" />
+      </div>
+      <div class="field">
+        <div class="field-label">AC</div>
+        <input class="field-input" id="acInput" type="text" inputmode="text" value="8" />
+      </div>
+      <div class="field">
+        <div class="field-label">BD</div>
+        <input class="field-input" id="bdInput" type="text" inputmode="text" value="3" />
+      </div>
+    </footer>
+  </div>
+
+  <div class="sheet-backdrop" id="sheetBackdrop"></div>
+  <section class="sheet" id="editSheet" aria-hidden="true">
+    <div class="sheet-header">
+      <h2 class="sheet-title" id="sheetTitle">設定</h2>
+      <button class="sheet-close" id="sheetClose" type="button" aria-label="閉じる">×</button>
+    </div>
+    <div class="sheet-body" id="sheetBody"></div>
+  </section>
+
+  <section class="sheet" id="saveSheet" aria-hidden="true">
+    <div class="sheet-header">
+      <h2 class="sheet-title">保存</h2>
+      <button class="sheet-close" id="saveSheetClose" type="button" aria-label="閉じる">×</button>
+    </div>
+    <div class="sheet-body">
+      <div class="save-grid">
+        <button class="btn" id="savePngBtn" type="button">PNG</button>
+        <button class="btn" id="saveTransparentBtn" type="button">透過PNG</button>
+        <button class="btn" id="savePdfBtn" type="button">PDF</button>
+      </div>
+    </div>
+  </section>
+
+  <script src="../../../assets/mobile-angle-ornaments.js?v=triangle-katex-1"></script>
+  <script src="../../../assets/function-svg-labels.js?v=triangle-katex-1"></script>
+  <script src="../../../assets/draw-shared-labels.js?v=shared-katex-2"></script>
+  <script src="../../../assets/draw-label-taxonomy.js?v=taxonomy-1"></script>
+  <script src="../../../assets/draw-shared-label-engine.js?v=controller-1"></script>
+  <script src="../../../assets/triangle-mobile-page.js?v=controller-17"></script>
+  <script>
+    (function () {
+      'use strict';
+
+      function angleValue(vertex, p1, p2) {
+        const ax = p1.x - vertex.x;
+        const ay = p1.y - vertex.y;
+        const bx = p2.x - vertex.x;
+        const by = p2.y - vertex.y;
+        const dot = ax * bx + ay * by;
+        const len = (Math.hypot(ax, ay) || 1) * (Math.hypot(bx, by) || 1);
+        return Math.acos(Math.max(-1, Math.min(1, dot / len))) * 180 / Math.PI;
+      }
+
+      function labelPoint(vertex, p1, p2, rate) {
+        return {
+          x: vertex.x + ((p1.x - vertex.x) + (p2.x - vertex.x)) * (rate || 0.24),
+          y: vertex.y + ((p1.y - vertex.y) + (p2.y - vertex.y)) * (rate || 0.24)
+        };
+      }
+
+      function segmentLabelPoint(P, Q, center, distance) {
+        const mid = { x: (P.x + Q.x) / 2, y: (P.y + Q.y) / 2 };
+        const dx = Q.x - P.x;
+        const dy = Q.y - P.y;
+        const len = Math.hypot(dx, dy) || 1;
+        let nx = -dy / len;
+        let ny = dx / len;
+        if (nx * (center.x - mid.x) + ny * (center.y - mid.y) > 0) {
+          nx *= -1;
+          ny *= -1;
+        }
+        return {
+          x: mid.x + nx * (distance || 0.46),
+          y: mid.y + ny * (distance || 0.46)
+        };
+      }
+
+      function buildGeometry(values) {
+        const BC = values.BD * (values.AB + values.AC) / values.AB;
+        const CD = BC - values.BD;
+        if (!(BC > Math.abs(values.AB - values.AC) && BC < values.AB + values.AC)) {
+          throw new Error('AB、AC、BD から三角形を作れません。BD の値を調整してください。');
+        }
+        const B = { x: 0, y: 0 };
+        const C = { x: BC, y: 0 };
+        const ax = (values.AB * values.AB + BC * BC - values.AC * values.AC) / (2 * BC);
+        const ay = Math.sqrt(Math.max(0, values.AB * values.AB - ax * ax));
+        const A = { x: ax, y: ay };
+        const D = { x: values.BD, y: 0 };
+        const angleA = angleValue(A, B, C);
+        const angleB = angleValue(B, C, A);
+        return {
+          A: A,
+          B: B,
+          C: C,
+          D: D,
+          AB: values.AB,
+          AC: values.AC,
+          BD: values.BD,
+          CD: CD,
+          BC: BC,
+          AD: Math.hypot(A.x - D.x, A.y - D.y),
+          angleA: angleA,
+          angleB: angleB,
+          angleC: 180 - angleA - angleB
+        };
+      }
+
+      function extraAngles(geometry) {
+        return [
+          { id: 'BAD', name: '∠BAD', vertex: geometry.A, p1: geometry.B, p2: geometry.D, arcRadius: 0.72, hitRadius: 1.08, labelRate: 0.22 },
+          { id: 'CAD', name: '∠CAD', vertex: geometry.A, p1: geometry.D, p2: geometry.C, arcRadius: 0.92, hitRadius: 1.22, labelRate: 0.22 },
+          { id: 'ABD', name: '∠ABD', vertex: geometry.B, p1: geometry.A, p2: geometry.D, arcRadius: 0.82, hitRadius: 1.12, labelRate: 0.22 },
+          { id: 'ACD', name: '∠ACD', vertex: geometry.C, p1: geometry.A, p2: geometry.D, arcRadius: 0.82, hitRadius: 1.12, labelRate: 0.22 },
+          { id: 'ADC', name: '∠ADC', vertex: geometry.D, p1: geometry.A, p2: geometry.C, arcRadius: 0.72, hitRadius: 1.05, labelRate: 0.24 },
+          { id: 'ADB', name: '∠ADB', vertex: geometry.D, p1: geometry.A, p2: geometry.B, arcRadius: 0.96, hitRadius: 1.25, labelRate: 0.24 }
+        ].map(function (angle) {
+          angle.value = angleValue(angle.vertex, angle.p1, angle.p2);
+          angle.labelPoint = labelPoint(angle.vertex, angle.p1, angle.p2, angle.labelRate);
+          angle.labelFontSize = angle.vertex === geometry.A ? 44 : 42;
+          return angle;
+        });
+      }
+
+      function extraSegments(geometry) {
+        const center = {
+          x: (geometry.A.x + geometry.B.x + geometry.C.x) / 3,
+          y: (geometry.A.y + geometry.B.y + geometry.C.y) / 3
+        };
+        return [
+          { id: 'AB', name: 'AB', p1: geometry.A, p2: geometry.B, drawLine: false, value: geometry.AB, stroke: '#2a5bd7', labelPoint: segmentLabelPoint(geometry.A, geometry.B, center, 0.48) },
+          { id: 'BD', name: 'BD', p1: geometry.B, p2: geometry.D, drawLine: false, value: geometry.BD, stroke: '#2a5bd7', labelPoint: segmentLabelPoint(geometry.B, geometry.D, center, 0.42) },
+          { id: 'AC', name: 'AC', p1: geometry.A, p2: geometry.C, drawLine: false, value: geometry.AC, stroke: '#2a5bd7', labelPoint: segmentLabelPoint(geometry.A, geometry.C, center, 0.48) },
+          { id: 'CD', name: 'CD', p1: geometry.C, p2: geometry.D, drawLine: false, value: geometry.CD, stroke: '#2a5bd7', labelPoint: segmentLabelPoint(geometry.C, geometry.D, center, 0.42) },
+          { id: 'AD', name: 'AD', p1: geometry.A, p2: geometry.D, stroke: '#2a5bd7', strokeWidth: 3, dasharray: '8 7', value: geometry.AD, labelPoint: segmentLabelPoint(geometry.A, geometry.D, center, 0.42) }
+        ];
+      }
+
+      window.InstantGeometryTriangleMobile.createPage({
+        readyMessage: 'AB、AC、BD から三角形と２等分線を描画しました。',
+        fileBase: 'triangle-bisector',
+        disabledBaseAngleHits: ['A', 'B', 'C'],
+        disabledBaseSideHits: ['a', 'b', 'c'],
+        pageAngleArcRadius: 0.86,
+        angleMarkScale: 1.35,
+        extraAngleMarkScale: 1.35,
+        controlInputIds: {
+          AB: 'abInput',
+          AC: 'acInput',
+          BD: 'bdInput'
+        },
+        initialState: {
+          sides: { a: 7, b: 8, c: 6 },
+          pointInputs: { A: 'A', B: 'B', C: 'C', D: 'D' },
+          sideInputs: { a: '', b: '', c: '' },
+          sideKinds: { a: 'plain', b: 'plain', c: 'plain' },
+          sideArcVisible: { a: false, b: false, c: false },
+          angleInputs: { A: '', B: '', C: '' },
+          angleKinds: { A: 'hidden', B: 'hidden', C: 'hidden' },
+          extraAngleInputs: { BAD: '', CAD: '', ABD: '', ACD: '', ADC: '', ADB: '' },
+          extraAngleKinds: { BAD: 'circle', CAD: 'circle', ABD: 'hidden', ACD: 'hidden', ADC: 'hidden', ADB: 'hidden' },
+          extraSegmentInputs: { AB: ' ', BD: ' ', AC: ' ', CD: ' ', AD: '' },
+          extraSegmentKinds: { AB: 'plain', BD: 'plain', AC: 'plain', CD: 'plain', AD: 'plain' },
+          extraSegmentArcVisible: { AB: true, BD: true, AC: true, CD: true, AD: false },
+          areaValue: ''
+        },
+        readControls: function (inputs, parseNatural) {
+          return {
+            AB: parseNatural(inputs.AB.value, 'AB'),
+            AC: parseNatural(inputs.AC.value, 'AC'),
+            BD: parseNatural(inputs.BD.value, 'BD')
+          };
+        },
+        applyControlsToState: function (state, parsed) {
+          state.sides.b = parsed.AC;
+          state.sides.c = parsed.AB;
+        },
+        computeGeometry: function (state, parsed) {
+          const geometry = buildGeometry(parsed);
+          state.sides.a = geometry.BC;
+          state.sides.b = geometry.AC;
+          state.sides.c = geometry.AB;
+          return geometry;
+        },
+        extraPoints: function (context) {
+          const g = context.geometry;
+          return [
+            { id: 'D', point: g.D, labelPoint: { x: g.D.x, y: g.D.y - 0.48 }, fill: '#2a5bd7', radius: 7, labelFontSize: 48 }
+          ];
+        },
+        extraSegments: function (context) {
+          return extraSegments(context.geometry);
+        },
+        extraAngles: function (context) {
+          return extraAngles(context.geometry);
+        },
+        angleNumericMode: function () {
+          return 'readonly';
+        }
+      });
+    })();
+  </script>
+  <script src="/assets/site-auto-i18n.js?v=triangle-katex-1"></script>
+</body>
+</html>

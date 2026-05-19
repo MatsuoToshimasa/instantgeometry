@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>七角形と外角和 | Instant Geometry</title>
+  <link rel="stylesheet" href="../../../assets/quadrilateral-mobile-page.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" />
+  <style>
+    .bottom-bar.many-fields{display:flex;gap:10px;overflow-x:auto;padding-bottom:2px;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+    .bottom-bar.many-fields::-webkit-scrollbar{display:none}
+    .bottom-bar.many-fields .field{flex:0 0 118px;scroll-snap-align:start}
+    .bottom-bar.many-fields .field-label{white-space:nowrap}
+  </style>
+  <script src="/assets/save-quota.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar"><button class="btn" id="backBtn" type="button">戻る</button><h1 class="topbar-title">七角形と外角和</h1><button class="btn" id="saveBtn" type="button">保存</button></header>
+    <section class="stage-wrap" id="captureRoot">
+      <div class="status" id="statusBox">∠HAG、∠IBA、∠JCB、∠KDC、∠LED、∠MFE、∠NGF を外角として描画します。</div>
+      <svg class="stage" id="stage" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet" aria-label="七角形と外角和の描画画面"></svg>
+    </section>
+    <footer class="bottom-bar many-fields">
+      <div class="field"><div class="field-label">∠HAG</div><input class="field-input" id="angleHAGInput" type="text" inputmode="decimal" value="50" /></div>
+      <div class="field"><div class="field-label">∠IBA</div><input class="field-input" id="angleIBAInput" type="text" inputmode="decimal" value="50" /></div>
+      <div class="field"><div class="field-label">∠JCB</div><input class="field-input" id="angleJCBInput" type="text" inputmode="decimal" value="50" /></div>
+      <div class="field"><div class="field-label">∠KDC</div><input class="field-input" id="angleKDCInput" type="text" inputmode="decimal" value="50" /></div>
+      <div class="field"><div class="field-label">∠LED</div><input class="field-input" id="angleLEDInput" type="text" inputmode="decimal" value="50" /></div>
+      <div class="field"><div class="field-label">∠MFE</div><input class="field-input" id="angleMFEInput" type="text" inputmode="decimal" value="55" /></div>
+      <div class="field"><div class="field-label">∠NGF</div><input class="field-input" id="angleNGFInput" type="text" inputmode="decimal" value="55" /></div>
+    </footer>
+  </div>
+  <div class="sheet-backdrop" id="sheetBackdrop"></div>
+  <section class="sheet" id="editSheet" aria-hidden="true"><div class="sheet-header"><h2 class="sheet-title" id="sheetTitle">設定</h2><button class="sheet-close" id="sheetClose" type="button" aria-label="閉じる">×</button></div><div class="sheet-body" id="sheetBody"></div></section>
+  <section class="sheet" id="saveSheet" aria-hidden="true"><div class="sheet-header"><h2 class="sheet-title">保存</h2><button class="sheet-close" id="saveSheetClose" type="button" aria-label="閉じる">×</button></div><div class="sheet-body"><div class="save-grid"><button class="btn" id="savePngBtn" type="button">PNG</button><button class="btn" id="saveTransparentBtn" type="button">透過PNG</button><button class="btn" id="savePdfBtn" type="button">PDF</button></div></div></section>
+  <script src="../../../assets/draw-shared-labels.js?v=shared-katex-2"></script>
+  <script src="../../../assets/function-svg-labels.js?v=polygon-katex-1"></script>
+  <script src="../../../assets/mobile-angle-ornaments.js?v=angle-modal-1"></script>
+  <script src="../../../assets/draw-label-taxonomy.js?v=taxonomy-1"></script>
+  <script src="../../../assets/draw-shared-label-engine.js?v=controller-1"></script>
+  <script src="../../../assets/polygon-mobile-page.js"></script>
+  <script>
+    const baseIds = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
+    const extIds = ['H', 'I', 'J', 'K', 'L', 'M', 'N'];
+    const extraIds = ['HAG', 'IBA', 'JCB', 'KDC', 'LED', 'MFE', 'NGF'];
+
+    function angleBetween(prev, vertex, next) {
+      const ux = prev.x - vertex.x, uy = prev.y - vertex.y, vx = next.x - vertex.x, vy = next.y - vertex.y;
+      const denom = (Math.hypot(ux, uy) || 1) * (Math.hypot(vx, vy) || 1);
+      return Math.acos(Math.max(-1, Math.min(1, (ux * vx + uy * vy) / denom))) * 180 / Math.PI;
+    }
+    function pointOnRay(P, Q, distance) {
+      const dx = Q.x - P.x, dy = Q.y - P.y, len = Math.hypot(dx, dy) || 1;
+      return { x: P.x + dx / len * distance, y: P.y + dy / len * distance };
+    }
+    function extensionPoints(geometry) {
+      const result = {};
+      baseIds.forEach(function (id, index) {
+        const next = baseIds[(index + 1) % baseIds.length];
+        result[extIds[index]] = pointOnRay(geometry.points[id], geometry.points[next], -2.2);
+      });
+      return result;
+    }
+    function orientBase(rawPoints, pointIds) {
+      const A = rawPoints[0], B = rawPoints[1], angle = Math.atan2(B.y - A.y, B.x - A.x);
+      const cos = Math.cos(-angle), sin = Math.sin(-angle);
+      const rotated = rawPoints.map(function (point) { return { x: point.x * cos - point.y * sin, y: -(point.x * sin + point.y * cos) }; });
+      const lower = (rotated[0].y + rotated[1].y) / 2;
+      const upper = rotated.slice(2).reduce(function (sum, point) { return sum + point.y / (pointIds.length - 2); }, 0);
+      if (upper > lower) rotated.forEach(function (point) { point.y *= -1; });
+      return rotated;
+    }
+    function exteriorLabelPoint(vertex, p1, p2) {
+      return { x: vertex.x + (p1.x - vertex.x) * 0.34 + (p2.x - vertex.x) * 0.18, y: vertex.y + (p1.y - vertex.y) * 0.34 + (p2.y - vertex.y) * 0.18 };
+    }
+
+    window.InstantGeometryPolygonMobile.createPage({
+      mode: 'angles',
+      normalizeMinSide: 5,
+      transformRawPoints: orientBase,
+      pointIds: baseIds,
+      sideIds: ['AB', 'BC', 'CD', 'DE', 'EF', 'FG', 'GA'],
+      areaName: '七角形ABCDEFG',
+      readyMessage: '∠HAG、∠IBA、∠JCB、∠KDC、∠LED、∠MFE、∠NGF を外角として描画しました。',
+      errorMessage: 'この角の組み合わせでは七角形を作れません。',
+      fileBase: 'polygon-heptagon-exterior-angle-sum',
+      controls: extraIds.map(function (id) { return { key: id, id: 'angle' + id + 'Input', label: '∠' + id }; }),
+      readValues: function (inputs, parsePositiveNumber) {
+        const exterior = {};
+        extraIds.forEach(function (id) {
+          exterior[id] = parsePositiveNumber(inputs[id].value, '∠' + id);
+          if (!(exterior[id] > 0 && exterior[id] < 180)) throw new Error('∠' + id + 'を 0° より大きく 180° 未満で入力してください。');
+        });
+        const sum = extraIds.reduce(function (total, id) { return total + exterior[id]; }, 0);
+        if (Math.abs(sum - 360) > 0.01) throw new Error('7つの外角の和が 360° になるように入力してください。現在は ' + (Math.round(sum * 100) / 100) + '° です。');
+        return { A: 180 - exterior.HAG, B: 180 - exterior.IBA, C: 180 - exterior.JCB, D: 180 - exterior.KDC, E: 180 - exterior.LED, F: 180 - exterior.MFE, G: 180 - exterior.NGF };
+      },
+      angleNames: { A: ['G', 'A', 'B'], B: ['A', 'B', 'C'], C: ['B', 'C', 'D'], D: ['C', 'D', 'E'], E: ['D', 'E', 'F'], F: ['E', 'F', 'G'], G: ['F', 'G', 'A'] },
+      extraAngles: function (context) {
+        const ext = extensionPoints(context.geometry);
+        return baseIds.map(function (id, index) {
+          const prev = baseIds[(index - 1 + baseIds.length) % baseIds.length], extId = extIds[index], extraId = extraIds[index], vertex = context.geometry.points[id];
+          return { id: extraId, name: '∠' + extraId, value: angleBetween(ext[extId], vertex, context.geometry.points[prev]), vertex: vertex, p1: ext[extId], p2: context.geometry.points[prev], labelPoint: exteriorLabelPoint(vertex, ext[extId], context.geometry.points[prev]) };
+        });
+      },
+      drawAuxiliary: function (ctx) {
+        const ext = extensionPoints(ctx.geometry);
+        extIds.forEach(function (extId, index) {
+          const tV = ctx.screen[baseIds[index]], tP = ctx.fitPoint(ext[extId]);
+          ctx.stage.appendChild(ctx.createSvg('line', { x1: tV.x, y1: tV.y, x2: tP.x, y2: tP.y, stroke: '#7f8aa3', 'stroke-width': '3', 'stroke-linecap': 'round', 'stroke-dasharray': '9 7' }));
+          const label = ctx.getPointLabel(extId);
+          const point = ctx.createSvg('circle', { cx: tP.x, cy: tP.y, r: label ? 8 : 18, fill: label ? '#1f2430' : 'transparent' });
+          ctx.attachHit(point, 'point', extId);
+          ctx.stage.appendChild(point);
+          if (label) {
+            const text = ctx.createLabelNode(label, { x: tP.x, y: tP.y - 34, 'text-anchor': 'middle', 'dominant-baseline': 'middle', 'font-size': '58', 'font-weight': '700', fill: '#1f2430' });
+            ctx.attachHit(text, 'point', extId);
+            ctx.stage.appendChild(text);
+          }
+        });
+      },
+      initialState: {
+        pointInputs: { A: 'A', B: 'B', C: 'C', D: 'D', E: 'E', F: 'F', G: 'G', H: '', I: '', J: '', K: '', L: '', M: '', N: '' },
+        sideInputs: { AB: '', BC: '', CD: '', DE: '', EF: '', FG: '', GA: '' },
+        angleInputs: { A: '', B: '', C: '', D: '', E: '', F: '', G: '' },
+        angleKinds: { A: 'hidden', B: 'hidden', C: 'hidden', D: 'hidden', E: 'hidden', F: 'hidden', G: 'hidden' },
+        extraAngleInputs: { HAG: ' ', IBA: ' ', JCB: ' ', KDC: ' ', LED: ' ', MFE: ' ', NGF: ' ' },
+        extraAngleKinds: { HAG: 'plain', IBA: 'plain', JCB: 'plain', KDC: 'plain', LED: 'plain', MFE: 'plain', NGF: 'plain' },
+        areaValue: ''
+      }
+    });
+  </script>
+  <script src="/assets/site-auto-i18n.js"></script>
+</body>
+</html>

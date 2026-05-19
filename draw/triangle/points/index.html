@@ -2,172 +2,219 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>三角形（3点座標）準備中 | Instant Geometry</title>
-  <link rel="stylesheet" href="/assets/base.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>三角形（3点座標） | Instant Geometry</title>
+  <link rel="stylesheet" href="../../../assets/triangle-mobile-page.css?v=triangle-katex-6" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" />
+  <script src="/assets/save-quota.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <style>
-    :root{
-      --panel:#ffffff;
-      --line:#d9dce7;
-      --text:#1f2430;
-      --muted:#687086;
-      --accent:#2a5bd7;
-      --shadow:0 10px 28px rgba(27,39,94,.08);
+    .bottom-bar.coordinate-fields{
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:8px 10px;
     }
 
-    *{box-sizing:border-box}
-
-    html,body{
-      height:100%;
-      margin:0;
-      overflow:hidden;
-      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;
-      color:var(--text);
-      background:
-        repeating-linear-gradient(45deg, rgba(42,91,215,.06) 0 12px, transparent 12px 28px),
-        linear-gradient(180deg,#f8faff 0%,#f3f6fc 100%);
+    .bottom-bar.coordinate-fields .field-label{
+      font-size:10px;
     }
 
-    .page{
-      position:relative;
-      width:100%;
-      height:100%;
-      display:grid;
-      place-items:center;
-      padding:24px;
-    }
-
-    .back-btn{
-      position:absolute;
-      top:8px;
-      left:50%;
-      transform:translateX(-50%);
-      z-index:10;
-      min-width:156px;
-      padding:10px 14px;
-      border:1px solid #cfd7ea;
-      border-radius:13px;
-      background:linear-gradient(180deg,#ffffff 0%,#f6f8ff 100%);
-      color:#24304d;
-      font-size:13px;
-      font-weight:700;
-      cursor:pointer;
-      box-shadow:0 1px 0 rgba(255,255,255,.9) inset, 0 2px 8px rgba(36,71,168,.08);
-    }
-
-    .back-btn:hover{
-      border-color:#9fb3ea;
-      color:#1f3d94;
-      background:linear-gradient(180deg,#ffffff 0%,#eef3ff 100%);
-    }
-
-    .card{
-      width:min(740px,calc(100vw - 48px));
-      background:var(--panel);
-      border:1px solid var(--line);
-      border-radius:24px;
-      box-shadow:var(--shadow);
-      padding:34px 30px;
-      text-align:center;
-    }
-
-    .pill{
-      display:inline-block;
-      padding:6px 10px;
-      border-radius:999px;
-      font-size:12px;
-      font-weight:700;
-      color:#1f3d94;
-      background:#eef3ff;
-      border:1px solid #cfdcff;
-    }
-
-    h1{
-      margin:14px 0 8px;
-      font-size:34px;
-      line-height:1.2;
-      letter-spacing:-.01em;
-    }
-
-    p{
-      margin:0 auto;
-      max-width:560px;
-      color:var(--muted);
+    .bottom-bar.coordinate-fields .field-input{
+      min-height:36px;
+      padding:7px 8px;
       font-size:15px;
-      line-height:1.85;
-    }
-
-    .dots{
-      margin:22px auto 0;
-      display:flex;
-      justify-content:center;
-      gap:8px;
-    }
-
-    .dot{
-      width:9px;
-      height:9px;
-      border-radius:50%;
-      background:#2a5bd7;
-      animation:blink 1.2s infinite ease-in-out;
-    }
-
-    .dot:nth-child(2){ animation-delay:.15s; }
-    .dot:nth-child(3){ animation-delay:.3s; }
-
-    .links{
-      margin-top:24px;
-      display:flex;
-      justify-content:center;
-      gap:10px;
-      flex-wrap:wrap;
-    }
-
-    .link{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      min-width:136px;
-      padding:10px 14px;
-      border-radius:12px;
-      border:1px solid #d6dcef;
-      background:#fff;
-      color:#22345e;
-      text-decoration:none;
-      font-size:13px;
-      font-weight:700;
-    }
-
-    .link.primary{
-      border-color:#b8c8f2;
-      background:linear-gradient(180deg,#ffffff 0%,#edf2ff 100%);
-      color:#1f3d94;
-    }
-
-    @keyframes blink{
-      0%,80%,100%{ opacity:.28; transform:translateY(0); }
-      40%{ opacity:1; transform:translateY(-2px); }
     }
   </style>
 </head>
 <body>
-  <main class="page">
-    <button class="back-btn" type="button" onclick="history.back()">前の画面に戻る</button>
-    <section class="card" aria-live="polite">
-      <span class="pill">COMING SOON</span>
-      <h1>三角形（3点座標）は準備中です</h1>
-      <p>座標系を前提にした専用UI・補助線・ラベル操作を、他の三角形ページと整合する形で実装中です。<br>今は先に、他の三角形モードをご利用ください。</p>
-      <div class="dots" aria-hidden="true">
-        <span class="dot"></span>
-        <span class="dot"></span>
-        <span class="dot"></span>
-      </div>
-      <div class="links">
-        <a class="link primary" href="/draw/triangle/sss/">SSS を開く</a>
-        <a class="link" href="/draw/triangle/base-height/">底辺＋高さを開く</a>
-        <a class="link" href="/draw/">図形一覧へ戻る</a>
-      </div>
+  <div class="app">
+    <header class="topbar">
+      <button class="btn" id="backBtn" type="button">戻る</button>
+      <h1 class="topbar-title">三角形（3点座標）</h1>
+      <button class="btn" id="saveBtn" type="button">保存</button>
+    </header>
+
+    <section class="stage-wrap" id="captureRoot">
+      <div class="status error" id="statusBox">3点の座標から三角形を描画します。</div>
+      <svg class="stage" id="stage" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet" aria-label="三角形（3点座標）の描画画面"></svg>
     </section>
-  </main>
+
+    <footer class="bottom-bar coordinate-fields">
+      <div class="field">
+        <div class="field-label">Ax</div>
+        <input class="field-input" id="axInput" type="text" inputmode="text" value="2" />
+      </div>
+      <div class="field">
+        <div class="field-label">Ay</div>
+        <input class="field-input" id="ayInput" type="text" inputmode="text" value="4" />
+      </div>
+      <div class="field">
+        <div class="field-label">Bx</div>
+        <input class="field-input" id="bxInput" type="text" inputmode="text" value="0" />
+      </div>
+      <div class="field">
+        <div class="field-label">By</div>
+        <input class="field-input" id="byInput" type="text" inputmode="text" value="0" />
+      </div>
+      <div class="field">
+        <div class="field-label">Cx</div>
+        <input class="field-input" id="cxInput" type="text" inputmode="text" value="6" />
+      </div>
+      <div class="field">
+        <div class="field-label">Cy</div>
+        <input class="field-input" id="cyInput" type="text" inputmode="text" value="0" />
+      </div>
+    </footer>
+  </div>
+
+  <div class="sheet-backdrop" id="sheetBackdrop"></div>
+  <section class="sheet" id="editSheet" aria-hidden="true">
+    <div class="sheet-header">
+      <h2 class="sheet-title" id="sheetTitle">設定</h2>
+      <button class="sheet-close" id="sheetClose" type="button" aria-label="閉じる">×</button>
+    </div>
+    <div class="sheet-body" id="sheetBody"></div>
+  </section>
+
+  <section class="sheet" id="saveSheet" aria-hidden="true">
+    <div class="sheet-header">
+      <h2 class="sheet-title">保存</h2>
+      <button class="sheet-close" id="saveSheetClose" type="button" aria-label="閉じる">×</button>
+    </div>
+    <div class="sheet-body">
+      <div class="save-grid">
+        <button class="btn" id="savePngBtn" type="button">PNG</button>
+        <button class="btn" id="saveTransparentBtn" type="button">透過PNG</button>
+        <button class="btn" id="savePdfBtn" type="button">PDF</button>
+      </div>
+    </div>
+  </section>
+
+  <script src="../../../assets/mobile-angle-ornaments.js?v=triangle-katex-1"></script>
+  <script src="../../../assets/function-svg-labels.js?v=triangle-katex-1"></script>
+  <script src="../../../assets/draw-shared-labels.js?v=shared-katex-2"></script>
+  <script src="../../../assets/draw-label-taxonomy.js?v=taxonomy-1"></script>
+  <script src="../../../assets/draw-shared-label-engine.js?v=controller-1"></script>
+  <script src="../../../assets/triangle-mobile-page.js?v=controller-17"></script>
+  <script>
+    function parseCoordinate(value, name) {
+      const text = String(value || '').trim();
+      if (!/^-?(?:[0-9]+(?:\.[0-9]+)?|\.[0-9]+)$/.test(text)) {
+        throw new Error(name + ' には数値を入力してください。');
+      }
+      const number = Number(text);
+      if (!Number.isFinite(number)) {
+        throw new Error(name + ' には有限の数値を入力してください。');
+      }
+      return number;
+    }
+
+    function distance(P, Q) {
+      return Math.hypot(P.x - Q.x, P.y - Q.y);
+    }
+
+    function toDegrees(rad) {
+      return rad * 180 / Math.PI;
+    }
+
+    function angleAt(vertex, first, second) {
+      const ux = first.x - vertex.x;
+      const uy = first.y - vertex.y;
+      const vx = second.x - vertex.x;
+      const vy = second.y - vertex.y;
+      const lenU = Math.hypot(ux, uy);
+      const lenV = Math.hypot(vx, vy);
+      if (lenU === 0 || lenV === 0) {
+        throw new Error('同じ座標の点があるため三角形を作れません。');
+      }
+      const cosine = Math.max(-1, Math.min(1, ((ux * vx) + (uy * vy)) / (lenU * lenV)));
+      return toDegrees(Math.acos(cosine));
+    }
+
+    function computeTriangleFromPoints(A, B, C) {
+      const epsilon = 1e-9;
+      if (distance(A, B) < epsilon || distance(B, C) < epsilon || distance(C, A) < epsilon) {
+        throw new Error('3点はすべて異なる座標にしてください。');
+      }
+      const cross = ((B.x - A.x) * (C.y - A.y)) - ((B.y - A.y) * (C.x - A.x));
+      if (Math.abs(cross) < epsilon) {
+        throw new Error('3点が一直線上にあるため三角形を作れません。');
+      }
+      return {
+        A: A,
+        B: B,
+        C: C,
+        angleA: angleAt(A, B, C),
+        angleB: angleAt(B, C, A),
+        angleC: angleAt(C, A, B)
+      };
+    }
+
+    window.InstantGeometryTriangleMobile.createPage({
+      readyMessage: '入力をもとに3点座標の三角形を描画しています。',
+      fileBase: 'triangle-points',
+      controlInputIds: {
+        ax: 'axInput',
+        ay: 'ayInput',
+        bx: 'bxInput',
+        by: 'byInput',
+        cx: 'cxInput',
+        cy: 'cyInput'
+      },
+      initialState: {
+        sides: { a: 0, b: 0, c: 0 },
+        points: {
+          A: { x: 2, y: 4 },
+          B: { x: 0, y: 0 },
+          C: { x: 6, y: 0 }
+        },
+        pointInputs: { A: 'A', B: 'B', C: 'C' },
+        sideInputs: { a: '', b: '', c: '' },
+        sideKinds: { a: 'plain', b: 'plain', c: 'plain' },
+        sideArcVisible: { a: true, b: true, c: true },
+        angleInputs: { A: '', B: '', C: '' },
+        angleKinds: { A: 'hidden', B: 'hidden', C: 'hidden' },
+        areaValue: ''
+      },
+      readControls: function (inputs) {
+        return {
+          A: {
+            x: parseCoordinate(inputs.ax.value, 'Ax'),
+            y: parseCoordinate(inputs.ay.value, 'Ay')
+          },
+          B: {
+            x: parseCoordinate(inputs.bx.value, 'Bx'),
+            y: parseCoordinate(inputs.by.value, 'By')
+          },
+          C: {
+            x: parseCoordinate(inputs.cx.value, 'Cx'),
+            y: parseCoordinate(inputs.cy.value, 'Cy')
+          }
+        };
+      },
+      applyControlsToState: function (state, parsed) {
+        state.points.A = { x: parsed.A.x, y: parsed.A.y };
+        state.points.B = { x: parsed.B.x, y: parsed.B.y };
+        state.points.C = { x: parsed.C.x, y: parsed.C.y };
+      },
+      computeGeometry: function (state, parsed) {
+        const geometry = computeTriangleFromPoints(parsed.A, parsed.B, parsed.C);
+        state.sides.a = distance(parsed.B, parsed.C);
+        state.sides.b = distance(parsed.C, parsed.A);
+        state.sides.c = distance(parsed.A, parsed.B);
+        return geometry;
+      },
+      sideNumericMode: function () {
+        return 'readonly';
+      },
+      angleNumericMode: function () {
+        return 'readonly';
+      },
+      updateSideControl: function () {},
+      updateAngleControl: function () {}
+    });
+  </script>
+  <script src="/assets/site-auto-i18n.js?v=triangle-katex-1"></script>
 </body>
 </html>

@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>リボン相似 | Instant Geometry</title>
+  <link rel="stylesheet" href="../../../assets/triangle-mobile-page.css?v=triangle-katex-6" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" />
+  <script src="/assets/save-quota.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <button class="btn" id="backBtn" type="button">戻る</button>
+      <h1 class="topbar-title">リボン相似</h1>
+      <button class="btn" id="saveBtn" type="button">保存</button>
+    </header>
+
+    <section class="stage-wrap" id="captureRoot">
+      <div class="status" id="statusBox">AB、CD を入力すると、AB//CD//EF となるリボン相似の図を描画します。</div>
+      <svg class="stage" id="stage" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet" aria-label="リボン相似の描画画面"></svg>
+    </section>
+
+    <footer class="bottom-bar two-fields">
+      <div class="field">
+        <div class="field-label">AB</div>
+        <input class="field-input" id="abInput" type="text" inputmode="text" value="4" />
+      </div>
+      <div class="field">
+        <div class="field-label">CD</div>
+        <input class="field-input" id="dcInput" type="text" inputmode="text" value="7" />
+      </div>
+    </footer>
+  </div>
+
+  <div class="sheet-backdrop" id="sheetBackdrop"></div>
+  <section class="sheet" id="editSheet" aria-hidden="true">
+    <div class="sheet-header">
+      <h2 class="sheet-title" id="sheetTitle">設定</h2>
+      <button class="sheet-close" id="sheetClose" type="button" aria-label="閉じる">×</button>
+    </div>
+    <div class="sheet-body" id="sheetBody"></div>
+  </section>
+
+  <section class="sheet" id="saveSheet" aria-hidden="true">
+    <div class="sheet-header">
+      <h2 class="sheet-title">保存</h2>
+      <button class="sheet-close" id="saveSheetClose" type="button" aria-label="閉じる">×</button>
+    </div>
+    <div class="sheet-body">
+      <div class="save-grid">
+        <button class="btn" id="savePngBtn" type="button">PNG</button>
+        <button class="btn" id="saveTransparentBtn" type="button">透過PNG</button>
+        <button class="btn" id="savePdfBtn" type="button">PDF</button>
+      </div>
+    </div>
+  </section>
+
+  <script src="../../../assets/mobile-angle-ornaments.js?v=triangle-katex-1"></script>
+  <script src="../../../assets/function-svg-labels.js?v=triangle-katex-1"></script>
+  <script src="../../../assets/draw-shared-labels.js?v=shared-katex-2"></script>
+  <script src="../../../assets/draw-label-taxonomy.js?v=taxonomy-1"></script>
+  <script src="../../../assets/draw-shared-label-engine.js?v=controller-1"></script>
+  <script src="../../../assets/triangle-mobile-page.js?v=controller-17"></script>
+  <script>
+    (function () {
+      'use strict';
+
+      function segmentLength(P, Q) {
+        return Math.hypot(P.x - Q.x, P.y - Q.y);
+      }
+
+      function lineIntersection(P, Q, R, S) {
+        const vx = Q.x - P.x;
+        const vy = Q.y - P.y;
+        const wx = S.x - R.x;
+        const wy = S.y - R.y;
+        const denominator = vx * wy - vy * wx;
+        if (Math.abs(denominator) < 1e-10) {
+          throw new Error('交点を計算できません。入力値を確認してください。');
+        }
+        const t = ((R.x - P.x) * wy - (R.y - P.y) * wx) / denominator;
+        return {
+          x: P.x + vx * t,
+          y: P.y + vy * t
+        };
+      }
+
+      function angleDegrees(P, vertex, Q) {
+        const ux = P.x - vertex.x;
+        const uy = P.y - vertex.y;
+        const vx = Q.x - vertex.x;
+        const vy = Q.y - vertex.y;
+        const length = Math.hypot(ux, uy) * Math.hypot(vx, vy);
+        if (!length) return 0;
+        const cosine = Math.max(-1, Math.min(1, (ux * vx + uy * vy) / length));
+        return Math.acos(cosine) * 180 / Math.PI;
+      }
+
+      function areaOfTriangle(P, Q, R) {
+        return Math.abs((Q.x - P.x) * (R.y - P.y) - (R.x - P.x) * (Q.y - P.y)) / 2;
+      }
+
+      function segmentLabelPoint(P, Q, center, distance) {
+        const midpoint = { x: (P.x + Q.x) / 2, y: (P.y + Q.y) / 2 };
+        const dx = Q.x - P.x;
+        const dy = Q.y - P.y;
+        const length = Math.hypot(dx, dy) || 1;
+        let nx = -dy / length;
+        let ny = dx / length;
+        if (nx * (center.x - midpoint.x) + ny * (center.y - midpoint.y) > 0) {
+          nx *= -1;
+          ny *= -1;
+        }
+        return {
+          x: midpoint.x + nx * (distance || 0.42),
+          y: midpoint.y + ny * (distance || 0.42)
+        };
+      }
+
+      function buildRibbonGeometry(values) {
+        const rawDirection = { x: -0.45, y: 0.89 };
+        const directionLength = Math.hypot(rawDirection.x, rawDirection.y) || 1;
+        const direction = {
+          x: rawDirection.x / directionLength,
+          y: rawDirection.y / directionLength
+        };
+        const base = values.AB + values.DC + 4;
+        const B = { x: 0, y: 0 };
+        const C = { x: base, y: 0 };
+        const A = {
+          x: B.x + values.AB * direction.x,
+          y: B.y + values.AB * direction.y
+        };
+        const D = {
+          x: C.x + values.DC * direction.x,
+          y: C.y + values.DC * direction.y
+        };
+        const E = lineIntersection(A, C, B, D);
+        const down = -E.y / direction.y;
+        const F = {
+          x: E.x + direction.x * down,
+          y: E.y + direction.y * down
+        };
+        const angleA = angleDegrees(B, A, C);
+        const angleB = angleDegrees(C, B, A);
+        const angleC = 180 - angleA - angleB;
+        return {
+          A: A,
+          B: B,
+          C: C,
+          D: D,
+          E: E,
+          F: F,
+          angleA: angleA,
+          angleB: angleB,
+          angleC: angleC,
+          AB: values.AB,
+          DC: values.DC,
+          BC: base,
+          AC: segmentLength(A, C),
+          BD: segmentLength(B, D),
+          EF: segmentLength(E, F),
+          BE: segmentLength(B, E),
+          CE: segmentLength(C, E),
+          BF: segmentLength(B, F),
+          CF: segmentLength(C, F),
+          AE: segmentLength(A, E),
+          DE: segmentLength(D, E)
+        };
+      }
+
+      function ribbonSegments(geometry) {
+        const center = {
+          x: (geometry.A.x + geometry.B.x + geometry.C.x + geometry.D.x) / 4,
+          y: (geometry.A.y + geometry.B.y + geometry.C.y + geometry.D.y) / 4
+        };
+        const crossCenter = {
+          x: (geometry.A.x + geometry.B.x + geometry.C.x + geometry.D.x + geometry.E.x) / 5,
+          y: (geometry.A.y + geometry.B.y + geometry.C.y + geometry.D.y + geometry.E.y) / 5
+        };
+        const baseCenter = {
+          x: (geometry.B.x + geometry.C.x + geometry.F.x) / 3,
+          y: (geometry.B.y + geometry.C.y + geometry.F.y) / 3 - 0.45
+        };
+        return [
+          { id: 'CD', name: 'CD', p1: geometry.C, p2: geometry.D, stroke: '#2a5bd7', strokeWidth: 3, dasharray: 'none', value: geometry.DC, labelPoint: segmentLabelPoint(geometry.C, geometry.D, center, 0.44) },
+          { id: 'BD', name: 'BD', p1: geometry.B, p2: geometry.D, stroke: '#2a5bd7', strokeWidth: 3, dasharray: 'none', value: geometry.BD, labelPoint: segmentLabelPoint(geometry.B, geometry.D, crossCenter, 0.42), hitEnabled: false },
+          { id: 'EF', name: 'EF', p1: geometry.E, p2: geometry.F, stroke: '#2a5bd7', strokeWidth: 3, dasharray: 'none', value: geometry.EF, labelPoint: { x: geometry.E.x - 0.62, y: (geometry.E.y + geometry.F.y) / 2 } },
+          { id: 'BE', name: 'BE', p1: geometry.B, p2: geometry.E, drawLine: false, value: geometry.BE, stroke: '#2a5bd7', labelPoint: segmentLabelPoint(geometry.B, geometry.E, crossCenter, 0.35) },
+          { id: 'CE', name: 'CE', p1: geometry.C, p2: geometry.E, drawLine: false, value: geometry.CE, stroke: '#2a5bd7', labelPoint: segmentLabelPoint(geometry.C, geometry.E, crossCenter, 0.35) },
+          { id: 'BF', name: 'BF', p1: geometry.B, p2: geometry.F, drawLine: false, value: geometry.BF, stroke: '#2a5bd7', labelPoint: segmentLabelPoint(geometry.B, geometry.F, baseCenter, 0.34) },
+          { id: 'CF', name: 'CF', p1: geometry.C, p2: geometry.F, drawLine: false, value: geometry.CF, stroke: '#2a5bd7', labelPoint: segmentLabelPoint(geometry.C, geometry.F, baseCenter, 0.34) },
+          { id: 'AE', name: 'AE', p1: geometry.A, p2: geometry.E, drawLine: false, value: geometry.AE, stroke: '#2a5bd7', labelPoint: segmentLabelPoint(geometry.A, geometry.E, crossCenter, 0.42) },
+          { id: 'DE', name: 'DE', p1: geometry.D, p2: geometry.E, drawLine: false, value: geometry.DE, stroke: '#2a5bd7', labelPoint: { x: (geometry.D.x + geometry.E.x) / 2 + 0.5, y: (geometry.D.y + geometry.E.y) / 2 + 0.34 } }
+        ];
+      }
+
+      window.InstantGeometryTriangleMobile.createPage({
+        readyMessage: 'AB、CD からリボン相似の図を描画しました。',
+        fileBase: 'triangle-ribbon-similarity',
+        controlInputIds: {
+          AB: 'abInput',
+          DC: 'dcInput'
+        },
+        initialState: {
+          sides: { a: 15, b: 0, c: 4 },
+          pointInputs: { A: 'A', B: 'B', C: 'C', D: 'D', E: 'E', F: 'F' },
+          sideInputs: { a: '', b: '', c: ' ' },
+          sideKinds: { a: 'plain', b: 'plain', c: 'plain' },
+          sideArcVisible: { a: false, b: false, c: true },
+          angleInputs: { A: '', B: '', C: '' },
+          angleKinds: { A: 'hidden', B: 'hidden', C: 'hidden' },
+          areaValue: '',
+          areaColor: '#ffffff',
+          extraAreaInputs: { ABE: '', BEF: '', CEF: '', CDE: '' },
+          extraAreaColors: { ABE: '#ffffff', BEF: '#ffffff', CEF: '#ffffff', CDE: '#ffffff' },
+          extraSegmentInputs: { CD: ' ', BD: '', EF: '', BE: '', CE: '', BF: '', CF: '', AE: '', DE: '' },
+          extraSegmentKinds: { CD: 'plain', BD: 'plain', EF: 'plain', BE: 'plain', CE: 'plain', BF: 'plain', CF: 'plain', AE: 'plain', DE: 'plain' },
+          extraSegmentArcVisible: { CD: true, BD: false, EF: true, BE: true, CE: true, BF: true, CF: true, AE: true, DE: true }
+        },
+        disabledBaseSideHits: ['b'],
+        readControls: function (inputs, parseNatural) {
+          return {
+            AB: parseNatural(inputs.AB.value, 'AB'),
+            DC: parseNatural(inputs.DC.value, 'DC')
+          };
+        },
+        applyControlsToState: function (state, parsed) {
+          const geometry = buildRibbonGeometry(parsed);
+          state.sides.a = geometry.BC;
+          state.sides.b = geometry.AC;
+          state.sides.c = parsed.AB;
+        },
+        computeGeometry: function (state, parsed) {
+          return buildRibbonGeometry(parsed);
+        },
+        extraPoints: function (context) {
+          const geometry = context.geometry;
+          return [
+            { id: 'D', point: geometry.D, labelPoint: { x: geometry.D.x + 0.42, y: geometry.D.y + 0.42 }, fill: '#1f2430' },
+            { id: 'E', point: geometry.E, labelPoint: { x: geometry.E.x + 0.38, y: geometry.E.y + 0.35 }, fill: '#b42318', radius: 7 },
+            { id: 'F', point: geometry.F, labelPoint: { x: geometry.F.x, y: geometry.F.y - 0.45 }, fill: '#b42318', radius: 7 }
+          ];
+        },
+        extraAreas: function (context) {
+          const g = context.geometry;
+          return [
+            { id: 'ABE', name: '△ABE', points: [g.A, g.B, g.E], color: '#ffffff', value: areaOfTriangle(g.A, g.B, g.E) },
+            { id: 'BEF', name: '△BEF', points: [g.B, g.E, g.F], color: '#ffffff', value: areaOfTriangle(g.B, g.E, g.F) },
+            { id: 'CEF', name: '△CEF', points: [g.C, g.E, g.F], color: '#ffffff', value: areaOfTriangle(g.C, g.E, g.F) },
+            { id: 'CDE', name: '△CDE', points: [g.C, g.D, g.E], color: '#ffffff', value: areaOfTriangle(g.C, g.D, g.E) }
+          ];
+        },
+        extraSegments: function (context) {
+          return ribbonSegments(context.geometry);
+        }
+      });
+    })();
+  </script>
+  <script src="/assets/site-auto-i18n.js?v=triangle-katex-1"></script>
+</body>
+</html>

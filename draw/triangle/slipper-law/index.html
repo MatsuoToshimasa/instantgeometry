@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>スリッパの法則 | Instant Geometry</title>
+  <link rel="stylesheet" href="../../../assets/triangle-mobile-page.css?v=triangle-katex-6" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" />
+  <script src="/assets/save-quota.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <button class="btn" id="backBtn" type="button">戻る</button>
+      <h1 class="topbar-title">スリッパの法則</h1>
+      <button class="btn" id="saveBtn" type="button">保存</button>
+    </header>
+
+    <section class="stage-wrap" id="captureRoot">
+      <div class="status" id="statusBox">角 A と角 B から、BC を延長した外角を描画します。</div>
+      <svg class="stage" id="stage" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet" aria-label="スリッパの法則の描画画面"></svg>
+    </section>
+
+    <footer class="bottom-bar two-fields">
+      <div class="field">
+        <div class="field-label">角 A（∠CAB）</div>
+        <input class="field-input" id="angleAInput" type="text" inputmode="text" value="50" />
+      </div>
+      <div class="field">
+        <div class="field-label">角 B（∠ABC）</div>
+        <input class="field-input" id="angleBInput" type="text" inputmode="text" value="60" />
+      </div>
+    </footer>
+  </div>
+
+  <div class="sheet-backdrop" id="sheetBackdrop"></div>
+  <section class="sheet" id="editSheet" aria-hidden="true">
+    <div class="sheet-header">
+      <h2 class="sheet-title" id="sheetTitle">設定</h2>
+      <button class="sheet-close" id="sheetClose" type="button" aria-label="閉じる">×</button>
+    </div>
+    <div class="sheet-body" id="sheetBody"></div>
+  </section>
+
+  <section class="sheet" id="saveSheet" aria-hidden="true">
+    <div class="sheet-header">
+      <h2 class="sheet-title">保存</h2>
+      <button class="sheet-close" id="saveSheetClose" type="button" aria-label="閉じる">×</button>
+    </div>
+    <div class="sheet-body">
+      <div class="save-grid">
+        <button class="btn" id="savePngBtn" type="button">PNG</button>
+        <button class="btn" id="saveTransparentBtn" type="button">透過PNG</button>
+        <button class="btn" id="savePdfBtn" type="button">PDF</button>
+      </div>
+    </div>
+  </section>
+
+  <script src="../../../assets/mobile-angle-ornaments.js?v=triangle-katex-1"></script>
+  <script src="../../../assets/function-svg-labels.js?v=triangle-katex-1"></script>
+  <script src="../../../assets/draw-shared-labels.js?v=shared-katex-2"></script>
+  <script src="../../../assets/draw-label-taxonomy.js?v=taxonomy-1"></script>
+  <script src="../../../assets/draw-shared-label-engine.js?v=controller-1"></script>
+  <script src="../../../assets/triangle-mobile-page.js?v=controller-17"></script>
+  <script>
+    window.InstantGeometryTriangleMobile.createPage({
+      readyMessage: '入力をもとにスリッパの法則を描画しています。',
+      fileBase: 'triangle-slipper-law',
+      controlInputIds: {
+        A: 'angleAInput',
+        B: 'angleBInput'
+      },
+      initialState: {
+        sides: { a: 8, b: 0, c: 0 },
+        independentAngles: { A: 50, B: 60 },
+        pointInputs: { A: 'A', B: 'B', C: 'C' },
+        sideInputs: { a: '', b: '', c: '' },
+        sideKinds: { a: 'plain', b: 'plain', c: 'plain' },
+        sideArcVisible: { a: true, b: true, c: true },
+        angleInputs: { A: ' ', B: ' ', C: '' },
+        angleKinds: { A: 'plain', B: 'plain', C: 'hidden' },
+        extraAngleInputs: { ACD: ' ' },
+        extraAngleKinds: { ACD: 'plain' },
+        areaValue: ''
+      },
+      readControls: function (inputs, parseNatural) {
+        return {
+          A: parseNatural(inputs.A.value, '角 A'),
+          B: parseNatural(inputs.B.value, '角 B')
+        };
+      },
+      applyControlsToState: function (state, parsed) {
+        state.independentAngles.A = parsed.A;
+        state.independentAngles.B = parsed.B;
+      },
+      computeGeometry: function (state, parsed) {
+        if (!(parsed.A > 0 && parsed.B > 0 && parsed.A + parsed.B < 180)) {
+          throw new Error('角 A と角 B は正で、和が 180 未満である必要があります。');
+        }
+        const a = 8;
+        const angleC = 180 - parsed.A - parsed.B;
+        const radA = parsed.A * Math.PI / 180;
+        const radB = parsed.B * Math.PI / 180;
+        const radC = angleC * Math.PI / 180;
+        const c = a * Math.sin(radC) / Math.sin(radA);
+        const b = a * Math.sin(radB) / Math.sin(radA);
+        const B = { x: 0, y: 0 };
+        const C = { x: a, y: 0 };
+        const A = { x: c * Math.cos(radB), y: c * Math.sin(radB) };
+        state.sides.a = a;
+        state.sides.b = b;
+        state.sides.c = c;
+        return { A: A, B: B, C: C, angleA: parsed.A, angleB: parsed.B, angleC: angleC };
+      },
+      extraAngles: function (context) {
+        const geometry = context.geometry;
+        const D = { x: geometry.C.x + 3, y: geometry.C.y };
+        const labelPoint = {
+          x: geometry.C.x + (D.x - geometry.C.x) * 0.36 + (geometry.A.x - geometry.C.x) * 0.18,
+          y: geometry.C.y + (D.y - geometry.C.y) * 0.36 + (geometry.A.y - geometry.C.y) * 0.18
+        };
+        return [{
+          id: 'ACD',
+          name: '∠ACD',
+          value: 180 - geometry.angleC,
+          vertex: geometry.C,
+          p1: geometry.A,
+          p2: D,
+          labelPoint: labelPoint
+        }];
+      },
+      drawAuxiliary: function (ctx) {
+        const geometry = ctx.geometry;
+        const D = { x: geometry.C.x + 3, y: geometry.C.y };
+        const tC = ctx.fitPoint(geometry.C);
+        const tD = ctx.fitPoint(D);
+        const line = ctx.createSvg('line', {
+          x1: tC.x,
+          y1: tC.y,
+          x2: tD.x,
+          y2: tD.y,
+          stroke: '#2a5bd7',
+          'stroke-width': '3',
+          'stroke-linecap': 'round'
+        });
+        ctx.stage.appendChild(line);
+        ctx.stage.appendChild(ctx.createSvg('line', {
+          x1: tC.x,
+          y1: tC.y,
+          x2: tD.x,
+          y2: tD.y,
+          stroke: 'transparent',
+          'stroke-width': '28',
+          'stroke-linecap': 'round'
+        }));
+        ctx.stage.appendChild(ctx.createSvg('circle', {
+          cx: tD.x,
+          cy: tD.y,
+          r: 8,
+          fill: '#1f2430'
+        }));
+        ctx.stage.appendChild(ctx.createTextLabel('D', {
+          x: tD.x + 48,
+          y: tD.y + 22,
+          'text-anchor': 'middle',
+          'dominant-baseline': 'middle',
+          'font-size': '60',
+          'font-weight': '700',
+          fill: '#1f2430'
+        }));
+      },
+      sideNumericMode: function () {
+        return 'readonly';
+      },
+      angleNumericMode: function (id) {
+        return id === 'A' || id === 'B' ? 'control' : 'readonly';
+      },
+      updateSideControl: function (id, value, state) {
+        state.sides[id] = value;
+      },
+      updateAngleControl: function (id, value, state, inputs) {
+        if (inputs[id]) inputs[id].value = String(value);
+        state.independentAngles[id] = value;
+      }
+    });
+  </script>
+  <script src="/assets/site-auto-i18n.js?v=triangle-katex-1"></script>
+</body>
+</html>

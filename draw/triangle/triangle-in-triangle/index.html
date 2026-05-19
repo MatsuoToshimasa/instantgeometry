@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>三角in三角 | Instant Geometry</title>
+  <link rel="stylesheet" href="../../../assets/triangle-mobile-page.css?v=triangle-katex-6" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" />
+  <style>
+    .bottom-bar.six-fields{
+      grid-template-columns:repeat(6,minmax(0,1fr));
+    }
+
+    @media (max-width: 720px){
+      .bottom-bar.six-fields{
+        grid-template-columns:repeat(3,minmax(0,1fr));
+      }
+    }
+  </style>
+  <script src="/assets/save-quota.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <button class="btn" id="backBtn" type="button">戻る</button>
+      <h1 class="topbar-title">三角in三角</h1>
+      <button class="btn" id="saveBtn" type="button">保存</button>
+    </header>
+
+    <section class="stage-wrap" id="captureRoot">
+      <div class="status" id="statusBox">BP、PQ、AR、RP、CQ、QR から、A-R-P、B-P-Q、C-Q-R の三角in三角を描画します。</div>
+      <svg class="stage" id="stage" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet" aria-label="三角in三角の描画画面"></svg>
+    </section>
+
+    <footer class="bottom-bar six-fields">
+      <div class="field">
+        <div class="field-label">BP</div>
+        <input class="field-input" id="bpInput" type="text" inputmode="text" value="3" />
+      </div>
+      <div class="field">
+        <div class="field-label">PQ</div>
+        <input class="field-input" id="pqInput" type="text" inputmode="text" value="3" />
+      </div>
+      <div class="field">
+        <div class="field-label">AR</div>
+        <input class="field-input" id="arInput" type="text" inputmode="text" value="3" />
+      </div>
+      <div class="field">
+        <div class="field-label">RP</div>
+        <input class="field-input" id="rpInput" type="text" inputmode="text" value="3" />
+      </div>
+      <div class="field">
+        <div class="field-label">CQ</div>
+        <input class="field-input" id="cqInput" type="text" inputmode="text" value="3" />
+      </div>
+      <div class="field">
+        <div class="field-label">QR</div>
+        <input class="field-input" id="qrInput" type="text" inputmode="text" value="3" />
+      </div>
+    </footer>
+  </div>
+
+  <div class="sheet-backdrop" id="sheetBackdrop"></div>
+  <section class="sheet" id="editSheet" aria-hidden="true">
+    <div class="sheet-header">
+      <h2 class="sheet-title" id="sheetTitle">設定</h2>
+      <button class="sheet-close" id="sheetClose" type="button" aria-label="閉じる">×</button>
+    </div>
+    <div class="sheet-body" id="sheetBody"></div>
+  </section>
+
+  <section class="sheet" id="saveSheet" aria-hidden="true">
+    <div class="sheet-header">
+      <h2 class="sheet-title">保存</h2>
+      <button class="sheet-close" id="saveSheetClose" type="button" aria-label="閉じる">×</button>
+    </div>
+    <div class="sheet-body">
+      <div class="save-grid">
+        <button class="btn" id="savePngBtn" type="button">PNG</button>
+        <button class="btn" id="saveTransparentBtn" type="button">透過PNG</button>
+        <button class="btn" id="savePdfBtn" type="button">PDF</button>
+      </div>
+    </div>
+  </section>
+
+  <script src="../../../assets/mobile-angle-ornaments.js?v=triangle-katex-1"></script>
+  <script src="../../../assets/function-svg-labels.js?v=triangle-katex-1"></script>
+  <script src="../../../assets/draw-shared-labels.js?v=shared-katex-2"></script>
+  <script src="../../../assets/draw-label-taxonomy.js?v=taxonomy-1"></script>
+  <script src="../../../assets/draw-shared-label-engine.js?v=controller-1"></script>
+  <script src="../../../assets/triangle-mobile-page.js?v=controller-17"></script>
+  <script>
+    (function () {
+      'use strict';
+
+      function angleDegrees(P, vertex, Q) {
+        const ux = P.x - vertex.x;
+        const uy = P.y - vertex.y;
+        const vx = Q.x - vertex.x;
+        const vy = Q.y - vertex.y;
+        const length = Math.hypot(ux, uy) * Math.hypot(vx, vy);
+        if (!length) return 0;
+        const cosine = Math.max(-1, Math.min(1, (ux * vx + uy * vy) / length));
+        return Math.acos(cosine) * 180 / Math.PI;
+      }
+
+      function segmentLength(P, Q) {
+        return Math.hypot(P.x - Q.x, P.y - Q.y);
+      }
+
+      function unitVector(from, to) {
+        const length = segmentLength(from, to);
+        return {
+          x: (to.x - from.x) / length,
+          y: (to.y - from.y) / length
+        };
+      }
+
+      function ratioLabel(value) {
+        const ratio = value / 3;
+        const rounded = Math.round(ratio * 100) / 100;
+        const text = Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(2).replace(/0+$/, '').replace(/\.$/, '');
+        return 'ratio:r,' + text;
+      }
+
+      function segmentLabelPoint(P, Q, center, distance) {
+        const midpoint = { x: (P.x + Q.x) / 2, y: (P.y + Q.y) / 2 };
+        const dx = Q.x - P.x;
+        const dy = Q.y - P.y;
+        const length = Math.hypot(dx, dy) || 1;
+        let nx = -dy / length;
+        let ny = dx / length;
+        if (nx * (center.x - midpoint.x) + ny * (center.y - midpoint.y) > 0) {
+          nx *= -1;
+          ny *= -1;
+        }
+        return {
+          x: midpoint.x + nx * (distance || 0.42),
+          y: midpoint.y + ny * (distance || 0.42)
+        };
+      }
+
+      function buildTriangleInTriangleGeometry(values) {
+        if (values.PQ + values.QR <= values.RP || values.QR + values.RP <= values.PQ || values.RP + values.PQ <= values.QR) {
+          throw new Error('PQ、QR、RP が三角形を作れる値になるようにしてください。');
+        }
+        const P = { x: 0, y: 0 };
+        const Q = { x: values.PQ, y: 0 };
+        const rx = (values.RP * values.RP + values.PQ * values.PQ - values.QR * values.QR) / (2 * values.PQ);
+        const ry = Math.sqrt(Math.max(0, values.RP * values.RP - rx * rx));
+        const R = { x: rx, y: ry };
+        const pr = unitVector(P, R);
+        const pq = unitVector(P, Q);
+        const rqToQ = unitVector(R, Q);
+        const A = {
+          x: R.x + pr.x * values.AR,
+          y: R.y + pr.y * values.AR
+        };
+        const B = {
+          x: P.x - pq.x * values.BP,
+          y: P.y - pq.y * values.BP
+        };
+        const C = {
+          x: Q.x + rqToQ.x * values.CQ,
+          y: Q.y + rqToQ.y * values.CQ
+        };
+        const angleA = angleDegrees(B, A, C);
+        const angleB = angleDegrees(C, B, A);
+        const angleC = 180 - angleA - angleB;
+        return Object.assign({ A: A, B: B, C: C, P: P, Q: Q, R: R, angleA: angleA, angleB: angleB, angleC: angleC }, values, {
+          AB: segmentLength(A, B),
+          BC: segmentLength(B, C),
+          CA: segmentLength(C, A)
+        });
+      }
+
+      function triangleInTriangleSegments(geometry) {
+        const center = {
+          x: (geometry.A.x + geometry.B.x + geometry.C.x) / 3,
+          y: (geometry.A.y + geometry.B.y + geometry.C.y) / 3
+        };
+        return [
+          { id: 'AR', name: 'AR', p1: geometry.A, p2: geometry.R, stroke: '#25603b', strokeWidth: 3, dasharray: 'none', labelPoint: segmentLabelPoint(geometry.A, geometry.R, center, 0.46) },
+          { id: 'RP', name: 'RP', p1: geometry.R, p2: geometry.P, stroke: '#25603b', strokeWidth: 3, dasharray: 'none', labelPoint: segmentLabelPoint(geometry.R, geometry.P, center, 0.46) },
+          { id: 'BP', name: 'BP', p1: geometry.B, p2: geometry.P, stroke: '#b42318', strokeWidth: 3, dasharray: 'none', labelPoint: segmentLabelPoint(geometry.B, geometry.P, center, 0.46) },
+          { id: 'PQ', name: 'PQ', p1: geometry.P, p2: geometry.Q, stroke: '#b42318', strokeWidth: 3, dasharray: 'none', labelPoint: segmentLabelPoint(geometry.P, geometry.Q, center, 0.46) },
+          { id: 'CQ', name: 'CQ', p1: geometry.C, p2: geometry.Q, stroke: '#7c3aed', strokeWidth: 3, dasharray: 'none', labelPoint: segmentLabelPoint(geometry.C, geometry.Q, center, 0.46) },
+          { id: 'QR', name: 'QR', p1: geometry.Q, p2: geometry.R, stroke: '#7c3aed', strokeWidth: 3, dasharray: 'none', labelPoint: segmentLabelPoint(geometry.Q, geometry.R, center, 0.46) }
+        ];
+      }
+
+      window.InstantGeometryTriangleMobile.createPage({
+        readyMessage: '三角in三角を描画しました。',
+        fileBase: 'triangle-in-triangle',
+        controlInputIds: {
+          BP: 'bpInput',
+          PQ: 'pqInput',
+          AR: 'arInput',
+          RP: 'rpInput',
+          CQ: 'cqInput',
+          QR: 'qrInput'
+        },
+        enableLabelMoveMode: true,
+        initialState: {
+          sides: { a: 7.94, b: 7.94, c: 6 },
+          pointInputs: { A: 'A', B: 'B', C: 'C', P: 'P', Q: 'Q', R: 'R' },
+          sideInputs: { a: '', b: '', c: '' },
+          sideKinds: { a: 'plain', b: 'plain', c: 'plain' },
+          sideArcVisible: { a: false, b: false, c: false },
+          angleInputs: { A: '', B: '', C: '' },
+          angleKinds: { A: 'hidden', B: 'hidden', C: 'hidden' },
+          extraSegmentInputs: { BP: 'ratio:r,1', PQ: 'ratio:r,1', AR: 'ratio:r,1', RP: 'ratio:r,1', CQ: 'ratio:r,1', QR: 'ratio:r,1' },
+          extraSegmentKinds: { BP: 'plain', PQ: 'plain', AR: 'plain', RP: 'plain', CQ: 'plain', QR: 'plain' },
+          extraSegmentArcVisible: { BP: true, PQ: true, AR: true, RP: true, CQ: true, QR: true },
+          areaValue: ''
+        },
+        readControls: function (inputs, parseNatural) {
+          return {
+            BP: parseNatural(inputs.BP.value, 'BP'),
+            PQ: parseNatural(inputs.PQ.value, 'PQ'),
+            AR: parseNatural(inputs.AR.value, 'AR'),
+            RP: parseNatural(inputs.RP.value, 'RP'),
+            CQ: parseNatural(inputs.CQ.value, 'CQ'),
+            QR: parseNatural(inputs.QR.value, 'QR')
+          };
+        },
+        applyControlsToState: function (state, parsed) {
+          const geometry = buildTriangleInTriangleGeometry(parsed);
+          state.sides.a = geometry.BC;
+          state.sides.b = geometry.CA;
+          state.sides.c = geometry.AB;
+          ['BP', 'PQ', 'AR', 'RP', 'CQ', 'QR'].forEach(function (id) {
+            state.extraSegmentInputs[id] = ratioLabel(parsed[id]);
+          });
+        },
+        computeGeometry: function (state, parsed) {
+          return buildTriangleInTriangleGeometry(parsed);
+        },
+        extraPoints: function (context) {
+          const geometry = context.geometry;
+          return [
+            { id: 'P', point: geometry.P, labelPoint: { x: geometry.P.x - 0.42, y: geometry.P.y + 0.18 }, fill: '#25603b', radius: 7 },
+            { id: 'Q', point: geometry.Q, labelPoint: { x: geometry.Q.x + 0.45, y: geometry.Q.y - 0.04 }, fill: '#b42318', radius: 7 },
+            { id: 'R', point: geometry.R, labelPoint: { x: geometry.R.x - 0.46, y: geometry.R.y + 0.12 }, fill: '#7c3aed', radius: 7 }
+          ];
+        },
+        extraSegments: function (context) {
+          return triangleInTriangleSegments(context.geometry);
+        }
+      });
+    })();
+  </script>
+  <script src="/assets/site-auto-i18n.js?v=triangle-katex-1"></script>
+</body>
+</html>

@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>２等分線の交差① | Instant Geometry</title>
+  <link rel="stylesheet" href="../../../assets/triangle-mobile-page.css?v=triangle-katex-6" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" />
+  <script src="/assets/save-quota.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <button class="btn" id="backBtn" type="button">戻る</button>
+      <h1 class="topbar-title">２等分線の交差①</h1>
+      <button class="btn" id="saveBtn" type="button">保存</button>
+    </header>
+
+    <section class="stage-wrap" id="captureRoot">
+      <div class="status" id="statusBox">∠BAC から、∠ABC と ∠ACB の二等分線の交点 D を描画します。</div>
+      <svg class="stage" id="stage" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet" aria-label="２等分線の交差①の描画画面"></svg>
+    </section>
+
+    <footer class="bottom-bar one-field">
+      <div class="field">
+        <div class="field-label">∠BAC</div>
+        <input class="field-input" id="angleAInput" type="text" inputmode="text" value="60" />
+      </div>
+    </footer>
+  </div>
+
+  <div class="sheet-backdrop" id="sheetBackdrop"></div>
+  <section class="sheet" id="editSheet" aria-hidden="true">
+    <div class="sheet-header">
+      <h2 class="sheet-title" id="sheetTitle">設定</h2>
+      <button class="sheet-close" id="sheetClose" type="button" aria-label="閉じる">×</button>
+    </div>
+    <div class="sheet-body" id="sheetBody"></div>
+  </section>
+
+  <section class="sheet" id="saveSheet" aria-hidden="true">
+    <div class="sheet-header">
+      <h2 class="sheet-title">保存</h2>
+      <button class="sheet-close" id="saveSheetClose" type="button" aria-label="閉じる">×</button>
+    </div>
+    <div class="sheet-body">
+      <div class="save-grid">
+        <button class="btn" id="savePngBtn" type="button">PNG</button>
+        <button class="btn" id="saveTransparentBtn" type="button">透過PNG</button>
+        <button class="btn" id="savePdfBtn" type="button">PDF</button>
+      </div>
+    </div>
+  </section>
+
+  <script src="../../../assets/mobile-angle-ornaments.js?v=triangle-katex-1"></script>
+  <script src="../../../assets/function-svg-labels.js?v=triangle-katex-1"></script>
+  <script src="../../../assets/draw-shared-labels.js?v=shared-katex-2"></script>
+  <script src="../../../assets/draw-label-taxonomy.js?v=taxonomy-1"></script>
+  <script src="../../../assets/draw-shared-label-engine.js?v=controller-1"></script>
+  <script src="../../../assets/triangle-mobile-page.js?v=controller-17"></script>
+  <script>
+    (function () {
+      'use strict';
+
+      function angleValue(vertex, p1, p2) {
+        const ax = p1.x - vertex.x;
+        const ay = p1.y - vertex.y;
+        const bx = p2.x - vertex.x;
+        const by = p2.y - vertex.y;
+        const dot = ax * bx + ay * by;
+        const len = (Math.hypot(ax, ay) || 1) * (Math.hypot(bx, by) || 1);
+        return Math.acos(Math.max(-1, Math.min(1, dot / len))) * 180 / Math.PI;
+      }
+
+      function labelPoint(vertex, p1, p2, rate) {
+        return {
+          x: vertex.x + ((p1.x - vertex.x) + (p2.x - vertex.x)) * (rate || 0.24),
+          y: vertex.y + ((p1.y - vertex.y) + (p2.y - vertex.y)) * (rate || 0.24)
+        };
+      }
+
+      function buildGeometry(angleA) {
+        if (!(angleA > 0 && angleA < 180)) {
+          throw new Error('∠BAC には 0 より大きく 180 未満の数を入力してください。');
+        }
+        const side = 8;
+        const halfBase = side * Math.sin(angleA * Math.PI / 360);
+        const height = side * Math.cos(angleA * Math.PI / 360);
+        const geometry = {
+          A: { x: 0, y: height },
+          B: { x: -halfBase, y: 0 },
+          C: { x: halfBase, y: 0 },
+          angleA: angleA,
+          angleB: (180 - angleA) / 2,
+          angleC: (180 - angleA) / 2
+        };
+        const D = window.InstantGeometryTriangleMobile.helpers.triangleCenterPoint(geometry, 'incenter');
+        geometry.D = D;
+        geometry.angleD = angleValue(D, geometry.B, geometry.C);
+        return geometry;
+      }
+
+      window.InstantGeometryTriangleMobile.createPage({
+        readyMessage: '∠BAC から２等分線の交差①を描画しました。',
+        fileBase: 'bisector-intersection',
+        disabledBaseAngleHits: ['B', 'C'],
+        baseAngleArcRadii: { A: 1.05 },
+        angleMarkScale: 1.45,
+        extraAngleMarkScale: 1.65,
+        controlInputIds: {
+          A: 'angleAInput'
+        },
+        initialState: {
+          sides: { a: 8, b: 8, c: 8 },
+          independentAngles: { A: 60 },
+          pointInputs: { A: 'A', B: 'B', C: 'C', D: 'D' },
+          sideInputs: { a: '', b: '', c: '' },
+          sideKinds: { a: 'plain', b: 'plain', c: 'plain' },
+          sideArcVisible: { a: true, b: true, c: true },
+          angleInputs: { A: ' ', B: '', C: '' },
+          angleKinds: { A: 'plain', B: 'hidden', C: 'hidden' },
+          extraAngleInputs: { BDC: ' ', ABD: '', ACD: '', DBC: '', DCB: '' },
+          extraAngleKinds: { BDC: 'plain', ABD: 'circle', ACD: 'double-cross', DBC: 'circle', DCB: 'double-cross' },
+          extraSegmentInputs: { BD: '', CD: '' },
+          extraSegmentKinds: { BD: 'plain', CD: 'plain' },
+          extraSegmentArcVisible: { BD: false, CD: false },
+          areaValue: ''
+        },
+        readControls: function (inputs, parseNatural) {
+          return {
+            A: parseNatural(inputs.A.value, '∠BAC')
+          };
+        },
+        applyControlsToState: function (state, parsed) {
+          const baseAngle = (180 - parsed.A) / 2;
+          state.independentAngles.A = parsed.A;
+          state.independentAngles.B = baseAngle;
+          state.independentAngles.C = baseAngle;
+        },
+        computeGeometry: function (state, parsed, helpers) {
+          const geometry = buildGeometry(parsed.A);
+          state.sides.a = Math.hypot(geometry.B.x - geometry.C.x, geometry.B.y - geometry.C.y);
+          state.sides.b = Math.hypot(geometry.C.x - geometry.A.x, geometry.C.y - geometry.A.y);
+          state.sides.c = Math.hypot(geometry.A.x - geometry.B.x, geometry.A.y - geometry.B.y);
+          return geometry;
+        },
+        extraPoints: function (context) {
+          const g = context.geometry;
+          return [
+            { id: 'D', point: g.D, labelPoint: { x: g.D.x, y: g.D.y + 0.48 }, fill: '#25603b', radius: 7, labelFontSize: 48 }
+          ];
+        },
+        extraSegments: function (context) {
+          const g = context.geometry;
+          return [
+            { id: 'BD', name: 'BD', p1: g.B, p2: g.D, stroke: '#25603b', strokeWidth: 3, dasharray: null },
+            { id: 'CD', name: 'CD', p1: g.C, p2: g.D, stroke: '#25603b', strokeWidth: 3, dasharray: null }
+          ];
+        },
+        extraAngles: function (context) {
+          const g = context.geometry;
+          return [
+            { id: 'BDC', name: '∠BDC', vertex: g.D, p1: g.B, p2: g.C, arcRadius: 0.95, hitRadius: 1.2, labelRate: 0.2 },
+            { id: 'ABD', name: '∠ABD', vertex: g.B, p1: g.A, p2: g.D, arcRadius: 1.16, hitRadius: 1.35, labelRate: 0.22 },
+            { id: 'ACD', name: '∠ACD', vertex: g.C, p1: g.A, p2: g.D, arcRadius: 1.16, hitRadius: 1.35, labelRate: 0.22 },
+            { id: 'DBC', name: '∠DBC', vertex: g.B, p1: g.D, p2: g.C, arcRadius: 0.86, hitRadius: 1.12, labelRate: 0.24 },
+            { id: 'DCB', name: '∠DCB', vertex: g.C, p1: g.D, p2: g.B, arcRadius: 0.86, hitRadius: 1.12, labelRate: 0.24 }
+          ].map(function (angle) {
+            angle.value = angleValue(angle.vertex, angle.p1, angle.p2);
+            angle.labelPoint = angle.id === 'BDC'
+              ? { x: g.D.x, y: g.D.y - 0.62 }
+              : labelPoint(angle.vertex, angle.p1, angle.p2, angle.labelRate);
+            angle.labelFontSize = angle.id === 'BDC' ? 52 : 44;
+            return angle;
+          });
+        },
+        angleNumericMode: function () {
+          return 'control';
+        },
+        updateAngleControl: function (id, value, state, inputs) {
+          if (id !== 'A') return;
+          inputs.A.value = String(value);
+          state.independentAngles.A = value;
+        }
+      });
+    })();
+  </script>
+  <script src="/assets/site-auto-i18n.js?v=triangle-katex-1"></script>
+</body>
+</html>

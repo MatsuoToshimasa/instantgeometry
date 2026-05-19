@@ -65,6 +65,9 @@
   const angleModeBtn = document.getElementById('angleModeBtn');
   const pageBackBtn = document.getElementById('pageBackBtn');
   const downloadButtons = document.querySelectorAll('[data-download-format]');
+  if (window.InstantGeometrySaveQuota && downloadButtons[0]) {
+    window.InstantGeometrySaveQuota.createIndicator({ target: downloadButtons[0] });
+  }
   const box = document.getElementById('box');
   const labelLayer = document.getElementById('labelLayer');
   const exportBackdrop = document.getElementById('exportBackdrop');
@@ -91,6 +94,7 @@
   let paletteOpen = false;
   let dragState = null;
   let labelNodes = {};
+  let currentLabelAnchors = [];
   let figureSelectionRef = null;
   let figureSelectionBounds = null;
   let figureState = {
@@ -355,7 +359,7 @@
     const bounds = getBounds(geometry.points);
     const width = Math.max(1, bounds.maxX - bounds.minX);
     const height = Math.max(1, bounds.maxY - bounds.minY);
-    const padding = Math.max(width, height) * 0.2;
+    const padding = Math.max(width, height) * 0.42;
     const aspect = exportAspects[exportAspectIndex].value;
     let viewWidth = width + padding * 2;
     let viewHeight = height + padding * 2;
@@ -381,6 +385,7 @@
     const oldSvg = box.querySelector('svg');
     if (oldSvg) oldSvg.remove();
     labelLayer.innerHTML = '';
+    currentLabelAnchors = [];
     svg = createSvgElement('svg', { width: '100%', height: '100%', viewBox: '0 0 100 100', preserveAspectRatio: 'xMidYMid meet' });
     box.insertBefore(svg, labelLayer);
     figureSelectionRef = null;
@@ -879,6 +884,20 @@
     }
   }
 
+  async function handleDownloadWithQuota(format) {
+    try {
+      if (!window.InstantGeometrySaveQuota) {
+        await handleDownload(format);
+        return;
+      }
+      await window.InstantGeometrySaveQuota.runWithQuota(function () {
+        return handleDownload(format);
+      });
+    } catch (error) {
+      setStatus(error.message || '保存に失敗しました。', true);
+    }
+  }
+
   function render() {
     clearBox();
     try {
@@ -1008,7 +1027,7 @@
   });
   downloadButtons.forEach(function (button) {
     button.addEventListener('click', function () {
-      handleDownload(button.dataset.downloadFormat);
+      handleDownloadWithQuota(button.dataset.downloadFormat);
     });
   });
   window.addEventListener('resize', render);

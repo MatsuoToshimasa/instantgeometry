@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>折り返し③ | Instant Geometry</title>
+  <link rel="stylesheet" href="../../../assets/quadrilateral-mobile-page.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" />
+  <script src="/assets/save-quota.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <button class="btn" id="backBtn" type="button">戻る</button>
+      <h1 class="topbar-title">折り返し③</h1>
+      <button class="btn" id="saveBtn" type="button">保存</button>
+    </header>
+
+    <section class="stage-wrap" id="captureRoot">
+      <div class="status" id="statusBox">AB と ∠ACB から、長方形の対角線折り返し図を描画します。</div>
+      <svg class="stage" id="stage" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet" aria-label="折り返し③の描画画面"></svg>
+    </section>
+
+    <footer class="bottom-bar two-fields">
+      <div class="field">
+        <div class="field-label">AB</div>
+        <input class="field-input" id="abInput" type="text" inputmode="decimal" value="6" />
+      </div>
+      <div class="field">
+        <div class="field-label">∠ACB</div>
+        <input class="field-input" id="angleInput" type="text" inputmode="decimal" value="30" />
+      </div>
+    </footer>
+  </div>
+
+  <div class="sheet-backdrop" id="sheetBackdrop"></div>
+  <section class="sheet" id="editSheet" aria-hidden="true">
+    <div class="sheet-header">
+      <h2 class="sheet-title" id="sheetTitle">設定</h2>
+      <button class="sheet-close" id="sheetClose" type="button" aria-label="閉じる">×</button>
+    </div>
+    <div class="sheet-body" id="sheetBody"></div>
+  </section>
+
+  <section class="sheet" id="saveSheet" aria-hidden="true">
+    <div class="sheet-header">
+      <h2 class="sheet-title">保存</h2>
+      <button class="sheet-close" id="saveSheetClose" type="button" aria-label="閉じる">×</button>
+    </div>
+    <div class="sheet-body">
+      <div class="save-grid">
+        <button class="btn" id="savePngBtn" type="button">PNG</button>
+        <button class="btn" id="saveTransparentBtn" type="button">透過PNG</button>
+        <button class="btn" id="savePdfBtn" type="button">PDF</button>
+      </div>
+    </div>
+  </section>
+
+  <script src="../../../assets/mobile-angle-ornaments.js?v=angle-modal-1"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script src="../../../assets/draw-shared-labels.js?v=shared-katex-2"></script>
+  <script src="../../../assets/draw-label-taxonomy.js?v=taxonomy-1"></script>
+  <script src="../../../assets/draw-shared-label-engine.js?v=controller-1"></script>
+  <script src="../../../assets/quadrilateral-mobile-page.js"></script>
+  <script>
+    (function () {
+      'use strict';
+
+      const EPS = 1e-6;
+
+      function parsePositive(value, name) {
+        const text = String(value || '').trim();
+        if (!/^(?:[1-9][0-9]*|0?\.[0-9]+|[1-9][0-9]*\.[0-9]+)$/.test(text)) {
+          throw new Error(name + ' には正の数を入力してください。');
+        }
+        return Number(text);
+      }
+
+      function parseAngle(value, name) {
+        const angle = parsePositive(value, name);
+        if (angle <= 0 || angle > 45) {
+          throw new Error(name + ' は 0 より大きく 45 以下の角度にしてください。');
+        }
+        return angle;
+      }
+
+      function distance(P, Q) {
+        return Math.hypot(P.x - Q.x, P.y - Q.y);
+      }
+
+      function reflectPoint(P, R, S) {
+        const dx = S.x - R.x;
+        const dy = S.y - R.y;
+        const lengthSquared = dx * dx + dy * dy || 1;
+        const t = ((P.x - R.x) * dx + (P.y - R.y) * dy) / lengthSquared;
+        const foot = { x: R.x + dx * t, y: R.y + dy * t };
+        return { x: 2 * foot.x - P.x, y: 2 * foot.y - P.y };
+      }
+
+      function lineHorizontalIntersection(P, Q, y) {
+        const dy = Q.y - P.y;
+        if (Math.abs(dy) < EPS) return null;
+        const t = (y - P.y) / dy;
+        return { x: P.x + (Q.x - P.x) * t, y: y, t: t };
+      }
+
+      function angleDegrees(P, V, Q) {
+        const ax = P.x - V.x;
+        const ay = P.y - V.y;
+        const bx = Q.x - V.x;
+        const by = Q.y - V.y;
+        const denominator = Math.hypot(ax, ay) * Math.hypot(bx, by) || 1;
+        const cosine = Math.max(-1, Math.min(1, (ax * bx + ay * by) / denominator));
+        return Math.acos(cosine) * 180 / Math.PI;
+      }
+
+      function labelPoint(P, Q, toward, offset) {
+        const m = { x: (P.x + Q.x) / 2, y: (P.y + Q.y) / 2 };
+        const dx = Q.x - P.x;
+        const dy = Q.y - P.y;
+        const length = Math.hypot(dx, dy) || 1;
+        let nx = -dy / length;
+        let ny = dx / length;
+        if ((toward.x - m.x) * nx + (toward.y - m.y) * ny < 0) {
+          nx *= -1;
+          ny *= -1;
+        }
+        return { x: m.x + nx * offset, y: m.y + ny * offset };
+      }
+
+      function buildGeometry(values) {
+        const height = values.AB;
+        const width = height / Math.tan(values.angle * Math.PI / 180);
+        const A = { x: 0, y: height };
+        const B = { x: 0, y: 0 };
+        const C = { x: width, y: 0 };
+        const D = { x: width, y: height };
+        const E = reflectPoint(B, A, C);
+        const F = lineHorizontalIntersection(E, C, height);
+        if (!F || F.x < -EPS || F.x > width + EPS) {
+          throw new Error('F が AD 上に来るように ∠ACB を 45°以下にしてください。');
+        }
+        const geometry = window.InstantGeometryQuadrilateralMobile.helpers.finalizeGeometry({ A: A, B: B, C: C, D: D });
+        geometry.E = E;
+        geometry.F = F;
+        geometry.width = width;
+        geometry.height = height;
+        geometry.angleACB = values.angle;
+        geometry.AC = distance(A, C);
+        geometry.AE = distance(A, E);
+        geometry.EC = distance(E, C);
+        geometry.AF = distance(A, F);
+        geometry.EF = distance(E, F);
+        geometry.FD = distance(F, D);
+        geometry.FC = distance(F, C);
+        geometry.anglesExtra = {
+          FCA: angleDegrees(F, C, A),
+          FCD: angleDegrees(F, C, D),
+          CDF: angleDegrees(C, D, F),
+          CFD: angleDegrees(C, F, D),
+          FAC: angleDegrees(F, A, C),
+          AFE: angleDegrees(A, F, E),
+          AEF: angleDegrees(A, E, F),
+          EAF: angleDegrees(E, A, F),
+          BAC: angleDegrees(B, A, C),
+          ABC: angleDegrees(A, B, C)
+        };
+        geometry.points = geometry.points.concat([E, F]);
+        return geometry;
+      }
+
+      window.InstantGeometryQuadrilateralMobile.createPage({
+        readyMessage: 'AB と ∠ACB から折り返し③を描画しました。',
+        fileBase: 'folding-3',
+        skipBaseAngles: true,
+        controlInputIds: {
+          AB: 'abInput',
+          angle: 'angleInput'
+        },
+        initialState: {
+          pointInputs: { A: 'A', B: 'B', C: 'C', D: 'D', E: 'E', F: 'F' },
+          sides: { AB: 6, BC: 0, CD: 6, DA: 0, AE: 0, EF: 0, FA: 0, FD: 0, DC: 6, FC: 0, AC: 0 },
+          sideInputs: { AB: ' ', BC: '', CD: '', DA: '', AE: '', EF: '', FA: '', FD: '', DC: '', FC: '', AC: '' },
+          sideKinds: { AB: 'plain', BC: 'plain', CD: 'plain', DA: 'plain', AE: 'plain', EF: 'plain', FA: 'plain', FD: 'plain', DC: 'plain', FC: 'plain', AC: 'plain' },
+          sideArcVisible: { AB: true, BC: false, CD: false, DA: false, AE: false, EF: false, FA: false, FD: false, DC: false, FC: false, AC: false },
+          angleInputs: { A: '', B: '', C: '', D: '' },
+          angleKinds: { A: 'hidden', B: 'hidden', C: 'hidden', D: 'hidden' },
+          extraAngleInputs: { ACB: ' ', FCA: '', FCD: '', CDF: '', CFD: '', FAC: '', AFE: '', AEF: '', EAF: '', BAC: '', ABC: '' },
+          extraAngleKinds: { ACB: 'plain', FCA: 'hidden', FCD: 'hidden', CDF: 'hidden', CFD: 'hidden', FAC: 'hidden', AFE: 'hidden', AEF: 'hidden', EAF: 'hidden', BAC: 'hidden', ABC: 'hidden' },
+          areaValue: '',
+          areaColor: '#ffffff'
+        },
+        readControls: function (inputs) {
+          return {
+            AB: parsePositive(inputs.AB.value, 'AB'),
+            angle: parseAngle(inputs.angle.value, '∠ACB')
+          };
+        },
+        applyControlsToState: function (state, parsed) {
+          const g = buildGeometry(parsed);
+          state.sides.AB = parsed.AB;
+          state.sides.CD = parsed.AB;
+          state.sides.DC = parsed.AB;
+          state.sides.BC = g.width;
+          state.sides.DA = g.width;
+          state.sides.AC = g.AC;
+          state.sides.AE = g.AE;
+          state.sides.EC = g.EC;
+          state.sides.FA = g.AF;
+          state.sides.EF = g.EF;
+          state.sides.FD = g.FD;
+          state.sides.FC = g.FC;
+        },
+        computeGeometry: function (state, parsed) {
+          return buildGeometry(parsed);
+        },
+        extraAngles: function (context) {
+          const g = context.geometry;
+          const definitions = [
+            {
+              id: 'ACB',
+              name: '∠ACB',
+              vertex: g.C,
+              p1: g.A,
+              p2: g.B,
+              value: g.angleACB,
+              arcRadius: Math.max(0.42, g.height * 0.12),
+              hitRadius: Math.max(0.84, g.height * 0.2),
+              labelPoint: {
+                x: g.C.x - g.height * 0.36,
+                y: g.C.y + g.height * 0.18
+              }
+            }
+          ];
+          [
+            ['FCA', '∠FCA', g.C, g.F, g.A],
+            ['FCD', '∠FCD', g.C, g.F, g.D],
+            ['CDF', '∠CDF', g.D, g.C, g.F],
+            ['CFD', '∠CFD', g.F, g.C, g.D],
+            ['FAC', '∠FAC', g.A, g.F, g.C],
+            ['AFE', '∠AFE', g.F, g.A, g.E],
+            ['AEF', '∠AEF', g.E, g.A, g.F],
+            ['EAF', '∠EAF', g.A, g.E, g.F],
+            ['BAC', '∠BAC', g.A, g.B, g.C],
+            ['ABC', '∠ABC', g.B, g.A, g.C]
+          ].forEach(function (entry) {
+            definitions.push({
+              id: entry[0],
+              name: entry[1],
+              vertex: entry[2],
+              p1: entry[3],
+              p2: entry[4],
+              value: g.anglesExtra[entry[0]],
+              arcRadius: Math.max(0.36, g.height * 0.1),
+              hitRadius: Math.max(0.72, g.height * 0.18)
+            });
+          });
+          return definitions;
+        },
+        drawAuxiliary: function (helpers) {
+          const g = helpers.geometry;
+          const stage = helpers.stage;
+          const center = helpers.screen.center;
+          const t = {
+            A: helpers.screen.A,
+            B: helpers.screen.B,
+            C: helpers.screen.C,
+            D: helpers.screen.D,
+            E: helpers.fitPoint(g.E),
+            F: helpers.fitPoint(g.F)
+          };
+          const centerModel = { x: g.width / 2, y: g.height / 2 };
+
+          function addLine(id, p1Id, p2Id, options) {
+            const opts = options || {};
+            const p1 = t[p1Id];
+            const p2 = t[p2Id];
+            if (opts.drawLine !== false) {
+              stage.appendChild(helpers.createSvg('line', {
+                x1: p1.x,
+                y1: p1.y,
+                x2: p2.x,
+                y2: p2.y,
+                stroke: opts.stroke || '#2a5bd7',
+                'stroke-width': opts.strokeWidth || '3',
+                'stroke-linecap': 'round',
+                'stroke-dasharray': opts.dasharray || 'none'
+              }));
+            }
+            const hit = helpers.createSvg('line', {
+              x1: p1.x,
+              y1: p1.y,
+              x2: p2.x,
+              y2: p2.y,
+              stroke: 'transparent',
+              'stroke-width': '28',
+              'stroke-linecap': 'round'
+            });
+            helpers.attachHit(hit, 'side', id);
+            stage.appendChild(hit);
+            helpers.drawSideKind(helpers.state.sideKinds[id], p1, p2);
+            const label = helpers.getSideLabelValue(id);
+            if (!label) return;
+            const baseModel = opts.labelPoint || labelPoint(g[p1Id], g[p2Id], opts.toward || centerModel, Math.max(0.4, g.height * 0.08));
+            const pos = helpers.getLabelPosition('side', id, helpers.fitPoint(baseModel));
+            if (helpers.state.sideArcVisible[id] !== false) {
+              const arc = helpers.sideArcGeometry(p1, p2, center, pos);
+              stage.appendChild(helpers.createSvg('path', {
+                d: helpers.quadraticPathSegment(p1, arc.control, p2, 0, 0.5 - arc.gapHalf, 20),
+                fill: 'none',
+                stroke: '#2a5bd7',
+                'stroke-width': '2',
+                'stroke-linecap': 'round',
+                'stroke-dasharray': '6 5'
+              }));
+              stage.appendChild(helpers.createSvg('path', {
+                d: helpers.quadraticPathSegment(p1, arc.control, p2, 0.5 + arc.gapHalf, 1, 20),
+                fill: 'none',
+                stroke: '#2a5bd7',
+                'stroke-width': '2',
+                'stroke-linecap': 'round',
+                'stroke-dasharray': '6 5'
+              }));
+            }
+            const text = helpers.createLabelNode(label, {
+              x: pos.x,
+              y: pos.y,
+              'text-anchor': 'middle',
+              'dominant-baseline': 'middle',
+              'font-size': '50',
+              'font-weight': '700',
+              fill: '#2a5bd7'
+            });
+            helpers.attachHit(text, 'side', id);
+            stage.appendChild(text);
+          }
+
+          stage.appendChild(helpers.createSvg('polygon', {
+            points: [t.A, t.E, t.C].map(function (p) { return p.x + ',' + p.y; }).join(' '),
+            fill: 'rgba(42,91,215,0.1)',
+            stroke: 'none'
+          }));
+          addLine('AE', 'A', 'E', { stroke: '#2a5bd7', strokeWidth: 3 });
+          addLine('AC', 'A', 'C', { stroke: '#687086', strokeWidth: 3, dasharray: '8 7' });
+          addLine('EC', 'E', 'C', { stroke: '#2a5bd7', strokeWidth: 3 });
+          addLine('EF', 'E', 'F', { drawLine: false, stroke: '#2a5bd7' });
+          addLine('FA', 'F', 'A', { drawLine: false, stroke: '#2a5bd7' });
+          addLine('FD', 'F', 'D', { drawLine: false, stroke: '#2a5bd7' });
+          addLine('DC', 'D', 'C', { drawLine: false, stroke: '#2a5bd7' });
+          addLine('FC', 'F', 'C', { drawLine: false, stroke: '#2a5bd7' });
+          addLine('BC', 'B', 'C', { drawLine: false, stroke: '#2a5bd7' });
+
+          ['E', 'F'].forEach(function (id) {
+            const point = t[id];
+            const node = helpers.createSvg('circle', { cx: point.x, cy: point.y, r: 7, fill: '#1f2430' });
+            helpers.attachHit(node, 'point', id);
+            stage.appendChild(node);
+          });
+          const labelOffsets = {
+            E: { x: 0, y: -38 },
+            F: { x: 0, y: -34 }
+          };
+          ['E', 'F'].forEach(function (id) {
+            const value = helpers.getPointLabelValue(id);
+            if (!value) return;
+            const offset = labelOffsets[id];
+            const text = helpers.createLabelNode(value, {
+              x: t[id].x + offset.x,
+              y: t[id].y + offset.y,
+              'text-anchor': 'middle',
+              'dominant-baseline': 'middle',
+              'font-size': '44',
+              'font-weight': '700',
+              fill: '#1f2430'
+            });
+            helpers.attachHit(text, 'point', id);
+            stage.appendChild(text);
+          });
+        },
+        updateSideControl: function () {},
+        updateAngleControl: function () {}
+      });
+    })();
+  </script>
+  <script src="/assets/site-auto-i18n.js"></script>
+</body>
+</html>

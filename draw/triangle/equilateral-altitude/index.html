@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>正三角形（垂線） | Instant Geometry</title>
+  <link rel="stylesheet" href="../../../assets/triangle-mobile-page.css?v=triangle-katex-6" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" />
+  <script src="/assets/save-quota.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <button class="btn" id="backBtn" type="button">戻る</button>
+      <h1 class="topbar-title">正三角形（垂線）</h1>
+      <button class="btn" id="saveBtn" type="button">保存</button>
+    </header>
+
+    <section class="stage-wrap" id="captureRoot">
+      <div class="status error" id="statusBox">高さ AH から、頂点 A から BC への垂線を持つ正三角形を描画します。</div>
+      <svg class="stage" id="stage" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet" aria-label="正三角形（垂線）の描画画面"></svg>
+    </section>
+
+    <footer class="bottom-bar one-field">
+      <div class="field">
+        <div class="field-label">高さ AH</div>
+        <input class="field-input" id="heightInput" type="text" inputmode="text" value="5" />
+      </div>
+    </footer>
+  </div>
+
+  <div class="sheet-backdrop" id="sheetBackdrop"></div>
+  <section class="sheet" id="editSheet" aria-hidden="true">
+    <div class="sheet-header">
+      <h2 class="sheet-title" id="sheetTitle">設定</h2>
+      <button class="sheet-close" id="sheetClose" type="button" aria-label="閉じる">×</button>
+    </div>
+    <div class="sheet-body" id="sheetBody"></div>
+  </section>
+
+  <section class="sheet" id="saveSheet" aria-hidden="true">
+    <div class="sheet-header">
+      <h2 class="sheet-title">保存</h2>
+      <button class="sheet-close" id="saveSheetClose" type="button" aria-label="閉じる">×</button>
+    </div>
+    <div class="sheet-body">
+      <div class="save-grid">
+        <button class="btn" id="savePngBtn" type="button">PNG</button>
+        <button class="btn" id="saveTransparentBtn" type="button">透過PNG</button>
+        <button class="btn" id="savePdfBtn" type="button">PDF</button>
+      </div>
+    </div>
+  </section>
+
+  <script src="../../../assets/mobile-angle-ornaments.js?v=triangle-katex-1"></script>
+  <script src="../../../assets/function-svg-labels.js?v=triangle-katex-1"></script>
+  <script src="../../../assets/draw-shared-labels.js?v=shared-katex-2"></script>
+  <script src="../../../assets/draw-label-taxonomy.js?v=taxonomy-1"></script>
+  <script src="../../../assets/draw-shared-label-engine.js?v=controller-1"></script>
+  <script src="../../../assets/triangle-mobile-page.js?v=controller-17"></script>
+  <script>
+    window.InstantGeometryTriangleMobile.createPage({
+      readyMessage: '入力をもとに正三角形（垂線）を描画しています。',
+      fileBase: 'triangle-equilateral-altitude',
+      controlInputIds: {
+        h: 'heightInput'
+      },
+      initialState: {
+        sides: { a: 0, b: 0, c: 0, AH: 5 },
+        pointInputs: { A: 'A', B: 'B', C: 'C', H: 'H' },
+        sideInputs: { a: '', b: '', c: '', AH: ' ' },
+        sideKinds: { a: 'plain', b: 'plain', c: 'plain', AH: 'plain' },
+        sideArcVisible: { a: true, b: true, c: true, AH: true },
+        angleInputs: { A: '', B: '', C: '' },
+        angleKinds: { A: 'hidden', B: 'hidden', C: 'hidden' },
+        areaValue: ''
+      },
+      readControls: function (inputs, parseNatural) {
+        return {
+          h: parseNatural(inputs.h.value, '高さ AH')
+        };
+      },
+      applyControlsToState: function (state, parsed) {
+        const side = (2 * parsed.h) / Math.sqrt(3);
+        state.sides.a = side;
+        state.sides.b = side;
+        state.sides.c = side;
+        state.sides.AH = parsed.h;
+      },
+      computeGeometry: function (state, parsed, helpers) {
+        const side = (2 * parsed.h) / Math.sqrt(3);
+        const geometry = helpers.computeTriangleFromSides(side, side, side);
+        geometry.H = { x: side / 2, y: 0 };
+        state.sides.a = side;
+        state.sides.b = side;
+        state.sides.c = side;
+        state.sides.AH = parsed.h;
+        return geometry;
+      },
+      drawAuxiliary: function (helpers) {
+        const geometry = helpers.geometry;
+        const H = geometry.H || { x: geometry.A.x, y: 0 };
+        const tH = helpers.fitPoint(H);
+        const tA = helpers.screen.A;
+        const tB = helpers.screen.B;
+        const chLine = helpers.createSvg('line', {
+          x1: tA.x,
+          y1: tA.y,
+          x2: tH.x,
+          y2: tH.y,
+          stroke: '#687086',
+          'stroke-width': '3',
+          'stroke-dasharray': '8 7',
+          'stroke-linecap': 'round'
+        });
+        helpers.attachHit(chLine, 'side', 'AH');
+        helpers.stage.appendChild(chLine);
+        helpers.drawSideKind(helpers.state.sideKinds.AH, tA, tH);
+        helpers.drawRightAngleAtPoint(tH, tB, tA);
+        const chLabel = helpers.getSideLabelValue('AH');
+        if (chLabel) {
+          const labelPos = { x: tH.x - 48, y: (tH.y + tA.y) / 2 };
+          if (helpers.state.sideArcVisible.AH !== false) {
+            helpers.drawSideLabelArc(tA, tH, helpers.screen.center, labelPos);
+          }
+          const labelAttrs = {
+            x: labelPos.x,
+            y: labelPos.y,
+            'text-anchor': 'middle',
+            'dominant-baseline': 'middle',
+            'font-size': '52',
+            'font-weight': '700',
+            fill: '#2a5bd7'
+          };
+          const textNode = helpers.createTextLabel ? helpers.createTextLabel(chLabel, labelAttrs) : helpers.createSvg('text', labelAttrs);
+          if (!helpers.createTextLabel) textNode.textContent = chLabel;
+          helpers.attachHit(textNode, 'side', 'AH');
+          helpers.stage.appendChild(textNode);
+        }
+        const point = helpers.createSvg('circle', {
+          cx: tH.x,
+          cy: tH.y,
+          r: 7,
+          fill: '#1f2430'
+        });
+        helpers.attachHit(point, 'point', 'H');
+        helpers.stage.appendChild(point);
+        const label = helpers.getPointLabelValue('H');
+        if (label) {
+          const textNode = helpers.createSvg('text', {
+            x: tH.x + 52,
+            y: tH.y + 52,
+            'text-anchor': 'middle',
+            'dominant-baseline': 'middle',
+            'font-size': '52',
+            'font-weight': '700',
+            fill: '#1f2430'
+          });
+          textNode.textContent = label;
+          helpers.attachHit(textNode, 'point', 'H');
+          helpers.stage.appendChild(textNode);
+        }
+      },
+      sideNumericMode: function (id) {
+        return id === 'AH' ? 'control' : 'readonly';
+      },
+      angleNumericMode: function () {
+        return 'readonly';
+      },
+      updateSideControl: function (id, value, state, inputs) {
+        if (id === 'AH') {
+          inputs.h.value = String(value);
+          state.sides.AH = value;
+          return;
+        }
+        const side = (2 * state.sides.AH) / Math.sqrt(3);
+        state.sides.a = side;
+        state.sides.b = side;
+        state.sides.c = side;
+      },
+      updateAngleControl: function () {}
+    });
+  </script>
+  <script src="/assets/site-auto-i18n.js?v=triangle-katex-1"></script>
+</body>
+</html>

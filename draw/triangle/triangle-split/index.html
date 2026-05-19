@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>面積比① | Instant Geometry</title>
+  <link rel="stylesheet" href="../../../assets/triangle-mobile-page.css?v=triangle-katex-6" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" />
+  <script src="/assets/save-quota.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <button class="btn" id="backBtn" type="button">戻る</button>
+      <h1 class="topbar-title">面積比①</h1>
+      <button class="btn" id="saveBtn" type="button">保存</button>
+    </header>
+
+    <section class="stage-wrap" id="captureRoot">
+      <div class="status" id="statusBox">AB、BD、DC、CA から、BC上の点Dと線分ADを描画します。</div>
+      <svg class="stage" id="stage" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet" aria-label="面積比①の描画画面"></svg>
+    </section>
+
+    <footer class="bottom-bar four-fields">
+      <div class="field">
+        <div class="field-label">AB</div>
+        <input class="field-input" id="abInput" type="text" inputmode="text" value="5" />
+      </div>
+      <div class="field">
+        <div class="field-label">BD</div>
+        <input class="field-input" id="bdInput" type="text" inputmode="text" value="3" />
+      </div>
+      <div class="field">
+        <div class="field-label">DC</div>
+        <input class="field-input" id="dcInput" type="text" inputmode="text" value="4" />
+      </div>
+      <div class="field">
+        <div class="field-label">CA</div>
+        <input class="field-input" id="caInput" type="text" inputmode="text" value="6" />
+      </div>
+    </footer>
+  </div>
+
+  <div class="sheet-backdrop" id="sheetBackdrop"></div>
+  <section class="sheet" id="editSheet" aria-hidden="true">
+    <div class="sheet-header">
+      <h2 class="sheet-title" id="sheetTitle">設定</h2>
+      <button class="sheet-close" id="sheetClose" type="button" aria-label="閉じる">×</button>
+    </div>
+    <div class="sheet-body" id="sheetBody"></div>
+  </section>
+
+  <section class="sheet" id="saveSheet" aria-hidden="true">
+    <div class="sheet-header">
+      <h2 class="sheet-title">保存</h2>
+      <button class="sheet-close" id="saveSheetClose" type="button" aria-label="閉じる">×</button>
+    </div>
+    <div class="sheet-body">
+      <div class="save-grid">
+        <button class="btn" id="savePngBtn" type="button">PNG</button>
+        <button class="btn" id="saveTransparentBtn" type="button">透過PNG</button>
+        <button class="btn" id="savePdfBtn" type="button">PDF</button>
+      </div>
+    </div>
+  </section>
+
+  <script src="../../../assets/mobile-angle-ornaments.js?v=triangle-katex-1"></script>
+  <script src="../../../assets/function-svg-labels.js?v=triangle-katex-1"></script>
+  <script src="../../../assets/draw-shared-labels.js?v=shared-katex-2"></script>
+  <script src="../../../assets/draw-label-taxonomy.js?v=taxonomy-1"></script>
+  <script src="../../../assets/draw-shared-label-engine.js?v=controller-1"></script>
+  <script src="../../../assets/triangle-mobile-page.js?v=controller-17"></script>
+  <script>
+    (function () {
+      'use strict';
+
+      function pointOnSegment(P, Q, t) {
+        return {
+          x: P.x + (Q.x - P.x) * t,
+          y: P.y + (Q.y - P.y) * t
+        };
+      }
+
+      function segmentLength(P, Q) {
+        return Math.hypot(P.x - Q.x, P.y - Q.y);
+      }
+
+      function angleDegrees(P, vertex, Q) {
+        const ux = P.x - vertex.x;
+        const uy = P.y - vertex.y;
+        const vx = Q.x - vertex.x;
+        const vy = Q.y - vertex.y;
+        const size = Math.hypot(ux, uy) * Math.hypot(vx, vy);
+        if (!size) return 0;
+        const cosine = Math.max(-1, Math.min(1, (ux * vx + uy * vy) / size));
+        return Math.acos(cosine) * 180 / Math.PI;
+      }
+
+      function segmentLabelPoint(P, Q, center, distance) {
+        const midpoint = { x: (P.x + Q.x) / 2, y: (P.y + Q.y) / 2 };
+        const dx = Q.x - P.x;
+        const dy = Q.y - P.y;
+        const length = Math.hypot(dx, dy) || 1;
+        let nx = -dy / length;
+        let ny = dx / length;
+        if (nx * (center.x - midpoint.x) + ny * (center.y - midpoint.y) > 0) {
+          nx *= -1;
+          ny *= -1;
+        }
+        return {
+          x: midpoint.x + nx * (distance || 0.42),
+          y: midpoint.y + ny * (distance || 0.42)
+        };
+      }
+
+      function buildTriangleSplitGeometry(values) {
+        const BC = values.BD + values.DC;
+        if (values.AB + values.CA <= BC || values.AB + BC <= values.CA || values.CA + BC <= values.AB) {
+          throw new Error('AB、BD+DC、CA が三角形を作れる値になるようにしてください。');
+        }
+        const B = { x: 0, y: 0 };
+        const C = { x: BC, y: 0 };
+        const x = (values.AB * values.AB + BC * BC - values.CA * values.CA) / (2 * BC);
+        const y = Math.sqrt(Math.max(0, values.AB * values.AB - x * x));
+        const A = { x: x, y: y };
+        const D = pointOnSegment(B, C, values.BD / BC);
+        const angleA = angleDegrees(B, A, C);
+        const angleB = angleDegrees(C, B, A);
+        const angleC = 180 - angleA - angleB;
+        return Object.assign({ A: A, B: B, C: C, D: D, angleA: angleA, angleB: angleB, angleC: angleC }, values, {
+          BC: BC,
+          AD: segmentLength(A, D)
+        });
+      }
+
+      function splitSegments(geometry) {
+        const center = {
+          x: (geometry.A.x + geometry.B.x + geometry.C.x) / 3,
+          y: (geometry.A.y + geometry.B.y + geometry.C.y) / 3
+        };
+        return [
+          { id: 'AD', name: 'AD', p1: geometry.A, p2: geometry.D, stroke: '#25603b', strokeWidth: 3, dasharray: null, value: geometry.AD, labelPoint: segmentLabelPoint(geometry.A, geometry.D, center, 0.46) },
+          { id: 'AB', name: 'AB', p1: geometry.A, p2: geometry.B, drawLine: false, value: geometry.AB, stroke: '#2a5bd7', labelPoint: segmentLabelPoint(geometry.A, geometry.B, center, 0.42) },
+          { id: 'BD', name: 'BD', p1: geometry.B, p2: geometry.D, drawLine: false, value: geometry.BD, stroke: '#2a5bd7', labelPoint: segmentLabelPoint(geometry.B, geometry.D, center, 0.42) },
+          { id: 'DC', name: 'DC', p1: geometry.D, p2: geometry.C, drawLine: false, value: geometry.DC, stroke: '#2a5bd7', labelPoint: segmentLabelPoint(geometry.D, geometry.C, center, 0.42) },
+          { id: 'CA', name: 'CA', p1: geometry.C, p2: geometry.A, drawLine: false, value: geometry.CA, stroke: '#2a5bd7', labelPoint: segmentLabelPoint(geometry.C, geometry.A, center, 0.42) }
+        ];
+      }
+
+      window.InstantGeometryTriangleMobile.createPage({
+        readyMessage: 'AB、BD、DC、CA から面積比①を描画しました。',
+        fileBase: 'triangle-split',
+        controlInputIds: {
+          AB: 'abInput',
+          BD: 'bdInput',
+          DC: 'dcInput',
+          CA: 'caInput'
+        },
+        initialState: {
+          sides: { a: 7, b: 6, c: 5 },
+          pointInputs: { A: 'A', B: 'B', C: 'C', D: 'D' },
+          sideInputs: { a: '', b: '', c: '' },
+          sideKinds: { a: 'plain', b: 'plain', c: 'plain' },
+          sideArcVisible: { a: true, b: true, c: true },
+          angleInputs: { A: '', B: '', C: '' },
+          angleKinds: { A: 'hidden', B: 'hidden', C: 'hidden' },
+          extraSegmentInputs: { AD: ' ', AB: ' ', BD: ' ', DC: ' ', CA: ' ' },
+          extraSegmentKinds: { AD: 'plain', AB: 'plain', BD: 'plain', DC: 'plain', CA: 'plain' },
+          extraSegmentArcVisible: { AD: true, AB: true, BD: true, DC: true, CA: true },
+          areaValue: ''
+        },
+        readControls: function (inputs, parseNatural) {
+          return {
+            AB: parseNatural(inputs.AB.value, 'AB'),
+            BD: parseNatural(inputs.BD.value, 'BD'),
+            DC: parseNatural(inputs.DC.value, 'DC'),
+            CA: parseNatural(inputs.CA.value, 'CA')
+          };
+        },
+        applyControlsToState: function (state, parsed) {
+          state.sides.a = parsed.BD + parsed.DC;
+          state.sides.b = parsed.CA;
+          state.sides.c = parsed.AB;
+        },
+        computeGeometry: function (state, parsed) {
+          return buildTriangleSplitGeometry(parsed);
+        },
+        extraPoints: function (context) {
+          const geometry = context.geometry;
+          return [
+            { id: 'D', point: geometry.D, labelPoint: { x: geometry.D.x, y: geometry.D.y - 0.5 }, fill: '#25603b' }
+          ];
+        },
+        extraSegments: function (context) {
+          return splitSegments(context.geometry);
+        }
+      });
+    })();
+  </script>
+  <script src="/assets/site-auto-i18n.js?v=triangle-katex-1"></script>
+</body>
+</html>

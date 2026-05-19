@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>転がる円錐 | Instant Geometry</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" />
+  <link rel="stylesheet" href="../../../assets/conic-mobile-page.css" />
+  <script src="/assets/save-quota.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <style>
+    .solid-outline{fill:none;stroke:#2a5bd7;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+    .solid-hidden{fill:none;stroke:#687086;stroke-width:2.4;stroke-linecap:round;stroke-dasharray:10 8}
+    .solid-radius{stroke:#2a5bd7;stroke-width:2.4;stroke-linecap:round}
+    .rolling-apex{fill:#1f2430}
+    .rolling-point-hit{fill:transparent;stroke:transparent;pointer-events:all;cursor:pointer}
+    .rolling-label-line{stroke:#1f2430;stroke-width:2;stroke-linecap:round}
+    .rolling-label{font-size:42px;font-weight:700;fill:#2a5bd7}
+    .rolling-hit{stroke:transparent;stroke-width:34;stroke-linecap:round;pointer-events:stroke;cursor:pointer}
+    .rolling-label-hit{cursor:pointer;pointer-events:auto}
+    .rolling-hit,.rolling-label-hit,.rolling-point-hit{-webkit-tap-highlight-color:transparent}
+    .rolling-hit:focus,.rolling-hit:focus-visible,.rolling-label-hit:focus,.rolling-label-hit:focus-visible,.rolling-point-hit:focus,.rolling-point-hit:focus-visible{outline:none!important}
+    .rolling-label-hit.is-moving{cursor:grab;opacity:1}
+    .rolling-label-hit.is-moving:active{cursor:grabbing}
+    .move-toolbar{position:fixed;left:12px;right:12px;bottom:var(--safe-bottom);z-index:45;display:none;grid-template-columns:1fr 1fr;gap:10px}
+    .move-toolbar.open{display:grid}
+    body.label-move-active .topbar,body.label-move-active .bottom-bar{pointer-events:none;opacity:.42}
+    .stage-wrap.label-move-active .stage > *{filter:grayscale(1);opacity:.34;pointer-events:none}
+    .stage-wrap.label-move-active .stage .label-move-target,.stage-wrap.label-move-active .stage .label-move-target *{filter:none;opacity:1;pointer-events:auto}
+    .stage-wrap.label-move-active .stage text.label-move-target{fill:#2a5bd7!important}
+    .stage-wrap.label-move-active .stage .label-move-target{cursor:grab}
+    .stage-wrap.label-move-active .stage .label-move-target:active{cursor:grabbing}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <button class="btn" id="backBtn" type="button">戻る</button>
+      <h1 class="topbar-title">転がる円錐</h1>
+      <button class="btn" id="saveBtn" type="button">保存</button>
+    </header>
+
+    <section class="stage-wrap" id="captureRoot">
+      <div class="status" id="statusBox">OA と O'A を入力すると、円Oの上に寝ている円錐を描画します。</div>
+      <svg class="stage" id="stage" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet" aria-label="転がる円錐の描画画面"></svg>
+    </section>
+
+    <footer class="bottom-bar two-fields">
+      <div class="field">
+        <div class="field-label">OA</div>
+        <input class="field-input" id="slantInput" type="text" inputmode="decimal" value="9" />
+      </div>
+      <div class="field">
+        <div class="field-label">O'A</div>
+        <input class="field-input" id="radiusInput" type="text" inputmode="decimal" value="3" />
+      </div>
+    </footer>
+  </div>
+
+  <div class="sheet-backdrop" id="sheetBackdrop"></div>
+  <section class="sheet" id="editSheet" aria-hidden="true">
+    <div class="sheet-header">
+      <h2 class="sheet-title" id="sheetTitle">線分</h2>
+      <button class="sheet-close" id="sheetClose" type="button" aria-label="閉じる">x</button>
+    </div>
+    <div class="sheet-body" id="sheetBody"></div>
+  </section>
+
+  <section class="sheet" id="saveSheet" aria-hidden="true">
+    <div class="sheet-header">
+      <h2 class="sheet-title">保存</h2>
+      <button class="sheet-close" id="saveSheetClose" type="button" aria-label="閉じる">x</button>
+    </div>
+    <div class="sheet-body">
+      <div class="save-grid">
+        <button class="btn" id="savePngBtn" type="button">PNG</button>
+        <button class="btn" id="saveTransparentBtn" type="button">透過PNG</button>
+        <button class="btn" id="savePdfBtn" type="button">PDF</button>
+      </div>
+    </div>
+  </section>
+
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script src="../../../assets/draw-shared-labels.js?v=rolling-controller-1"></script>
+  <script src="../../../assets/draw-label-taxonomy.js?v=rolling-controller-1"></script>
+  <script src="../../../assets/draw-shared-label-engine.js?v=rolling-controller-1"></script>
+  <script src="../../../assets/rolling-cone-page.js?v=rolling-controller-1"></script>
+  <script>
+    window.InstantGeometryRollingCone.createPage({
+      slantInputId: 'slantInput',
+      radiusInputId: 'radiusInput',
+      fileBase: 'solid-rolling-cone'
+    });
+  </script>
+  <script src="/assets/site-auto-i18n.js"></script>
+</body>
+</html>

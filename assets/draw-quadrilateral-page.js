@@ -6,12 +6,18 @@
     'isosceles-trapezoid': { name: '等脚台形', slug: 'isosceles-trapezoid' },
     kite: { name: '凧形', slug: 'kite' },
     rectangle: { name: '長方形', slug: 'rectangle' },
+    'rectangle-diagonal': { name: '長方形（対角線）', slug: 'rectangle-diagonal' },
     rhombus: { name: '菱形', slug: 'rhombus' },
-    parallelogram: { name: '平行四辺形', slug: 'parallelogram' },
+    'square-diagonal': { name: '正方形（対角線）', slug: 'square-diagonal' },
+    parallelogram: { name: '平行四辺形（２辺の長さ）', slug: 'parallelogram' },
+    'parallelogram-diagonal': { name: '平行四辺形（対角線）', slug: 'parallelogram-diagonal' },
+    'parallelogram-angle-pairs': { name: '平行四辺形（２組の角）', slug: 'parallelogram-angle-pairs' },
+    'parallelogram-parallel-equal': { name: '平行四辺形（平行かつ等しい）', slug: 'parallelogram-parallel-equal' },
     'parallelogram-angle': { name: '平行四辺形（2辺＋角）', slug: 'parallelogram-angle' },
     convex: { name: '凸四角形', slug: 'convex' },
     concave: { name: '凹四角形', slug: 'concave' },
     trapezoid: { name: '台形', slug: 'trapezoid' },
+    'trapezoid-diagonal': { name: '台形（対角線）', slug: 'trapezoid-diagonal' },
     square: { name: '正方形', slug: 'square' }
   }[shape] || { name: '四角形', slug: 'quadrilateral' };
   const inputElements = Array.from(document.querySelectorAll('[data-quad-input]')).reduce(function (acc, element) {
@@ -31,6 +37,9 @@
   const unitBtn = document.getElementById('unitBtn');
   const pageBackBtn = document.getElementById('pageBackBtn');
   const downloadButtons = document.querySelectorAll('[data-download-format]');
+  if (window.InstantGeometrySaveQuota && downloadButtons[0]) {
+    window.InstantGeometrySaveQuota.createIndicator({ target: downloadButtons[0] });
+  }
   const box = document.getElementById('box');
   const exportBackdrop = document.getElementById('exportBackdrop');
   const exportFrame = document.getElementById('exportFrame');
@@ -1924,6 +1933,20 @@
     }
   }
 
+  async function handleDownloadWithQuota(format) {
+    try {
+      if (!window.InstantGeometrySaveQuota) {
+        await handleDownload(format);
+        return;
+      }
+      await window.InstantGeometrySaveQuota.runWithQuota(function () {
+        return handleDownload(format);
+      });
+    } catch (error) {
+      setStatus(error.message || '保存に失敗しました。', true);
+    }
+  }
+
   labelLayer.addEventListener('pointerdown', function (event) {
     const target = event.target.closest('.floating-label');
     if (!target) return;
@@ -2245,7 +2268,7 @@
 
   downloadButtons.forEach(function (button) {
     button.addEventListener('click', function () {
-      handleDownload(button.dataset.downloadFormat);
+      handleDownloadWithQuota(button.dataset.downloadFormat);
     });
   });
 

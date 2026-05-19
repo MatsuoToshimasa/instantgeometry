@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>面積足し引き① | Instant Geometry</title>
+  <link rel="stylesheet" href="../../../assets/triangle-mobile-page.css?v=triangle-katex-6" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" />
+  <script src="/assets/save-quota.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <button class="btn" id="backBtn" type="button">戻る</button>
+      <h1 class="topbar-title">面積足し引き①</h1>
+      <button class="btn" id="saveBtn" type="button">保存</button>
+    </header>
+
+    <section class="stage-wrap" id="captureRoot">
+      <div class="status" id="statusBox">BC、AD、DH から、面積を足し引きする図を描画します。</div>
+      <svg class="stage" id="stage" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet" aria-label="面積足し引き①の描画画面"></svg>
+    </section>
+
+    <footer class="bottom-bar">
+      <div class="field">
+        <div class="field-label">BC</div>
+        <input class="field-input" id="bcInput" type="text" inputmode="text" value="8" />
+      </div>
+      <div class="field">
+        <div class="field-label">AD</div>
+        <input class="field-input" id="adInput" type="text" inputmode="text" value="3" />
+      </div>
+      <div class="field">
+        <div class="field-label">DH</div>
+        <input class="field-input" id="dhInput" type="text" inputmode="text" value="2" />
+      </div>
+    </footer>
+  </div>
+
+  <div class="sheet-backdrop" id="sheetBackdrop"></div>
+  <section class="sheet" id="editSheet" aria-hidden="true">
+    <div class="sheet-header">
+      <h2 class="sheet-title" id="sheetTitle">設定</h2>
+      <button class="sheet-close" id="sheetClose" type="button" aria-label="閉じる">×</button>
+    </div>
+    <div class="sheet-body" id="sheetBody"></div>
+  </section>
+
+  <section class="sheet" id="saveSheet" aria-hidden="true">
+    <div class="sheet-header">
+      <h2 class="sheet-title">保存</h2>
+      <button class="sheet-close" id="saveSheetClose" type="button" aria-label="閉じる">×</button>
+    </div>
+    <div class="sheet-body">
+      <div class="save-grid">
+        <button class="btn" id="savePngBtn" type="button">PNG</button>
+        <button class="btn" id="saveTransparentBtn" type="button">透過PNG</button>
+        <button class="btn" id="savePdfBtn" type="button">PDF</button>
+      </div>
+    </div>
+  </section>
+
+  <script src="../../../assets/mobile-angle-ornaments.js?v=triangle-katex-1"></script>
+  <script src="../../../assets/function-svg-labels.js?v=triangle-katex-1"></script>
+  <script src="../../../assets/draw-shared-labels.js?v=shared-katex-2"></script>
+  <script src="../../../assets/draw-label-taxonomy.js?v=taxonomy-1"></script>
+  <script src="../../../assets/draw-shared-label-engine.js?v=controller-1"></script>
+  <script src="../../../assets/triangle-mobile-page.js?v=controller-17"></script>
+  <script>
+    (function () {
+      'use strict';
+
+      function midpoint(P, Q) {
+        return { x: (P.x + Q.x) / 2, y: (P.y + Q.y) / 2 };
+      }
+
+      function buildGeometry(values) {
+        const half = values.BC / 2;
+        const H = { x: 0, y: 0 };
+        const D = { x: 0, y: values.DH };
+        const A = { x: 0, y: values.DH + values.AD };
+        const B = { x: -half, y: 0 };
+        const C = { x: half, y: 0 };
+        const AB = Math.hypot(A.x - B.x, A.y - B.y);
+        const AC = Math.hypot(A.x - C.x, A.y - C.y);
+        return {
+          A: A,
+          B: B,
+          C: C,
+          D: D,
+          H: H,
+          BC: values.BC,
+          AD: values.AD,
+          DH: values.DH,
+          AB: AB,
+          AC: AC,
+          angleA: 2 * Math.atan2(half, values.AD + values.DH) * 180 / Math.PI,
+          angleB: Math.atan2(values.AD + values.DH, half) * 180 / Math.PI,
+          angleC: Math.atan2(values.AD + values.DH, half) * 180 / Math.PI
+        };
+      }
+
+      function areaOfTriangle(P, Q, R) {
+        return Math.abs((Q.x - P.x) * (R.y - P.y) - (R.x - P.x) * (Q.y - P.y)) / 2;
+      }
+
+      function segmentLabelPoint(P, Q, xOffset) {
+        const m = midpoint(P, Q);
+        return { x: m.x + (xOffset || 0), y: m.y };
+      }
+
+      window.InstantGeometryTriangleMobile.createPage({
+        readyMessage: 'BC、AD、DH から面積足し引き①を描画しました。',
+        fileBase: 'area-add-subtract-1',
+        controlInputIds: {
+          BC: 'bcInput',
+          AD: 'adInput',
+          DH: 'dhInput'
+        },
+        initialState: {
+          sides: { a: 8, b: 0, c: 0 },
+          pointInputs: { A: 'A', B: 'B', C: 'C', D: 'D', H: 'H' },
+          sideInputs: { a: ' ', b: '', c: '' },
+          sideKinds: { a: 'plain', b: 'plain', c: 'plain' },
+          sideArcVisible: { a: true, b: true, c: true },
+          angleInputs: { A: '', B: '', C: '' },
+          angleKinds: { A: 'hidden', B: 'hidden', C: 'hidden' },
+          areaValue: '',
+          areaColor: '#ffffff',
+          extraAreaInputs: { ADB: '', ADC: '', DHB: '', DHC: '' },
+          extraAreaColors: { ADB: '#2a5bd7', ADC: '#2a5bd7', DHB: '#ffffff', DHC: '#ffffff' },
+          extraSegmentInputs: { AD: ' ', DH: ' ', DB: '', DC: '' },
+          extraSegmentKinds: { AD: 'plain', DH: 'plain', DB: 'plain', DC: 'plain' },
+          extraSegmentArcVisible: { AD: false, DH: false, DB: false, DC: false }
+        },
+        readControls: function (inputs, parseNatural) {
+          return {
+            BC: parseNatural(inputs.BC.value, 'BC'),
+            AD: parseNatural(inputs.AD.value, 'AD'),
+            DH: parseNatural(inputs.DH.value, 'DH')
+          };
+        },
+        applyControlsToState: function (state, parsed) {
+          const geometry = buildGeometry(parsed);
+          state.sides.a = parsed.BC;
+          state.sides.b = geometry.AC;
+          state.sides.c = geometry.AB;
+        },
+        computeGeometry: function (state, parsed) {
+          return buildGeometry(parsed);
+        },
+        extraAreas: function (context) {
+          const g = context.geometry;
+          return [
+            { id: 'ADB', name: '△ADB', points: [g.A, g.D, g.B], color: '#2a5bd7', value: areaOfTriangle(g.A, g.D, g.B) },
+            { id: 'ADC', name: '△ADC', points: [g.A, g.D, g.C], color: '#2a5bd7', value: areaOfTriangle(g.A, g.D, g.C) },
+            { id: 'DHB', name: '△DHB', points: [g.D, g.H, g.B], color: '#ffffff', value: areaOfTriangle(g.D, g.H, g.B) },
+            { id: 'DHC', name: '△DHC', points: [g.D, g.H, g.C], color: '#ffffff', value: areaOfTriangle(g.D, g.H, g.C) }
+          ];
+        },
+        extraPoints: function (context) {
+          const g = context.geometry;
+          return [
+            { id: 'D', point: g.D, labelPoint: { x: g.D.x + g.BC * 0.08, y: g.D.y }, fill: '#1f2430', radius: 7, labelFontSize: 46 },
+            { id: 'H', point: g.H, labelPoint: { x: g.H.x + g.BC * 0.12, y: g.H.y - g.BC * 0.08 }, fill: '#1f2430', radius: 7, labelFontSize: 46 }
+          ];
+        },
+        extraSegments: function (context) {
+          const g = context.geometry;
+          return [
+            { id: 'DB', name: 'DB', p1: g.D, p2: g.B, stroke: '#2a5bd7', strokeWidth: 3, dasharray: 'none' },
+            { id: 'DC', name: 'DC', p1: g.D, p2: g.C, stroke: '#2a5bd7', strokeWidth: 3, dasharray: 'none' },
+            { id: 'AD', name: 'AD', p1: g.A, p2: g.D, drawLine: false, value: g.AD, stroke: '#2a5bd7', labelPoint: segmentLabelPoint(g.A, g.D, -g.BC * 0.08) },
+            { id: 'DH', name: 'DH', p1: g.D, p2: g.H, drawLine: false, value: g.DH, stroke: '#2a5bd7', labelPoint: segmentLabelPoint(g.D, g.H, -g.BC * 0.08) }
+          ];
+        },
+        drawAuxiliary: function (helpers) {
+          const g = helpers.geometry;
+          const tA = helpers.fitPoint(g.A);
+          const tD = helpers.fitPoint(g.D);
+          const tH = helpers.fitPoint(g.H);
+          const tB = helpers.fitPoint(g.B);
+          const tC = helpers.fitPoint(g.C);
+          const altitude = helpers.createSvg('line', {
+            x1: tA.x,
+            y1: tA.y,
+            x2: tH.x,
+            y2: tH.y,
+            stroke: '#687086',
+            'stroke-width': '3',
+            'stroke-dasharray': '8 7',
+            'stroke-linecap': 'round'
+          });
+          helpers.stage.appendChild(altitude);
+          helpers.drawRightAngleAtPoint(tH, tB, tA);
+          [tD, tH].forEach(function (point) {
+            helpers.stage.appendChild(helpers.createSvg('circle', {
+              cx: point.x,
+              cy: point.y,
+              r: 4.2,
+              fill: '#fbfcff',
+              stroke: '#687086',
+              'stroke-width': '2'
+            }));
+          });
+          helpers.stage.appendChild(helpers.createSvg('line', {
+            x1: tB.x,
+            y1: tB.y,
+            x2: tC.x,
+            y2: tC.y,
+            stroke: '#2a5bd7',
+            'stroke-width': '3',
+            'stroke-linecap': 'round'
+          }));
+        }
+      });
+    })();
+  </script>
+  <script src="/assets/site-auto-i18n.js?v=triangle-katex-1"></script>
+</body>
+</html>

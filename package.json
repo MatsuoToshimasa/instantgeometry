@@ -9,6 +9,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "audit:labels": "node scripts/audit-label-taxonomy.mjs",
+    "audit:label-adoption": "node scripts/audit-label-engine-adoption.mjs",
+    "audit:geometry-labels": "node scripts/audit-geometric-label-consistency.mjs",
+    "audit:label-modal-contract": "node scripts/audit-shared-label-modal-contract.mjs",
+    "audit:settings": "node scripts/audit-draw-settings-coverage.mjs",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>正方形と四分円② | Instant Geometry</title>
+  <link rel="stylesheet" href="../../../assets/conic-mobile-page.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" />
+  <script src="/assets/save-quota.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <button class="btn" id="backBtn" type="button">戻る</button>
+      <h1 class="topbar-title">正方形と四分円②</h1>
+      <button class="btn" id="saveBtn" type="button">保存</button>
+    </header>
+
+    <section class="stage-wrap" id="captureRoot">
+      <div class="status" id="statusBox">1辺を入力すると、正方形内に4つの扇形と9つの面積領域を描画します。</div>
+      <svg class="stage" id="stage" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet" aria-label="正方形と四分円②の描画画面"></svg>
+    </section>
+
+    <footer class="bottom-bar one-field">
+      <div class="field">
+        <div class="field-label">1辺</div>
+        <input class="field-input" id="sideLen" type="text" inputmode="decimal" value="10" />
+      </div>
+    </footer>
+  </div>
+
+  <div class="sheet-backdrop" id="sheetBackdrop"></div>
+  <section class="sheet" id="editSheet" aria-hidden="true">
+    <div class="sheet-header">
+      <h2 class="sheet-title" id="sheetTitle">設定</h2>
+      <button class="sheet-close" id="sheetClose" type="button" aria-label="閉じる">×</button>
+    </div>
+    <div class="sheet-body" id="sheetBody"></div>
+  </section>
+
+  <section class="sheet" id="saveSheet" aria-hidden="true">
+    <div class="sheet-header">
+      <h2 class="sheet-title">保存</h2>
+      <button class="sheet-close" id="saveSheetClose" type="button" aria-label="閉じる">×</button>
+    </div>
+    <div class="sheet-body">
+      <div class="save-grid">
+        <button class="btn" id="savePngBtn" type="button">PNG</button>
+        <button class="btn" id="saveTransparentBtn" type="button">透過PNG</button>
+        <button class="btn" id="savePdfBtn" type="button">PDF</button>
+      </div>
+    </div>
+  </section>
+
+  <script src="../../../assets/mobile-angle-ornaments.js?v=angle-modal-1"></script>
+  <script src="../../../assets/function-svg-labels.js?v=triangle-katex-1"></script>
+  <script src="../../../assets/draw-shared-labels.js?v=shared-katex-2"></script>
+  <script src="../../../assets/draw-label-taxonomy.js?v=taxonomy-1"></script>
+  <script src="../../../assets/draw-shared-label-engine.js?v=controller-1"></script>
+  <script src="../../../assets/conic-mobile-page.js?v=controller-1"></script>
+  <script>
+    window.InstantGeometryConicMobile.createPage({
+      shape: 'square-corner-sectors',
+      readyMessage: '入力をもとに正方形と四分円②を描画しています。',
+      fileBase: 'square-corner-sectors',
+      showArea: false,
+      controlInputIds: {
+        side: 'sideLen'
+      },
+      initialState: {
+        pointInputs: { A: '', B: '', C: '', D: '' },
+        measures: { AB: 10, BC: 10, CD: 10, DA: 10 },
+        measureInputs: { AB: ' ', BC: ' ', CD: '', DA: '' },
+        extraAreaInputs: {
+          top: '',
+          right: '',
+          bottom: '',
+          left: '',
+          'corner-a': '',
+          'corner-b': '',
+          'corner-c': '',
+          'corner-d': '',
+          center: ''
+        }
+      }
+    });
+  </script>
+  <script src="/assets/site-auto-i18n.js"></script>
+</body>
+</html>

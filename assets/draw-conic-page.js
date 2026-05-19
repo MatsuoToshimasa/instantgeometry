@@ -51,6 +51,9 @@
   const unitBtn = document.getElementById('unitBtn');
   const pageBackBtn = document.getElementById('pageBackBtn');
   const downloadButtons = document.querySelectorAll('[data-download-format]');
+  if (window.InstantGeometrySaveQuota && downloadButtons[0]) {
+    window.InstantGeometrySaveQuota.createIndicator({ target: downloadButtons[0] });
+  }
   const box = document.getElementById('box');
   const exportBackdrop = document.getElementById('exportBackdrop');
   const exportFrame = document.getElementById('exportFrame');
@@ -575,6 +578,20 @@
     }
   }
 
+  async function handleDownloadWithQuota(format) {
+    try {
+      if (!window.InstantGeometrySaveQuota) {
+        await handleDownload(format);
+        return;
+      }
+      await window.InstantGeometrySaveQuota.runWithQuota(function () {
+        return handleDownload(format);
+      });
+    } catch (error) {
+      setStatus(error.message || '保存に失敗しました。', true);
+    }
+  }
+
   labelLayer.addEventListener('pointerdown', function (event) {
     const target = event.target.closest('.floating-label');
     if (!target) return;
@@ -700,7 +717,7 @@
   leftToggle.addEventListener('click', function () { isDockCollapsed = !isDockCollapsed; leftDock.classList.toggle('is-collapsed', isDockCollapsed); updateDockToggleButtons(); });
   rightToggle.addEventListener('click', function () { isRightDockCollapsed = !isRightDockCollapsed; rightDock.classList.toggle('is-collapsed', isRightDockCollapsed); updateDockToggleButtons(); });
   pageBackBtn.addEventListener('click', function () { window.history.back(); });
-  downloadButtons.forEach(function (button) { button.addEventListener('click', function () { handleDownload(button.dataset.downloadFormat); }); });
+  downloadButtons.forEach(function (button) { button.addEventListener('click', function () { handleDownloadWithQuota(button.dataset.downloadFormat); }); });
   window.addEventListener('resize', function () { updateExportFrame(); lastFitSignature = ''; render(); });
 
   updateRatioButton();

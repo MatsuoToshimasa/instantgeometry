@@ -60,6 +60,189 @@
     return latex;
   }
 
+  function stripOuterParens(text) {
+    const source = String(text || '').trim();
+    if (source[0] !== '(' || source[source.length - 1] !== ')') return source;
+    let depth = 0;
+    for (let i = 0; i < source.length; i += 1) {
+      if (source[i] === '(') depth += 1;
+      if (source[i] === ')') {
+        depth -= 1;
+        if (depth === 0 && i < source.length - 1) return source;
+      }
+    }
+    return source.slice(1, -1);
+  }
+
+  function findTopLevelSlash(text) {
+    let depth = 0;
+    for (let i = 0; i < text.length; i += 1) {
+      if (text[i] === '(') depth += 1;
+      else if (text[i] === ')') depth = Math.max(0, depth - 1);
+      else if (text[i] === '/' && depth === 0) return i;
+    }
+    return -1;
+  }
+
+  function escapeLatexText(text) {
+    return String(text || '').replace(/([\\{}_$&#%])/g, '\\$1');
+  }
+
+  function hasMathSyntax(text) {
+    return /[\/√π°*_^()]|sqrt|pi|acos|arccos/i.test(String(text || ''));
+  }
+
+  function labelTextToLatex(text, kind) {
+    const raw = String(text || '').trim().replace(/\s+/g, '');
+    if (kind === 'point' && !hasMathSyntax(raw)) {
+      if (/^[A-Za-z0-9]+$/.test(raw)) return '\\mathrm{' + escapeLatexText(raw) + '}';
+      return '\\text{' + escapeLatexText(raw) + '}';
+    }
+    if ((kind === 'area' || kind === 'extraArea') && !hasMathSyntax(raw) && /[^0-9.]/.test(raw)) {
+      return '\\text{' + escapeLatexText(raw) + '}';
+    }
+    const suffixMatch = raw.match(/^(.*?)(°|cm²|m²|km²|cm|m|km)$/);
+    const core = suffixMatch ? suffixMatch[1] : raw;
+    const suffix = suffixMatch ? suffixMatch[2] : '';
+
+    function convert(input) {
+      let value = stripOuterParens(String(input || '').trim());
+      const slash = findTopLevelSlash(value);
+      if (slash > 0 && slash < value.length - 1) {
+        return '\\frac{' + convert(value.slice(0, slash)) + '}{' + convert(value.slice(slash + 1)) + '}';
+      }
+      value = value
+        .replace(/arccos\(([^()]+)\)/ig, function (_, argument) {
+          return '\\arccos\\left(' + convert(argument) + '\\right)';
+        })
+        .replace(/acos\(([^()]+)\)/ig, function (_, argument) {
+          return '\\arccos\\left(' + convert(argument) + '\\right)';
+        })
+        .replace(/pi/ig, 'π')
+        .replace(/sqrt\(([^()]+)\)/ig, '√($1)')
+        .replace(/√\(([^()]+)\)/g, function (_, radicand) {
+          return '\\sqrt{' + convert(radicand) + '}';
+        })
+        .replace(/(\d*)√([0-9A-Za-zπ]+)/g, function (_, coefficient, radicand) {
+          return (coefficient || '') + '\\sqrt{' + convert(radicand) + '}';
+        })
+        .replace(/π/g, '\\pi')
+        .replace(/\*/g, '\\cdot ');
+      return value;
+    }
+
+    let latex = convert(core);
+    if (suffix === '°') latex += '^{\\circ}';
+    else if (suffix) latex += '\\,\\mathrm{' + suffix.replace('²', '^2') + '}';
+    return latex;
+  }
+
+  function shouldUseKatex(text) {
+    const raw = String(text || '');
+    return /[√π°/]|km²|cm²|m²|km|cm|m/.test(raw);
+  }
+
+  function measureSvgKatexLabel(latex, fontSize, color, className) {
+    if (!window.katex || typeof window.katex.render !== 'function') return null;
+    const measure = document.createElement('div');
+    measure.className = (className || 'draw-katex-label') + ' draw-katex-measure';
+    measure.style.fontSize = fontSize + 'px';
+    measure.style.color = color;
+    try {
+      window.katex.render(latex, measure, {
+        throwOnError: false,
+        output: 'html',
+        strict: 'ignore'
+      });
+    } catch (_) {
+      return null;
+    }
+    document.body.appendChild(measure);
+    const rect = measure.getBoundingClientRect();
+    measure.remove();
+    if (!Number.isFinite(rect.width) || !Number.isFinite(rect.height) || rect.width <= 0 || rect.height <= 0) return null;
+    return {
+      width: Math.ceil(rect.width) + Math.ceil(fontSize * 0.28),
+      height: Math.ceil(rect.height) + Math.ceil(fontSize * 0.2)
+    };
+  }
+
+  function createSvgKatexLabel(deps) {
+    if (!window.katex || typeof window.katex.render !== 'function') return null;
+    const createSvgNode = deps.createSvg;
+    if (typeof createSvgNode !== 'function') return null;
+    const text = deps.text;
+    const attrs = deps.attrs || {};
+    const x = Number(attrs.x) || 0;
+    const y = Number(attrs.y) || 0;
+    const fontSize = Number(attrs['font-size']) || 42;
+    const color = attrs.fill || '#1f2430';
+    const kind = deps.kind || attrs['data-label-kind'] || attrs['data-kind'] || '';
+    const id = deps.id || attrs['data-label-id'] || attrs['data-id'] || '';
+    const className = deps.className || 'draw-katex-label';
+    const latex = labelTextToLatex(text, kind);
+    const measured = measureSvgKatexLabel(latex, fontSize, color, className);
+    if (!measured) return null;
+    const dataAttrs = {
+      'data-kind': attrs['data-kind'] || kind,
+      'data-id': attrs['data-id'] || id,
+      'data-label-kind': kind,
+      'data-label-id': id
+    };
+    const foreignObject = createSvgNode('foreignObject', Object.assign({
+      x: x - measured.width / 2,
+      y: y - measured.height / 2,
+      width: measured.width,
+      height: measured.height,
+      class: ['draw-katex-foreign', attrs.class || ''].join(' ').trim(),
+      overflow: 'visible'
+    }, dataAttrs));
+    const div = document.createElement('div');
+    div.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
+    div.className = className;
+    div.style.fontSize = fontSize + 'px';
+    div.style.color = color;
+    try {
+      window.katex.render(latex, div, {
+        throwOnError: false,
+        output: 'html',
+        strict: 'ignore'
+      });
+    } catch (_) {
+      return null;
+    }
+    foreignObject.appendChild(div);
+    const group = createSvgNode('g', Object.assign({
+      class: ['draw-katex-hit-label', attrs.class || ''].join(' ').trim()
+    }, dataAttrs));
+    group.appendChild(foreignObject);
+    group.appendChild(createSvgNode('rect', Object.assign({
+      x: x - measured.width / 2,
+      y: y - measured.height / 2,
+      width: measured.width,
+      height: measured.height,
+      fill: 'transparent',
+      'pointer-events': 'all'
+    }, dataAttrs)));
+    return group;
+  }
+
+  function renderKatexLabelContent(node, text, kind) {
+    if (node && window.katex && typeof window.katex.render === 'function') {
+      try {
+        window.katex.render(labelTextToLatex(text, kind), node, {
+          throwOnError: false,
+          output: 'html',
+          strict: 'ignore'
+        });
+        return true;
+      } catch (_) {
+        return false;
+      }
+    }
+    return false;
+  }
+
   function userToScreenPoint(board, point) {
     return {
       x: board.origin.scrCoords[1] + point.x * board.unitX,
@@ -85,17 +268,10 @@
     labelNode.className = 'floating-label';
     labelNode.dataset.type = labelKey.type;
     labelNode.dataset.id = labelKey.id;
-    if (window.katex && typeof window.katex.render === 'function') {
-      try {
-        window.katex.render(toLatexMath(text), labelNode, {
-          throwOnError: false,
-          output: 'html',
-          strict: 'ignore'
-        });
-      } catch (_) {
-        labelNode.innerHTML = toMathLikeHtml(text);
-      }
-    } else {
+    if (!renderKatexLabelContent(labelNode, text, labelKey.type) && shouldUseKatex(text) && window.katex && typeof window.katex.render === 'function') {
+      renderKatexLabelContent(labelNode, text, labelKey.type);
+    }
+    if (!labelNode.childNodes.length) {
       labelNode.innerHTML = toMathLikeHtml(text);
     }
     labelNode.style.left = screen.x + 'px';
@@ -149,17 +325,10 @@
     labelNode.className = 'floating-label';
     labelNode.dataset.type = type;
     labelNode.dataset.id = id;
-    if (window.katex && typeof window.katex.render === 'function') {
-      try {
-        window.katex.render(toLatexMath(text), labelNode, {
-          throwOnError: false,
-          output: 'html',
-          strict: 'ignore'
-        });
-      } catch (_) {
-        labelNode.innerHTML = toMathLikeHtml(text);
-      }
-    } else {
+    if (!renderKatexLabelContent(labelNode, text, type) && shouldUseKatex(text) && window.katex && typeof window.katex.render === 'function') {
+      renderKatexLabelContent(labelNode, text, type);
+    }
+    if (!labelNode.childNodes.length) {
       labelNode.innerHTML = toMathLikeHtml(text);
     }
     labelNode.style.left = screen.x + 'px';
@@ -442,6 +611,9 @@
     escapeHtml: escapeHtml,
     toMathLikeHtml: toMathLikeHtml,
     toLatexMath: toLatexMath,
+    labelTextToLatex: labelTextToLatex,
+    createSvgKatexLabel: createSvgKatexLabel,
+    renderKatexLabelContent: renderKatexLabelContent,
     userToScreenPoint: userToScreenPoint,
     createSelectableText: createSelectableText,
     createDomSelectableLabel: createDomSelectableLabel,

@@ -28,6 +28,9 @@
   const unitBtn = document.getElementById('unitBtn');
   const pageBackBtn = document.getElementById('pageBackBtn');
   const downloadButtons = document.querySelectorAll('[data-download-format]');
+  if (window.InstantGeometrySaveQuota && downloadButtons[0]) {
+    window.InstantGeometrySaveQuota.createIndicator({ target: downloadButtons[0] });
+  }
   const box = document.getElementById('box');
   const exportBackdrop = document.getElementById('exportBackdrop');
   const exportFrame = document.getElementById('exportFrame');
@@ -45,6 +48,77 @@
   labelLayer.id = 'labelLayer';
   labelLayer.setAttribute('aria-hidden', 'true');
   box.appendChild(labelLayer);
+
+  const pointModalStyle = document.createElement('style');
+  pointModalStyle.textContent = [
+    '.point-label-backdrop{position:fixed;inset:0;z-index:80;background:rgba(31,36,48,.28);display:none}',
+    '.point-hit-target{position:absolute;width:32px;height:32px;margin-left:-16px;margin-top:-16px;border-radius:50%;pointer-events:auto;cursor:pointer}',
+    '.point-label-backdrop.open{display:block}',
+    '.point-label-modal{position:fixed;left:50%;top:50%;z-index:81;width:min(360px,calc(100vw - 32px));transform:translate(-50%,-50%);display:none;background:#fff;border:1px solid #d9dce7;border-radius:18px;box-shadow:0 24px 70px rgba(27,39,94,.24);padding:16px}',
+    '.point-label-modal.open{display:block}',
+    '.point-label-modal h2{margin:0 0 14px;font-size:18px;line-height:1.35}',
+    '.point-label-field{display:grid;gap:6px;margin-bottom:12px}',
+    '.point-label-field label{font-size:12px;color:#687086;font-weight:700}',
+    '.point-label-field select,.point-label-field input{width:100%;min-height:42px;border:1px solid #d9dce7;border-radius:12px;background:#fff;color:#1f2430;font-size:16px;padding:8px 10px}',
+    '.point-label-hint{margin:0 0 14px;color:#687086;font-size:12px;line-height:1.55}',
+    '.point-label-actions{display:flex;justify-content:flex-end;gap:10px}',
+    '.point-label-actions button{border:1px solid #cfd7ea;border-radius:12px;background:#fff;color:#24304d;font-size:14px;font-weight:700;padding:10px 14px;cursor:pointer}',
+    '.point-label-actions .primary{background:#2a5bd7;border-color:#2a5bd7;color:#fff}',
+    '.point-label-modal .sheet-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}',
+    '.point-label-modal .sheet-title{margin:0;font-size:18px;line-height:1.35}',
+    '.point-label-modal .sheet-close{border:1px solid #d9dce7;border-radius:12px;background:#fff;color:#687086;width:38px;height:38px;font-size:20px;cursor:pointer}',
+    '.point-label-modal .sheet-body{display:grid;gap:12px}',
+    '.point-label-modal .sheet-field{display:grid;gap:6px}',
+    '.point-label-modal .sheet-field label{font-size:12px;color:#687086;font-weight:700}',
+    '.point-label-modal .sheet-field select,.point-label-modal .sheet-field input{width:100%;min-height:42px;border:1px solid #d9dce7;border-radius:12px;background:#fff;color:#1f2430;font-size:16px;padding:8px 10px}',
+    '.point-label-modal .range-field{grid-template-columns:1fr auto;align-items:center}',
+    '.point-label-modal .range-field label{grid-column:1 / -1}',
+    '.point-label-modal .range-field input{padding:0}',
+    '.point-label-modal .range-field output{min-width:48px;text-align:right;color:#687086;font-size:13px;font-weight:700}',
+    '.point-label-modal .color-swatch-picker{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}',
+    '.point-label-modal .color-swatch{min-height:34px;border:2px solid transparent;border-radius:10px;text-indent:-999px;overflow:hidden;cursor:pointer}',
+    '.point-label-modal .color-swatch.is-selected{border-color:#111827;box-shadow:0 0 0 2px #fff inset}',
+    '.point-label-modal .sheet-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}',
+    '.point-label-modal .sheet-actions button{border:1px solid #cfd7ea;border-radius:12px;background:#fff;color:#24304d;font-size:14px;font-weight:700;padding:10px 14px;cursor:pointer}',
+    '.point-label-modal .sheet-actions .action-primary{background:#2a5bd7;border-color:#2a5bd7;color:#fff}'
+  ].join('');
+  document.head.appendChild(pointModalStyle);
+  const pointModalBackdrop = document.createElement('div');
+  pointModalBackdrop.className = 'point-label-backdrop';
+  const pointModal = document.createElement('section');
+  pointModal.className = 'point-label-modal';
+  pointModal.setAttribute('aria-hidden', 'true');
+  pointModal.innerHTML = [
+    '<h2 id="pointLabelModalTitle">点</h2>',
+    '<div class="point-label-field"><label for="pointLabelMode">ラベル</label><select id="pointLabelMode"><option value="hidden">非表示</option><option value="text">自由入力</option></select></div>',
+    '<div class="point-label-field"><label for="pointLabelInput">文字</label><input id="pointLabelInput" type="text" inputmode="text" autocomplete="off" autocapitalize="none" spellcheck="false" /></div>',
+    '<p class="point-label-hint">非表示または自由入力を選べます。自由入力では数字や記号も文字として表示します。</p>',
+    '<div class="point-label-actions"><button type="button" id="pointLabelCancel">キャンセル</button><button class="primary" type="button" id="pointLabelSave">保存</button></div>'
+  ].join('');
+  document.body.appendChild(pointModalBackdrop);
+  document.body.appendChild(pointModal);
+  const pointLabelModalTitle = document.getElementById('pointLabelModalTitle');
+  const pointLabelMode = document.getElementById('pointLabelMode');
+  const pointLabelInput = document.getElementById('pointLabelInput');
+  const pointLabelCancel = document.getElementById('pointLabelCancel');
+  const pointLabelSave = document.getElementById('pointLabelSave');
+  let editingPointId = null;
+  const sharedLabelBackdrop = document.createElement('div');
+  sharedLabelBackdrop.className = 'point-label-backdrop';
+  const sharedLabelSheet = document.createElement('section');
+  sharedLabelSheet.className = 'point-label-modal';
+  sharedLabelSheet.setAttribute('aria-hidden', 'true');
+  sharedLabelSheet.innerHTML = [
+    '<div class="sheet-header"><h2 class="sheet-title" id="starSharedLabelTitle">ラベル</h2><button class="sheet-close" id="starSharedLabelClose" type="button" aria-label="閉じる">×</button></div>',
+    '<div class="sheet-body" id="starSharedLabelBody"></div>'
+  ].join('');
+  document.body.appendChild(sharedLabelBackdrop);
+  document.body.appendChild(sharedLabelSheet);
+  const sharedLabelTitle = document.getElementById('starSharedLabelTitle');
+  const sharedLabelBody = document.getElementById('starSharedLabelBody');
+  const sharedLabelClose = document.getElementById('starSharedLabelClose');
+  const LabelEngine = window.InstantGeometryDrawLabelEngine || window.InstantGeometryTriangleLabelEngine || null;
+  let labelController = null;
 
   const pointLabelText = {};
   allPointIds.forEach(function (id) { pointLabelText[id] = id; });
@@ -79,6 +153,105 @@
 
   function style(color) { return { color: color, rotation: 0 }; }
   function setStatus(message, isError) { statusBox.textContent = message; statusBox.classList.toggle('error', !!isError); }
+  function labelKind(type) {
+    if (type === 'angleMark' || type === 'rightAngleMark') return 'angle';
+    return type;
+  }
+  function getModalTitle(type, id) {
+    if (type === 'point') return '点 ' + getPointLabelToken(id);
+    if (type === 'segment') return '線分 ' + getSegmentName(id);
+    if (type === 'angle' || type === 'angleMark' || type === 'rightAngleMark') return '角 ' + getAngleName(id);
+    return getAreaName();
+  }
+  function closeSharedLabelSheet() {
+    sharedLabelSheet.classList.remove('open');
+    sharedLabelBackdrop.classList.remove('open');
+    sharedLabelSheet.setAttribute('aria-hidden', 'true');
+    sharedLabelBody.innerHTML = '';
+  }
+  function getStoredLabelValue(type, id) {
+    if (type === 'point') return labelState.point[id] ? getPointLabelToken(id) : '';
+    if (type === 'segment') return labelState.segment[id] ? (customLabelText.segment[id] || ' ') : '';
+    if (type === 'angle') return labelState.angle[id] ? (customLabelText.angle[id] || ' ') : '';
+    if (type === 'area') return labelState.area.main ? (customLabelText.area.main || ' ') : '';
+    return '';
+  }
+  function setStoredLabelValue(type, id, value) {
+    if (type === 'point') {
+      labelState.point[id] = Boolean(value);
+      if (value) pointLabelText[id] = String(value).trim() || id;
+      return;
+    }
+    if (type === 'segment') {
+      labelState.segment[id] = Boolean(value);
+      customLabelText.segment[id] = value === ' ' || value === '0' || value === 'decimal:' || value === 'raw:' ? '' : String(value || '');
+      return;
+    }
+    if (type === 'angle') {
+      labelState.angle[id] = Boolean(value);
+      customLabelText.angle[id] = value === ' ' || value === '0' || value === 'decimal:' || value === 'raw:' ? '' : String(value || '');
+      return;
+    }
+    if (type === 'area') {
+      labelState.area.main = Boolean(value);
+      customLabelText.area.main = value === ' ' || value === '0' || value === 'decimal:' || value === 'raw:' ? '' : String(value || '');
+    }
+  }
+  function getScaleForModal(type, id) {
+    const group = labelKind(type);
+    const defaults = labelFontDefaults[group] || {};
+    const sizes = labelFontSize[group] || {};
+    const base = Number(defaults[id]) || Number(defaults.main) || 48;
+    const current = Number(sizes[id]) || Number(sizes.main) || base;
+    return current / base;
+  }
+  function setScaleForModal(type, id, scale) {
+    const group = labelKind(type);
+    const defaults = labelFontDefaults[group] || {};
+    const base = Number(defaults[id]) || Number(defaults.main) || 48;
+    labelFontSize[group][id] = Math.max(group === 'rightAngleMark' ? 4 : 10, Math.min(320, Math.round(base * (Number(scale) || 1))));
+  }
+  function initLabelController() {
+    if (!LabelEngine || typeof LabelEngine.createController !== 'function') return;
+    labelController = LabelEngine.createController({
+      enabledLabels: { point: true, segment: true, angle: true, area: true },
+      editSheet: sharedLabelSheet,
+      sheetTitle: sharedLabelTitle,
+      sheetBody: sharedLabelBody,
+      sheetBackdrop: sharedLabelBackdrop,
+      closeSheets: closeSharedLabelSheet,
+      render: function () {
+        renderLabelToggleButtons();
+        render();
+      },
+      onError: function (error) { setStatus(error.message || '入力を確認してください。', true); },
+      getModalSpec: function (kind, id, modalType) {
+        return LabelEngine.getStandardModalSpec(modalType, {
+          guideField: false,
+          angleArcSizeField: false,
+          moveAction: false
+        });
+      },
+      getTitle: function (type, id) { return getModalTitle(type, id); },
+      getLabelValue: getStoredLabelValue,
+      setLabelValue: setStoredLabelValue,
+      getLabelScale: getScaleForModal,
+      setLabelScale: setScaleForModal,
+      getColor: function (type, id) {
+        return getLabelStyle(labelKind(type), id).color || (labelKind(type) === 'point' ? '#1f2430' : '#2a5bd7');
+      },
+      setColor: function (type, id, color) {
+        getLabelStyle(labelKind(type), id).color = color;
+      },
+      hasColorField: function () { return true; }
+    });
+  }
+  function openSharedLabelSheet(type, id) {
+    if (!labelController) return false;
+    closePointLabelModal();
+    labelController.openEditSheet(type, id);
+    return true;
+  }
   function updateRatioButton() { ratioBtn.textContent = '画面比 ' + exportAspects[exportAspectIndex].label; }
   function updateUnitButton() { unitBtn.textContent = unitOptions[unitIndex] ? '長さ' + unitOptions[unitIndex] : '単位なし'; }
   function updateAngleModeButton() { angleModeBtn.textContent = angleMode === 'degrees' ? '度数法' : '弧度法'; }
@@ -151,8 +324,8 @@
     return pointIds.map(function (id, index) { return id + pointIds[(index + 1) % pointIds.length]; });
   }
   function getPointLabelToken(id) {
-    const raw = String(pointLabelText[id] || id).trim().toUpperCase();
-    return /^[A-Z]+$/.test(raw) ? raw : id;
+    const raw = String(pointLabelText[id] || '').trim();
+    return raw || id;
   }
   function getAreaName() { return '星形'; }
   function getSegmentName(id) { return id.split('').map(getPointLabelToken).join(''); }
@@ -404,6 +577,37 @@
     labelStyleState[type][id] = JSON.parse(JSON.stringify(styleDefaults[type][id]));
     if (customLabelText[type] && Object.prototype.hasOwnProperty.call(customLabelText[type], id)) customLabelText[type][id] = '';
   }
+
+  function syncPointLabelInput() {
+    pointLabelInput.disabled = pointLabelMode.value !== 'text';
+  }
+
+  function closePointLabelModal() {
+    editingPointId = null;
+    pointModalBackdrop.classList.remove('open');
+    pointModal.classList.remove('open');
+    pointModal.setAttribute('aria-hidden', 'true');
+  }
+
+  function openPointLabelModal(id) {
+    if (openSharedLabelSheet('point', id)) return;
+    editingPointId = id;
+    pointLabelModalTitle.textContent = getPointLabelToken(id);
+    pointLabelMode.value = labelState.point[id] ? 'text' : 'hidden';
+    pointLabelInput.value = labelState.point[id] ? getPointLabelToken(id) : '';
+    syncPointLabelInput();
+    pointModalBackdrop.classList.add('open');
+    pointModal.classList.add('open');
+    pointModal.setAttribute('aria-hidden', 'false');
+    requestAnimationFrame(function () {
+      if (pointLabelMode.value === 'text') {
+        pointLabelInput.focus();
+        pointLabelInput.select();
+      } else {
+        pointLabelMode.focus();
+      }
+    });
+  }
   function renderLabelToggleButtons() {
     generalLabelToggleGrid.innerHTML = '';
     specialLabelToggleGrid.innerHTML = '';
@@ -426,12 +630,11 @@
       button.addEventListener('contextmenu', async function (event) {
         event.preventDefault();
         if (config.type === 'point') {
-          const response = await window.InstantGeometrySharedLabelConfig.promptSingleText({ title: '点ラベル設定', firstLabel: '文字（A-Z のみ）', value: getPointLabelToken(config.id) });
+          const response = await window.InstantGeometrySharedLabelConfig.promptSingleText({ title: '点ラベル設定', firstLabel: '文字', value: getPointLabelToken(config.id) });
           if (response === null) return;
-          const normalized = String(response).trim().toUpperCase();
+          const normalized = String(response).trim();
           if (!normalized) pointLabelText[config.id] = config.id;
-          else if (/^[A-Z]+$/.test(normalized)) pointLabelText[config.id] = normalized.slice(0, 12);
-          else { setStatus('点ラベルは英字大文字（A-Z）のみ入力できます。', true); return; }
+          else pointLabelText[config.id] = normalized.slice(0, 12);
           renderLabelToggleButtons();
           render();
           return;
@@ -599,7 +802,7 @@
     const minX = Math.min.apply(null, xs); const maxX = Math.max.apply(null, xs);
     const minY = Math.min.apply(null, ys); const maxY = Math.max.apply(null, ys);
     const width = Math.max(1, maxX - minX); const height = Math.max(1, maxY - minY);
-    const padding = Math.max(width, height) * 0.42;
+    const padding = Math.max(width, height) * 0.62;
     const contentWidth = width + padding * 2; const contentHeight = height + padding * 2;
     const aspect = exportAspects[exportAspectIndex].value;
     let halfWidth = contentWidth / 2; let halfHeight = contentHeight / 2;
@@ -735,6 +938,21 @@
     labelLayer.innerHTML = '';
     currentLabelAnchors = [];
     geometry.pointIds.forEach(function (id) {
+      const screenPoint = userToScreenPoint(geometry.points[id]);
+      const hitTarget = document.createElement('div');
+      hitTarget.className = 'point-hit-target';
+      hitTarget.dataset.type = 'point';
+      hitTarget.dataset.id = id;
+      hitTarget.style.left = screenPoint.x + 'px';
+      hitTarget.style.top = screenPoint.y + 'px';
+      hitTarget.addEventListener('click', function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (!openSharedLabelSheet('point', id)) openPointLabelModal(id);
+      });
+      labelLayer.appendChild(hitTarget);
+    });
+    geometry.pointIds.forEach(function (id) {
       if (!labelState.point[id]) return;
       createSelectableText(getLabelPosition('point', id, getDefaultPosition('point', id, geometry)), getPointLabelToken(id), labelFontSize.point[id], { type: 'point', id: id }, { color: '#1f2430' });
     });
@@ -809,6 +1027,20 @@
     }
   }
 
+  async function handleDownloadWithQuota(format) {
+    try {
+      if (!window.InstantGeometrySaveQuota) {
+        await handleDownload(format);
+        return;
+      }
+      await window.InstantGeometrySaveQuota.runWithQuota(function () {
+        return handleDownload(format);
+      });
+    } catch (error) {
+      setStatus(error.message || '保存に失敗しました。', true);
+    }
+  }
+
   labelLayer.addEventListener('pointerdown', function (event) {
     const target = event.target.closest('.floating-label');
     if (!target) return;
@@ -819,6 +1051,31 @@
     const position = (labelPositions[type] && labelPositions[type][id]) || (anchor ? { x: anchor.x, y: anchor.y } : null);
     if (!position) return;
     dragState = { mode: 'move', type: type, id: id, startClient: { x: event.clientX, y: event.clientY }, labelStart: { x: position.x, y: position.y } };
+  });
+  labelLayer.addEventListener('click', function (event) {
+    const target = event.target.closest('.floating-label');
+    if (!target) return;
+    event.preventDefault();
+    event.stopPropagation();
+    openSharedLabelSheet(target.dataset.type, target.dataset.id);
+  });
+  pointLabelMode.addEventListener('change', syncPointLabelInput);
+  pointLabelCancel.addEventListener('click', closePointLabelModal);
+  pointModalBackdrop.addEventListener('click', closePointLabelModal);
+  sharedLabelClose.addEventListener('click', closeSharedLabelSheet);
+  sharedLabelBackdrop.addEventListener('click', closeSharedLabelSheet);
+  pointLabelSave.addEventListener('click', function () {
+    if (!editingPointId) return;
+    if (pointLabelMode.value === 'hidden') {
+      labelState.point[editingPointId] = false;
+    } else {
+      const text = String(pointLabelInput.value || '').trim();
+      pointLabelText[editingPointId] = text || editingPointId;
+      labelState.point[editingPointId] = true;
+    }
+    closePointLabelModal();
+    renderLabelToggleButtons();
+    render();
   });
   box.addEventListener('mousedown', function (event) {
     if (!currentGeometry) return;
@@ -946,13 +1203,14 @@
   leftToggle.addEventListener('click', function () { isDockCollapsed = !isDockCollapsed; leftDock.classList.toggle('is-collapsed', isDockCollapsed); updateDockToggleButtons(); });
   rightToggle.addEventListener('click', function () { isRightDockCollapsed = !isRightDockCollapsed; rightDock.classList.toggle('is-collapsed', isRightDockCollapsed); updateDockToggleButtons(); });
   pageBackBtn.addEventListener('click', function () { window.history.back(); });
-  downloadButtons.forEach(function (button) { button.addEventListener('click', function () { handleDownload(button.dataset.downloadFormat); }); });
+  downloadButtons.forEach(function (button) { button.addEventListener('click', function () { handleDownloadWithQuota(button.dataset.downloadFormat); }); });
   window.addEventListener('resize', function () { updateExportFrame(); lastFitSignature = ''; render(); });
 
   updateRatioButton();
   updateUnitButton();
   updateAngleModeButton();
   updateDockToggleButtons();
+  initLabelController();
   renderLabelToggleButtons();
   render();
 })();

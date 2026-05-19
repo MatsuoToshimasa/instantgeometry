@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>折り返し① | Instant Geometry</title>
+  <link rel="stylesheet" href="../../../assets/triangle-mobile-page.css?v=triangle-katex-6" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" />
+  <script src="/assets/save-quota.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <button class="btn" id="backBtn" type="button">戻る</button>
+      <h1 class="topbar-title">折り返し①</h1>
+      <button class="btn" id="saveBtn" type="button">保存</button>
+    </header>
+
+    <section class="stage-wrap" id="captureRoot">
+      <div class="status" id="statusBox">CE、EH、HC、FH から、正三角形の折り返し図を描画します。</div>
+      <svg class="stage" id="stage" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet" aria-label="折り返し①の描画画面"></svg>
+    </section>
+
+    <footer class="bottom-bar">
+      <div class="field">
+        <div class="field-label">CE</div>
+        <input class="field-input" id="ceInput" type="text" inputmode="text" value="5" />
+      </div>
+      <div class="field">
+        <div class="field-label">EH</div>
+        <input class="field-input" id="ehInput" type="text" inputmode="text" value="7" />
+      </div>
+      <div class="field">
+        <div class="field-label">HC</div>
+        <input class="field-input" id="hcInput" type="text" inputmode="text" value="8" />
+      </div>
+      <div class="field">
+        <div class="field-label">FH</div>
+        <input class="field-input" id="hfInput" type="text" inputmode="text" value="4" />
+      </div>
+    </footer>
+  </div>
+
+  <div class="sheet-backdrop" id="sheetBackdrop"></div>
+  <section class="sheet" id="editSheet" aria-hidden="true">
+    <div class="sheet-header">
+      <h2 class="sheet-title" id="sheetTitle">設定</h2>
+      <button class="sheet-close" id="sheetClose" type="button" aria-label="閉じる">×</button>
+    </div>
+    <div class="sheet-body" id="sheetBody"></div>
+  </section>
+
+  <section class="sheet" id="saveSheet" aria-hidden="true">
+    <div class="sheet-header">
+      <h2 class="sheet-title">保存</h2>
+      <button class="sheet-close" id="saveSheetClose" type="button" aria-label="閉じる">×</button>
+    </div>
+    <div class="sheet-body">
+      <div class="save-grid">
+        <button class="btn" id="savePngBtn" type="button">PNG</button>
+        <button class="btn" id="saveTransparentBtn" type="button">透過PNG</button>
+        <button class="btn" id="savePdfBtn" type="button">PDF</button>
+      </div>
+    </div>
+  </section>
+
+  <script src="../../../assets/mobile-angle-ornaments.js?v=triangle-katex-1"></script>
+  <script src="../../../assets/function-svg-labels.js?v=triangle-katex-1"></script>
+  <script src="../../../assets/draw-shared-labels.js?v=shared-katex-2"></script>
+  <script src="../../../assets/draw-label-taxonomy.js?v=taxonomy-1"></script>
+  <script src="../../../assets/draw-shared-label-engine.js?v=controller-1"></script>
+  <script src="../../../assets/triangle-mobile-page.js?v=controller-17"></script>
+  <script>
+    (function () {
+      'use strict';
+
+      const EPS = 1e-6;
+
+      function parsePositive(value, name) {
+        const text = String(value || '').trim();
+        if (!/^(?:[1-9][0-9]*|0?\.[0-9]+|[1-9][0-9]*\.[0-9]+)$/.test(text)) {
+          throw new Error(name + ' には正の数を入力してください。');
+        }
+        return Number(text);
+      }
+
+      function parseNonNegative(value, name) {
+        const text = String(value || '').trim();
+        if (!/^(?:0|[1-9][0-9]*|0?\.[0-9]+|[1-9][0-9]*\.[0-9]+)$/.test(text)) {
+          throw new Error(name + ' には0以上の数を入力してください。');
+        }
+        return Number(text);
+      }
+
+      function pointOnSegment(P, Q, distanceFromP, segmentLength) {
+        const t = distanceFromP / segmentLength;
+        return { x: P.x + (Q.x - P.x) * t, y: P.y + (Q.y - P.y) * t };
+      }
+
+      function distance(P, Q) {
+        return Math.hypot(P.x - Q.x, P.y - Q.y);
+      }
+
+      function unit(P, Q) {
+        const len = distance(P, Q) || 1;
+        return { x: (Q.x - P.x) / len, y: (Q.y - P.y) / len };
+      }
+
+      function lineIntersection(P, Q, R, S) {
+        const dx1 = Q.x - P.x;
+        const dy1 = Q.y - P.y;
+        const dx2 = S.x - R.x;
+        const dy2 = S.y - R.y;
+        const det = dx1 * dy2 - dy1 * dx2;
+        if (Math.abs(det) < EPS) return null;
+        const t = ((R.x - P.x) * dy2 - (R.y - P.y) * dx2) / det;
+        return { x: P.x + dx1 * t, y: P.y + dy1 * t, t: t };
+      }
+
+      function segmentLabelPoint(P, Q, toward, offset) {
+        const m = { x: (P.x + Q.x) / 2, y: (P.y + Q.y) / 2 };
+        const dx = Q.x - P.x;
+        const dy = Q.y - P.y;
+        const len = Math.hypot(dx, dy) || 1;
+        let nx = -dy / len;
+        let ny = dx / len;
+        if ((toward.x - m.x) * nx + (toward.y - m.y) * ny < 0) {
+          nx *= -1;
+          ny *= -1;
+        }
+        return { x: m.x + nx * offset, y: m.y + ny * offset };
+      }
+
+      function buildGeometry(values) {
+        const side = values.CE + values.EH + values.HF;
+        const root3 = Math.sqrt(3);
+        const A = { x: -side / 2, y: root3 * side / 2 };
+        const B = { x: -side, y: 0 };
+        const C = { x: 0, y: 0 };
+        const E = pointOnSegment(C, A, values.CE, side);
+        const H = { x: -values.HC, y: 0 };
+        const actualEH = distance(E, H);
+        if (Math.abs(actualEH - values.EH) > 0.01) {
+          throw new Error('この条件では E と H の距離が EH と一致しません。CE、EH、HC の関係を調整してください。');
+        }
+        if (values.HC >= side) {
+          throw new Error('HC は BC より短くなるようにしてください。');
+        }
+        const ehUnit = unit(E, H);
+        const F = {
+          x: E.x + ehUnit.x * (values.EH + values.HF),
+          y: E.y + ehUnit.y * (values.EH + values.HF)
+        };
+        const eaUnit = unit(E, A);
+        const efUnit = unit(E, F);
+        const bisectorEnd = {
+          x: E.x + eaUnit.x + efUnit.x,
+          y: E.y + eaUnit.y + efUnit.y
+        };
+        const D = lineIntersection(A, B, E, bisectorEnd);
+        if (!D || D.t < -EPS || D.t > 1 + EPS) {
+          throw new Error('折り目 DE が辺 AB 上で交わる条件にしてください。');
+        }
+        const G = lineIntersection(D, F, B, C);
+        if (!G || G.t < -EPS || G.t > 1 + EPS) {
+          throw new Error('DF と BC が線分上で交わる条件にしてください。');
+        }
+        return {
+          A: A,
+          B: B,
+          C: C,
+          D: D,
+          E: E,
+          F: F,
+          G: G,
+          H: H,
+          CE: values.CE,
+          EH: values.EH,
+          HC: values.HC,
+          HF: values.HF,
+          side: side,
+          angleA: 60,
+          angleB: 60,
+          angleC: 60
+        };
+      }
+
+      window.InstantGeometryTriangleMobile.createPage({
+        readyMessage: 'CE、EH、HC、FH から折り返し①を描画しました。',
+        fileBase: 'folding-1',
+        controlInputIds: {
+          CE: 'ceInput',
+          EH: 'ehInput',
+          HC: 'hcInput',
+          HF: 'hfInput'
+        },
+        initialState: {
+          sides: { a: 16, b: 16, c: 16 },
+          pointInputs: { A: 'A', B: 'B', C: 'C', D: 'D', E: 'E', F: 'F', G: 'G', H: 'H' },
+          sideInputs: { a: '', b: '', c: '' },
+          sideKinds: { a: 'plain', b: 'plain', c: 'plain' },
+          sideArcVisible: { a: true, b: true, c: true },
+          angleInputs: { A: '', B: '', C: '' },
+          angleKinds: { A: 'hidden', B: 'hidden', C: 'hidden' },
+          areaValue: '',
+          areaColor: '#ffffff',
+          extraAreaInputs: { ADE: '', DBG: '', DGHE: '', GFH: '', HEC: '' },
+          extraAreaColors: { ADE: '#2a5bd7', DBG: '#2a5bd7', DGHE: '#2a5bd7', GFH: '#2a5bd7', HEC: '#2a5bd7' },
+          extraSegmentInputs: { DE: '', DF: '', EF: '', DG: '', EH: ' ', HF: ' ', CE: ' ', HC: ' ', GH: '', GF: '', BG: '', BD: '', AD: '', AE: '' },
+          extraSegmentKinds: { DE: 'plain', DF: 'plain', EF: 'plain', DG: 'plain', EH: 'plain', HF: 'plain', CE: 'plain', HC: 'plain', GH: 'plain', GF: 'plain', BG: 'plain', BD: 'plain', AD: 'plain', AE: 'plain' },
+          extraSegmentArcVisible: { DE: false, DF: false, EF: false, DG: false, EH: true, HF: true, CE: true, HC: true, GH: false, GF: false, BG: false, BD: false, AD: false, AE: false }
+        },
+        readControls: function (inputs) {
+          return {
+            CE: parsePositive(inputs.CE.value, 'CE'),
+            EH: parsePositive(inputs.EH.value, 'EH'),
+            HC: parsePositive(inputs.HC.value, 'HC'),
+            HF: parseNonNegative(inputs.HF.value, 'FH')
+          };
+        },
+        applyControlsToState: function (state, parsed) {
+          const geometry = buildGeometry(parsed);
+          state.sides.a = geometry.side;
+          state.sides.b = geometry.side;
+          state.sides.c = geometry.side;
+        },
+        computeGeometry: function (state, parsed) {
+          return buildGeometry(parsed);
+        },
+        extraAreas: function (context) {
+          const g = context.geometry;
+          return [
+            { id: 'ADE', name: '△ADE', points: [g.A, g.D, g.E], color: '#2a5bd7' },
+            { id: 'DBG', name: '△DBG', points: [g.D, g.B, g.G], color: '#2a5bd7' },
+            { id: 'DGHE', name: '四角形DGHE', points: [g.D, g.G, g.H, g.E], color: '#2a5bd7' },
+            { id: 'GFH', name: '△GFH', points: [g.G, g.F, g.H], color: '#2a5bd7' },
+            { id: 'HEC', name: '△HEC', points: [g.H, g.E, g.C], color: '#2a5bd7' }
+          ];
+        },
+        extraPoints: function (context) {
+          const g = context.geometry;
+          return [
+            { id: 'D', point: g.D, labelPoint: { x: g.D.x - g.side * 0.04, y: g.D.y + g.side * 0.08 }, fill: '#1f2430', radius: 7, labelFontSize: 42 },
+            { id: 'E', point: g.E, labelPoint: { x: g.E.x + g.side * 0.08, y: g.E.y + g.side * 0.02 }, fill: '#1f2430', radius: 7, labelFontSize: 42 },
+            { id: 'F', point: g.F, labelPoint: { x: g.F.x - g.side * 0.02, y: g.F.y - g.side * 0.1 }, fill: '#1f2430', radius: 7, labelFontSize: 42 },
+            { id: 'G', point: g.G, labelPoint: { x: g.G.x, y: g.G.y - g.side * 0.1 }, fill: '#1f2430', radius: 7, labelFontSize: 42 },
+            { id: 'H', point: g.H, labelPoint: { x: g.H.x, y: g.H.y + g.side * 0.06 }, fill: '#1f2430', radius: 7, labelFontSize: 42 }
+          ];
+        },
+        extraSegments: function (context) {
+          const g = context.geometry;
+          const inner = { x: -g.side * 0.5, y: g.side * 0.25 };
+          const lower = { x: -g.side * 0.5, y: -g.side * 0.35 };
+          return [
+            { id: 'DE', name: 'DE', p1: g.D, p2: g.E, stroke: '#25603b', strokeWidth: 3, dasharray: 'none' },
+            { id: 'DF', name: 'DF', p1: g.D, p2: g.F, stroke: '#2a5bd7', strokeWidth: 3, dasharray: 'none' },
+            { id: 'EF', name: 'EF', p1: g.E, p2: g.F, stroke: '#2a5bd7', strokeWidth: 3, dasharray: 'none' },
+            { id: 'DG', name: 'DG', p1: g.D, p2: g.G, drawLine: false, stroke: '#2a5bd7' },
+            { id: 'GH', name: 'GH', p1: g.G, p2: g.H, drawLine: false, stroke: '#2a5bd7' },
+            { id: 'GF', name: 'GF', p1: g.G, p2: g.F, drawLine: false, stroke: '#2a5bd7' },
+            { id: 'BG', name: 'BG', p1: g.B, p2: g.G, drawLine: false, stroke: '#2a5bd7' },
+            { id: 'BD', name: 'BD', p1: g.B, p2: g.D, drawLine: false, stroke: '#2a5bd7' },
+            { id: 'AD', name: 'AD', p1: g.A, p2: g.D, drawLine: false, stroke: '#2a5bd7' },
+            { id: 'AE', name: 'AE', p1: g.A, p2: g.E, drawLine: false, stroke: '#2a5bd7' },
+            { id: 'CE', name: 'CE', p1: g.C, p2: g.E, drawLine: false, value: g.CE, stroke: '#2a5bd7', labelPoint: segmentLabelPoint(g.C, g.E, inner, 0.45) },
+            { id: 'EH', name: 'EH', p1: g.E, p2: g.H, drawLine: false, value: g.EH, stroke: '#2a5bd7', labelPoint: segmentLabelPoint(g.E, g.H, inner, 0.45) },
+            { id: 'HC', name: 'HC', p1: g.H, p2: g.C, drawLine: false, value: g.HC, stroke: '#2a5bd7', labelPoint: segmentLabelPoint(g.H, g.C, lower, 0.45) },
+            { id: 'HF', name: 'FH', p1: g.H, p2: g.F, drawLine: false, value: g.HF, stroke: '#2a5bd7', labelPoint: { x: g.H.x + g.side * 0.07, y: (g.H.y + g.F.y) / 2 - g.side * 0.02 } }
+          ];
+        },
+        drawAuxiliary: function (helpers) {
+          const g = helpers.geometry;
+          const tA = helpers.fitPoint(g.A);
+          const tD = helpers.fitPoint(g.D);
+          const tE = helpers.fitPoint(g.E);
+          const maskAttrs = {
+            stroke: '#fbfcff',
+            'stroke-width': '8',
+            'stroke-linecap': 'round'
+          };
+          [
+            [tA, tD],
+            [tA, tE]
+          ].forEach(function (entry) {
+            helpers.stage.appendChild(helpers.createSvg('line', Object.assign({
+              x1: entry[0].x,
+              y1: entry[0].y,
+              x2: entry[1].x,
+              y2: entry[1].y
+            }, maskAttrs)));
+            helpers.stage.appendChild(helpers.createSvg('line', {
+              x1: entry[0].x,
+              y1: entry[0].y,
+              x2: entry[1].x,
+              y2: entry[1].y,
+              stroke: '#2a5bd7',
+              'stroke-width': '3',
+              'stroke-linecap': 'round',
+              'stroke-dasharray': '8 7'
+            }));
+          });
+        }
+      });
+    })();
+  </script>
+  <script src="/assets/site-auto-i18n.js?v=triangle-katex-1"></script>
+</body>
+</html>

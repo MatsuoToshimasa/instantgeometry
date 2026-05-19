@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>２つの正方形と扇形 | Instant Geometry</title>
+  <link rel="stylesheet" href="../../../assets/quadrilateral-mobile-page.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" />
+  <script src="../../../assets/save-quota.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <button class="btn" id="backBtn" type="button">戻る</button>
+      <h1 class="topbar-title">２つの正方形と扇形</h1>
+      <button class="btn" id="saveBtn" type="button">保存</button>
+    </header>
+
+    <section class="stage-wrap" id="captureRoot">
+      <div class="status error" id="statusBox">BC を入力すると、正方形内に扇形と小さな正方形を描画します。</div>
+      <svg class="stage" id="stage" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet" aria-label="２つの正方形と扇形の描画画面"></svg>
+    </section>
+
+    <footer class="bottom-bar one-field">
+      <div class="field">
+        <div class="field-label">BC</div>
+        <input class="field-input" id="bcInput" type="text" inputmode="decimal" value="10" />
+      </div>
+    </footer>
+  </div>
+
+  <div class="sheet-backdrop" id="sheetBackdrop"></div>
+  <section class="sheet" id="editSheet" aria-hidden="true">
+    <div class="sheet-header">
+      <h2 class="sheet-title" id="sheetTitle">設定</h2>
+      <button class="sheet-close" id="sheetClose" type="button" aria-label="閉じる">×</button>
+    </div>
+    <div class="sheet-body" id="sheetBody"></div>
+  </section>
+
+  <section class="sheet" id="saveSheet" aria-hidden="true">
+    <div class="sheet-header">
+      <h2 class="sheet-title">保存</h2>
+      <button class="sheet-close" id="saveSheetClose" type="button" aria-label="閉じる">×</button>
+    </div>
+    <div class="sheet-body">
+      <div class="save-grid">
+        <button class="btn" id="savePngBtn" type="button">PNG</button>
+        <button class="btn" id="saveTransparentBtn" type="button">透過PNG</button>
+        <button class="btn" id="savePdfBtn" type="button">PDF</button>
+      </div>
+    </div>
+  </section>
+
+  <script src="../../../assets/mobile-angle-ornaments.js?v=angle-modal-1"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script src="../../../assets/draw-shared-labels.js?v=shared-katex-2"></script>
+  <script src="../../../assets/draw-label-taxonomy.js?v=taxonomy-1"></script>
+  <script src="../../../assets/draw-shared-label-engine.js?v=controller-1"></script>
+  <script src="../../../assets/quadrilateral-mobile-page.js"></script>
+  <script>
+    (function () {
+      'use strict';
+
+      const AREA_IDS = ['outer', 'bottom-sector', 'small-square', 'right-sector'];
+
+      function sampleArc(center, radius, startAngle, endAngle, steps) {
+        const points = [];
+        const count = steps || 28;
+        for (let i = 0; i <= count; i += 1) {
+          const angle = startAngle + (endAngle - startAngle) * (i / count);
+          points.push({
+            x: center.x + Math.cos(angle) * radius,
+            y: center.y + Math.sin(angle) * radius
+          });
+        }
+        return points;
+      }
+
+      function pointLabelPoint(point, center) {
+        return {
+          x: point.x + (point.x - center.x) * 0.18,
+          y: point.y + (point.y - center.y) * 0.18
+        };
+      }
+
+      function lineHit(ctx, id, P, Q, kind) {
+        const p = ctx.fitPoint(P);
+        const q = ctx.fitPoint(Q);
+        const visible = ctx.createSvg('line', {
+          x1: p.x,
+          y1: p.y,
+          x2: q.x,
+          y2: q.y,
+          stroke: '#2a5bd7',
+          'stroke-width': '3',
+          'stroke-linecap': 'round'
+        });
+        ctx.attachHit(visible, kind || 'side', id);
+        ctx.stage.appendChild(visible);
+        const hit = ctx.createSvg('line', {
+          x1: p.x,
+          y1: p.y,
+          x2: q.x,
+          y2: q.y,
+          stroke: 'transparent',
+          'stroke-width': '28',
+          'stroke-linecap': 'round'
+        });
+        ctx.attachHit(hit, kind || 'side', id);
+        ctx.stage.appendChild(hit);
+      }
+
+      window.InstantGeometryQuadrilateralMobile.createPage({
+        readyMessage: '入力をもとに２つの正方形と扇形を描画しています。',
+        fileBase: 'two-squares-sector',
+        skipBaseAngles: true,
+        showArea: false,
+        controlInputIds: {
+          side: 'bcInput'
+        },
+        initialState: {
+          pointInputs: { A: 'A', B: 'B', C: 'C', D: 'D', E: 'E', F: 'F', G: 'G' },
+          sides: { AB: 10, BC: 10, CD: 10, DA: 10, FE: 0, FG: 0 },
+          sideInputs: { AB: '', BC: ' ', CD: '', DA: '', FE: '', FG: '' },
+          sideKinds: { AB: 'plain', BC: 'plain', CD: 'plain', DA: 'plain', FE: 'plain', FG: 'plain' },
+          sideArcVisible: { AB: true, BC: true, CD: true, DA: true, FE: true, FG: true },
+          angleInputs: { A: '', B: '', C: '', D: '' },
+          angleKinds: { A: 'hidden', B: 'hidden', C: 'hidden', D: 'hidden' },
+          extraAreaInputs: { outer: '', 'bottom-sector': '', 'small-square': '', 'right-sector': '' },
+          extraAreaColors: {
+            outer: '#2a5bd7',
+            'bottom-sector': '#f97316',
+            'small-square': '#16a34a',
+            'right-sector': '#db2777'
+          },
+          areaValue: ''
+        },
+        readControls: function (inputs, parsePositiveNumber) {
+          return {
+            side: parsePositiveNumber(inputs.side.value, 'BC')
+          };
+        },
+        applyControlsToState: function (state, parsed) {
+          ['AB', 'BC', 'CD', 'DA'].forEach(function (id) {
+            state.sides[id] = parsed.side;
+          });
+        },
+        computeGeometry: function (state, parsed, helpers) {
+          const side = parsed.side;
+          const half = side / 2;
+          const leg = side / Math.SQRT2;
+          const points = {
+            A: { x: -half, y: half },
+            B: { x: -half, y: -half },
+            C: { x: half, y: -half },
+            D: { x: half, y: half },
+            F: { x: half - leg, y: -half + leg },
+            E: { x: half, y: -half + leg },
+            G: { x: half - leg, y: -half }
+          };
+          const geometry = helpers.finalizeGeometry(points);
+          geometry.E = points.E;
+          geometry.F = points.F;
+          geometry.G = points.G;
+          geometry.radius = side;
+          geometry.arcBD = sampleArc(points.C, side, Math.PI, Math.PI / 2, 36);
+          geometry.arcBF = sampleArc(points.C, side, Math.PI, Math.PI * 3 / 4, 18);
+          geometry.arcFD = sampleArc(points.C, side, Math.PI * 3 / 4, Math.PI / 2, 18);
+          geometry.sides.FE = leg;
+          geometry.sides.FG = leg;
+          state.sides.FE = leg;
+          state.sides.FG = leg;
+          return geometry;
+        },
+        extraAreas: function (context) {
+          const g = context.geometry;
+          return [
+            {
+              id: 'outer',
+              name: '外側の領域',
+              points: [g.A, g.B].concat(g.arcBD, [g.D]),
+              color: '#2a5bd7'
+            },
+            {
+              id: 'bottom-sector',
+              name: '下の領域',
+              points: [g.B, g.G, g.F].concat(g.arcBF.slice().reverse()),
+              color: '#f97316'
+            },
+            {
+              id: 'small-square',
+              name: '□CEFG',
+              points: [g.C, g.E, g.F, g.G],
+              color: '#16a34a'
+            },
+            {
+              id: 'right-sector',
+              name: '右の領域',
+              points: [g.D, g.E, g.F].concat(g.arcFD),
+              color: '#db2777'
+            }
+          ];
+        },
+        drawAuxiliary: function (ctx) {
+          const g = ctx.geometry;
+          const screenArc = g.arcBD.map(function (point) { return ctx.fitPoint(point); });
+          ctx.stage.appendChild(ctx.createSvg('path', {
+            d: screenArc.map(function (point, index) {
+              return (index === 0 ? 'M ' : 'L ') + point.x + ' ' + point.y;
+            }).join(' '),
+            fill: 'none',
+            stroke: '#2a5bd7',
+            'stroke-width': '3',
+            'stroke-linecap': 'round',
+            'stroke-linejoin': 'round'
+          }));
+
+          lineHit(ctx, 'FE', g.F, g.E, 'side');
+          lineHit(ctx, 'FG', g.F, g.G, 'side');
+
+          const center = {
+            x: (g.A.x + g.B.x + g.C.x + g.D.x) / 4,
+            y: (g.A.y + g.B.y + g.C.y + g.D.y) / 4
+          };
+          ['E', 'F', 'G'].forEach(function (id) {
+            const p = ctx.fitPoint(g[id]);
+            const point = ctx.createSvg('circle', { cx: p.x, cy: p.y, r: 8, fill: '#1f2430' });
+            ctx.attachHit(point, 'point', id);
+            ctx.stage.appendChild(point);
+            const label = ctx.getPointLabelValue(id);
+            if (!label) return;
+            const pos = ctx.fitPoint(pointLabelPoint(g[id], center));
+            const text = ctx.createLabelNode(label, {
+              x: pos.x,
+              y: pos.y,
+              'text-anchor': 'middle',
+              'dominant-baseline': 'middle',
+              'font-size': '54',
+              'font-weight': '700',
+              fill: '#1f2430'
+            });
+            ctx.attachHit(text, 'point', id);
+            ctx.stage.appendChild(text);
+          });
+        }
+      });
+    })();
+  </script>
+  <script src="../../../assets/site-auto-i18n.js"></script>
+</body>
+</html>

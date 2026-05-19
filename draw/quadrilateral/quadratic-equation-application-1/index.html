@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>二次方程式の利用① | Instant Geometry</title>
+  <link rel="stylesheet" href="../../../assets/quadrilateral-mobile-page.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" />
+  <script src="/assets/save-quota.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <button class="btn" id="backBtn" type="button">戻る</button>
+      <h1 class="topbar-title">二次方程式の利用①</h1>
+      <button class="btn" id="saveBtn" type="button">保存</button>
+    </header>
+
+    <section class="stage-wrap" id="captureRoot">
+      <div class="status" id="statusBox">AB、BC、EF、AE、CG、BI、DK から、交差する2つの平行四辺形と9つの面積領域を描画します。</div>
+      <svg class="stage" id="stage" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet" aria-label="二次方程式の利用①の描画画面"></svg>
+    </section>
+
+    <footer class="bottom-bar seven-fields">
+      <div class="field">
+        <div class="field-label">AB</div>
+        <input class="field-input" id="abInput" type="text" inputmode="decimal" value="10" />
+      </div>
+      <div class="field">
+        <div class="field-label">BC</div>
+        <input class="field-input" id="bcInput" type="text" inputmode="decimal" value="15" />
+      </div>
+      <div class="field">
+        <div class="field-label">EF</div>
+        <input class="field-input" id="efInput" type="text" inputmode="decimal" value="2" />
+      </div>
+      <div class="field">
+        <div class="field-label">AE</div>
+        <input class="field-input" id="aeInput" type="text" inputmode="decimal" value="4.5" />
+      </div>
+      <div class="field">
+        <div class="field-label">CG</div>
+        <input class="field-input" id="cgInput" type="text" inputmode="decimal" value="4.5" />
+      </div>
+      <div class="field">
+        <div class="field-label">BI</div>
+        <input class="field-input" id="biInput" type="text" inputmode="decimal" value="3.5" />
+      </div>
+      <div class="field">
+        <div class="field-label">DK</div>
+        <input class="field-input" id="dkInput" type="text" inputmode="decimal" value="3.5" />
+      </div>
+    </footer>
+  </div>
+
+  <div class="sheet-backdrop" id="sheetBackdrop"></div>
+  <section class="sheet" id="editSheet" aria-hidden="true">
+    <div class="sheet-header">
+      <h2 class="sheet-title" id="sheetTitle">設定</h2>
+      <button class="sheet-close" id="sheetClose" type="button" aria-label="閉じる">×</button>
+    </div>
+    <div class="sheet-body" id="sheetBody"></div>
+  </section>
+
+  <section class="sheet" id="saveSheet" aria-hidden="true">
+    <div class="sheet-header">
+      <h2 class="sheet-title">保存</h2>
+      <button class="sheet-close" id="saveSheetClose" type="button" aria-label="閉じる">×</button>
+    </div>
+    <div class="sheet-body">
+      <div class="save-grid">
+        <button class="btn" id="savePngBtn" type="button">PNG</button>
+        <button class="btn" id="saveTransparentBtn" type="button">透過PNG</button>
+        <button class="btn" id="savePdfBtn" type="button">PDF</button>
+      </div>
+    </div>
+  </section>
+
+  <script src="../../../assets/mobile-angle-ornaments.js?v=angle-modal-1"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script src="../../../assets/draw-shared-labels.js?v=shared-katex-2"></script>
+  <script src="../../../assets/draw-label-taxonomy.js?v=taxonomy-1"></script>
+  <script src="../../../assets/draw-shared-label-engine.js?v=controller-1"></script>
+  <script src="../../../assets/quadrilateral-mobile-page.js"></script>
+  <script>
+    (function () {
+      'use strict';
+
+      const BLUE = '#2a5bd7';
+      const WHITE = '#ffffff';
+
+      function midpoint(P, Q) {
+        return { x: (P.x + Q.x) / 2, y: (P.y + Q.y) / 2 };
+      }
+
+      function polygonArea(points) {
+        let sum = 0;
+        for (let i = 0; i < points.length; i += 1) {
+          const p = points[i];
+          const q = points[(i + 1) % points.length];
+          sum += p.x * q.y - q.x * p.y;
+        }
+        return Math.abs(sum) / 2;
+      }
+
+      function buildGeometry(values, helpers) {
+        const height = values.AB;
+        const width = values.BC;
+        const strip = values.EF;
+        if (!(strip < height && strip < width)) {
+          throw new Error('EF は AB と BC より短い値にしてください。');
+        }
+        if (values.AE + strip >= height) {
+          throw new Error('AE + EF が AB より小さくなる値にしてください。');
+        }
+        if (values.CG + strip >= height) {
+          throw new Error('CG + EF が AB より小さくなる値にしてください。');
+        }
+        if (values.BI + strip >= width) {
+          throw new Error('BI + EF が BC より小さくなる値にしてください。');
+        }
+        if (values.DK + strip >= width) {
+          throw new Error('DK + EF が BC より小さくなる値にしてください。');
+        }
+
+        const y2 = height - values.AE;
+        const y1 = y2 - strip;
+        const yG = values.CG;
+        const yH = yG + strip;
+        const xI = values.BI;
+        const xJ = xI + strip;
+        const xK = width - values.DK;
+        const xL = xK - strip;
+        const geometry = helpers.finalizeGeometry({
+          A: { x: 0, y: height },
+          B: { x: 0, y: 0 },
+          C: { x: width, y: 0 },
+          D: { x: width, y: height }
+        });
+
+        Object.assign(geometry, {
+          E: { x: 0, y: y2 },
+          F: { x: 0, y: y1 },
+          G: { x: width, y: yG },
+          H: { x: width, y: yH },
+          I: { x: xI, y: 0 },
+          J: { x: xJ, y: 0 },
+          K: { x: xK, y: height },
+          L: { x: xL, y: height },
+          values: values
+        });
+        geometry.M = lineIntersection(geometry.E, geometry.H, geometry.I, geometry.L);
+        geometry.N = lineIntersection(geometry.F, geometry.G, geometry.I, geometry.L);
+        geometry.O = lineIntersection(geometry.F, geometry.G, geometry.J, geometry.K);
+        geometry.P = lineIntersection(geometry.E, geometry.H, geometry.J, geometry.K);
+        return geometry;
+      }
+
+      function lineIntersection(A, B, C, D) {
+        const r = { x: B.x - A.x, y: B.y - A.y };
+        const s = { x: D.x - C.x, y: D.y - C.y };
+        const denom = r.x * s.y - r.y * s.x;
+        if (Math.abs(denom) < 1e-9) {
+          throw new Error('この値では平行四辺形の交差部を作れません。');
+        }
+        const t = ((C.x - A.x) * s.y - (C.y - A.y) * s.x) / denom;
+        return { x: A.x + r.x * t, y: A.y + r.y * t };
+      }
+
+      function drawLine(helpers, P, Q, attrs) {
+        const p = helpers.fitPoint(P);
+        const q = helpers.fitPoint(Q);
+        helpers.stage.appendChild(helpers.createSvg('line', Object.assign({
+          x1: p.x,
+          y1: p.y,
+          x2: q.x,
+          y2: q.y,
+          stroke: BLUE,
+          'stroke-width': '3',
+          'stroke-linecap': 'round'
+        }, attrs || {})));
+      }
+
+      function drawSegment(helpers, id, P, Q) {
+        drawLine(helpers, P, Q);
+        const p = helpers.fitPoint(P);
+        const q = helpers.fitPoint(Q);
+        const hit = helpers.createSvg('line', {
+          x1: p.x,
+          y1: p.y,
+          x2: q.x,
+          y2: q.y,
+          stroke: 'transparent',
+          'stroke-width': '28',
+          'stroke-linecap': 'round'
+        });
+        helpers.attachHit(hit, 'side', id);
+        helpers.stage.appendChild(hit);
+        const label = helpers.getSideLabelValue(id);
+        if (!label) return;
+        const m = midpoint(p, q);
+        const pos = { x: m.x + (id === 'EF' ? 74 : 0), y: m.y };
+        if (helpers.state.sideArcVisible[id] !== false && helpers.sideArcGeometry && helpers.quadraticPathSegment) {
+          const geom = helpers.sideArcGeometry(p, q, helpers.screen.center, pos);
+          helpers.stage.appendChild(helpers.createSvg('path', {
+            d: helpers.quadraticPathSegment(p, geom.control, q, 0, 0.5 - geom.gapHalf, 20),
+            fill: 'none',
+            stroke: BLUE,
+            'stroke-width': '2',
+            'stroke-linecap': 'round',
+            'stroke-dasharray': '6 5'
+          }));
+          helpers.stage.appendChild(helpers.createSvg('path', {
+            d: helpers.quadraticPathSegment(p, geom.control, q, 0.5 + geom.gapHalf, 1, 20),
+            fill: 'none',
+            stroke: BLUE,
+            'stroke-width': '2',
+            'stroke-linecap': 'round',
+            'stroke-dasharray': '6 5'
+          }));
+        }
+        const text = helpers.createLabelNode(label, {
+          x: pos.x,
+          y: pos.y,
+          'text-anchor': 'middle',
+          'dominant-baseline': 'middle',
+          'font-size': '52',
+          'font-weight': '700',
+          fill: BLUE
+        });
+        helpers.attachHit(text, 'side', id);
+        helpers.stage.appendChild(text);
+      }
+
+      function drawPoint(helpers, id, point, radius, modalEnabled) {
+        const p = helpers.fitPoint(point);
+        const circle = helpers.createSvg('circle', {
+          cx: p.x,
+          cy: p.y,
+          r: radius || 6,
+          fill: '#1f2430'
+        });
+        if (modalEnabled) helpers.attachHit(circle, 'point', id);
+        helpers.stage.appendChild(circle);
+        const label = modalEnabled ? helpers.getPointLabelValue(id) : null;
+        if (!label) return;
+        const pos = helpers.getLabelPosition('point', id, { x: p.x + 26, y: p.y - 26 });
+        const text = helpers.createLabelNode(label, {
+          x: pos.x,
+          y: pos.y,
+          'text-anchor': 'middle',
+          'dominant-baseline': 'middle',
+          'font-size': '44',
+          'font-weight': '700',
+          fill: '#1f2430'
+        });
+        helpers.attachHit(text, 'point', id);
+        helpers.stage.appendChild(text);
+      }
+
+      function drawSegmentLabel(helpers, label, P, Q, offset) {
+        const p = helpers.fitPoint(P);
+        const q = helpers.fitPoint(Q);
+        const m = midpoint(p, q);
+        const text = helpers.createLabelNode(label, {
+          x: m.x + (offset && offset.x || 0),
+          y: m.y + (offset && offset.y || 0),
+          'text-anchor': 'middle',
+          'dominant-baseline': 'middle',
+          'font-size': '52',
+          'font-weight': '700',
+          fill: BLUE
+        });
+        helpers.stage.appendChild(text);
+      }
+
+      window.InstantGeometryQuadrilateralMobile.createPage({
+        readyMessage: 'AB、BC、EF、AE、CG、BI、DK から二次方程式の利用①を描画しました。',
+        fileBase: 'quadratic-equation-application-1',
+        showArea: false,
+        skipBaseAngles: true,
+        controlInputIds: {
+          AB: 'abInput',
+          BC: 'bcInput',
+          EF: 'efInput',
+          AE: 'aeInput',
+          CG: 'cgInput',
+          BI: 'biInput',
+          DK: 'dkInput'
+        },
+        initialState: {
+          pointInputs: { A: '', B: '', C: '', D: '', E: '', F: '', G: '', H: '', I: '', J: '', K: '', L: '' },
+          sides: { AB: 10, BC: 15, CD: 10, DA: 15, EF: 2, GH: 2, IJ: 2, KL: 2 },
+          sideInputs: { AB: ' ', BC: ' ', CD: '', DA: '', EF: ' ', GH: '', IJ: '', KL: '' },
+          sideKinds: { AB: 'plain', BC: 'plain', CD: 'plain', DA: 'plain', EF: 'plain', GH: 'plain', IJ: 'plain', KL: 'plain' },
+          sideArcVisible: { AB: true, BC: true, CD: false, DA: false, EF: true, GH: false, IJ: false, KL: false },
+          angleInputs: { A: '', B: '', C: '', D: '' },
+          angleKinds: { A: 'hidden', B: 'hidden', C: 'hidden', D: 'hidden' },
+          areaValue: '',
+          extraAreaInputs: {
+            TOP_LEFT: '',
+            TOP: '',
+            TOP_RIGHT: '',
+            LEFT: '',
+            MNOP: '',
+            RIGHT: '',
+            BOTTOM_LEFT: '',
+            BOTTOM: '',
+            BOTTOM_RIGHT: ''
+          },
+          extraAreaColors: {
+            TOP_LEFT: BLUE,
+            TOP: WHITE,
+            TOP_RIGHT: BLUE,
+            LEFT: WHITE,
+            MNOP: WHITE,
+            RIGHT: WHITE,
+            BOTTOM_LEFT: BLUE,
+            BOTTOM: WHITE,
+            BOTTOM_RIGHT: BLUE
+          }
+        },
+        readControls: function (inputs, parsePositiveNumber) {
+          return {
+            AB: parsePositiveNumber(inputs.AB.value, 'AB'),
+            BC: parsePositiveNumber(inputs.BC.value, 'BC'),
+            EF: parsePositiveNumber(inputs.EF.value, 'EF'),
+            AE: parsePositiveNumber(inputs.AE.value, 'AE'),
+            CG: parsePositiveNumber(inputs.CG.value, 'CG'),
+            BI: parsePositiveNumber(inputs.BI.value, 'BI'),
+            DK: parsePositiveNumber(inputs.DK.value, 'DK')
+          };
+        },
+        applyControlsToState: function (state, parsed) {
+          state.sides.AB = parsed.AB;
+          state.sides.BC = parsed.BC;
+          state.sides.CD = parsed.AB;
+          state.sides.DA = parsed.BC;
+          state.sides.EF = parsed.EF;
+          state.sides.GH = parsed.EF;
+          state.sides.IJ = parsed.EF;
+          state.sides.KL = parsed.EF;
+        },
+        computeGeometry: function (state, parsed, helpers) {
+          return buildGeometry(parsed, helpers);
+        },
+        extraAreas: function (context) {
+          const g = context.geometry;
+          const areas = [
+            { id: 'TOP_LEFT', name: '左上', points: [g.A, g.L, g.M, g.E], color: BLUE },
+            { id: 'TOP', name: '上中央', points: [g.L, g.K, g.P, g.M], color: WHITE },
+            { id: 'TOP_RIGHT', name: '右上', points: [g.K, g.D, g.H, g.P], color: BLUE },
+            { id: 'LEFT', name: '左中央', points: [g.E, g.M, g.N, g.F], color: WHITE },
+            { id: 'MNOP', name: '平行四辺形MNOP', points: [g.M, g.P, g.O, g.N], color: WHITE },
+            { id: 'RIGHT', name: '右中央', points: [g.P, g.H, g.G, g.O], color: WHITE },
+            { id: 'BOTTOM_LEFT', name: '左下', points: [g.B, g.I, g.N, g.F], color: BLUE },
+            { id: 'BOTTOM', name: '下中央', points: [g.I, g.J, g.O, g.N], color: WHITE },
+            { id: 'BOTTOM_RIGHT', name: '右下', points: [g.J, g.C, g.G, g.O], color: BLUE }
+          ];
+          return areas.map(function (area) {
+            return Object.assign(area, { value: polygonArea(area.points) });
+          });
+        },
+        drawAuxiliary: function (helpers) {
+          const g = helpers.geometry;
+          drawLine(helpers, g.E, g.M);
+          drawLine(helpers, g.P, g.H);
+          drawLine(helpers, g.F, g.N);
+          drawLine(helpers, g.O, g.G);
+          drawLine(helpers, g.I, g.N);
+          drawLine(helpers, g.M, g.L);
+          drawLine(helpers, g.J, g.O);
+          drawLine(helpers, g.P, g.K);
+          drawSegment(helpers, 'EF', g.E, g.F);
+          drawSegment(helpers, 'GH', g.G, g.H);
+          drawSegment(helpers, 'IJ', g.I, g.J);
+          drawSegment(helpers, 'KL', g.K, g.L);
+          ['E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'].forEach(function (id) {
+            drawPoint(helpers, id, g[id], 6, true);
+          });
+          ['M', 'N', 'O', 'P'].forEach(function (id) {
+            drawPoint(helpers, id, g[id], 5, false);
+          });
+        },
+        sideNumericMode: function (id) {
+          return id === 'AB' || id === 'BC' ? 'control' : 'readonly';
+        },
+        angleNumericMode: function () {
+          return 'readonly';
+        },
+        updateSideControl: function (id, value, state, inputs) {
+          if (id === 'AB') {
+            inputs.AB.value = String(value);
+            state.sides.AB = value;
+            state.sides.CD = value;
+          } else if (id === 'BC') {
+            inputs.BC.value = String(value);
+            state.sides.BC = value;
+            state.sides.DA = value;
+          }
+        },
+        updateAngleControl: function () {}
+      });
+    })();
+  </script>
+  <script src="/assets/site-auto-i18n.js"></script>
+</body>
+</html>

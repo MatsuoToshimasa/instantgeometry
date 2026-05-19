@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>折り返し② | Instant Geometry</title>
+  <link rel="stylesheet" href="../../../assets/quadrilateral-mobile-page.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" />
+  <script src="/assets/save-quota.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <button class="btn" id="backBtn" type="button">戻る</button>
+      <h1 class="topbar-title">折り返し②</h1>
+      <button class="btn" id="saveBtn" type="button">保存</button>
+    </header>
+
+    <section class="stage-wrap" id="captureRoot">
+      <div class="status" id="statusBox">BF、FC、CE から、正方形の折り返し図を描画します。</div>
+      <svg class="stage" id="stage" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet" aria-label="折り返し②の描画画面"></svg>
+    </section>
+
+    <footer class="bottom-bar">
+      <div class="field">
+        <div class="field-label">BF</div>
+        <input class="field-input" id="bfInput" type="text" inputmode="decimal" value="8" />
+      </div>
+      <div class="field">
+        <div class="field-label">FC</div>
+        <input class="field-input" id="fcInput" type="text" inputmode="decimal" value="8" />
+      </div>
+      <div class="field">
+        <div class="field-label">CE</div>
+        <input class="field-input" id="ceInput" type="text" inputmode="decimal" value="6" />
+      </div>
+    </footer>
+  </div>
+
+  <div class="sheet-backdrop" id="sheetBackdrop"></div>
+  <section class="sheet" id="editSheet" aria-hidden="true">
+    <div class="sheet-header">
+      <h2 class="sheet-title" id="sheetTitle">設定</h2>
+      <button class="sheet-close" id="sheetClose" type="button" aria-label="閉じる">×</button>
+    </div>
+    <div class="sheet-body" id="sheetBody"></div>
+  </section>
+
+  <section class="sheet" id="saveSheet" aria-hidden="true">
+    <div class="sheet-header">
+      <h2 class="sheet-title">保存</h2>
+      <button class="sheet-close" id="saveSheetClose" type="button" aria-label="閉じる">×</button>
+    </div>
+    <div class="sheet-body">
+      <div class="save-grid">
+        <button class="btn" id="savePngBtn" type="button">PNG</button>
+        <button class="btn" id="saveTransparentBtn" type="button">透過PNG</button>
+        <button class="btn" id="savePdfBtn" type="button">PDF</button>
+      </div>
+    </div>
+  </section>
+
+  <script src="../../../assets/mobile-angle-ornaments.js?v=angle-modal-1"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script src="../../../assets/draw-shared-labels.js?v=shared-katex-2"></script>
+  <script src="../../../assets/draw-label-taxonomy.js?v=taxonomy-1"></script>
+  <script src="../../../assets/draw-shared-label-engine.js?v=controller-1"></script>
+  <script src="../../../assets/quadrilateral-mobile-page.js"></script>
+  <script>
+    (function () {
+      'use strict';
+
+      const EPS = 1e-6;
+
+      function distance(P, Q) {
+        return Math.hypot(P.x - Q.x, P.y - Q.y);
+      }
+
+      function reflectPoint(P, R, S) {
+        const dx = S.x - R.x;
+        const dy = S.y - R.y;
+        const lengthSquared = dx * dx + dy * dy || 1;
+        const t = ((P.x - R.x) * dx + (P.y - R.y) * dy) / lengthSquared;
+        const foot = { x: R.x + dx * t, y: R.y + dy * t };
+        return { x: 2 * foot.x - P.x, y: 2 * foot.y - P.y };
+      }
+
+      function lineIntersection(P, Q, R, S) {
+        const dx1 = Q.x - P.x;
+        const dy1 = Q.y - P.y;
+        const dx2 = S.x - R.x;
+        const dy2 = S.y - R.y;
+        const det = dx1 * dy2 - dy1 * dx2;
+        if (Math.abs(det) < EPS) return null;
+        const t = ((R.x - P.x) * dy2 - (R.y - P.y) * dx2) / det;
+        return { x: P.x + dx1 * t, y: P.y + dy1 * t, t: t };
+      }
+
+      function angleDegrees(P, V, Q) {
+        const ax = P.x - V.x;
+        const ay = P.y - V.y;
+        const bx = Q.x - V.x;
+        const by = Q.y - V.y;
+        const denominator = Math.hypot(ax, ay) * Math.hypot(bx, by) || 1;
+        const cosine = Math.max(-1, Math.min(1, (ax * bx + ay * by) / denominator));
+        return Math.acos(cosine) * 180 / Math.PI;
+      }
+
+      function polygonArea(points) {
+        let sum = 0;
+        for (let i = 0; i < points.length; i += 1) {
+          const p = points[i];
+          const q = points[(i + 1) % points.length];
+          sum += p.x * q.y - q.x * p.y;
+        }
+        return Math.abs(sum) / 2;
+      }
+
+      function labelPoint(P, Q, toward, offset) {
+        const m = { x: (P.x + Q.x) / 2, y: (P.y + Q.y) / 2 };
+        const dx = Q.x - P.x;
+        const dy = Q.y - P.y;
+        const length = Math.hypot(dx, dy) || 1;
+        let nx = -dy / length;
+        let ny = dx / length;
+        if ((toward.x - m.x) * nx + (toward.y - m.y) * ny < 0) {
+          nx *= -1;
+          ny *= -1;
+        }
+        return { x: m.x + nx * offset, y: m.y + ny * offset };
+      }
+
+      function parsePositive(value, name) {
+        const text = String(value || '').trim();
+        if (!/^(?:[1-9][0-9]*|0?\.[0-9]+|[1-9][0-9]*\.[0-9]+)$/.test(text)) {
+          throw new Error(name + ' には正の数を入力してください。');
+        }
+        return Number(text);
+      }
+
+      function buildGeometry(values) {
+        const side = values.BF + values.FC;
+        const A = { x: 0, y: side };
+        const B = { x: 0, y: 0 };
+        const C = { x: side, y: 0 };
+        const D = { x: side, y: side };
+        const F = { x: values.BF, y: 0 };
+        const E = { x: side, y: values.CE };
+        const H = { x: 0, y: values.CE + values.FC };
+        if (values.CE >= side) {
+          throw new Error('CE は正方形の1辺より短くしてください。');
+        }
+        if (H.y > side + EPS) {
+          throw new Error('H が AB 上に来るように CE + FC ≤ BF + FC を満たしてください。');
+        }
+        if (Math.abs(distance(D, E) - distance(F, E)) > 0.01) {
+          throw new Error('この条件では D と F が EH に関して対称になりません。BF、FC、CE の関係を調整してください。');
+        }
+        const G = reflectPoint(A, E, H);
+        const I = lineIntersection(G, F, A, B);
+        if (!I || I.y < -EPS || I.y > side + EPS) {
+          throw new Error('GF と AB が線分上で交わる条件にしてください。');
+        }
+        const geometry = window.InstantGeometryQuadrilateralMobile.helpers.finalizeGeometry({ A: A, B: B, C: C, D: D });
+        geometry.E = E;
+        geometry.F = F;
+        geometry.G = G;
+        geometry.H = H;
+        geometry.I = I;
+        geometry.side = side;
+        geometry.BF = values.BF;
+        geometry.FC = values.FC;
+        geometry.CE = values.CE;
+        geometry.GH = distance(G, H);
+        geometry.HI = distance(H, I);
+        geometry.IB = distance(I, B);
+        geometry.DE = distance(D, E);
+        geometry.AD = distance(A, D);
+        geometry.EF = distance(E, F);
+        geometry.GI = distance(G, I);
+        geometry.AHED = [A, H, E, D];
+        geometry.GHI = [G, H, I];
+        geometry.IBF = [I, B, F];
+        geometry.FCE = [F, C, E];
+        geometry.HIFE = [H, I, F, E];
+        geometry.points = geometry.points.concat([E, F, G, H, I]);
+        return geometry;
+      }
+
+      function areaDefinition(id, name, points) {
+        return { id: id, name: name, points: points, color: '#2a5bd7', value: polygonArea(points) };
+      }
+
+      function regionAngles(geometry) {
+        const regions = [
+          { prefix: 'AHED', names: ['A', 'H', 'E', 'D'], points: geometry.AHED },
+          { prefix: 'GHI', names: ['G', 'H', 'I'], points: geometry.GHI },
+          { prefix: 'IBF', names: ['I', 'B', 'F'], points: geometry.IBF },
+          { prefix: 'FCE', names: ['F', 'C', 'E'], points: geometry.FCE },
+          { prefix: 'HIFE', names: ['H', 'I', 'F', 'E'], points: geometry.HIFE }
+        ];
+        return regions.reduce(function (angles, region) {
+          region.points.forEach(function (vertex, index) {
+            const previous = region.points[(index - 1 + region.points.length) % region.points.length];
+            const next = region.points[(index + 1) % region.points.length];
+            const vertexName = region.names[index];
+            angles.push({
+              id: region.prefix + '_' + vertexName,
+              name: '∠' + region.prefix + ' ' + vertexName,
+              vertex: vertex,
+              p1: previous,
+              p2: next,
+              value: angleDegrees(previous, vertex, next),
+              arcRadius: 0.46,
+              hitRadius: 0.86,
+              labelRate: 0.28
+            });
+          });
+          return angles;
+        }, []);
+      }
+
+      window.InstantGeometryQuadrilateralMobile.createPage({
+        readyMessage: 'BF、FC、CE から折り返し②を描画しました。',
+        fileBase: 'folding-2',
+        skipBaseAngles: true,
+        controlInputIds: {
+          BF: 'bfInput',
+          FC: 'fcInput',
+          CE: 'ceInput'
+        },
+        initialState: {
+          pointInputs: { A: 'A', B: 'B', C: 'C', D: 'D', E: 'E', F: 'F', G: 'G', H: 'H', I: 'I' },
+          sides: { AB: 16, BC: 16, CD: 16, DA: 16, BF: 8, FC: 8, CE: 6, GH: 0, AH: 0, HI: 0, IB: 0, DE: 0, AD: 0, EF: 0, GI: 0, EH: 0, FG: 0 },
+          sideInputs: { AB: '', BC: '', CD: '', DA: '', BF: ' ', FC: ' ', CE: ' ', GH: '', AH: '', HI: '', IB: '', DE: '', AD: '', EF: '', GI: '', EH: '', FG: '' },
+          sideKinds: { AB: 'plain', BC: 'plain', CD: 'plain', DA: 'plain', BF: 'plain', FC: 'plain', CE: 'plain', GH: 'plain', AH: 'plain', HI: 'plain', IB: 'plain', DE: 'plain', AD: 'plain', EF: 'plain', GI: 'plain', EH: 'plain', FG: 'plain' },
+          sideArcVisible: { AB: false, BC: false, CD: false, DA: false, BF: true, FC: true, CE: true, GH: false, AH: false, HI: false, IB: false, DE: false, AD: false, EF: false, GI: false, EH: false, FG: false },
+          angleInputs: { A: '', B: '', C: '', D: '' },
+          angleKinds: { A: 'hidden', B: 'hidden', C: 'hidden', D: 'hidden' },
+          extraAngleInputs: { AHED_A: '', AHED_H: '', AHED_E: '', AHED_D: '', GHI_G: '', GHI_H: '', GHI_I: '', IBF_I: '', IBF_B: '', IBF_F: '', FCE_F: '', FCE_C: '', FCE_E: '', HIFE_H: '', HIFE_I: '', HIFE_F: '', HIFE_E: '' },
+          extraAngleKinds: { AHED_A: 'hidden', AHED_H: 'hidden', AHED_E: 'hidden', AHED_D: 'hidden', GHI_G: 'hidden', GHI_H: 'hidden', GHI_I: 'hidden', IBF_I: 'hidden', IBF_B: 'hidden', IBF_F: 'hidden', FCE_F: 'hidden', FCE_C: 'hidden', FCE_E: 'hidden', HIFE_H: 'hidden', HIFE_I: 'hidden', HIFE_F: 'hidden', HIFE_E: 'hidden' },
+          extraAreaInputs: { AHED: '', GHI: '', IBF: '', FCE: '', HIFE: '' },
+          extraAreaColors: { AHED: '#2a5bd7', GHI: '#2a5bd7', IBF: '#2a5bd7', FCE: '#2a5bd7', HIFE: '#2a5bd7' },
+          areaValue: '',
+          areaColor: '#ffffff'
+        },
+        readControls: function (inputs) {
+          return {
+            BF: parsePositive(inputs.BF.value, 'BF'),
+            FC: parsePositive(inputs.FC.value, 'FC'),
+            CE: parsePositive(inputs.CE.value, 'CE')
+          };
+        },
+        applyControlsToState: function (state, parsed) {
+          const g = buildGeometry(parsed);
+          state.sides.AB = g.side;
+          state.sides.BC = g.side;
+          state.sides.CD = g.side;
+          state.sides.DA = g.side;
+          state.sides.BF = parsed.BF;
+          state.sides.FC = parsed.FC;
+          state.sides.CE = parsed.CE;
+          state.sides.GH = g.GH;
+          state.sides.HI = g.HI;
+          state.sides.IB = g.IB;
+          state.sides.DE = g.DE;
+          state.sides.AD = g.AD;
+          state.sides.EF = g.EF;
+          state.sides.GI = g.GI;
+          state.sides.EH = distance(g.E, g.H);
+          state.sides.AH = distance(g.A, g.H);
+          state.sides.FG = distance(g.F, g.G);
+        },
+        computeGeometry: function (state, parsed) {
+          return buildGeometry(parsed);
+        },
+        extraAreas: function (context) {
+          const g = context.geometry;
+          return [
+            areaDefinition('AHED', '四角形AHED', g.AHED),
+            areaDefinition('GHI', '△GHI', g.GHI),
+            areaDefinition('IBF', '△IBF', g.IBF),
+            areaDefinition('FCE', '△FCE', g.FCE),
+            areaDefinition('HIFE', '四角形HIFE', g.HIFE)
+          ];
+        },
+        extraAngles: function (context) {
+          return regionAngles(context.geometry);
+        },
+        drawAuxiliary: function (helpers) {
+          const g = helpers.geometry;
+          const stage = helpers.stage;
+          const center = helpers.screen.center;
+          const t = {
+            A: helpers.screen.A,
+            B: helpers.screen.B,
+            C: helpers.screen.C,
+            D: helpers.screen.D,
+            E: helpers.fitPoint(g.E),
+            F: helpers.fitPoint(g.F),
+            G: helpers.fitPoint(g.G),
+            H: helpers.fitPoint(g.H),
+            I: helpers.fitPoint(g.I)
+          };
+          const centerModel = { x: g.side / 2, y: g.side / 2 };
+
+          function addLine(id, name, p1Id, p2Id, options) {
+            const opts = options || {};
+            const p1 = t[p1Id];
+            const p2 = t[p2Id];
+            if (opts.drawLine !== false) {
+              stage.appendChild(helpers.createSvg('line', {
+                x1: p1.x,
+                y1: p1.y,
+                x2: p2.x,
+                y2: p2.y,
+                stroke: opts.stroke || '#2a5bd7',
+                'stroke-width': opts.strokeWidth || '3',
+                'stroke-linecap': 'round',
+                'stroke-dasharray': opts.dasharray || 'none'
+              }));
+            }
+            const hit = helpers.createSvg('line', {
+              x1: p1.x,
+              y1: p1.y,
+              x2: p2.x,
+              y2: p2.y,
+              stroke: 'transparent',
+              'stroke-width': '28',
+              'stroke-linecap': 'round'
+            });
+            helpers.attachHit(hit, 'side', id);
+            stage.appendChild(hit);
+            helpers.drawSideKind(helpers.state.sideKinds[id], p1, p2);
+            const label = helpers.getSideLabelValue(id);
+            if (!label) return;
+            const baseModel = opts.labelPoint || labelPoint(g[p1Id], g[p2Id], opts.toward || centerModel, Math.max(0.45, g.side * 0.045));
+            const pos = helpers.getLabelPosition('side', id, helpers.fitPoint(baseModel));
+            if (helpers.state.sideArcVisible[id] !== false) {
+              const arc = helpers.sideArcGeometry(p1, p2, center, pos);
+              stage.appendChild(helpers.createSvg('path', {
+                d: helpers.quadraticPathSegment(p1, arc.control, p2, 0, 0.5 - arc.gapHalf, 20),
+                fill: 'none',
+                stroke: '#2a5bd7',
+                'stroke-width': '2',
+                'stroke-linecap': 'round',
+                'stroke-dasharray': '6 5'
+              }));
+              stage.appendChild(helpers.createSvg('path', {
+                d: helpers.quadraticPathSegment(p1, arc.control, p2, 0.5 + arc.gapHalf, 1, 20),
+                fill: 'none',
+                stroke: '#2a5bd7',
+                'stroke-width': '2',
+                'stroke-linecap': 'round',
+                'stroke-dasharray': '6 5'
+              }));
+            }
+            const text = helpers.createLabelNode(label, {
+              x: pos.x,
+              y: pos.y,
+              'text-anchor': 'middle',
+              'dominant-baseline': 'middle',
+              'font-size': '50',
+              'font-weight': '700',
+              fill: '#2a5bd7'
+            });
+            helpers.attachHit(text, 'side', id);
+            stage.appendChild(text);
+          }
+
+          addLine('EH', 'EH', 'E', 'H', { stroke: '#25603b', strokeWidth: 3 });
+          addLine('GH', 'GH', 'G', 'H', {
+            stroke: '#2a5bd7',
+            strokeWidth: 3,
+            labelPoint: { x: g.G.x - g.side * 0.12, y: (g.G.y + g.H.y) / 2 + g.side * 0.03 }
+          });
+          addLine('FG', 'FG', 'F', 'G', { stroke: '#2a5bd7', strokeWidth: 3 });
+          addLine('EF', 'EF', 'E', 'F', { stroke: '#2a5bd7', strokeWidth: 3 });
+          addLine('AH', 'AH', 'A', 'H', { drawLine: false, stroke: '#2a5bd7' });
+          addLine('HI', 'HI', 'H', 'I', { drawLine: false, stroke: '#2a5bd7' });
+          addLine('IB', 'IB', 'I', 'B', { drawLine: false, stroke: '#2a5bd7' });
+          addLine('DE', 'DE', 'D', 'E', { drawLine: false, stroke: '#2a5bd7' });
+          addLine('AD', 'AD', 'A', 'D', { drawLine: false, stroke: '#2a5bd7' });
+          addLine('GI', 'GI', 'G', 'I', { drawLine: false, stroke: '#2a5bd7' });
+          addLine('BF', 'BF', 'B', 'F', { drawLine: false, stroke: '#2a5bd7', toward: { x: g.side / 2, y: -g.side * 0.45 } });
+          addLine('FC', 'FC', 'F', 'C', { drawLine: false, stroke: '#2a5bd7', toward: { x: g.side / 2, y: -g.side * 0.45 } });
+          addLine('CE', 'CE', 'C', 'E', { drawLine: false, stroke: '#2a5bd7', toward: { x: g.side * 1.35, y: g.side / 2 } });
+
+          ['E', 'F', 'G', 'H', 'I'].forEach(function (id) {
+            const point = t[id];
+            const node = helpers.createSvg('circle', {
+              cx: point.x,
+              cy: point.y,
+              r: 7,
+              fill: '#1f2430'
+            });
+            helpers.attachHit(node, 'point', id);
+            stage.appendChild(node);
+          });
+          const labelOffsets = {
+            E: { x: 34, y: 0 },
+            F: { x: -6, y: 42 },
+            G: { x: -34, y: 4 },
+            H: { x: 0, y: -38 },
+            I: { x: -34, y: 2 }
+          };
+          ['E', 'F', 'G', 'H', 'I'].forEach(function (id) {
+            const value = helpers.getPointLabelValue(id);
+            if (!value) return;
+            const offset = labelOffsets[id];
+            const text = helpers.createLabelNode(value, {
+              x: t[id].x + offset.x,
+              y: t[id].y + offset.y,
+              'text-anchor': 'middle',
+              'dominant-baseline': 'middle',
+              'font-size': '44',
+              'font-weight': '700',
+              fill: '#1f2430'
+            });
+            helpers.attachHit(text, 'point', id);
+            stage.appendChild(text);
+          });
+        },
+        updateSideControl: function () {},
+        updateAngleControl: function () {}
+      });
+    })();
+  </script>
+  <script src="/assets/site-auto-i18n.js"></script>
+</body>
+</html>

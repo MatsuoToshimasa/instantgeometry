@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>六角形と外角 | Instant Geometry</title>
+  <link rel="stylesheet" href="../../../assets/quadrilateral-mobile-page.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" />
+  <style>
+    .bottom-bar.many-fields{
+      display:flex;
+      gap:10px;
+      overflow-x:auto;
+      padding-bottom:2px;
+      scroll-snap-type:x proximity;
+      -webkit-overflow-scrolling:touch;
+      scrollbar-width:none;
+    }
+    .bottom-bar.many-fields::-webkit-scrollbar{display:none}
+    .bottom-bar.many-fields .field{
+      flex:0 0 112px;
+      scroll-snap-align:start;
+    }
+    .bottom-bar.many-fields .field-label{white-space:nowrap}
+  </style>
+  <script src="/assets/save-quota.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <button class="btn" id="backBtn" type="button">戻る</button>
+      <h1 class="topbar-title">六角形と外角</h1>
+      <button class="btn" id="saveBtn" type="button">保存</button>
+    </header>
+
+    <section class="stage-wrap" id="captureRoot">
+      <div class="status error" id="statusBox">角A・角B・角D・角E・角Fから、BC の延長上にある外角 ∠GCD を描画します。</div>
+      <svg class="stage" id="stage" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet" aria-label="六角形と外角の描画画面"></svg>
+    </section>
+
+    <footer class="bottom-bar many-fields">
+      <div class="field"><div class="field-label">角 A</div><input class="field-input" id="angleAInput" type="text" inputmode="decimal" value="126" /></div>
+      <div class="field"><div class="field-label">角 B</div><input class="field-input" id="angleBInput" type="text" inputmode="decimal" value="118" /></div>
+      <div class="field"><div class="field-label">角 D</div><input class="field-input" id="angleDInput" type="text" inputmode="decimal" value="124" /></div>
+      <div class="field"><div class="field-label">角 E</div><input class="field-input" id="angleEInput" type="text" inputmode="decimal" value="116" /></div>
+      <div class="field"><div class="field-label">角 F</div><input class="field-input" id="angleFInput" type="text" inputmode="decimal" value="110" /></div>
+    </footer>
+  </div>
+
+  <div class="sheet-backdrop" id="sheetBackdrop"></div>
+  <section class="sheet" id="editSheet" aria-hidden="true">
+    <div class="sheet-header">
+      <h2 class="sheet-title" id="sheetTitle">設定</h2>
+      <button class="sheet-close" id="sheetClose" type="button" aria-label="閉じる">×</button>
+    </div>
+    <div class="sheet-body" id="sheetBody"></div>
+  </section>
+
+  <section class="sheet" id="saveSheet" aria-hidden="true">
+    <div class="sheet-header">
+      <h2 class="sheet-title">保存</h2>
+      <button class="sheet-close" id="saveSheetClose" type="button" aria-label="閉じる">×</button>
+    </div>
+    <div class="sheet-body">
+      <div class="save-grid">
+        <button class="btn" id="savePngBtn" type="button">PNG</button>
+        <button class="btn" id="saveTransparentBtn" type="button">透過PNG</button>
+        <button class="btn" id="savePdfBtn" type="button">PDF</button>
+      </div>
+    </div>
+  </section>
+  <script src="../../../assets/draw-shared-labels.js?v=shared-katex-2"></script>
+  <script src="../../../assets/function-svg-labels.js?v=polygon-katex-1"></script>
+  <script src="../../../assets/mobile-angle-ornaments.js?v=angle-modal-1"></script>
+  <script src="../../../assets/draw-label-taxonomy.js?v=taxonomy-1"></script>
+  <script src="../../../assets/draw-shared-label-engine.js?v=controller-1"></script>
+  <script src="../../../assets/polygon-mobile-page.js"></script>
+  <script>
+    function angleBetween(prev, vertex, next) {
+      const ux = prev.x - vertex.x;
+      const uy = prev.y - vertex.y;
+      const vx = next.x - vertex.x;
+      const vy = next.y - vertex.y;
+      const denom = (Math.hypot(ux, uy) || 1) * (Math.hypot(vx, vy) || 1);
+      const cosine = Math.max(-1, Math.min(1, (ux * vx + uy * vy) / denom));
+      return Math.acos(cosine) * 180 / Math.PI;
+    }
+
+    function extensionPoint(geometry) {
+      const B = geometry.points.B;
+      const C = geometry.points.C;
+      const dx = C.x - B.x;
+      const dy = C.y - B.y;
+      const len = Math.hypot(dx, dy) || 1;
+      return {
+        x: C.x + dx / len * 2.2,
+        y: C.y + dy / len * 2.2
+      };
+    }
+
+    function orientBcBottom(rawPoints, pointIds) {
+      const index = {};
+      pointIds.forEach(function (id, i) { index[id] = i; });
+      const B = rawPoints[index.B];
+      const C = rawPoints[index.C];
+      const angle = Math.atan2(C.y - B.y, C.x - B.x);
+      const cos = Math.cos(-angle);
+      const sin = Math.sin(-angle);
+      const rotated = rawPoints.map(function (point) {
+        return {
+          x: point.x * cos - point.y * sin,
+          y: point.x * sin + point.y * cos
+        };
+      });
+      const bcY = (rotated[index.B].y + rotated[index.C].y) / 2;
+      const otherIds = pointIds.filter(function (id) { return id !== 'B' && id !== 'C'; });
+      const otherY = otherIds.reduce(function (sum, id) {
+        return sum + rotated[index[id]].y / otherIds.length;
+      }, 0);
+      if (otherY < bcY) {
+        rotated.forEach(function (point) {
+          point.y *= -1;
+        });
+      }
+      return rotated;
+    }
+
+    window.InstantGeometryPolygonMobile.createPage({
+      mode: 'angles',
+      normalizeMinSide: 5,
+      transformRawPoints: orientBcBottom,
+      pointIds: ['A', 'B', 'C', 'D', 'E', 'F'],
+      sideIds: ['AB', 'BC', 'CD', 'DE', 'EF', 'FA'],
+      areaName: '六角形ABCDEF',
+      readyMessage: '入力をもとに六角形と外角を描画しています。',
+      errorMessage: 'この角の組み合わせでは六角形を作れません。',
+      fileBase: 'polygon-hexagon-exterior-angle',
+      controls: [
+        { key: 'A', id: 'angleAInput', label: '角 A' },
+        { key: 'B', id: 'angleBInput', label: '角 B' },
+        { key: 'D', id: 'angleDInput', label: '角 D' },
+        { key: 'E', id: 'angleEInput', label: '角 E' },
+        { key: 'F', id: 'angleFInput', label: '角 F' }
+      ],
+      readValues: function (inputs, parsePositiveNumber) {
+        const values = {
+          A: parsePositiveNumber(inputs.A.value, '角 A'),
+          B: parsePositiveNumber(inputs.B.value, '角 B'),
+          D: parsePositiveNumber(inputs.D.value, '角 D'),
+          E: parsePositiveNumber(inputs.E.value, '角 E'),
+          F: parsePositiveNumber(inputs.F.value, '角 F')
+        };
+        ['A', 'B', 'D', 'E', 'F'].forEach(function (id) {
+          if (!(values[id] > 0 && values[id] < 180)) {
+            throw new Error('角' + id + 'を 0° より大きく 180° 未満で入力してください。');
+          }
+        });
+        values.C = 720 - values.A - values.B - values.D - values.E - values.F;
+        if (!(values.C > 0 && values.C < 180)) {
+          throw new Error('角C = 720° - 角A - 角B - 角D - 角E - 角F が 0° より大きく 180° 未満になるようにしてください。');
+        }
+        return values;
+      },
+      angleNames: {
+        A: ['F', 'A', 'B'],
+        B: ['A', 'B', 'C'],
+        C: ['B', 'C', 'D'],
+        D: ['C', 'D', 'E'],
+        E: ['D', 'E', 'F'],
+        F: ['E', 'F', 'A']
+      },
+      extraAngles: function (context) {
+        const geometry = context.geometry;
+        const G = extensionPoint(geometry);
+        const C = geometry.points.C;
+        const D = geometry.points.D;
+        return [{
+          id: 'GCD',
+          name: '∠GCD',
+          value: angleBetween(G, C, D),
+          vertex: C,
+          p1: G,
+          p2: D,
+          labelPoint: {
+            x: C.x + (G.x - C.x) * 0.32 + (D.x - C.x) * 0.18,
+            y: C.y + (G.y - C.y) * 0.32 + (D.y - C.y) * 0.18
+          }
+        }];
+      },
+      drawAuxiliary: function (ctx) {
+        const G = extensionPoint(ctx.geometry);
+        const tC = ctx.screen.C;
+        const tG = ctx.fitPoint(G);
+        ctx.stage.appendChild(ctx.createSvg('line', {
+          x1: tC.x,
+          y1: tC.y,
+          x2: tG.x,
+          y2: tG.y,
+          stroke: '#2a5bd7',
+          'stroke-width': '3',
+          'stroke-linecap': 'round'
+        }));
+        ctx.stage.appendChild(ctx.createSvg('line', {
+          x1: tC.x,
+          y1: tC.y,
+          x2: tG.x,
+          y2: tG.y,
+          stroke: 'transparent',
+          'stroke-width': '28',
+          'stroke-linecap': 'round'
+        }));
+        ctx.stage.appendChild(ctx.createSvg('circle', {
+          cx: tG.x,
+          cy: tG.y,
+          r: 8,
+          fill: '#1f2430'
+        }));
+        ctx.stage.appendChild(ctx.createLabelNode('G', {
+          x: tG.x + 48,
+          y: tG.y + 22,
+          'text-anchor': 'middle',
+          'dominant-baseline': 'middle',
+          'font-size': '58',
+          'font-weight': '700',
+          fill: '#1f2430'
+        }));
+      },
+      initialState: {
+        pointInputs: { A: 'A', B: 'B', C: 'C', D: 'D', E: 'E', F: 'F' },
+        sideInputs: { AB: '', BC: '', CD: '', DE: '', EF: '', FA: '' },
+        angleInputs: { A: ' ', B: ' ', C: ' ', D: ' ', E: ' ', F: ' ' },
+        extraAngleInputs: { GCD: ' ' },
+        extraAngleKinds: { GCD: 'plain' },
+        areaValue: ''
+      }
+    });
+  </script>
+  <script src="/assets/site-auto-i18n.js"></script>
+</body>
+</html>

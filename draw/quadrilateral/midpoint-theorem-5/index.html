@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>中点連結定理⑤ | Instant Geometry</title>
+  <link rel="stylesheet" href="../../../assets/quadrilateral-mobile-page.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" />
+  <script src="/assets/save-quota.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <button class="btn" id="backBtn" type="button">戻る</button>
+      <h1 class="topbar-title">中点連結定理⑤</h1>
+      <button class="btn" id="saveBtn" type="button">保存</button>
+    </header>
+
+    <section class="stage-wrap" id="captureRoot">
+      <div class="status" id="statusBox">AE、BF、CG、DH を入力すると、各辺の中点 E, F, G, H をもつ凸四角形 ABCD を描画します。</div>
+      <svg class="stage" id="stage" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet" aria-label="中点連結定理⑤の描画画面"></svg>
+    </section>
+
+    <footer class="bottom-bar">
+      <div class="field">
+        <div class="field-label">AE</div>
+        <input class="field-input" id="aeInput" type="text" inputmode="decimal" value="4" />
+      </div>
+      <div class="field">
+        <div class="field-label">BF</div>
+        <input class="field-input" id="bfInput" type="text" inputmode="decimal" value="3" />
+      </div>
+      <div class="field">
+        <div class="field-label">CG</div>
+        <input class="field-input" id="cgInput" type="text" inputmode="decimal" value="5" />
+      </div>
+      <div class="field">
+        <div class="field-label">DH</div>
+        <input class="field-input" id="dhInput" type="text" inputmode="decimal" value="3.5" />
+      </div>
+    </footer>
+  </div>
+
+  <div class="sheet-backdrop" id="sheetBackdrop"></div>
+  <section class="sheet" id="editSheet" aria-hidden="true">
+    <div class="sheet-header">
+      <h2 class="sheet-title" id="sheetTitle">設定</h2>
+      <button class="sheet-close" id="sheetClose" type="button" aria-label="閉じる">×</button>
+    </div>
+    <div class="sheet-body" id="sheetBody"></div>
+  </section>
+
+  <section class="sheet" id="saveSheet" aria-hidden="true">
+    <div class="sheet-header">
+      <h2 class="sheet-title">保存</h2>
+      <button class="sheet-close" id="saveSheetClose" type="button" aria-label="閉じる">×</button>
+    </div>
+    <div class="sheet-body">
+      <div class="save-grid">
+        <button class="btn" id="savePngBtn" type="button">PNG</button>
+        <button class="btn" id="saveTransparentBtn" type="button">透過PNG</button>
+        <button class="btn" id="savePdfBtn" type="button">PDF</button>
+      </div>
+    </div>
+  </section>
+
+  <script src="../../../assets/mobile-angle-ornaments.js?v=segment-modal-1"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script src="../../../assets/draw-shared-labels.js?v=shared-katex-2"></script>
+  <script src="../../../assets/draw-label-taxonomy.js?v=taxonomy-1"></script>
+  <script src="../../../assets/draw-shared-label-engine.js?v=controller-1"></script>
+  <script src="../../../assets/quadrilateral-mobile-page.js"></script>
+  <script>
+    (function () {
+      'use strict';
+
+      function trianglePointFromSides(aToB, bToC, aToC, sign) {
+        const x = (aToB * aToB + aToC * aToC - bToC * bToC) / (2 * aToC);
+        const hSquared = Math.max(0, aToB * aToB - x * x);
+        return { x: x, y: sign * Math.sqrt(hSquared) };
+      }
+
+      function buildQuadrilateralFromSides(sides) {
+        const lengths = [sides.AB, sides.BC, sides.CD, sides.DA];
+        const max = Math.max.apply(null, lengths);
+        const sum = lengths.reduce(function (total, value) { return total + value; }, 0);
+        if (!(max < sum - max)) {
+          throw new Error('この長さでは凸四角形を作れません。いちばん長い辺を、他の3辺の合計より短くしてください。');
+        }
+
+        const firstMin = Math.abs(sides.AB - sides.BC) + 0.001;
+        const firstMax = sides.AB + sides.BC - 0.001;
+        const secondMin = Math.abs(sides.CD - sides.DA) + 0.001;
+        const secondMax = sides.CD + sides.DA - 0.001;
+        const minDiagonal = Math.max(firstMin, secondMin);
+        const maxDiagonal = Math.min(firstMax, secondMax);
+        if (!(minDiagonal < maxDiagonal)) {
+          throw new Error('この長さでは凸四角形を作れません。入力値を調整してください。');
+        }
+
+        const diagonal = (minDiagonal + maxDiagonal) / 2;
+        const points = {
+          A: { x: 0, y: 0 },
+          B: trianglePointFromSides(sides.AB, sides.BC, diagonal, -1),
+          C: { x: diagonal, y: 0 },
+          D: trianglePointFromSides(sides.DA, sides.CD, diagonal, 1)
+        };
+        return rotatePoints(points, -45);
+      }
+
+      function rotatePoints(points, degrees) {
+        const radians = degrees * Math.PI / 180;
+        const cos = Math.cos(radians);
+        const sin = Math.sin(radians);
+        const rotated = {};
+        Object.keys(points).forEach(function (id) {
+          const point = points[id];
+          rotated[id] = {
+            x: point.x * cos - point.y * sin,
+            y: point.x * sin + point.y * cos
+          };
+        });
+        return rotated;
+      }
+
+      function midpoint(P, Q) {
+        return { x: (P.x + Q.x) / 2, y: (P.y + Q.y) / 2 };
+      }
+
+      function pointAwayFromCenter(point, center, amount) {
+        const dx = point.x - center.x;
+        const dy = point.y - center.y;
+        const length = Math.hypot(dx, dy) || 1;
+        return { x: point.x + dx / length * amount, y: point.y + dy / length * amount };
+      }
+
+      function appendPointLabel(ctx, id, point, center) {
+        const labelPoint = pointAwayFromCenter(point, center, 0.34);
+        const screenPoint = ctx.fitPoint(point);
+        const screenLabel = ctx.fitPoint(labelPoint);
+        ctx.stage.appendChild(ctx.createSvg('circle', {
+          cx: screenPoint.x,
+          cy: screenPoint.y,
+          r: 7,
+          fill: '#1f2430'
+        }));
+        ctx.stage.appendChild(ctx.createLabelNode(id, {
+          x: screenLabel.x,
+          y: screenLabel.y,
+          'text-anchor': 'middle',
+          'dominant-baseline': 'middle',
+          'font-size': '50',
+          'font-weight': '700',
+          fill: '#1f2430'
+        }));
+      }
+
+      function appendHiddenSegment(ctx, id, P, Q) {
+        const p = ctx.fitPoint(P);
+        const q = ctx.fitPoint(Q);
+        ctx.state.sides[id] = segmentLength(P, Q);
+        const hit = ctx.createSvg('line', {
+          x1: p.x,
+          y1: p.y,
+          x2: q.x,
+          y2: q.y,
+          stroke: 'transparent',
+          'stroke-width': '28',
+          'stroke-linecap': 'round'
+        });
+        ctx.attachHit(hit, 'side', id);
+        ctx.stage.appendChild(hit);
+      }
+
+      function segmentLength(P, Q) {
+        return Math.hypot(Q.x - P.x, Q.y - P.y);
+      }
+
+      function normalLabelPoint(P, Q, center, distance) {
+        const mid = midpoint(P, Q);
+        const dx = Q.x - P.x;
+        const dy = Q.y - P.y;
+        const length = Math.hypot(dx, dy) || 1;
+        let nx = -dy / length;
+        let ny = dx / length;
+        if (nx * (center.x - mid.x) + ny * (center.y - mid.y) > 0) {
+          nx *= -1;
+          ny *= -1;
+        }
+        return { x: mid.x + nx * distance, y: mid.y + ny * distance };
+      }
+
+      function appendAuxiliarySegment(ctx, id, P, Q, center) {
+        const p = ctx.fitPoint(P);
+        const q = ctx.fitPoint(Q);
+        ctx.state.sides[id] = segmentLength(P, Q);
+
+        const line = ctx.createSvg('line', {
+          x1: p.x,
+          y1: p.y,
+          x2: q.x,
+          y2: q.y,
+          stroke: '#2a5bd7',
+          'stroke-width': '3',
+          'stroke-linecap': 'round',
+          'data-kind': 'side',
+          'data-id': id
+        });
+        ctx.stage.appendChild(line);
+        ctx.drawSideKind(ctx.state.sideKinds[id], p, q);
+
+        const hit = ctx.createSvg('line', {
+          x1: p.x,
+          y1: p.y,
+          x2: q.x,
+          y2: q.y,
+          stroke: 'transparent',
+          'stroke-width': '28',
+          'stroke-linecap': 'round'
+        });
+        ctx.attachHit(hit, 'side', id);
+        ctx.stage.appendChild(hit);
+
+        const label = ctx.getSideLabelValue(id);
+        if (!label) return;
+        const base = normalLabelPoint(P, Q, center, Math.max(0.45, ctx.state.sides[id] * 0.1));
+        const pos = ctx.getLabelPosition('side', id, ctx.fitPoint(base));
+        if (ctx.state.sideArcVisible[id] !== false) {
+          const geom = ctx.sideArcGeometry(p, q, ctx.fitPoint(center), pos);
+          ctx.stage.appendChild(ctx.createSvg('path', {
+            d: ctx.quadraticPathSegment(p, geom.control, q, 0, 0.5 - geom.gapHalf, 20),
+            fill: 'none',
+            stroke: '#2a5bd7',
+            'stroke-width': '2',
+            'stroke-linecap': 'round',
+            'stroke-dasharray': '6 5'
+          }));
+          ctx.stage.appendChild(ctx.createSvg('path', {
+            d: ctx.quadraticPathSegment(p, geom.control, q, 0.5 + geom.gapHalf, 1, 20),
+            fill: 'none',
+            stroke: '#2a5bd7',
+            'stroke-width': '2',
+            'stroke-linecap': 'round',
+            'stroke-dasharray': '6 5'
+          }));
+        }
+        const textNode = ctx.createLabelNode(label, {
+          x: pos.x,
+          y: pos.y,
+          'text-anchor': 'middle',
+          'dominant-baseline': 'middle',
+          'font-size': '50',
+          'font-weight': '700',
+          fill: '#2a5bd7'
+        });
+        ctx.attachHit(textNode, 'side', id);
+        ctx.stage.appendChild(textNode);
+      }
+
+      function drawMarkedPair(ctx, firstId, secondId, P, M, Q, kind) {
+        appendHiddenSegment(ctx, firstId, P, M);
+        appendHiddenSegment(ctx, secondId, M, Q);
+        ctx.drawSideKind(ctx.state.sideKinds[firstId] || kind, ctx.fitPoint(P), ctx.fitPoint(M));
+        ctx.drawSideKind(ctx.state.sideKinds[secondId] || kind, ctx.fitPoint(M), ctx.fitPoint(Q));
+      }
+
+      window.InstantGeometryQuadrilateralMobile.createPage({
+        readyMessage: 'AE、BF、CG、DH から中点連結定理⑤を描画しました。',
+        fileBase: 'midpoint-theorem-5',
+        showArea: true,
+        skipBaseAngles: true,
+        controlInputIds: {
+          AE: 'aeInput',
+          BF: 'bfInput',
+          CG: 'cgInput',
+          DH: 'dhInput'
+        },
+        initialState: {
+          pointInputs: { A: 'A', B: 'B', C: 'C', D: 'D' },
+          sides: { AB: 0, BC: 0, CD: 0, DA: 0 },
+          sideInputs: {
+            AB: '', BC: '', CD: '', DA: '',
+            AE: '', EB: '', BF: '', FC: '', CG: '', GD: '', DH: '', HA: '',
+            EF: '', FG: '', GH: '', HE: ''
+          },
+          sideKinds: {
+            AB: 'plain', BC: 'plain', CD: 'plain', DA: 'plain',
+            AE: 'circle', EB: 'circle', BF: 'single', FC: 'single',
+            CG: 'double', GD: 'double', DH: 'cross', HA: 'cross',
+            EF: 'plain', FG: 'plain', GH: 'plain', HE: 'plain'
+          },
+          sideArcVisible: {
+            AB: false, BC: false, CD: false, DA: false,
+            AE: false, EB: false, BF: false, FC: false,
+            CG: false, GD: false, DH: false, HA: false,
+            EF: false, FG: false, GH: false, HE: false
+          },
+          angleInputs: { A: '', B: '', C: '', D: '' },
+          angleKinds: { A: 'hidden', B: 'hidden', C: 'hidden', D: 'hidden' },
+          areaValue: ''
+        },
+        readControls: function (inputs, parsePositiveNumber) {
+          return {
+            AE: parsePositiveNumber(inputs.AE.value, 'AE'),
+            BF: parsePositiveNumber(inputs.BF.value, 'BF'),
+            CG: parsePositiveNumber(inputs.CG.value, 'CG'),
+            DH: parsePositiveNumber(inputs.DH.value, 'DH')
+          };
+        },
+        applyControlsToState: function (state, parsed) {
+          state.sides = {
+            AB: parsed.AE * 2,
+            BC: parsed.BF * 2,
+            CD: parsed.CG * 2,
+            DA: parsed.DH * 2
+          };
+        },
+        computeGeometry: function (state, parsed, helpers) {
+          const sides = {
+            AB: parsed.AE * 2,
+            BC: parsed.BF * 2,
+            CD: parsed.CG * 2,
+            DA: parsed.DH * 2
+          };
+          return helpers.finalizeGeometry(buildQuadrilateralFromSides(sides));
+        },
+        sideNumericMode: function () {
+          return 'readonly';
+        },
+        angleNumericMode: function () {
+          return 'readonly';
+        },
+        updateSideControl: function () {},
+        updateAngleControl: function () {},
+        drawAuxiliary: function (ctx) {
+          const g = ctx.geometry;
+          const E = midpoint(g.A, g.B);
+          const F = midpoint(g.B, g.C);
+          const G = midpoint(g.C, g.D);
+          const H = midpoint(g.D, g.A);
+          const center = {
+            x: (g.A.x + g.B.x + g.C.x + g.D.x) / 4,
+            y: (g.A.y + g.B.y + g.C.y + g.D.y) / 4
+          };
+
+          drawMarkedPair(ctx, 'AE', 'EB', g.A, E, g.B, 'circle');
+          drawMarkedPair(ctx, 'BF', 'FC', g.B, F, g.C, 'single');
+          drawMarkedPair(ctx, 'CG', 'GD', g.C, G, g.D, 'double');
+          drawMarkedPair(ctx, 'DH', 'HA', g.D, H, g.A, 'cross');
+
+          appendAuxiliarySegment(ctx, 'EF', E, F, center);
+          appendAuxiliarySegment(ctx, 'FG', F, G, center);
+          appendAuxiliarySegment(ctx, 'GH', G, H, center);
+          appendAuxiliarySegment(ctx, 'HE', H, E, center);
+
+          appendPointLabel(ctx, 'E', E, center);
+          appendPointLabel(ctx, 'F', F, center);
+          appendPointLabel(ctx, 'G', G, center);
+          appendPointLabel(ctx, 'H', H, center);
+        }
+      });
+    })();
+  </script>
+  <script src="/assets/site-auto-i18n.js"></script>
+</body>
+</html>

@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>内心 | Instant Geometry</title>
+  <link rel="stylesheet" href="../../../assets/triangle-mobile-page.css?v=triangle-katex-8" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" />
+  <script src="/assets/save-quota.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <button class="btn" id="backBtn" type="button">戻る</button>
+      <h1 class="topbar-title">内心</h1>
+      <button class="btn" id="saveBtn" type="button">保存</button>
+    </header>
+
+    <section class="stage-wrap" id="captureRoot">
+      <div class="status" id="statusBox">3辺から三角形の内心を描画します。</div>
+      <svg class="stage" id="stage" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet" aria-label="内心の描画画面"></svg>
+    </section>
+
+    <footer class="bottom-bar">
+      <div class="field">
+        <div class="field-label">辺 a（BC）</div>
+        <input class="field-input" id="sideA" type="text" inputmode="text" value="5" />
+      </div>
+      <div class="field">
+        <div class="field-label">辺 b（CA）</div>
+        <input class="field-input" id="sideB" type="text" inputmode="text" value="6" />
+      </div>
+      <div class="field">
+        <div class="field-label">辺 c（AB）</div>
+        <input class="field-input" id="sideC" type="text" inputmode="text" value="7" />
+      </div>
+    </footer>
+  </div>
+
+  <div class="sheet-backdrop" id="sheetBackdrop"></div>
+  <section class="sheet" id="editSheet" aria-hidden="true">
+    <div class="sheet-header">
+      <h2 class="sheet-title" id="sheetTitle">設定</h2>
+      <button class="sheet-close" id="sheetClose" type="button" aria-label="閉じる">×</button>
+    </div>
+    <div class="sheet-body" id="sheetBody"></div>
+  </section>
+
+  <section class="sheet" id="saveSheet" aria-hidden="true">
+    <div class="sheet-header">
+      <h2 class="sheet-title">保存</h2>
+      <button class="sheet-close" id="saveSheetClose" type="button" aria-label="閉じる">×</button>
+    </div>
+    <div class="sheet-body">
+      <div class="save-grid">
+        <button class="btn" id="savePngBtn" type="button">PNG</button>
+        <button class="btn" id="saveTransparentBtn" type="button">透過PNG</button>
+        <button class="btn" id="savePdfBtn" type="button">PDF</button>
+      </div>
+    </div>
+  </section>
+
+  <script src="../../../assets/mobile-angle-ornaments.js?v=triangle-katex-1"></script>
+  <script src="../../../assets/function-svg-labels.js?v=triangle-katex-1"></script>
+  <script src="../../../assets/draw-shared-labels.js?v=shared-katex-2"></script>
+  <script src="../../../assets/draw-label-taxonomy.js?v=taxonomy-1"></script>
+  <script src="../../../assets/draw-shared-label-engine.js?v=controller-1"></script>
+  <script src="../../../assets/triangle-mobile-page.js?v=controller-17"></script>
+  <script>
+    window.InstantGeometryTriangleMobile.createPage({
+      readyMessage: '入力をもとに内心を描画しています。',
+      fileBase: 'triangle-incenter',
+      centerType: 'incenter',
+      centerLabel: 'I',
+      controlInputIds: {
+        a: 'sideA',
+        b: 'sideB',
+        c: 'sideC'
+      },
+      initialState: {
+        sides: { a: 5, b: 6, c: 7 },
+        pointInputs: { A: 'A', B: 'B', C: 'C', I: 'I', P: '', Q: '', R: '' },
+        sideInputs: { a: ' ', b: ' ', c: ' ' },
+        sideKinds: { a: 'plain', b: 'plain', c: 'plain' },
+        sideArcVisible: { a: true, b: true, c: true },
+        angleInputs: { A: '', B: '', C: '' },
+        angleKinds: { A: 'hidden', B: 'hidden', C: 'hidden' },
+        extraAngleInputs: { IAC: '', ICA: '', IBC: '', ICB: '', IBA: '', IAB: '' },
+        extraAngleKinds: {
+          IAC: 'circle',
+          ICA: 'triangle',
+          IBC: 'circle',
+          ICB: 'double-cross',
+          IBA: 'triangle',
+          IAB: 'double-cross'
+        },
+        extraAreaInputs: { ABI: ' ', BCI: ' ', CAI: ' ' },
+        extraSegmentInputs: { IP: ' ', IQ: ' ', IR: ' ' },
+        extraSegmentKinds: { IP: 'double', IQ: 'double', IR: 'double' },
+        areaValue: ' '
+      },
+      readControls: function (inputs, parseNatural) {
+        return {
+          a: parseNatural(inputs.a.value, '辺 a'),
+          b: parseNatural(inputs.b.value, '辺 b'),
+          c: parseNatural(inputs.c.value, '辺 c')
+        };
+      },
+      applyControlsToState: function (state, parsed) {
+        state.sides.a = parsed.a;
+        state.sides.b = parsed.b;
+        state.sides.c = parsed.c;
+      },
+      computeGeometry: function (state, parsed, helpers) {
+        return helpers.computeTriangleFromSides(parsed.a, parsed.b, parsed.c);
+      },
+      formatAreaLabel: function (state, geometry, helpers) {
+        return helpers.formatHeronArea(state.sides.a, state.sides.b, state.sides.c);
+      },
+      extraAreas: function (context) {
+        const geometry = context.geometry;
+        const I = window.InstantGeometryTriangleMobile.helpers.triangleCenterPoint(geometry, 'incenter');
+        function areaValue(P, Q, R, sideLength) {
+          return function (helpers) {
+            if (helpers.formatIncenterSubArea) {
+              return helpers.formatIncenterSubArea(sideLength);
+            }
+            return helpers.formatPreferredNumber(helpers.pointTriangleArea(P, Q, R));
+          };
+        }
+        return [
+          {
+            id: 'ABI',
+            name: '△ABI',
+            points: [geometry.A, geometry.B, I],
+            labelPoint: {
+              x: (geometry.A.x + geometry.B.x + I.x) / 3,
+              y: (geometry.A.y + geometry.B.y + I.y) / 3
+            },
+            value: areaValue(geometry.A, geometry.B, I, context.state.sides.c)
+          },
+          {
+            id: 'BCI',
+            name: '△BCI',
+            points: [geometry.B, geometry.C, I],
+            labelPoint: {
+              x: (geometry.B.x + geometry.C.x + I.x) / 3,
+              y: (geometry.B.y + geometry.C.y + I.y) / 3
+            },
+            value: areaValue(geometry.B, geometry.C, I, context.state.sides.a)
+          },
+          {
+            id: 'CAI',
+            name: '△CAI',
+            points: [geometry.C, geometry.A, I],
+            labelPoint: {
+              x: (geometry.C.x + geometry.A.x + I.x) / 3,
+              y: (geometry.C.y + geometry.A.y + I.y) / 3
+            },
+            value: areaValue(geometry.C, geometry.A, I, context.state.sides.b)
+          }
+        ];
+      },
+      extraAngles: function (context) {
+        const geometry = context.geometry;
+        const I = window.InstantGeometryTriangleMobile.helpers.triangleCenterPoint(geometry, 'incenter');
+        function angleValue(vertex, p1, p2) {
+          const ax = p1.x - vertex.x;
+          const ay = p1.y - vertex.y;
+          const bx = p2.x - vertex.x;
+          const by = p2.y - vertex.y;
+          const dot = ax * bx + ay * by;
+          const len = (Math.hypot(ax, ay) || 1) * (Math.hypot(bx, by) || 1);
+          return Math.acos(Math.max(-1, Math.min(1, dot / len))) * 180 / Math.PI;
+        }
+        function labelPoint(vertex, p1, p2) {
+          return {
+            x: vertex.x + ((p1.x - vertex.x) + (p2.x - vertex.x)) * 0.26,
+            y: vertex.y + ((p1.y - vertex.y) + (p2.y - vertex.y)) * 0.26
+          };
+        }
+        return [
+          { id: 'IAC', name: '∠IAC', vertex: geometry.A, p1: I, p2: geometry.C },
+          { id: 'ICA', name: '∠ICA', vertex: geometry.C, p1: I, p2: geometry.A },
+          { id: 'IBC', name: '∠IBC', vertex: geometry.B, p1: I, p2: geometry.C },
+          { id: 'ICB', name: '∠ICB', vertex: geometry.C, p1: I, p2: geometry.B },
+          { id: 'IBA', name: '∠IBA', vertex: geometry.B, p1: I, p2: geometry.A },
+          { id: 'IAB', name: '∠IAB', vertex: geometry.A, p1: I, p2: geometry.B }
+        ].map(function (angle) {
+          angle.value = angleValue(angle.vertex, angle.p1, angle.p2);
+          angle.labelPoint = labelPoint(angle.vertex, angle.p1, angle.p2);
+          angle.labelFontSize = 58;
+          angle.arcRadius = 0.56;
+          angle.hitRadius = 0.92;
+          return angle;
+        });
+      },
+      extraSegments: function (context) {
+        const geometry = context.geometry;
+        const I = window.InstantGeometryTriangleMobile.helpers.triangleCenterPoint(geometry, 'incenter');
+        function foot(point, P, Q) {
+          const dx = Q.x - P.x;
+          const dy = Q.y - P.y;
+          const len2 = dx * dx + dy * dy || 1;
+          const t = ((point.x - P.x) * dx + (point.y - P.y) * dy) / len2;
+          return { x: P.x + dx * t, y: P.y + dy * t };
+        }
+        const P = foot(I, geometry.A, geometry.B);
+        const Q = foot(I, geometry.B, geometry.C);
+        const R = foot(I, geometry.C, geometry.A);
+        function segmentValue(endPoint) {
+          return function (helpers) {
+            if (helpers.formatHeronInradius) {
+              return helpers.formatHeronInradius(context.state.sides.a, context.state.sides.b, context.state.sides.c);
+            }
+            return helpers.formatPreferredNumber(Math.hypot(I.x - endPoint.x, I.y - endPoint.y));
+          };
+        }
+        return [
+          { id: 'IP', name: 'IP', p1: I, p2: P, value: segmentValue(P), foot: P },
+          { id: 'IQ', name: 'IQ', p1: I, p2: Q, value: segmentValue(Q), foot: Q },
+          { id: 'IR', name: 'IR', p1: I, p2: R, value: segmentValue(R), foot: R }
+        ];
+      },
+      extraPoints: function (context) {
+        const geometry = context.geometry;
+        const I = window.InstantGeometryTriangleMobile.helpers.triangleCenterPoint(geometry, 'incenter');
+        function foot(point, P, Q) {
+          const dx = Q.x - P.x;
+          const dy = Q.y - P.y;
+          const len2 = dx * dx + dy * dy || 1;
+          const t = ((point.x - P.x) * dx + (point.y - P.y) * dy) / len2;
+          return { x: P.x + dx * t, y: P.y + dy * t };
+        }
+        return [
+          { id: 'P', point: foot(I, geometry.A, geometry.B) },
+          { id: 'Q', point: foot(I, geometry.B, geometry.C) },
+          { id: 'R', point: foot(I, geometry.C, geometry.A) }
+        ];
+      },
+      drawAuxiliary: function (ctx) {
+        const geometry = ctx.geometry;
+        const I = window.InstantGeometryTriangleMobile.helpers.triangleCenterPoint(geometry, 'incenter');
+        function foot(point, P, Q) {
+          const dx = Q.x - P.x;
+          const dy = Q.y - P.y;
+          const len2 = dx * dx + dy * dy || 1;
+          const t = ((point.x - P.x) * dx + (point.y - P.y) * dy) / len2;
+          return { x: P.x + dx * t, y: P.y + dy * t };
+        }
+        [
+          { id: 'P', point: foot(I, geometry.A, geometry.B), edge1: geometry.A, edge2: geometry.B },
+          { id: 'Q', point: foot(I, geometry.B, geometry.C), edge1: geometry.B, edge2: geometry.C },
+          { id: 'R', point: foot(I, geometry.C, geometry.A), edge1: geometry.C, edge2: geometry.A }
+        ].forEach(function (entry) {
+          const tPoint = ctx.fitPoint(entry.point);
+          ctx.drawRightAngleAtPoint(tPoint, ctx.fitPoint(I), ctx.fitPoint(entry.edge1));
+        });
+      },
+      sideNumericMode: function () {
+        return 'control';
+      },
+      angleNumericMode: function () {
+        return 'readonly';
+      },
+      updateSideControl: function (id, value, state, inputs) {
+        inputs[id].value = String(value);
+        state.sides[id] = value;
+      },
+      updateAngleControl: function () {}
+    });
+  </script>
+  <script src="/assets/site-auto-i18n.js?v=triangle-katex-1"></script>
+</body>
+</html>
