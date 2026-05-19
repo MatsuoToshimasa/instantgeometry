@@ -499,6 +499,7 @@
       const modalSpec = cfg.getModalSpec ? cfg.getModalSpec(kind, id, modalType, normalizedTarget) : getStandardModalSpec(modalType);
       if (!modalSpec || !sheetTitle || !sheetBody || !editSheet || !sheetBackdrop) return;
       sheetTitle.textContent = cfg.getTitle ? cfg.getTitle(kind, id) : (modalSpec.title || '');
+      sheetBody.textContent = '';
 
       let kindSelect = null;
       let guideCheckbox = null;
