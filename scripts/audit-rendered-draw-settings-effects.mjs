@@ -9,9 +9,10 @@ const CONCURRENCY = Math.max(1, Number(process.env.SETTINGS_EFFECT_AUDIT_CONCURR
 const PAGE_TIMEOUT_MS = Math.max(2000, Number(process.env.SETTINGS_EFFECT_AUDIT_PAGE_TIMEOUT_MS || 7000));
 const ACTION_TIMEOUT_MS = Math.max(1000, Number(process.env.SETTINGS_EFFECT_AUDIT_ACTION_TIMEOUT_MS || 2500));
 const JSON_OUTPUT = process.argv.includes('--json');
+const BASE_URL_ARG = (process.argv.find((arg) => arg.startsWith('--base-url=')) || '').slice('--base-url='.length).replace(/\/$/, '');
 
 const DRAW_SETTINGS_CONSTITUTION = Object.freeze({
-  angleUnit: 'Every rendered angle label must follow the global angle unit setting: degrees labels use degree notation, radians labels must not keep degree notation.'
+  angleUnit: 'Every rendered angle label must follow the global angle unit setting: when angleUnit is radians, no visible drawing label may keep degree notation.'
 });
 
 const MIME_TYPES = new Map([
@@ -142,7 +143,11 @@ async function auditPage(page, pageInfo, baseUrl) {
     ].join(',');
     const visible = (node) => {
       const style = window.getComputedStyle(node);
-      if (style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity) === 0) return false;
+      const opacity = Number(style.opacity);
+      const attrOpacity = Number(node.getAttribute && node.getAttribute('opacity'));
+      if (style.display === 'none' || style.visibility === 'hidden') return false;
+      if (Number.isFinite(opacity) && opacity <= 0.01) return false;
+      if (Number.isFinite(attrOpacity) && attrOpacity <= 0.01) return false;
       const rect = node.getBoundingClientRect();
       return rect.width > 0 && rect.height > 0;
     };
@@ -162,10 +167,31 @@ async function auditPage(page, pageInfo, baseUrl) {
         text: (node.textContent || '').replace(/\s+/g, ' ').trim()
       }))
       .filter((entry) => entry.kind && entry.kind !== 'point' && entry.text);
+    const collectVisibleDegreeText = () => {
+      const roots = Array.from(document.querySelectorAll('#stage, svg.stage, .stage-wrap, #captureRoot, #labelLayer, body'));
+      const seen = new Set();
+      const entries = [];
+      roots.forEach((root) => {
+        Array.from(root.querySelectorAll('text, foreignObject, .floating-label, .katex, .katex-html, [data-kind], [data-label-kind], [data-type]')).forEach((node) => {
+          if (seen.has(node) || !visible(node)) return;
+          seen.add(node);
+          const text = (node.textContent || '').replace(/\s+/g, ' ').trim();
+          if (!isDegreeAngleText(text)) return;
+          entries.push({
+            tag: node.tagName ? node.tagName.toLowerCase() : '',
+            className: node.getAttribute ? (node.getAttribute('class') || '') : '',
+            kind: kindOf(node),
+            text
+          });
+        });
+      });
+      return entries;
+    };
 
     const before = collect();
+    const initialDegreeText = collectVisibleDegreeText();
     if (!window.InstantGeometryDrawSettings || typeof window.InstantGeometryDrawSettings.set !== 'function') {
-      return { hasSettings: false, before, afterUnits: [], afterRadians: [], afterDecimalPi: [], afterDecimalPlaces: [] };
+      return { hasSettings: false, before, initialDegreeText, afterUnits: [], afterRadians: [], afterRadiansDegreeText: [], afterDecimalPi: [], afterDecimalPlaces: [] };
     }
     window.InstantGeometryDrawSettings.set({ distanceUnit: 'cm', angleUnit: 'degrees', piMode: 'symbol', decimalPlaces: 2 });
     await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
@@ -173,13 +199,14 @@ async function auditPage(page, pageInfo, baseUrl) {
     window.InstantGeometryDrawSettings.set({ distanceUnit: 'none', angleUnit: 'radians', piMode: 'symbol', decimalPlaces: 2 });
     await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
     const afterRadians = collect();
+    const afterRadiansDegreeText = collectVisibleDegreeText();
     window.InstantGeometryDrawSettings.set({ distanceUnit: 'none', angleUnit: 'radians', piMode: 'decimal', decimalPlaces: 2 });
     await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
     const afterDecimalPi = collect();
     window.InstantGeometryDrawSettings.set({ distanceUnit: 'none', angleUnit: 'degrees', piMode: 'symbol', decimalPlaces: 0 });
     await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
     const afterDecimalPlaces = collect();
-    return { hasSettings: true, before, afterUnits, afterRadians, afterDecimalPi, afterDecimalPlaces };
+    return { hasSettings: true, before, initialDegreeText, afterUnits, afterRadians, afterRadiansDegreeText, afterDecimalPi, afterDecimalPlaces };
   });
 
   if (!result.hasSettings) {
@@ -196,10 +223,19 @@ async function auditPage(page, pageInfo, baseUrl) {
   if (beforeArea.length && !includesAny(result.afterUnits, /(?:cm²|\\mathrm\{cm\^2\})/)) addFinding(pageInfo.path, 'distance unit did not affect rendered area labels', { sample: beforeArea.slice(0, 3) });
   if (beforeAngle.length && !result.afterRadians.some((item) => item.kind === 'angle' && !isDegreeAngleText(item.text))) addFinding(pageInfo.path, 'angle unit did not affect rendered angle labels', { sample: beforeAngle.slice(0, 3) });
   const remainingDegreeAngles = result.afterRadians.filter((item) => item.kind === 'angle' && isDegreeAngleText(item.text));
-  if (remainingDegreeAngles.length) {
+  const initialVisibleDegreeText = Array.isArray(result.initialDegreeText) ? result.initialDegreeText : [];
+  const remainingVisibleDegreeText = Array.isArray(result.afterRadiansDegreeText) ? result.afterRadiansDegreeText : [];
+  if (remainingDegreeAngles.length || remainingVisibleDegreeText.length) {
     addFinding(pageInfo.path, 'angle labels still use degree notation after switching to radians', {
       rule: DRAW_SETTINGS_CONSTITUTION.angleUnit,
-      sample: remainingDegreeAngles.slice(0, 5)
+      sample: remainingDegreeAngles.slice(0, 5),
+      visibleDegreeText: remainingVisibleDegreeText.slice(0, 8)
+    });
+  }
+  if (initialVisibleDegreeText.length) {
+    addFinding(pageInfo.path, 'saved radians setting leaves visible degree notation on initial render', {
+      rule: DRAW_SETTINGS_CONSTITUTION.angleUnit,
+      visibleDegreeText: initialVisibleDegreeText.slice(0, 8)
     });
   }
   if (beforePi.length && !result.afterDecimalPi.some((item) => !/π/.test(item.text))) addFinding(pageInfo.path, 'pi mode did not affect rendered pi labels', { sample: beforePi.slice(0, 3) });
@@ -219,9 +255,9 @@ async function runPool(items, worker) {
 }
 
 const pages = discoverPages();
-const server = await createStaticServer();
-const address = server.address();
-const baseUrl = `http://127.0.0.1:${address.port}`;
+const server = BASE_URL_ARG ? null : await createStaticServer();
+const address = server ? server.address() : null;
+const baseUrl = BASE_URL_ARG || `http://127.0.0.1:${address.port}`;
 const { chromium } = await importPlaywright();
 const browser = await chromium.launch(getBrowserLaunchOptions());
 let checked = 0;
@@ -236,13 +272,13 @@ try {
             '</span></span>';
         }
       };
-      localStorage.setItem('instantGeometryDrawSettings', JSON.stringify({ distanceUnit: 'none', angleUnit: 'degrees', piMode: 'symbol', decimalPlaces: 2 }));
+      localStorage.setItem('instantGeometryDrawSettings', JSON.stringify({ distanceUnit: 'none', angleUnit: 'radians', piMode: 'symbol', decimalPlaces: 2 }));
     });
     const page = await context.newPage();
     page.setDefaultTimeout(ACTION_TIMEOUT_MS);
     await page.route('**/*', (route) => {
       const url = route.request().url();
-      if (url.startsWith(baseUrl) || url.startsWith('data:') || url.startsWith('blob:')) route.continue();
+      if (url.startsWith(baseUrl) || url.startsWith('data:') || url.startsWith('blob:') || (BASE_URL_ARG && url.includes('cdn.jsdelivr.net/npm/katex@'))) route.continue();
       else route.abort();
     });
     try {
@@ -257,12 +293,13 @@ try {
   });
 } finally {
   await browser.close();
-  await new Promise((resolve) => server.close(resolve));
+  if (server) await new Promise((resolve) => server.close(resolve));
 }
 
 if (!JSON_OUTPUT) {
   process.stdout.write(`\rChecked ${checked}/${pages.length}`.padEnd(120) + '\n');
   console.log('Rendered draw settings effects audit');
+  console.log(`Base URL: ${baseUrl}`);
   console.log(`Pages checked: ${pages.length}`);
   console.log(`Findings: ${FINDINGS.length}`);
   FINDINGS.slice(0, 200).forEach((finding) => {
