@@ -1419,7 +1419,7 @@
             createSvg: createSvg,
             text: label,
             attrs: attrs,
-            kind: attrs['data-label-kind'] || attrs['data-kind'],
+            kind: attrs['data-label-role'] || attrs['data-label-kind'] || attrs['data-kind'],
             id: attrs['data-label-id'] || attrs['data-id']
           });
           if (katexNode) return katexNode;
@@ -1480,7 +1480,7 @@
           createSvg: createSvg,
           text: parsed.value,
           attrs: textAttrs,
-          kind: attrs['data-label-kind'] || attrs['data-kind'],
+          kind: attrs['data-label-role'] || attrs['data-label-kind'] || attrs['data-kind'],
           id: attrs['data-label-id'] || attrs['data-id']
         });
         if (katexNode) group.appendChild(katexNode);
@@ -1506,7 +1506,8 @@
         });
         attrs.x = attrs.x || element.getAttribute('x') || '0';
         attrs.y = attrs.y || element.getAttribute('y') || '0';
-        attrs['data-label-kind'] = attrs['data-label-kind'] || kind;
+        attrs['data-label-kind'] = attrs['data-label-kind'] || canonicalLabelKind(kind);
+        if (kind !== attrs['data-label-kind']) attrs['data-label-role'] = attrs['data-label-role'] || kind;
         attrs['data-label-id'] = attrs['data-label-id'] || id;
         const katexNode = window.InstantGeometrySharedLabels.createSvgKatexLabel({
           createSvg: createSvg,
@@ -1550,6 +1551,13 @@
       const y = Number(textNode.getAttribute('y'));
       if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
       return { x: x, y: y };
+    }
+
+    function canonicalLabelKind(kind) {
+      if (kind === 'side') return 'segment';
+      if (kind === 'extraAngle') return 'angle';
+      if (kind === 'extraArea') return 'area';
+      return kind;
     }
 
     function offsetPointList(value, offset) {
@@ -1849,7 +1857,8 @@
             'font-size': '56',
             'font-weight': '700',
             fill: '#2a5bd7',
-            'data-label-kind': 'side',
+            'data-label-kind': 'segment',
+            'data-label-role': 'side',
             'data-label-id': id
           });
           attachHit(textNode, 'side', id);
@@ -1888,7 +1897,8 @@
             'font-size': '46',
             'font-weight': '700',
             fill: '#687086',
-            'data-label-kind': 'extraAngle',
+            'data-label-kind': 'angle',
+            'data-label-role': 'extraAngle',
             'data-label-id': angle.id
           });
           attachHit(textNode, 'extraAngle', angle.id);
@@ -1928,7 +1938,8 @@
             style: 'font-size:' + pos.fontSize + 'px',
             'font-weight': '700',
             fill: areaLabelColor(color),
-            'data-label-kind': 'extraArea',
+            'data-label-kind': 'area',
+            'data-label-role': 'extraArea',
             'data-label-id': area.id
           });
           attachHit(textNode, 'extraArea', area.id);

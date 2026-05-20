@@ -1184,11 +1184,21 @@
         return window.InstantGeometryLabelTaxonomy.normalize({ kind: kind, id: id }, { shape: config.shape });
       }
       return {
-        kind: kind === 'measure' && isArcMeasure(id) ? 'arc' : (kind === 'measure' ? 'segment' : kind),
+        kind: kind === 'measure' && isArcMeasure(id)
+          ? 'arc'
+          : (kind === 'measure' ? 'segment' : (kind === 'extraArea' ? 'area' : kind)),
         id: id,
         originalKind: kind,
         originalId: id,
         canonical: true
+      };
+    }
+
+    function labelDataAttrs(kind, id) {
+      const target = normalizeLabelTarget(kind, id);
+      return {
+        kind: target.kind,
+        role: target.role || (target.kind !== kind ? kind : '')
       };
     }
 
@@ -2520,7 +2530,7 @@
             createSvg: createSvg,
             text: label,
             attrs: attrs,
-            kind: attrs['data-label-kind'] || attrs['data-kind'],
+            kind: attrs['data-label-role'] || attrs['data-label-kind'] || attrs['data-kind'],
             id: attrs['data-label-id'] || attrs['data-id']
           });
           if (katexNode) return katexNode;
@@ -2595,6 +2605,7 @@
 
     function appendText(kind, id, text, x, y, className) {
       if (!text) return;
+      const dataLabel = labelDataAttrs(kind, id);
       const fill = kind === 'area'
         ? areaLabelColor(state.areaColor || '#2a5bd7')
         : (kind === 'measure' ? state.measureColors[id] || '#2a5bd7' : null);
@@ -2607,7 +2618,8 @@
         class: 'shape-label ' + (className || ''),
         style: 'font-size:' + fontSize + 'px' + (fill ? ';fill:' + fill : ''),
         'font-size': fontSize,
-        'data-label-kind': kind,
+        'data-label-kind': dataLabel.kind,
+        'data-label-role': dataLabel.role || undefined,
         'data-label-id': id,
         'data-kind': kind,
         'data-id': id
@@ -2715,6 +2727,7 @@
 
     function renderFittedAreaLabel(kind, id, label, points, color, maxFontSize) {
       if (!label || !points || points.length < 3) return;
+      const dataLabel = labelDataAttrs(kind, id);
       const area = { points: points, labelPoint: polygonCentroid(points) };
       const fitted = fittedAreaLabel(area, label);
       const pos = getLabelPosition(kind, id, fitted);
@@ -2727,7 +2740,8 @@
         class: 'shape-label area-label',
         style: 'font-size:' + fontSize + 'px;fill:' + fill,
         'font-size': fontSize,
-        'data-label-kind': kind,
+        'data-label-kind': dataLabel.kind,
+        'data-label-role': dataLabel.role || undefined,
         'data-label-id': id,
         'data-kind': kind,
         'data-id': id

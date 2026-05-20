@@ -1665,7 +1665,7 @@
             createSvg: createSvg,
             text: label,
             attrs: attrs,
-            kind: attrs['data-label-kind'] || attrs['data-kind'],
+            kind: attrs['data-label-role'] || attrs['data-label-kind'] || attrs['data-kind'],
             id: attrs['data-label-id'] || attrs['data-id']
           });
           if (katexNode) return katexNode;
@@ -1755,6 +1755,13 @@
       const y = Number(textNode.getAttribute('y'));
       if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
       return { x: x, y: y };
+    }
+
+    function canonicalLabelKind(kind) {
+      if (kind === 'side' || kind === 'extraSegment') return 'segment';
+      if (kind === 'extraAngle') return 'angle';
+      if (kind === 'extraArea') return 'area';
+      return kind;
     }
 
     function offsetPointList(value, offset) {
@@ -2029,7 +2036,7 @@
             : fitPoint(interiorLabel(angle.vertex, center, angle.labelRate || 0.34), view);
           const pos = getLabelPosition('extraAngle', angle.id, basePos);
           const fontSize = scaledFontSize('extraAngle', angle.id, 42);
-          const text = createLabelNode(label, { x: pos.x, y: pos.y, 'text-anchor': 'middle', 'dominant-baseline': 'middle', 'font-size': fontSize, 'font-weight': '700', fill: '#687086', 'data-label-kind': 'extraAngle', 'data-label-id': angle.id });
+          const text = createLabelNode(label, { x: pos.x, y: pos.y, 'text-anchor': 'middle', 'dominant-baseline': 'middle', 'font-size': fontSize, 'font-weight': '700', fill: '#687086', 'data-label-kind': 'angle', 'data-label-role': 'extraAngle', 'data-label-id': angle.id });
           attachHit(text, 'extraAngle', angle.id);
           stage.appendChild(text);
         });
@@ -2070,7 +2077,7 @@
             }));
           }
           const fontSize = scaledFontSize('side', id, 48);
-          const text = createLabelNode(label, { x: pos.x, y: pos.y, 'text-anchor': 'middle', 'dominant-baseline': 'middle', 'font-size': fontSize, 'font-weight': '700', fill: '#2a5bd7', 'data-label-kind': 'side', 'data-label-id': id });
+          const text = createLabelNode(label, { x: pos.x, y: pos.y, 'text-anchor': 'middle', 'dominant-baseline': 'middle', 'font-size': fontSize, 'font-weight': '700', fill: '#2a5bd7', 'data-label-kind': 'segment', 'data-label-role': 'side', 'data-label-id': id });
           attachHit(text, 'side', id);
           stage.appendChild(text);
         });
@@ -2101,7 +2108,7 @@
             }));
           }
           const fontSize = scaledFontSize('side', id, 48);
-          const text = createLabelNode(label, { x: pos.x, y: pos.y, 'text-anchor': 'middle', 'dominant-baseline': 'middle', 'font-size': fontSize, 'font-weight': '700', fill: '#2a5bd7', 'data-label-kind': 'side', 'data-label-id': id });
+          const text = createLabelNode(label, { x: pos.x, y: pos.y, 'text-anchor': 'middle', 'dominant-baseline': 'middle', 'font-size': fontSize, 'font-weight': '700', fill: '#2a5bd7', 'data-label-kind': 'segment', 'data-label-role': 'side', 'data-label-id': id });
           attachHit(text, 'side', id);
           stage.appendChild(text);
         });
@@ -2140,7 +2147,8 @@
             style: 'font-size:' + fontSize + 'px',
             'font-weight': '700',
             fill: areaLabelColor(color),
-            'data-label-kind': 'extraArea',
+            'data-label-kind': 'area',
+            'data-label-role': 'extraArea',
             'data-label-id': extraArea.id
           });
           attachHit(text, 'extraArea', extraArea.id);

@@ -65,9 +65,9 @@
   }
 
   function getLabelKind(node) {
-    const kind = node.dataset && (node.dataset.kind || node.dataset.type || node.dataset.labelKind);
+    const kind = node.dataset && (node.dataset.labelKind || node.dataset.kind || node.dataset.type);
     if (kind) return kind;
-    const attrKind = node.getAttribute && (node.getAttribute('data-kind') || node.getAttribute('data-label-kind') || node.getAttribute('data-type'));
+    const attrKind = node.getAttribute && (node.getAttribute('data-label-kind') || node.getAttribute('data-kind') || node.getAttribute('data-type'));
     if (attrKind) return attrKind;
     if (node.classList) {
       if (node.classList.contains('segment-label') || node.classList.contains('measure-label')) return 'segment';

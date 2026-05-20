@@ -204,6 +204,14 @@ async function auditPage(page, pageInfo, baseUrl) {
       }
       return text;
     };
+    const invalidDataLabelKinds = Array.from(document.querySelectorAll('[data-label-kind]'))
+      .map((node) => ({
+        kind: String(node.getAttribute('data-label-kind') || '').trim(),
+        role: String(node.getAttribute('data-label-role') || '').trim(),
+        id: String(node.getAttribute('data-label-id') || node.getAttribute('data-id') || '').trim(),
+        tag: node.tagName
+      }))
+      .filter((item) => item.kind && !typeSet.has(item.kind));
     const rawCandidates = [];
     [
       ['[data-point-id]', 'point', 'pointId'],
@@ -259,6 +267,7 @@ async function auditPage(page, pageInfo, baseUrl) {
       title: document.title,
       hasModalHost: Boolean(document.getElementById('editSheet') && document.getElementById('sheetBody')),
       hasSharedEngine: Boolean(window.InstantGeometryDrawLabelEngine || window.InstantGeometryTriangleLabelEngine),
+      invalidDataLabelKinds,
       targets: byKind
     };
   });
@@ -270,6 +279,9 @@ async function auditPage(page, pageInfo, baseUrl) {
   if (!rendered.hasSharedEngine) {
     addFinding(pageInfo.path, 'page', 'shared label engine not loaded');
     return;
+  }
+  for (const item of rendered.invalidDataLabelKinds) {
+    addFinding(pageInfo.path, 'taxonomy', `data-label-kind is not one of 7 categories: ${item.kind}`, item);
   }
   if (!rendered.targets.length) {
     addFinding(pageInfo.path, 'page', 'no rendered label targets found');

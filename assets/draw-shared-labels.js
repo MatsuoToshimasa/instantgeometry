@@ -137,6 +137,13 @@
     return latex;
   }
 
+  function canonicalLabelKind(kind) {
+    if (kind === 'side' || kind === 'extraSegment' || kind === 'centerLine') return 'segment';
+    if (kind === 'extraAngle') return 'angle';
+    if (kind === 'extraArea') return 'area';
+    return kind;
+  }
+
   function shouldUseKatex(text) {
     const raw = String(text || '');
     return /[√π°/]|km²|cm²|m²|km|cm|m/.test(raw);
@@ -177,17 +184,20 @@
     const y = Number(attrs.y) || 0;
     const fontSize = Number(attrs['font-size']) || 42;
     const color = attrs.fill || '#1f2430';
-    const kind = deps.kind || attrs['data-label-kind'] || attrs['data-kind'] || '';
+    const rawKind = deps.kind || attrs['data-label-role'] || attrs['data-label-kind'] || attrs['data-kind'] || '';
+    const kind = canonicalLabelKind(rawKind);
     const id = deps.id || attrs['data-label-id'] || attrs['data-id'] || '';
     const className = deps.className || 'draw-katex-label';
     const latex = labelTextToLatex(text, kind);
     const measured = measureSvgKatexLabel(latex, fontSize, color, className);
     if (!measured) return null;
+    const role = attrs['data-label-role'] || (rawKind !== kind ? rawKind : '');
     const dataAttrs = {
-      'data-kind': attrs['data-kind'] || kind,
+      'data-kind': attrs['data-kind'] || rawKind || kind,
       'data-id': attrs['data-id'] || id,
       'data-label-kind': kind,
       'data-label-id': id,
+      'data-label-role': role || undefined,
       'data-ig-raw-label': text
     };
     const foreignObject = createSvgNode('foreignObject', Object.assign({

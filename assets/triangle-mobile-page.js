@@ -2446,6 +2446,10 @@
       return kind;
     }
 
+    function canonicalLabelKind(kind) {
+      return getControllerLabelType(kind);
+    }
+
     function getControllerTitle(kind, id) {
       if (kind === 'point') return getPointName(id);
       if (kind === 'side') return getSideName(id);
@@ -2842,14 +2846,17 @@
       const x = Number(attrs.x) || 0;
       const y = Number(attrs.y) || 0;
       const baseFontSize = Number(attrs['font-size']) || 48;
-      const isSideLabel = attrs['data-label-kind'] === 'side';
+      const rawLabelKind = attrs['data-label-kind'] || '';
+      const labelRole = attrs['data-label-role'] || rawLabelKind;
+      const labelKind = canonicalLabelKind(rawLabelKind || labelRole);
+      const interactionKind = labelRole || labelKind;
+      const isSideLabel = interactionKind === 'side';
       const sideMaxFontSize = window.matchMedia && window.matchMedia('(max-width: 520px)').matches ? 38 : 50;
-      const labelKind = attrs['data-label-kind'] || '';
       const labelId = attrs['data-label-id'] || '';
       const color = attrs.fill || '#1f2430';
       const latex = labelTextToLatex(text, labelKind);
-      const userScale = labelKind && labelId
-        ? getMathLabelScale(labelKind, labelId)
+      const userScale = interactionKind && labelId
+        ? getMathLabelScale(interactionKind, labelId)
         : clampMathLabelScale(state.mathLabelScale);
       let fontSize = (isSideLabel ? Math.min(baseFontSize, sideMaxFontSize) : baseFontSize) * userScale;
       const sideLength = Number(attrs['data-side-length']);
@@ -2869,17 +2876,34 @@
       }
       const measured = measureKatexLabel(latex, fontSize, color);
       if (!measured) return null;
+      const labelAttrs = {
+        'data-kind': attrs['data-kind'] || interactionKind,
+        'data-id': attrs['data-id'] || labelId,
+        'data-label-kind': labelKind,
+        'data-label-id': labelId,
+        'data-label-role': labelRole && labelRole !== labelKind ? labelRole : undefined
+      };
       const foreignObject = createSvg('foreignObject', {
         x: x - measured.width / 2,
         y: y - measured.height / 2,
         width: measured.width,
         height: measured.height,
         class: 'triangle-katex-foreign',
-        overflow: 'visible'
+        overflow: 'visible',
+        'data-kind': labelAttrs['data-kind'],
+        'data-id': labelAttrs['data-id'],
+        'data-label-kind': labelAttrs['data-label-kind'],
+        'data-label-id': labelAttrs['data-label-id'],
+        'data-label-role': labelAttrs['data-label-role']
       });
       const div = document.createElement('div');
       div.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
       div.className = 'triangle-katex-label';
+      Object.keys(labelAttrs).forEach(function (key) {
+        if (labelAttrs[key] !== null && labelAttrs[key] !== undefined) {
+          div.setAttribute(key, String(labelAttrs[key]));
+        }
+      });
       div.style.fontSize = fontSize + 'px';
       div.style.color = color;
       try {
@@ -2910,7 +2934,7 @@
         y: y - measured.height / 2,
         width: measured.width,
         height: measured.height,
-        kind: labelKind,
+        kind: interactionKind,
         id: labelId,
         node: div.cloneNode(true)
       });
@@ -2921,7 +2945,9 @@
       const x = Number(attrs.x) || 0;
       const y = Number(attrs.y) || 0;
       const fontSize = Number(attrs['font-size']) || 48;
-      const labelKind = attrs['data-label-kind'] || '';
+      const rawLabelKind = attrs['data-label-kind'] || '';
+      const labelRole = attrs['data-label-role'] || rawLabelKind;
+      const labelKind = canonicalLabelKind(rawLabelKind || labelRole);
       const labelId = attrs['data-label-id'] || '';
       const color = attrs.fill || '#1f2430';
       const width = Math.max(fontSize * 1.2, String(text || '').length * fontSize * 0.72);
@@ -2933,12 +2959,20 @@
         height: height,
         class: 'triangle-katex-foreign',
         overflow: 'visible',
+        'data-kind': attrs['data-kind'] || labelRole || labelKind,
+        'data-id': attrs['data-id'] || labelId,
         'data-label-kind': labelKind,
-        'data-label-id': labelId
+        'data-label-id': labelId,
+        'data-label-role': labelRole && labelRole !== labelKind ? labelRole : undefined
       });
       const div = document.createElement('div');
       div.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
       div.className = 'triangle-katex-label';
+      div.setAttribute('data-kind', attrs['data-kind'] || labelRole || labelKind);
+      div.setAttribute('data-id', attrs['data-id'] || labelId);
+      div.setAttribute('data-label-kind', labelKind);
+      div.setAttribute('data-label-id', labelId);
+      if (labelRole && labelRole !== labelKind) div.setAttribute('data-label-role', labelRole);
       div.style.fontSize = fontSize + 'px';
       div.style.color = color;
       if (window.InstantGeometrySharedLabels && typeof window.InstantGeometrySharedLabels.renderKatexLabelContent === 'function') {
@@ -3113,7 +3147,8 @@
         });
         attrs.x = attrs.x || element.getAttribute('x') || '0';
         attrs.y = attrs.y || element.getAttribute('y') || '0';
-        attrs['data-label-kind'] = attrs['data-label-kind'] || kind;
+        attrs['data-label-kind'] = attrs['data-label-kind'] || canonicalLabelKind(kind);
+        if (kind !== attrs['data-label-kind']) attrs['data-label-role'] = attrs['data-label-role'] || kind;
         attrs['data-label-id'] = attrs['data-label-id'] || id;
         const katexNode = createKatexLabel(text, attrs) || createFallbackKatexLabel(text, attrs);
         if (!katexNode) return;
@@ -3824,7 +3859,8 @@
               'font-size': '46',
               'font-weight': '700',
               fill: segmentColor,
-              'data-label-kind': 'extraSegment',
+              'data-label-kind': 'segment',
+              'data-label-role': 'extraSegment',
               'data-label-id': segment.id
             });
             if (segmentHitEnabled) {
@@ -3875,7 +3911,8 @@
                 'font-size': '46',
                 'font-weight': '700',
                 fill: centerLineColor,
-                'data-label-kind': 'centerLine',
+                'data-label-kind': 'segment',
+                'data-label-role': 'centerLine',
                 'data-label-id': entry[0]
               });
               attachLabelHit(textNode, 'centerLine', entry[0]);
@@ -4129,7 +4166,8 @@
             'font-size': String(angle.labelFontSize || 48),
             'font-weight': '700',
             fill: getAngleColor('extraAngle', angle.id),
-            'data-label-kind': 'extraAngle',
+            'data-label-kind': 'angle',
+            'data-label-role': 'extraAngle',
             'data-label-id': angle.id
           });
           attachLabelHit(textNode, 'extraAngle', angle.id);
@@ -4151,7 +4189,8 @@
             'font-size': '60',
             'font-weight': '700',
             fill: getSideColor(entry[0]),
-            'data-label-kind': 'side',
+            'data-label-kind': 'segment',
+            'data-label-role': 'side',
             'data-label-id': entry[0],
             'data-side-length': Math.hypot(p2.x - p1.x, p2.y - p1.y)
           });
@@ -4226,7 +4265,8 @@
             style: 'font-size:' + fitted.fontSize + 'px',
             'font-weight': '700',
             fill: areaLabelColor(color),
-            'data-label-kind': 'extraArea',
+            'data-label-kind': 'area',
+            'data-label-role': 'extraArea',
             'data-label-id': area.id
           });
           attachLabelHit(textNode, 'extraArea', area.id);
