@@ -2007,6 +2007,8 @@
     savePdfBtn.addEventListener('click', async function () {
       try { await saveWithQuota('pdf'); closeSheets(); } catch (error) { setStatus(error.message || '保存に失敗しました。', true); }
     });
+    document.addEventListener('instant-geometry-settings:changed', render);
+    document.addEventListener('instant-geometry-draw-settings:ready', render);
     render();
   }
 

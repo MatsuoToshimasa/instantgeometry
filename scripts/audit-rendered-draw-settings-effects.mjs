@@ -121,6 +121,10 @@ function isDegreeAngleText(text) {
   return /(?:°|\\circ|\^\{\\circ\})/.test(String(text || '').trim());
 }
 
+function isAngleKind(kind) {
+  return kind === 'angle' || kind === 'extraAngle';
+}
+
 async function auditPage(page, pageInfo, baseUrl) {
   await page.goto(`${baseUrl}${pageInfo.path}?lang=ja&debugHit=1`, { waitUntil: 'domcontentloaded', timeout: PAGE_TIMEOUT_MS });
   await page.waitForTimeout(550);
@@ -215,14 +219,14 @@ async function auditPage(page, pageInfo, baseUrl) {
   }
   const beforeSegment = result.before.filter((item) => ['segment', 'side', 'measure', 'arc'].includes(item.kind) && numericLabel(item));
   const beforeArea = result.before.filter((item) => item.kind === 'area' && numericLabel(item));
-  const beforeAngle = result.before.filter((item) => item.kind === 'angle' && isDegreeAngleText(item.text));
+  const beforeAngle = result.before.filter((item) => isAngleKind(item.kind) && isDegreeAngleText(item.text));
   const beforePi = result.before.filter((item) => /π/.test(item.text));
   const beforeDecimal = result.before.filter((item) => /[0-9]\.[0-9]+/.test(item.text));
 
   if (beforeSegment.length && !includesAny(result.afterUnits, /(?:cm(?:\s|$)|\\mathrm\{cm\})/)) addFinding(pageInfo.path, 'distance unit did not affect rendered segment/arc labels', { sample: beforeSegment.slice(0, 3), afterSample: result.afterUnits.filter((item) => ['segment', 'side', 'measure', 'arc'].includes(item.kind)).slice(0, 5) });
   if (beforeArea.length && !includesAny(result.afterUnits, /(?:cm²|\\mathrm\{cm\^2\})/)) addFinding(pageInfo.path, 'distance unit did not affect rendered area labels', { sample: beforeArea.slice(0, 3) });
-  if (beforeAngle.length && !result.afterRadians.some((item) => item.kind === 'angle' && !isDegreeAngleText(item.text))) addFinding(pageInfo.path, 'angle unit did not affect rendered angle labels', { sample: beforeAngle.slice(0, 3) });
-  const remainingDegreeAngles = result.afterRadians.filter((item) => item.kind === 'angle' && isDegreeAngleText(item.text));
+  if (beforeAngle.length && !result.afterRadians.some((item) => isAngleKind(item.kind) && !isDegreeAngleText(item.text))) addFinding(pageInfo.path, 'angle unit did not affect rendered angle labels', { sample: beforeAngle.slice(0, 3) });
+  const remainingDegreeAngles = result.afterRadians.filter((item) => isAngleKind(item.kind) && isDegreeAngleText(item.text));
   const initialVisibleDegreeText = Array.isArray(result.initialDegreeText) ? result.initialDegreeText : [];
   const remainingVisibleDegreeText = Array.isArray(result.afterRadiansDegreeText) ? result.afterRadiansDegreeText : [];
   if (remainingDegreeAngles.length || remainingVisibleDegreeText.length) {

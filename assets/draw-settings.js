@@ -159,7 +159,7 @@
       return withUnit(formatPiText(source), settings.distanceUnit === 'none' ? '' : settings.distanceUnit);
     }
     if (kind === 'area') return withUnit(formatPiText(source), areaUnit());
-    if (kind === 'angle') return formatAngle(raw);
+    if (kind === 'angle' || kind === 'extraAngle') return formatAngle(raw);
     return formatPiText(raw);
   }
 
@@ -411,6 +411,7 @@
     },
     apply: applyLabels,
     formatNumber: formatNumber,
+    formatByKind: formatByKind,
     formatAngle: formatAngle,
     formatAngleDegrees: function (degrees) { return formatAngle(formatNumber(degrees) + '°'); },
     formatLength: function (text) { return withUnit(stripKnownUnit(formatPiText(text)), currentDistanceUnit()); },
