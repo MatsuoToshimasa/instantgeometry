@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>利用規約 | Instant Geometry</title>
+  <link rel="stylesheet" href="/assets/base.css" />
+  <style>
+    .page{padding:28px 0 64px}
+    .crumb{display:inline-flex;align-items:center;gap:8px;color:var(--muted);font-size:14px;margin-bottom:14px}
+    .crumb a:hover{color:var(--accent)}
+    .hero{margin-bottom:28px}
+    h1{margin:0 0 12px;font-size:clamp(30px,5vw,50px);line-height:1.12;letter-spacing:0}
+    .lead{max-width:780px;margin:0;color:var(--muted);font-size:16px;line-height:1.9}
+    .panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);padding:26px}
+    .section + .section{margin-top:28px;padding-top:24px;border-top:1px solid #e8ebf2}
+    .section h2{margin:0 0 12px;font-size:22px;line-height:1.25}
+    .section p,.section li{font-size:15px;line-height:1.9;color:var(--text)}
+    .section p{margin:0}
+    .section p + p{margin-top:12px}
+    .section ul{margin:10px 0 0;padding-left:1.4em}
+    .note{margin:18px 0 0;color:var(--muted);font-size:14px;line-height:1.8}
+    @media (max-width:720px){.panel{padding:20px}.section h2{font-size:20px}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div id="site-header"></div>
+
+    <main class="page">
+      <div class="crumb">
+        <a href="/">トップ</a>
+        <span>›</span>
+        <span>利用規約</span>
+      </div>
+
+      <section class="hero">
+        <h1>利用規約</h1>
+        <p class="lead">
+          本規約は、Instant Geometry の利用条件を定めるものです。
+        </p>
+      </section>
+
+      <section class="panel">
+        <div class="section">
+          <h2>1. 適用</h2>
+          <p>本規約は、Instant Geometry（以下「本サービス」）の利用に関する条件を定めるものです。ユーザーは、本サービスを利用することで本規約に同意したものとみなされます。</p>
+        </div>
+
+        <div class="section">
+          <h2>2. サービス内容</h2>
+          <p>本サービスは、数学教育向けの図形作成、問題作成、関連する支援機能を提供します。提供内容は、事前の告知なく変更、追加、停止される場合があります。</p>
+        </div>
+
+        <div class="section">
+          <h2>3. アカウント</h2>
+          <p>ユーザーは、登録情報を正確に管理するものとします。アカウントの不正利用または第三者利用によって生じた損害について、運営者は故意または重過失がある場合を除き責任を負いません。</p>
+        </div>
+
+        <div class="section">
+          <h2>4. 有料プラン</h2>
+          <p>有料プランの料金、支払方法、解約、返金条件は、購入ページ、決済画面、および「特定商取引法に基づく表記」に定める内容に従います。</p>
+        </div>
+
+        <div class="section">
+          <h2>5. 禁止事項</h2>
+          <p>ユーザーは、以下の行為を行ってはなりません。</p>
+          <ul>
+            <li>法令または公序良俗に反する行為</li>
+            <li>本サービスの運営を妨害する行為</li>
+            <li>不正アクセス、過度な負荷をかける行為</li>
+            <li>第三者の権利または利益を侵害する行為</li>
+            <li>その他、運営者が不適切と判断する行為</li>
+          </ul>
+        </div>
+
+        <div class="section">
+          <h2>6. 知的財産権</h2>
+          <p>本サービスに含まれるプログラム、デザイン、文章その他のコンテンツに関する権利は、運営者または正当な権利者に帰属します。ユーザーが本サービスで作成した図形や資料は、ユーザー自身の責任で利用できます。</p>
+        </div>
+
+        <div class="section">
+          <h2>7. 免責事項</h2>
+          <p>運営者は、本サービスが特定の目的に適合すること、常に利用可能であること、誤りがないことを保証しません。本サービスの利用により生じた損害について、運営者は故意または重過失がある場合を除き責任を負いません。</p>
+        </div>
+
+        <div class="section">
+          <h2>8. 規約の変更</h2>
+          <p>運営者は、必要に応じて本規約を変更することがあります。変更後の規約は、本ページに掲載された時点で効力を生じます。</p>
+        </div>
+
+        <div class="section">
+          <h2>9. 準拠法</h2>
+          <p>本規約は日本法に準拠します。本サービスに関して紛争が生じた場合、運営者所在地を管轄する日本の裁判所を第一審の専属的合意管轄裁判所とします。</p>
+        </div>
+
+        <div class="section">
+          <h2>10. お問い合わせ</h2>
+          <p>本規約に関するお問い合わせは、pinenutspoi@gmail.com までご連絡ください。</p>
+        </div>
+      </section>
+
+      <p class="note">制定日：2026年5月7日</p>
+    </main>
+  </div>
+
+  <div id="site-footer"></div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/assets/supabase-client.js"></script>
+  <script src="/assets/auth-helpers.js"></script>
+  <script src="/assets/auth-ui.js"></script>
+  <script src="/assets/components.js"></script>
+  <script src="/assets/site-auto-i18n.js"></script>
+</body>
+</html>

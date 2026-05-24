@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>サイトマップ | Instant Geometry</title>
+  <link rel="stylesheet" href="/assets/base.css" />
+  <style>
+    .page{
+      padding:28px 0 64px;
+    }
+
+    .crumb{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      color:var(--muted);
+      font-size:14px;
+      margin-bottom:14px;
+    }
+
+    .crumb a:hover{
+      color:var(--accent);
+    }
+
+    .hero{
+      margin-bottom:28px;
+    }
+
+    h1{
+      margin:0 0 12px;
+      font-size:clamp(32px,5vw,52px);
+      line-height:1.12;
+      letter-spacing:0;
+    }
+
+    .lead{
+      max-width:760px;
+      margin:0;
+      color:var(--muted);
+      font-size:16px;
+      line-height:1.9;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:18px;
+    }
+
+    .section{
+      background:var(--panel);
+      border:1px solid var(--line);
+      border-radius:18px;
+      box-shadow:var(--shadow);
+      padding:20px;
+    }
+
+    .section h2{
+      margin:0 0 14px;
+      font-size:22px;
+      line-height:1.25;
+    }
+
+    .links{
+      display:grid;
+      gap:9px;
+      margin:0;
+      padding:0;
+      list-style:none;
+    }
+
+    .links a{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      min-height:42px;
+      padding:10px 12px;
+      border:1px solid #e6eaf3;
+      border-radius:12px;
+      background:#fcfdff;
+      color:var(--text);
+      font-size:14px;
+      font-weight:700;
+    }
+
+    .links a:hover{
+      border-color:#9fb3ea;
+      background:var(--accent-soft);
+      color:var(--accent);
+    }
+
+    .links a::after{
+      content:"→";
+      color:var(--accent);
+      font-weight:800;
+    }
+
+    .muted a{
+      color:var(--muted);
+      font-weight:600;
+      background:#fff;
+    }
+
+    .wide{
+      grid-column:1 / -1;
+    }
+
+    @media (max-width: 760px){
+      .grid{
+        grid-template-columns:1fr;
+      }
+
+      .section{
+        padding:16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div id="site-header"></div>
+
+    <main class="page">
+      <div class="crumb">
+        <a href="/">トップ</a>
+        <span>›</span>
+        <span>サイトマップ</span>
+      </div>
+
+      <section class="hero">
+        <h1>サイトマップ</h1>
+        <p class="lead">
+          Instant Geometry の主要ページと、現在公開している作図ページの一覧です。
+        </p>
+      </section>
+
+      <div class="grid">
+        <section class="section">
+          <h2>基本ページ</h2>
+          <ul class="links">
+            <li><a href="/">トップ</a></li>
+            <li><a href="/draw/">図形を描く</a></li>
+            <li><a href="/about/">このサイトについて</a></li>
+            <li><a href="/contact/">お問い合わせ</a></li>
+            <li><a href="/legal/">プライバシーポリシー</a></li>
+            <li><a href="/terms/">利用規約</a></li>
+            <li><a href="/legal/tokusho/">特定商取引法に基づく表記</a></li>
+            <li><a href="/login/">ログイン</a></li>
+            <li><a href="/account/">アカウント</a></li>
+            <li><a href="/sitemap/">サイトマップ</a></li>
+          </ul>
+        </section>
+
+        <section class="section">
+          <h2>三角形</h2>
+          <ul class="links">
+            <li><a href="/draw/triangle/sss/">三角形（SSS）</a></li>
+            <li><a href="/draw/triangle/circumcenter/">外心</a></li>
+            <li><a href="/draw/triangle/incenter/">内心</a></li>
+            <li><a href="/draw/triangle/bisector-intersection/">２等分線の交差①</a></li>
+            <li><a href="/draw/triangle/bisector-intersection-2/">２等分線の交差②</a></li>
+            <li><a href="/draw/triangle/centroid/">重心</a></li>
+            <li><a href="/draw/triangle/orthocenter/">垂心</a></li>
+            <li><a href="/draw/triangle/sas/">三角形（SAS）</a></li>
+            <li><a href="/draw/triangle/asa/">三角形（ASA）</a></li>
+            <li><a href="/draw/triangle/aas/">三角形（AAS）</a></li>
+            <li><a href="/draw/triangle/aaa/">三角形（AAA）</a></li>
+            <li><a href="/draw/triangle/slipper-law/">スリッパの法則</a></li>
+            <li><a href="/draw/triangle/exterior-angle-sum/">三角形と外角和</a></li>
+            <li><a href="/draw/triangle/base-height/">三角形（底辺＋高さ）</a></li>
+            <li><a href="/draw/triangle/equilateral/">正三角形</a></li>
+            <li><a href="/draw/triangle/equilateral-altitude/">正三角形（垂線）</a></li>
+            <li><a href="/draw/triangle/isosceles/">二等辺三角形</a></li>
+            <li><a href="/draw/triangle/isosceles-altitude/">二等辺三角形（垂線）</a></li>
+            <li><a href="/draw/triangle/right-acute/">直角三角形（鋭角）</a></li>
+            <li><a href="/draw/triangle/right-adjacent/">直角三角形（隣辺）</a></li>
+            <li><a href="/draw/triangle/right-opposite/">直角三角形（対辺）</a></li>
+            <li><a href="/draw/triangle/parallel-ratio/">平行線と線分の比①</a></li>
+            <li><a href="/draw/triangle/midpoint-theorem-1/">中点連結定理①</a></li>
+            <li><a href="/draw/triangle/midpoint-theorem-2/">中点連結定理②</a></li>
+            <li><a href="/draw/triangle/midpoint-theorem-4/">中点連結定理④</a></li>
+            <li><a href="/draw/triangle/two-triangles-common-vertex/">平行線と線分の比②</a></li>
+          </ul>
+        </section>
+
+        <section class="section">
+          <h2>四角形</h2>
+          <ul class="links">
+            <li><a href="/draw/quadrilateral/square/">正方形</a></li>
+            <li><a href="/draw/quadrilateral/square-diagonal/">正方形（対角線）</a></li>
+            <li><a href="/draw/quadrilateral/square-equilateral/">正方形と正三角形</a></li>
+            <li><a href="/draw/quadrilateral/rectangle/">長方形</a></li>
+            <li><a href="/draw/quadrilateral/rectangle-diagonal/">長方形（対角線）</a></li>
+            <li><a href="/draw/quadrilateral/rhombus/">菱形</a></li>
+            <li><a href="/draw/quadrilateral/rhombus-angle/">菱形（一辺＋角）</a></li>
+            <li><a href="/draw/quadrilateral/trapezoid/">台形</a></li>
+            <li><a href="/draw/quadrilateral/trapezoid-diagonal/">台形（対角線）</a></li>
+            <li><a href="/draw/quadrilateral/isosceles-trapezoid/">等脚台形</a></li>
+            <li><a href="/draw/quadrilateral/parallelogram/">平行四辺形（２辺の長さ）</a></li>
+            <li><a href="/draw/quadrilateral/parallelogram-diagonal/">平行四辺形（対角線）</a></li>
+            <li><a href="/draw/quadrilateral/parallelogram-angle-pairs/">平行四辺形（２組の角）</a></li>
+            <li><a href="/draw/quadrilateral/parallelogram-parallel-equal/">平行四辺形（平行かつ等しい）</a></li>
+            <li><a href="/draw/quadrilateral/parallelogram-angle/">平行四辺形（2辺＋角）</a></li>
+            <li><a href="/draw/quadrilateral/parallelogram-ratio/">平行四辺形と連比</a></li>
+            <li><a href="/draw/quadrilateral/kite/">凧形</a></li>
+            <li><a href="/draw/quadrilateral/convex/">凸四角形と内角和</a></li>
+            <li><a href="/draw/quadrilateral/convex-diagonal/">凸四角形と対角線</a></li>
+            <li><a href="/draw/quadrilateral/concave/">凹四角形と内角和</a></li>
+            <li><a href="/draw/quadrilateral/cyclic/">四角形と外接円</a></li>
+            <li><a href="/draw/quadrilateral/exterior-angle/">四角形と外角</a></li>
+            <li><a href="/draw/quadrilateral/exterior-angle-sum/">四角形と外角和</a></li>
+          </ul>
+        </section>
+
+        <section class="section">
+          <h2>曲線図形</h2>
+          <ul class="links">
+            <li><a href="/draw/circle/">円</a></li>
+            <li><a href="/draw/circle/inscribed-center-angle/">円周角と中心角</a></li>
+            <li><a href="/draw/circle/two-inscribed-angles/">２つの円周角</a></li>
+            <li><a href="/draw/circle/inscribed-angle-application-1/">円周角の定理の応用①</a></li>
+            <li><a href="/draw/circle/inscribed-angle-application-2/">円周角の定理の応用②</a></li>
+            <li><a href="/draw/circle/inscribed-angle-application-3/">円周角の定理の応用③</a></li>
+            <li><a href="/draw/circle/inscribed-angle-application-4/">円周角の定理の応用④</a></li>
+            <li><a href="/draw/circle/tangent-theorem/">接弦定理</a></li>
+            <li><a href="/draw/ellipse/">楕円</a></li>
+            <li><a href="/draw/sector/">扇形</a></li>
+            <li><a href="/draw/curves/quarter-two-semicircles/">四分円と二半円</a></li>
+            <li><a href="/draw/curves/two-squares-sector/">２つの正方形と扇形</a></li>
+            <li><a href="/draw/ellipse-sector/">楕円の扇形</a></li>
+          </ul>
+        </section>
+
+        <section class="section">
+          <h2>多角形</h2>
+          <ul class="links">
+            <li><a href="/draw/polygon/pentagon/">五角形</a></li>
+            <li><a href="/draw/polygon/pentagon-angles/">五角形（角）</a></li>
+            <li><a href="/draw/polygon/pentagon-exterior-angle/">五角形と外角</a></li>
+            <li><a href="/draw/polygon/pentagon-exterior-angle-sum/">五角形と外角和</a></li>
+            <li><a href="/draw/polygon/hexagon/">六角形</a></li>
+            <li><a href="/draw/polygon/hexagon-angles/">六角形（角）</a></li>
+            <li><a href="/draw/polygon/hexagon-exterior-angle/">六角形と外角</a></li>
+            <li><a href="/draw/polygon/hexagon-exterior-angle-sum/">六角形と外角和</a></li>
+            <li><a href="/draw/polygon/heptagon-angles/">七角形（角）</a></li>
+            <li><a href="/draw/polygon/heptagon-exterior-angle-sum/">七角形と外角和</a></li>
+            <li><a href="/draw/polygon/octagon-angles/">八角形（角）</a></li>
+            <li><a href="/draw/polygon/regular/">正N角形</a></li>
+            <li><a href="/draw/polygon/regular-oa/">正N角形②</a></li>
+            <li><a href="/draw/polygon/star/">星形</a></li>
+          </ul>
+        </section>
+
+        <section class="section">
+          <h2>展開図</h2>
+          <ul class="links">
+            <li><a href="/draw/net/cone/">円錐の展開図</a></li>
+          </ul>
+        </section>
+
+        <section class="section">
+          <h2>空間図形</h2>
+          <ul class="links">
+            <li><a href="/draw/solid/cylinder/">円柱</a></li>
+            <li><a href="/draw/solid/similar-solid-1/">相似な立体①</a></li>
+            <li><a href="/draw/solid/similar-solid-2/">相似な立体②</a></li>
+            <li><a href="/draw/solid/right-triangular-pyramid-1/">直角三角錐①</a></li>
+            <li><a href="/draw/solid/right-triangular-pyramid/">直角三角錐②</a></li>
+          </ul>
+        </section>
+
+        <section class="section">
+          <h2>回転体</h2>
+          <ul class="links">
+            <li><a href="/draw/solid/revolution-cylinder/">回転体①（円柱）</a></li>
+            <li><a href="/draw/solid/revolution-cone/">回転体②（円錐）</a></li>
+            <li><a href="/draw/solid/revolution-sphere/">回転体③（球）</a></li>
+            <li><a href="/draw/solid/revolution-frustum/">回転体④（円錐台）</a></li>
+            <li><a href="/draw/solid/revolution-bicone/">回転体⑤（二錐）</a></li>
+            <li><a href="/draw/solid/revolution-tube/">回転体⑥（円筒）</a></li>
+            <li><a href="/draw/solid/revolution-hollow-frustum/">回転体⑦（空洞円錐台）</a></li>
+          </ul>
+        </section>
+
+        <section class="section wide">
+          <h2>その他</h2>
+          <ul class="links">
+            <li><a href="/draw/triangle/points/">三角形（3点座標）</a></li>
+            <li><a href="/draw/star/">星型</a></li>
+            <li><a href="/draw/parallel-lines-angle/">平行線と角①</a></li>
+            <li><a href="/draw/parallel-lines-angle-2/">平行線と角②</a></li>
+            <li><a href="/draw/corresponding-angles/">同位角</a></li>
+            <li><a href="/draw/alternate-interior-angles/">錯角</a></li>
+            <li><a href="/draw/vertical-angles/">対頂角</a></li>
+            <li><a href="/problems/">問題を作る</a></li>
+            <li><a href="/function/">関数を描く</a></li>
+          </ul>
+        </section>
+
+        <section class="section wide">
+          <h2>追加の作図ページ</h2>
+          <ul class="links">
+            <li><a href="/draw/triangle/ceva/">チェバの定理</a></li>
+            <li><a href="/draw/triangle/menelaus/">メネラウスの定理</a></li>
+            <li><a href="/draw/triangle/triangle-split/">三角形の分割</a></li>
+            <li><a href="/draw/triangle/area-ratio-2/">面積比②</a></li>
+            <li><a href="/draw/quadrilateral/trapezoid-split/">中点連結定理③</a></li>
+            <li><a href="/draw/quadrilateral/midpoint-theorem-5/">中点連結定理⑤</a></li>
+            <li><a href="/draw/quadrilateral/midpoint-theorem-6/">中点連結定理⑥</a></li>
+            <li><a href="/draw/quadrilateral/parallelogram-ratio-2/">平行四辺形と連比②</a></li>
+            <li><a href="/draw/quadrilateral/quadratic-equation-application-1/">二次方程式の利用①</a></li>
+            <li><a href="/draw/circle/power-theorem-1/">方べきの定理①</a></li>
+            <li><a href="/draw/circle/power-theorem-2/">方べきの定理②</a></li>
+            <li><a href="/draw/circle/power-theorem-3/">方べきの定理③</a></li>
+            <li><a href="/draw/curves/square-corner-sectors/">正方形と四分円②</a></li>
+            <li><a href="/draw/curves/square-quarter-sector-3/">正方形と四分円③</a></li>
+            <li><a href="/draw/curves/square-quarter-sector-4/">正方形と四分円④</a></li>
+            <li><a href="/draw/curves/square-circle-1/">正方形と円①</a></li>
+            <li><a href="/draw/curves/square-circle-2/">正方形と円②</a></li>
+            <li><a href="/draw/curves/square-semicircle-1/">正方形と半円①</a></li>
+            <li><a href="/draw/curves/square-semicircle-2/">正方形と半円②</a></li>
+            <li><a href="/draw/curves/two-squares-sector/">２つの正方形と扇形</a></li>
+          </ul>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <div id="site-footer"></div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/assets/supabase-client.js"></script>
+  <script src="/assets/auth-helpers.js"></script>
+  <script src="/assets/auth-ui.js"></script>
+  <script src="/assets/components.js"></script>
+  <script>
+    (function () {
+      'use strict';
+
+      const translations = {
+        ja: {
+          title: 'サイトマップ | Instant Geometry',
+          home: 'トップ',
+          crumb: 'サイトマップ',
+          heading: 'サイトマップ',
+          lead: 'Instant Geometry の主要ページと、現在公開している作図ページの一覧です。',
+          sections: ['基本ページ', '三角形', '四角形', '曲線図形', '多角形', '展開図', 'その他', '追加の作図ページ'],
+          links: [
+            'トップ', '図形を描く', 'このサイトについて', 'お問い合わせ', 'プライバシーポリシー', '利用規約', '特定商取引法に基づく表記', 'ログイン', 'アカウント', 'サイトマップ',
+            '三角形（SSS）', '外心', '内心', '重心', '垂心', '三角形（SAS）', '三角形（ASA）', '三角形（AAS）', '三角形（AAA）', 'スリッパの法則', '三角形（底辺＋高さ）', '正三角形', '正三角形（垂線）', '二等辺三角形', '二等辺三角形（垂線）', '直角三角形（鋭角）', '直角三角形（隣辺）', '直角三角形（対辺）', '平行線と線分の比①', '平行線と線分の比②',
+            '正方形', '正方形（対角線）', '正方形と正三角形', '長方形', '長方形（対角線）', '菱形', '菱形（一辺＋角）', '台形', '台形（対角線）', '等脚台形', '平行四辺形（２辺の長さ）', '平行四辺形（対角線）', '平行四辺形（２組の角）', '平行四辺形（平行かつ等しい）', '平行四辺形（2辺＋角）', '平行四辺形と連比', '凧形', '凸四角形と内角和', '凸四角形と対角線', '凹四角形と内角和', '四角形と外接円', '四角形と外角', '四角形と外角和',
+            '円', '円周角と中心角', '２つの円周角', '円周角の定理の応用①', '円周角の定理の応用②', '円周角の定理の応用③', '円周角の定理の応用④', '接弦定理', '楕円', '扇形', '２つの正方形と扇形', '楕円の扇形',
+            '五角形', '五角形（角）', '五角形と外角', '五角形と外角和', '六角形', '六角形（角）', '六角形と外角', '六角形と外角和', '七角形（角）', '七角形と外角和', '八角形（角）', '正N角形', '正N角形②',
+            '三角形（3点座標）', '星型', '平行線と角①', '平行線と角②', '同位角', '錯角', '対頂角', '問題を作る', '関数を描く',
+            'チェバの定理', 'メネラウスの定理', '三角形の分割', '中点連結定理③', '中点連結定理⑤', '中点連結定理⑥', '平行四辺形と連比②', '方べきの定理①', '方べきの定理②', '方べきの定理③', '正方形と四分円②', '正方形と四分円③', '正方形と四分円④', '正方形と円①', '正方形と円②', '正方形と半円①', '正方形と半円②', '２つの正方形と扇形'
+          ]
+        },
+        en: {
+          title: 'Sitemap | Instant Geometry',
+          home: 'Home',
+          crumb: 'Sitemap',
+          heading: 'Sitemap',
+          lead: 'A list of the main pages and currently available drawing pages in Instant Geometry.',
+          sections: ['Main Pages', 'Triangles', 'Quadrilaterals', 'Curved Shapes', 'Polygons', 'Nets', 'Other Pages', 'Additional Drawing Pages'],
+          links: [
+            'Home', 'Draw Shapes', 'About', 'Contact', 'Privacy Policy', 'Terms', 'Specified Commercial Transaction Act', 'Log In', 'Account', 'Sitemap',
+            'Triangle (SSS)', 'Circumcenter', 'Incenter', 'Centroid', 'Orthocenter', 'Triangle (SAS)', 'Triangle (ASA)', 'Triangle (AAS)', 'Triangle (AAA)', 'Slipper Law', 'Triangle (Base + Height)', 'Equilateral Triangle', 'Equilateral Triangle (Altitude)', 'Isosceles Triangle', 'Isosceles Triangle (Altitude)', 'Right Triangle (Acute)', 'Right Triangle (Adjacent)', 'Right Triangle (Opposite)', 'Parallel Lines and Segment Ratio 1', 'Parallel Lines and Segment Ratio 2',
+            'Square', 'Rectangle', 'Rhombus', 'Rhombus (Side + Angle)', 'Trapezoid', 'Isosceles Trapezoid', 'Parallelogram', 'Parallelogram (2 Sides + Angle)', 'Kite', 'Convex Quadrilateral and Interior Angle Sum', 'Convex Quadrilateral and Diagonals', 'Concave Quadrilateral and Interior Angle Sum', 'Cyclic Quadrilateral', 'Quadrilateral and Exterior Angle', 'Quadrilateral and Exterior Angle Sum',
+            'Circle', 'Inscribed Angle and Central Angle', 'Two Inscribed Angles', 'Tangent-Chord Theorem', 'Ellipse', 'Sector', 'Elliptic Sector',
+            'Pentagon', 'Pentagon (Angles)', 'Pentagon and Exterior Angle', 'Pentagon and Exterior Angle Sum', 'Hexagon', 'Hexagon (Angles)', 'Hexagon and Exterior Angle', 'Hexagon and Exterior Angle Sum', 'Heptagon (Angles)', 'Heptagon and Exterior Angle Sum', 'Octagon (Angles)', 'Regular Polygon', 'Regular Polygon 2',
+            'Triangle (3 Points)', 'Star', 'Parallel Lines and Angles 1', 'Parallel Lines and Angles 2', 'Corresponding Angles', 'Alternate Interior Angles', 'Vertical Angles', 'Create Problems', 'Graph Functions',
+            'Ceva Theorem', 'Menelaus Theorem', 'Triangle Split', 'Midpoint Theorem 3', 'Midpoint Theorem 5', 'Parallelogram and Ratio 2', 'Power of a Point 1', 'Power of a Point 2', 'Power of a Point 3', 'Square and Four Sectors'
+          ]
+        },
+        zh: {
+          title: '网站地图 | Instant Geometry',
+          home: '首页',
+          crumb: '网站地图',
+          heading: '网站地图',
+          lead: '这里列出 Instant Geometry 的主要页面和当前已公开的绘图页面。尚未支持的图形会跳转到准备中页面。',
+          sections: ['基本页面', '三角形', '四边形', '曲线图形', '多边形', '展开图', '其他页面', '追加绘图页面'],
+          links: [
+            '首页', '绘制图形', '关于本站', '联系我们', '隐私政策', '使用条款', '基于特定商业交易法的说明', '登录', '账户', '网站地图',
+            '三角形（SSS）', '外心', '内心', '重心', '垂心', '三角形（SAS）', '三角形（ASA）', '三角形（AAS）', '三角形（AAA）', '拖鞋法则', '三角形（底边+高度）', '正三角形', '正三角形（垂线）', '等腰三角形', '等腰三角形（垂线）', '直角三角形（锐角）', '直角三角形（邻边）', '直角三角形（对边）', '平行线与线段比例1', '平行线与线段比例2',
+            '正方形', '长方形', '菱形', '菱形（一边+角）', '梯形', '等腰梯形', '平行四边形', '平行四边形（两边+夹角）', '风筝形', '凸四边形与内角和', '凸四边形与对角线', '凹四边形与内角和', '圆内接四边形', '四边形与外角', '四边形与外角和',
+            '圆', '圆周角和圆心角', '两个圆周角', '切弦定理', '椭圆', '扇形', '椭圆扇形',
+            '五边形', '五边形（角）', '五边形与外角', '五边形与外角和', '六边形', '六边形（角）', '六边形与外角', '六边形与外角和', '七边形（角）', '七边形与外角和', '八边形（角）', '正N边形', '正N边形②',
+            '三角形（3点坐标）', '星形', '平行线与角1', '平行线与角2', '同位角', '内错角', '对顶角', '生成题目', '绘制函数',
+            '塞瓦定理', '梅涅劳斯定理', '三角形分割', '中点连结定理3', '中点连结定理5', '平行四边形与连比②', '点的幂定理1', '点的幂定理2', '点的幂定理3', '正方形和四个扇形'
+          ]
+        },
+        es: {
+          title: 'Mapa del sitio | Instant Geometry',
+          home: 'Inicio',
+          crumb: 'Mapa del sitio',
+          heading: 'Mapa del sitio',
+          lead: 'Lista de las páginas principales y de las páginas de dibujo disponibles en Instant Geometry. Las figuras aún no compatibles llevan a páginas en preparación.',
+          sections: ['Páginas Principales', 'Triángulos', 'Cuadriláteros', 'Figuras Curvas', 'Polígonos', 'Desarrollos', 'Otras páginas', 'Páginas de dibujo adicionales'],
+          links: [
+            'Inicio', 'Dibujar figuras', 'Acerca del sitio', 'Contacto', 'Política de privacidad', 'Términos', 'Aviso de transacciones comerciales específicas', 'Iniciar sesión', 'Cuenta', 'Mapa del sitio',
+            'Triángulo (SSS)', 'Circuncentro', 'Incentro', 'Baricentro', 'Ortocentro', 'Triángulo (SAS)', 'Triángulo (ASA)', 'Triángulo (AAS)', 'Triángulo (AAA)', 'Triángulo (base + altura)', 'Triángulo equilátero', 'Triángulo equilátero (altura)', 'Triángulo isósceles', 'Triángulo isósceles (altura)', 'Triángulo rectángulo (agudo)', 'Triángulo rectángulo (adyacente)', 'Triángulo rectángulo (opuesto)', 'Líneas paralelas y razón de segmentos 1', 'Líneas paralelas y razón de segmentos 2',
+            'Cuadrado', 'Rectángulo', 'Rombo', 'Rombo (lado + ángulo)', 'Trapecio', 'Trapecio isósceles', 'Paralelogramo', 'Paralelogramo (2 lados + ángulo)', 'Deltoide', 'Cuadrilátero convexo y suma de ángulos interiores', 'Cuadrilátero convexo y diagonales', 'Cuadrilátero cóncavo y suma de ángulos interiores', 'Cuadrilátero cíclico', 'Cuadrilátero y ángulo exterior', 'Cuadrilátero y suma de ángulos exteriores',
+            'Círculo', 'Ángulo inscrito y ángulo central', 'Dos ángulos inscritos', 'Teorema tangente-cuerda', 'Elipse', 'Sector', 'Sector elíptico',
+            'Pentágono', 'Pentágono (ángulos)', 'Pentágono y ángulo exterior', 'Pentágono y suma de ángulos exteriores', 'Hexágono', 'Hexágono (ángulos)', 'Hexágono y ángulo exterior', 'Hexágono y suma de ángulos exteriores', 'Heptágono (ángulos)', 'Heptágono y suma de ángulos exteriores', 'Octágono (ángulos)', 'Polígono regular', 'Polígono regular 2',
+            'Triángulo (3 puntos)', 'Estrella', 'Líneas paralelas y ángulos 1', 'Líneas paralelas y ángulos 2', 'Ángulos correspondientes', 'Ángulos alternos internos', 'Ángulos opuestos por el vértice', 'Crear problemas', 'Graficar funciones',
+            'Teorema de Ceva', 'Teorema de Menelao', 'División de triángulo', 'Teorema del punto medio 3', 'Teorema del punto medio 5', 'Paralelogramo y razón 2', 'Potencia de un punto 1', 'Potencia de un punto 2', 'Potencia de un punto 3', 'Cuadrado y cuatro sectores'
+          ]
+        }
+      };
+
+      function getLang() {
+        if (window.siteI18n && typeof window.siteI18n.getLanguage === 'function') {
+          return window.siteI18n.getLanguage();
+        }
+        return document.documentElement.lang || 'ja';
+      }
+
+      function applySitemapTranslations() {
+        const t = translations[getLang()] || translations.ja;
+        document.title = t.title;
+
+        const crumbHome = document.querySelector('.crumb a');
+        const crumbLast = document.querySelector('.crumb span:last-child');
+        if (crumbHome) crumbHome.textContent = t.home;
+        if (crumbLast) crumbLast.textContent = t.crumb;
+
+        const h1 = document.querySelector('.hero h1');
+        const lead = document.querySelector('.lead');
+        if (h1) h1.textContent = t.heading;
+        if (lead) lead.textContent = t.lead;
+
+        document.querySelectorAll('.section h2').forEach(function (el, index) {
+          if (t.sections[index]) el.textContent = t.sections[index];
+        });
+
+        const linkEls = Array.from(document.querySelectorAll('.links a'));
+        if (t.links.length === linkEls.length) {
+          linkEls.forEach(function (el, index) {
+            el.textContent = t.links[index];
+          });
+        }
+      }
+
+      document.addEventListener('site-components:ready', applySitemapTranslations);
+      document.addEventListener('site-language:changed', applySitemapTranslations);
+      applySitemapTranslations();
+    })();
+  </script>
+  <script src="/assets/site-auto-i18n.js"></script>
+</body>
+</html>
