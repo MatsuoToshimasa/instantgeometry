@@ -292,7 +292,7 @@
 
       <h1>アカウント</h1>
       <p class="lead">
-        ログイン状態、メールアドレス、支援プランの利用状況を確認できます。
+        ログイン状態、メールアドレス、現在の料金プランを確認できます。
       </p>
 
       <div class="grid">
@@ -320,8 +320,8 @@
             </div>
 
             <div class="actions">
-              <a class="button-link secondary" href="/upgrade/">支援プランを見る</a>
-              <button type="button" class="secondary" id="portalBtn" style="display:none;">支援プランを管理・解約</button>
+              <a class="button-link secondary" href="/pricing/">料金プランを見る</a>
+              <button type="button" class="secondary" id="portalBtn" style="display:none;">プランを管理・解約</button>
               <button type="button" class="secondary" id="logoutBtn">ログアウト</button>
             </div>
 
@@ -331,7 +331,7 @@
           <div id="loggedOutView" class="empty-box" style="display:none;">
             <p>
               まだログインしていません。<br>
-              Googleアカウントでログインすると、アカウント情報や支援プランの状態を確認できます。
+              Googleアカウントでログインすると、アカウント情報や現在の料金プランを確認できます。
             </p>
 
             <div class="actions">
@@ -356,7 +356,7 @@
           </div>
 
           <div class="small">
-            支援プランでは、保存回数やPDF出力回数の制限なく使えるようになります。
+            Freeは画像保存が月6枚までです。個人Proと商用Proでは画像保存が無制限になり、商用Proではライセンス表記なしの出力と商用・外部公開利用ができます。
           </div>
         </aside>
       </div>
@@ -389,29 +389,53 @@
     async function getPlanInfo(session) {
       if (!session) {
         return {
-          name: '無料プラン',
-          description: 'ログイン後に支援プランの状態を確認できます。',
+          name: 'Free',
+          description: 'ログイン後に料金プランの状態を確認できます。',
+          plan: 'free',
           isPro: false
         };
       }
 
       try {
-        if (typeof isProUser === 'function') {
-          const pro = await isProUser();
-          if (pro) {
-            return {
-              name: '支援プラン',
-              description: '現在、支援プランが有効です。',
-              isPro: true
-            };
-          }
+        const { data, error } = await supabaseClient
+          .from('profiles')
+          .select('is_pro')
+          .eq('user_id', session.user?.id)
+          .maybeSingle();
+
+        if (error) throw error;
+
+        const plan = window.InstantGeometryPlan
+          ? window.InstantGeometryPlan.resolvePlan(session, data)
+          : (data && data.is_pro === true ? 'personal_pro' : 'free');
+        const label = window.InstantGeometryPlan
+          ? window.InstantGeometryPlan.getPlanLabel(plan)
+          : (plan === 'personal_pro' ? '個人Pro' : plan === 'commercial_pro' ? '商用Pro' : 'Free');
+
+        if (plan === 'commercial_pro') {
+          return {
+            name: label,
+            description: '現在、商用Proが有効です。',
+            plan: plan,
+            isPro: true
+          };
+        }
+
+        if (plan === 'personal_pro') {
+          return {
+            name: label,
+            description: '現在、個人Proが有効です。',
+            plan: plan,
+            isPro: true
+          };
         }
       } catch (e) {
       }
 
       return {
-        name: '無料プラン',
-        description: '現在は無料プランです。',
+        name: 'Free',
+        description: '現在はFreeです。',
+        plan: 'free',
         isPro: false
       };
     }
@@ -436,7 +460,7 @@
         if (error) {
           loggedInView.style.display = 'none';
           loggedOutView.style.display = 'block';
-          planName.textContent = '無料プラン';
+          planName.textContent = 'Free';
           planDescription.textContent = 'ログイン状態を確認できませんでした。';
           return;
         }
@@ -446,8 +470,8 @@
         if (!session) {
           loggedInView.style.display = 'none';
           loggedOutView.style.display = 'block';
-          planName.textContent = '無料プラン';
-          planDescription.textContent = 'ログイン後に支援プランの状態を確認できます。';
+          planName.textContent = 'Free';
+          planDescription.textContent = 'ログイン後に料金プランの状態を確認できます。';
           return;
         }
 
@@ -459,14 +483,14 @@
 
         const plan = await getPlanInfo(session);
         planName.innerHTML = plan.isPro
-          ? '<span class="badge ok">支援プラン</span>'
-          : '<span class="badge warn">無料プラン</span>';
+          ? '<span class="badge ok">' + plan.name + '</span>'
+          : '<span class="badge warn">Free</span>';
         planDescription.textContent = plan.description;
         if (portalBtn) portalBtn.style.display = plan.isPro ? 'inline-block' : 'none';
       } catch (e) {
         loggedInView.style.display = 'none';
         loggedOutView.style.display = 'block';
-        planName.textContent = '無料プラン';
+        planName.textContent = 'Free';
         planDescription.textContent = '読み込みに失敗しました。';
         if (portalBtn) portalBtn.style.display = 'none';
       }
@@ -476,7 +500,7 @@
       const portalBtn = document.getElementById('portalBtn');
       try {
         if (portalBtn) portalBtn.disabled = true;
-        setStatus('支援プラン管理ページを開いています...', true);
+        setStatus('プラン管理ページを開いています...', true);
 
         const { data, error } = await supabaseClient.auth.getSession();
         if (error || !data.session) {
@@ -494,13 +518,13 @@
         const json = await res.json();
 
         if (!res.ok) {
-          setStatus(json.error || '支援プラン管理ページを作成できませんでした。');
+          setStatus(json.error || 'プラン管理ページを作成できませんでした。');
           return;
         }
 
         location.href = json.url;
       } catch (e) {
-        setStatus(e.message || '支援プラン管理ページを作成できませんでした。');
+        setStatus(e.message || 'プラン管理ページを作成できませんでした。');
       } finally {
         if (portalBtn) portalBtn.disabled = false;
       }

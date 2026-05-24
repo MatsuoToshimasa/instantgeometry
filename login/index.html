@@ -39,7 +39,7 @@
 
     .topbar{
       display:flex;
-      justify-content:space-between;
+      justify-content:flex-start;
       align-items:center;
       gap:16px;
       padding:20px 0;
@@ -147,6 +147,11 @@
       transition:.18s ease;
     }
 
+    .login-btn:disabled{
+      cursor:wait;
+      opacity:.72;
+    }
+
     .login-btn:hover{
       border-color:var(--accent);
       background:var(--accent-soft);
@@ -165,6 +170,7 @@
       min-height:22px;
       font-size:14px;
       color:#b42318;
+      line-height:1.6;
     }
 
     .status.ok{
@@ -196,8 +202,8 @@
 
     @media (max-width: 640px){
       .topbar{
-        flex-direction:column;
-        align-items:flex-start;
+        flex-wrap:wrap;
+        align-items:center;
       }
 
       .panel{
@@ -209,21 +215,17 @@
       }
     }
   </style>
+  <link rel="stylesheet" href="/assets/base.css" />
 </head>
 <body>
   <div class="wrap">
     <header class="topbar">
       <div class="brand">
-        <div class="brand-mark">G</div>
+        <div class="brand-mark">iG</div>
         <div>Instant Geometry</div>
       </div>
 
-      <nav class="nav">
-        <a href="/">トップ</a>
-        <a href="/draw/">図形を描く</a>
-        <a href="/coming-soon/?feature=problems">問題を作る</a>
-        <a href="/coming-soon/?feature=functions">関数を描く</a>
-      </nav>
+      <nav class="nav"></nav>
     </header>
 
     <main class="main">
@@ -237,7 +239,7 @@
         <h1>ログイン</h1>
         <p class="lead">
           Googleアカウントでログインできます。<br>
-          Proの利用状況や、今後のアカウント機能のために使用します。
+          支援プランの利用状況や、今後のアカウント機能のために使用します。
         </p>
 
         <button type="button" class="login-btn" id="googleLoginBtn">
@@ -247,7 +249,7 @@
             <path fill="#4CAF50" d="M24 44c5.174 0 9.86-1.977 13.409-5.192l-6.19-5.238C29.166 35.091 26.701 36 24 36c-5.219 0-9.617-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"/>
             <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-.793 2.237-2.231 4.166-4.084 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"/>
           </svg>
-          Googleでログイン
+          <span id="googleLoginLabel">Googleでログイン</span>
         </button>
 
         <div class="status" id="status"></div>
@@ -266,21 +268,42 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/assets/supabase-client.js"></script>
+  <script src="/assets/auth-helpers.js"></script>
   <script>
     function getRedirectTarget() {
-      const params = new URLSearchParams(window.location.search);
-      return params.get('redirect') || '/account/';
+      return window.InstantGeometryAuth
+        ? window.InstantGeometryAuth.getRedirectFromSearch('/account/')
+        : '/account/';
+    }
+
+    function setStatus(message, ok) {
+      const status = document.getElementById('status');
+      status.textContent = message || '';
+      status.classList.toggle('ok', !!ok);
+    }
+
+    function setLoginBusy(isBusy) {
+      const btn = document.getElementById('googleLoginBtn');
+      const label = document.getElementById('googleLoginLabel');
+      btn.disabled = !!isBusy;
+      label.textContent = isBusy ? 'Googleへ移動しています...' : 'Googleでログイン';
     }
 
     async function updateLoginState() {
-      const status = document.getElementById('status');
       try {
+        const authError = window.InstantGeometryAuth?.getAuthErrorFromUrl() || '';
+        if (authError) {
+          setStatus('ログインが完了しませんでした。もう一度お試しください。');
+          return;
+        }
+
         const { data } = await supabaseClient.auth.getSession();
         if (data.session) {
-          status.textContent = 'すでにログインしています。アカウントページへ移動します。';
-          status.classList.add('ok');
+          setStatus('すでにログインしています。移動します。', true);
           setTimeout(() => {
-            location.href = getRedirectTarget();
+            location.href = window.InstantGeometryAuth
+              ? window.InstantGeometryAuth.redirectWithLanguage(getRedirectTarget())
+              : getRedirectTarget();
           }, 500);
         }
       } catch (e) {
@@ -288,24 +311,32 @@
     }
 
     async function signInWithGoogle() {
-      const status = document.getElementById('status');
-      status.textContent = '';
+      setStatus('');
+      setLoginBusy(true);
 
       try {
-        const redirectTo = window.location.origin + getRedirectTarget();
+        const redirectTo = window.InstantGeometryAuth
+          ? window.InstantGeometryAuth.buildCallbackUrl(getRedirectTarget())
+          : window.location.origin + getRedirectTarget();
 
         const { error } = await supabaseClient.auth.signInWithOAuth({
           provider: 'google',
           options: {
-            redirectTo
+            queryParams: {
+              access_type: 'offline',
+              prompt: 'select_account'
+            },
+            redirectTo: redirectTo
           }
         });
 
         if (error) {
-          status.textContent = error.message || 'Googleログインを開始できませんでした。';
+          setLoginBusy(false);
+          setStatus(error.message || 'Googleログインを開始できませんでした。');
         }
       } catch (e) {
-        status.textContent = 'Googleログインを開始できませんでした。';
+        setLoginBusy(false);
+        setStatus('Googleログインを開始できませんでした。');
       }
     }
 
@@ -313,5 +344,8 @@
 
     updateLoginState();
   </script>
+  <div id="site-footer"></div>
+  <script src="/assets/components.js"></script>
+  <script src="/assets/site-auto-i18n.js"></script>
 </body>
 </html>
