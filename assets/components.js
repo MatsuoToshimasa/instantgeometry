@@ -4,11 +4,19 @@
   const baseTranslations = {
     ja: {
       'nav.home': 'トップ',
+      'nav.learn': '体系学習',
+      'nav.mathDrawing': '数理描画',
+      'nav.problemCreation': '問題作成',
       'nav.draw': '図形を描く',
       'nav.problems': '問題を作る',
       'nav.functions': '関数を描く',
+      'nav.pricing': '料金プラン',
       'nav.about': 'このサイトについて',
+      'nav.contact': 'お問い合わせ',
       'nav.legal': 'プライバシーポリシー',
+      'nav.terms': '利用規約',
+      'nav.tokusho': '特定商取引法に基づく表記',
+      'nav.sitemap': 'サイトマップ',
       'lang.label': '言語',
       'footer.tagline': '数学教育のための図形・問題・関数ツール',
       'footer.owner': '開発・運営：Toshimasa Matsuo',
@@ -17,15 +25,24 @@
       'auth.loggedInProviderPrefix': 'ログイン中 (',
       'auth.loggedOut': '未ログイン',
       'auth.account': 'アカウント',
-      'auth.login': 'ログイン'
+      'auth.login': 'ログイン',
+      'auth.logout': 'ログアウト'
     },
     en: {
       'nav.home': 'Home',
+      'nav.learn': 'Learning',
+      'nav.mathDrawing': 'Math Drawing',
+      'nav.problemCreation': 'Problem Creation',
       'nav.draw': 'Draw Shapes',
       'nav.problems': 'Create Problems',
       'nav.functions': 'Graph Functions',
+      'nav.pricing': 'Pricing',
       'nav.about': 'About',
+      'nav.contact': 'Contact',
       'nav.legal': 'Privacy Policy',
+      'nav.terms': 'Terms',
+      'nav.tokusho': 'Legal Notice',
+      'nav.sitemap': 'Sitemap',
       'lang.label': 'Language',
       'footer.tagline': 'Geometry, worksheet, and function tools for math education',
       'footer.owner': 'Created by Toshimasa Matsuo',
@@ -34,15 +51,24 @@
       'auth.loggedInProviderPrefix': 'Signed in (',
       'auth.loggedOut': 'Signed out',
       'auth.account': 'Account',
-      'auth.login': 'Log in'
+      'auth.login': 'Log in',
+      'auth.logout': 'Log out'
     },
     zh: {
       'nav.home': '首页',
+      'nav.learn': '体系学习',
+      'nav.mathDrawing': '数学绘图',
+      'nav.problemCreation': '题目制作',
       'nav.draw': '绘制图形',
       'nav.problems': '生成题目',
       'nav.functions': '绘制函数',
+      'nav.pricing': '价格方案',
       'nav.about': '关于本站',
+      'nav.contact': '联系我们',
       'nav.legal': '隐私政策',
+      'nav.terms': '使用条款',
+      'nav.tokusho': '特定商业交易法标示',
+      'nav.sitemap': '网站地图',
       'lang.label': '语言',
       'footer.tagline': '面向数学教育的图形、题目与函数工具',
       'footer.owner': '开发与运营：Toshimasa Matsuo',
@@ -51,15 +77,24 @@
       'auth.loggedInProviderPrefix': '已登录 (',
       'auth.loggedOut': '未登录',
       'auth.account': '账户',
-      'auth.login': '登录'
+      'auth.login': '登录',
+      'auth.logout': '退出登录'
     },
     es: {
       'nav.home': 'Inicio',
+      'nav.learn': 'Aprendizaje estructurado',
+      'nav.mathDrawing': 'Dibujo matemático',
+      'nav.problemCreation': 'Creación de problemas',
       'nav.draw': 'Dibujar figuras',
       'nav.problems': 'Crear problemas',
       'nav.functions': 'Graficar funciones',
+      'nav.pricing': 'Precios',
       'nav.about': 'Acerca del sitio',
+      'nav.contact': 'Contacto',
       'nav.legal': 'Política de privacidad',
+      'nav.terms': 'Términos',
+      'nav.tokusho': 'Aviso legal comercial',
+      'nav.sitemap': 'Mapa del sitio',
       'lang.label': 'Idioma',
       'footer.tagline': 'Herramientas de geometría, ejercicios y funciones para educación matemática',
       'footer.owner': 'Desarrollado por Toshimasa Matsuo',
@@ -68,7 +103,8 @@
       'auth.loggedInProviderPrefix': 'Con sesión (',
       'auth.loggedOut': 'Sin sesión',
       'auth.account': 'Cuenta',
-      'auth.login': 'Iniciar sesión'
+      'auth.login': 'Iniciar sesión',
+      'auth.logout': 'Cerrar sesión'
     }
   };
 
