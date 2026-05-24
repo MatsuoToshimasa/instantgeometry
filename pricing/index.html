@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>料金プラン | Instant Geometry</title>
+  <meta name="description" content="Instant Geometry のFree・個人Pro・商用Proの違い、保存機能、ライセンス表記、商用利用範囲を整理した料金プラン案です。" />
+  <link rel="canonical" href="https://www.instantgeometry.com/pricing/" />
+  <meta property="og:title" content="料金プラン | Instant Geometry" />
+  <meta property="og:description" content="Free・個人Pro・商用Proの違い、保存機能、ライセンス表記、商用利用範囲を整理します。" />
+  <meta property="og:url" content="https://www.instantgeometry.com/pricing/" />
+  <meta property="og:type" content="website" />
+  <link rel="stylesheet" href="/assets/base.css" />
+  <style>
+    :root{
+      --bg:#f6f7fb;
+      --panel:#ffffff;
+      --line:#d9dce7;
+      --text:#1f2430;
+      --muted:#687086;
+      --accent:#2a5bd7;
+      --accent-soft:#eef3ff;
+      --ok:#1f7a39;
+      --warn:#9a6700;
+      --no:#9d2f2f;
+      --shadow:0 10px 28px rgba(27,39,94,.08);
+    }
+
+    *{box-sizing:border-box}
+
+    body{
+      margin:0;
+      min-height:100vh;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;
+      background:linear-gradient(180deg,#f8faff 0%,#f4f6fb 100%);
+      color:var(--text);
+    }
+
+    a{color:inherit;text-decoration:none}
+
+    .wrap{
+      width:min(1060px,calc(100% - 32px));
+      margin:0 auto;
+    }
+
+    .hero{
+      padding:28px 0 18px;
+    }
+
+    .crumb{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      color:var(--muted);
+      font-size:14px;
+      margin-bottom:14px;
+    }
+
+    .crumb a:hover{color:var(--accent)}
+
+    h1{
+      margin:0;
+      font-size:clamp(32px,4.8vw,52px);
+      line-height:1.12;
+      letter-spacing:0;
+    }
+
+    .lead{
+      width:min(760px,100%);
+      margin:16px 0 0;
+      color:var(--muted);
+      font-size:16px;
+      line-height:1.85;
+    }
+
+    .plan-grid{
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:16px;
+      margin:18px 0;
+    }
+
+    .plan-card{
+      padding:22px;
+      border:1px solid var(--line);
+      border-radius:18px;
+      background:var(--panel);
+      box-shadow:var(--shadow);
+    }
+
+    .plan-card.highlight{
+      border-color:#b9c7ef;
+      background:linear-gradient(180deg,#ffffff 0%,#f7faff 100%);
+    }
+
+    .plan-kicker{
+      color:var(--accent);
+      font-size:13px;
+      font-weight:800;
+    }
+
+    .plan-card h2{
+      margin:8px 0 8px;
+      font-size:26px;
+      letter-spacing:0;
+    }
+
+    .plan-card p{
+      margin:0;
+      color:var(--muted);
+      line-height:1.75;
+    }
+
+    .price{
+      margin-top:16px;
+      font-size:28px;
+      font-weight:900;
+    }
+
+    .price span{
+      color:var(--muted);
+      font-size:14px;
+      font-weight:700;
+    }
+
+    .table-panel,
+    .note-panel{
+      margin:18px 0;
+      border:1px solid var(--line);
+      border-radius:18px;
+      background:var(--panel);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+
+    .table-wrap{
+      width:100%;
+      overflow-x:auto;
+    }
+
+    table{
+      width:100%;
+      min-width:860px;
+      border-collapse:collapse;
+    }
+
+    th,
+    td{
+      padding:16px;
+      border-bottom:1px solid #e6e9f2;
+      text-align:center;
+      vertical-align:middle;
+      font-size:15px;
+    }
+
+    th:first-child,
+    td:first-child{
+      text-align:left;
+      font-weight:800;
+      color:var(--text);
+      width:34%;
+    }
+
+    th{
+      background:#fbfcff;
+      font-size:14px;
+      color:var(--muted);
+      white-space:nowrap;
+    }
+
+    tr:last-child td{border-bottom:none}
+
+    .yes,
+    .maybe,
+    .no{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-width:34px;
+      min-height:34px;
+      border-radius:999px;
+      font-weight:900;
+    }
+
+    .yes{
+      color:var(--ok);
+      background:#eefaf1;
+    }
+
+    .maybe{
+      color:var(--warn);
+      background:#fff8e6;
+      padding:0 11px;
+    }
+
+    .no{
+      color:var(--no);
+      background:#fff0f0;
+    }
+
+    .cell-note{
+      display:block;
+      margin-top:5px;
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.45;
+      font-weight:600;
+    }
+
+    .note-panel{
+      padding:22px;
+    }
+
+    .note-panel h2{
+      margin:0 0 12px;
+      font-size:22px;
+      letter-spacing:0;
+    }
+
+    .rules{
+      display:grid;
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:14px;
+    }
+
+    .rule{
+      padding:16px;
+      border:1px solid #e2e8f6;
+      border-radius:14px;
+      background:#fbfcff;
+    }
+
+    .rule strong{
+      display:block;
+      margin-bottom:7px;
+      font-size:15px;
+    }
+
+    .rule span{
+      color:var(--muted);
+      font-size:14px;
+      line-height:1.65;
+    }
+
+    .actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin:22px 0 44px;
+    }
+
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-height:46px;
+      padding:0 18px;
+      border:1px solid var(--line);
+      border-radius:12px;
+      background:#fff;
+      color:var(--text);
+      font-weight:800;
+    }
+
+    .btn.primary{
+      border-color:var(--accent);
+      background:var(--accent);
+      color:#fff;
+    }
+
+    @media (max-width: 760px){
+      .wrap{width:min(100%,calc(100% - 24px))}
+      .plan-grid,
+      .rules{grid-template-columns:1fr}
+      .plan-card,
+      .note-panel{padding:18px}
+      .btn{width:100%}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div id="site-header"></div>
+
+    <main>
+      <section class="hero">
+        <div class="crumb">
+          <a href="/">トップ</a>
+          <span>›</span>
+          <span>料金プラン</span>
+        </div>
+        <h1>料金プラン</h1>
+        <p class="lead">
+          学習や授業で使いやすい無料利用を残しながら、教材制作・商用公開に必要な保存量と利用権を有料プランとして整理します。
+          Freeは学習・基本利用、個人Proは非商用の高品質利用、商用Proは外部公開・販売・収益化までを扱うプランです。
+        </p>
+      </section>
+
+      <section class="plan-grid" aria-label="プラン概要">
+        <article class="plan-card">
+          <div class="plan-kicker">学習・基本利用</div>
+          <h2>Free</h2>
+          <p>
+            学習者が無料で使える入口です。閲覧、操作、月6枚までの画像保存を中心に、数学を理解するための利用を想定します。
+          </p>
+          <div class="price">0円 <span>/ 月</span></div>
+        </article>
+
+        <article class="plan-card">
+          <div class="plan-kicker">非商用の高品質利用</div>
+          <h2>個人Pro</h2>
+          <p>
+            自分の学習、授業、研究、校内配布など、限定された相手への非商用利用を想定したプランです。
+          </p>
+          <div class="price">980円 <span>/ 月 目安</span></div>
+        </article>
+
+        <article class="plan-card highlight">
+          <div class="plan-kicker">公開・販売・収益化向け</div>
+          <h2>商用Pro</h2>
+          <p>
+            販売教材、収益化動画、広告付きサイト、外部公開資料など、商用利用を想定したプランです。
+          </p>
+          <div class="price">2,980円 <span>/ 月 目安</span></div>
+        </article>
+      </section>
+
+      <section class="table-panel" aria-label="機能比較">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>機能</th>
+                <th>Free</th>
+                <th>個人Pro</th>
+                <th>商用Pro</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>閲覧・基本操作</td>
+                <td><span class="yes" aria-label="対応">○</span></td>
+                <td><span class="yes" aria-label="対応">○</span></td>
+                <td><span class="yes" aria-label="対応">○</span></td>
+              </tr>
+              <tr>
+                <td>画像保存・ライセンス表記</td>
+                <td>
+                  <span class="maybe" aria-label="条件付き">△</span>
+                  <span class="cell-note">月6枚まで・表記あり</span>
+                </td>
+                <td>
+                  <span class="yes" aria-label="対応">○</span>
+                  <span class="cell-note">無制限・表記あり</span>
+                </td>
+                <td>
+                  <span class="yes" aria-label="対応">○</span>
+                  <span class="cell-note">無制限・表記なし可</span>
+                </td>
+              </tr>
+              <tr>
+                <td>商用・外部公開利用</td>
+                <td><span class="no" aria-label="非対応">×</span></td>
+                <td><span class="no" aria-label="非対応">×</span></td>
+                <td><span class="yes" aria-label="対応">○</span></td>
+              </tr>
+              <tr>
+                <td>履歴・お気に入り</td>
+                <td><span class="no" aria-label="非対応">×</span></td>
+                <td><span class="yes" aria-label="対応">○</span></td>
+                <td><span class="yes" aria-label="対応">○</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="note-panel" aria-label="画像保存とライセンス表記の説明">
+        <h2>画像保存・ライセンス表記とは</h2>
+        <div class="rules">
+          <div class="rule">
+            <strong>Freeは月6枚まで</strong>
+            <span>学習者が必要な場面で保存できるようにしつつ、大量の教材制作はProに分けます。</span>
+          </div>
+          <div class="rule">
+            <strong>Proは無制限</strong>
+            <span>授業準備、教材作成、繰り返し利用では保存枚数の制限を外します。</span>
+          </div>
+          <div class="rule">
+            <strong>表記の扱い</strong>
+            <span>保存画像のライセンス表記条件も画像保存に含めます。Freeと個人Proは表記あり、商用Proでは表記なしの出力を許可します。</span>
+          </div>
+          <div class="rule">
+            <strong>形式では分けない</strong>
+            <span>PNGやPDFなどの形式差ではなく、保存枚数と利用権でプランを分けます。</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="note-panel" aria-label="利用範囲の考え方">
+        <h2>利用範囲の考え方</h2>
+        <div class="rules">
+          <div class="rule">
+            <strong>Freeでよい例</strong>
+            <span>学習者の自習、授業中の閲覧、基本的な図の確認、個人的なメモ、月6枚までの保存など。</span>
+          </div>
+          <div class="rule">
+            <strong>個人Proでよい例</strong>
+            <span>学校や塾の授業、校内・クラス内配布、個人の発表資料、研究ノートなど。</span>
+          </div>
+          <div class="rule">
+            <strong>商用Proが必要な例</strong>
+            <span>販売PDF、書籍、収益化YouTube、広告付きブログ、有料講座、外部公開教材などの商用・外部公開利用。</span>
+          </div>
+          <div class="rule">
+            <strong>学校・法人利用</strong>
+            <span>複数人での利用、組織名義の教材、出版社・塾・企業利用は別途相談扱いにします。</span>
+          </div>
+        </div>
+      </section>
+
+      <div class="actions">
+        <a class="btn primary" href="/upgrade/">支援プランを見る</a>
+        <a class="btn" href="/settings/">表示設定へ</a>
+        <a class="btn" href="/">トップへ戻る</a>
+      </div>
+    </main>
+  </div>
+
+  <div id="site-footer"></div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/assets/supabase-client.js"></script>
+  <script src="/assets/auth-helpers.js"></script>
+  <script src="/assets/auth-ui.js"></script>
+  <script src="/assets/components.js"></script>
+  <script src="/assets/site-auto-i18n.js"></script>
+</body>
+</html>
