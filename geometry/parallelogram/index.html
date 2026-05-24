@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="ja" data-geometry-figure-model="figure.parallelogram">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>平行四辺形の面積（底辺と高さ） | Instant Geometry</title>
+  <link rel="canonical" href="https://www.instantgeometry.com/geometry/parallelogram/" />
+  <link rel="stylesheet" href="../../assets/quadrilateral-mobile-page.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" />
+  <script src="../../assets/save-quota.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <button class="btn" id="backBtn" type="button">戻る</button>
+      <h1 class="topbar-title">平行四辺形の面積（底辺と高さ）</h1>
+      <button class="btn" id="saveBtn" type="button">保存</button>
+    </header>
+
+    <section class="stage-wrap" id="captureRoot">
+      <div class="status" id="statusBox">辺BC・高さAH・横ずれBHを入力すると、平行四辺形を描画します。</div>
+      <svg class="stage" id="stage" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet" aria-label="平行四辺形の描画画面"></svg>
+    </section>
+
+    <footer class="bottom-bar">
+      <div class="field">
+        <div class="field-label">辺BC</div>
+        <input class="field-input" id="baseInput" type="text" inputmode="decimal" value="7" />
+      </div>
+      <div class="field">
+        <div class="field-label">高さAH</div>
+        <input class="field-input" id="heightInput" type="text" inputmode="decimal" value="5" />
+      </div>
+      <div class="field">
+        <div class="field-label">横ずれBH</div>
+        <input class="field-input" id="skewInput" type="text" inputmode="decimal" value="2" />
+      </div>
+    </footer>
+  </div>
+
+  <div class="sheet-backdrop" id="sheetBackdrop"></div>
+  <section class="sheet" id="editSheet" aria-hidden="true">
+    <div class="sheet-header">
+      <h2 class="sheet-title" id="sheetTitle">設定</h2>
+      <button class="sheet-close" id="sheetClose" type="button" aria-label="閉じる">×</button>
+    </div>
+    <div class="sheet-body" id="sheetBody"></div>
+  </section>
+
+  <section class="sheet" id="saveSheet" aria-hidden="true">
+    <div class="sheet-header">
+      <h2 class="sheet-title">保存</h2>
+      <button class="sheet-close" id="saveSheetClose" type="button" aria-label="閉じる">×</button>
+    </div>
+    <div class="sheet-body">
+      <div class="save-grid">
+        <button class="btn" id="savePngBtn" type="button">PNG</button>
+        <button class="btn" id="saveTransparentBtn" type="button">透過PNG</button>
+        <button class="btn" id="savePdfBtn" type="button">PDF</button>
+      </div>
+    </div>
+  </section>
+
+  <script type="application/json" id="geometryFigureModel">{"model":"figure.parallelogram","adopted":true}</script>
+  <script src="../../assets/mobile-angle-ornaments.js?v=angle-modal-1"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script src="../../assets/draw-shared-labels.js?v=shared-katex-2"></script>
+  <script src="../../assets/draw-label-taxonomy.js?v=taxonomy-1"></script>
+  <script src="../../assets/draw-shared-label-engine.js?v=controller-1"></script>
+  <script src="../../assets/quadrilateral-mobile-page.js"></script>
+  <script>
+    window.InstantGeometryQuadrilateralMobile.createPage({
+      readyMessage: '入力をもとに平行四辺形を描画しています。',
+      fileBase: 'geometry-parallelogram',
+      useRootSideLabels: true,
+      controlInputIds: {
+        base: 'baseInput',
+        height: 'heightInput',
+        skew: 'skewInput'
+      },
+      initialState: {
+        pointInputs: { A: 'A', B: 'B', C: 'C', D: 'D', H: 'H' },
+        sides: { AB: 0, BC: 7, CD: 0, DA: 7 },
+        sideInputs: { AB: '', BC: ' ', CD: '', DA: '', AH: ' ', BH: '' },
+        sideKinds: { AB: 'plain', BC: 'plain', CD: 'plain', DA: 'plain', AH: 'plain', BH: 'plain' },
+        sideArcVisible: { AB: false, BC: true, CD: false, DA: false, AH: true, BH: false },
+        angleInputs: { A: '', B: '', C: '', D: '' },
+        angleKinds: { A: 'hidden', B: 'hidden', C: 'hidden', D: 'hidden' },
+        areaValue: ''
+      },
+      readControls: function (inputs, parsePositiveNumber) {
+        function parseSignedNumber(value, name) {
+          var text = String(value || '').trim();
+          if (!/^[+-]?(?:[0-9]+(?:\.[0-9]+)?|\.[0-9]+)$/.test(text)) {
+            throw new Error(name + ' には数を入力してください。');
+          }
+          return Number(text);
+        }
+        return {
+          base: parsePositiveNumber(inputs.base.value, '辺BC'),
+          height: parsePositiveNumber(inputs.height.value, '高さAH'),
+          skew: parseSignedNumber(inputs.skew.value, '横ずれBH')
+        };
+      },
+      applyControlsToState: function () {},
+      computeGeometry: function (state, parsed, helpers) {
+        return helpers.finalizeGeometry({
+          A: { x: (-parsed.base / 2) + (parsed.skew / 2), y: parsed.height / 2 },
+          B: { x: (-parsed.base / 2) - (parsed.skew / 2), y: -parsed.height / 2 },
+          C: { x: (parsed.base / 2) - (parsed.skew / 2), y: -parsed.height / 2 },
+          D: { x: (parsed.base / 2) + (parsed.skew / 2), y: parsed.height / 2 }
+        });
+      },
+      sideNumericMode: function () {
+        return 'readonly';
+      },
+      angleNumericMode: function () {
+        return 'readonly';
+      },
+      updateSideControl: function () {},
+      updateAngleControl: function () {},
+      drawAuxiliary: function (context) {
+        var stage = context.stage;
+        var state = context.state;
+        var geometry = context.geometry;
+        var createSvg = context.createSvg;
+        var createLabelNode = context.createLabelNode;
+        var fitPoint = context.fitPoint;
+        var attachHit = context.attachHit;
+        var getLabelPosition = context.getLabelPosition;
+        var getPointLabelValue = context.getPointLabelValue;
+        var getSideLabelValue = context.getSideLabelValue;
+        var drawSideKind = context.drawSideKind;
+        var sideArcGeometry = context.sideArcGeometry;
+        var quadraticPathSegment = context.quadraticPathSegment;
+        var H = { x: geometry.A.x, y: geometry.B.y };
+        var A = context.screen.A;
+        var B = context.screen.B;
+        var tH = fitPoint(H);
+        var tCenter = context.screen.center;
+        geometry.H = H;
+        state.sides.AH = Math.abs(geometry.A.y - H.y);
+        state.sides.BH = Math.abs(H.x - geometry.B.x);
+        state.sideDisplay = Object.assign({}, state.sideDisplay || {}, {
+          AH: context.formatLengthBetween(geometry.A, H),
+          BH: context.formatNumber(H.x - geometry.B.x)
+        });
+
+        function addAuxSide(id, P, Q, className) {
+          stage.appendChild(createSvg('line', {
+            x1: P.x,
+            y1: P.y,
+            x2: Q.x,
+            y2: Q.y,
+            stroke: '#64748b',
+            'stroke-width': '2.6',
+            'stroke-dasharray': className === 'height' ? '4 8' : (className === 'offset' ? '9 8' : null),
+            'stroke-linecap': 'round'
+          }));
+          var hit = createSvg('line', {
+            x1: P.x,
+            y1: P.y,
+            x2: Q.x,
+            y2: Q.y,
+            stroke: 'transparent',
+            'stroke-width': '28',
+            'stroke-linecap': 'round'
+          });
+          attachHit(hit, 'side', id);
+          stage.appendChild(hit);
+          drawSideKind(state.sideKinds[id], P, Q);
+        }
+
+        function addAuxSideLabel(id, P, Q, basePoint, color) {
+          var label = getSideLabelValue(id);
+          if (!label) return;
+          var pos = getLabelPosition('side', id, basePoint);
+          if (state.sideArcVisible[id] !== false) {
+            var geom = sideArcGeometry(P, Q, tCenter, pos);
+            stage.appendChild(createSvg('path', {
+              d: quadraticPathSegment(P, geom.control, Q, 0, 0.5 - geom.gapHalf, 20),
+              fill: 'none',
+              stroke: color,
+              'stroke-width': '2',
+              'stroke-linecap': 'round',
+              'stroke-dasharray': '6 5'
+            }));
+            stage.appendChild(createSvg('path', {
+              d: quadraticPathSegment(P, geom.control, Q, 0.5 + geom.gapHalf, 1, 20),
+              fill: 'none',
+              stroke: color,
+              'stroke-width': '2',
+              'stroke-linecap': 'round',
+              'stroke-dasharray': '6 5'
+            }));
+          }
+          var textNode = createLabelNode(label, {
+            x: pos.x,
+            y: pos.y,
+            'text-anchor': 'middle',
+            'dominant-baseline': 'middle',
+            'font-size': '46',
+            'font-weight': '700',
+            fill: color,
+            'data-label-kind': 'segment',
+            'data-label-role': 'side',
+            'data-label-id': id
+          });
+          attachHit(textNode, 'side', id);
+          stage.appendChild(textNode);
+        }
+
+        addAuxSide('AH', A, tH, 'height');
+        addAuxSide('BH', B, tH, 'offset');
+        stage.appendChild(createSvg('path', {
+          d: 'M ' + (tH.x - 24) + ' ' + tH.y + ' L ' + (tH.x - 24) + ' ' + (tH.y - 24) + ' L ' + tH.x + ' ' + (tH.y - 24),
+          fill: 'none',
+          stroke: '#64748b',
+          'stroke-width': '2.5',
+          'stroke-linejoin': 'round'
+        }));
+
+        var hPoint = createSvg('circle', { cx: tH.x, cy: tH.y, r: 7, fill: '#1f2430' });
+        attachHit(hPoint, 'point', 'H');
+        stage.appendChild(hPoint);
+        var hLabel = getPointLabelValue('H');
+        if (hLabel) {
+          var hLabelPos = getLabelPosition('point', 'H', { x: tH.x + 28, y: tH.y + 34 });
+          var hText = createLabelNode(hLabel, {
+            x: hLabelPos.x,
+            y: hLabelPos.y,
+            'text-anchor': 'middle',
+            'dominant-baseline': 'middle',
+            'font-size': '52',
+            'font-weight': '700',
+            fill: '#1f2430',
+            'data-label-kind': 'point',
+            'data-label-id': 'H'
+          });
+          attachHit(hText, 'point', 'H');
+          stage.appendChild(hText);
+        }
+        addAuxSideLabel('AH', A, tH, { x: tH.x - 58, y: (A.y + tH.y) / 2 }, '#475569');
+        addAuxSideLabel('BH', B, tH, { x: (B.x + tH.x) / 2, y: tH.y + 52 }, '#475569');
+      }
+    });
+    (function syncGeometryModalTitles() {
+      var title = document.getElementById('sheetTitle');
+      if (!title) return;
+      var pendingTitle = '';
+      function objectTitle(kind, id) {
+        var pointLabels = { A: 'A', B: 'B', C: 'C', D: 'D' };
+        document.querySelectorAll('[data-kind="point"][data-id]').forEach(function (node) {
+          var pointId = node.getAttribute('data-id');
+          var text = node.textContent.trim();
+          if (pointId && text) pointLabels[pointId] = text;
+        });
+        function pointName(pointId) {
+          return pointLabels[pointId] || pointId;
+        }
+        if (kind === 'point') return '点' + pointName(id);
+        if (kind === 'side' && id === 'AH') return '高さ' + pointName('A') + pointName('H');
+        if (kind === 'side' && id === 'BH') return '横ずれ' + pointName('B') + pointName('H');
+        if (kind === 'side') return '辺' + id.split('').map(pointName).join('');
+        if (kind === 'angle') {
+          var points = {
+            A: ['B', 'A', 'D'],
+            B: ['A', 'B', 'C'],
+            C: ['B', 'C', 'D'],
+            D: ['C', 'D', 'A']
+          }[id] || String(id || '').split('');
+          return '角' + points.map(pointName).join('');
+        }
+        if (kind === 'area') return '四角形' + ['A', 'B', 'C', 'D'].map(pointName).join('');
+        return '';
+      }
+      document.addEventListener('click', function (event) {
+        var target = event.target && event.target.closest ? event.target.closest('[data-kind][data-id]') : null;
+        if (!target) return;
+        pendingTitle = objectTitle(target.getAttribute('data-kind'), target.getAttribute('data-id'));
+        setTimeout(function () {
+          if (pendingTitle && document.getElementById('editSheet').classList.contains('open')) {
+            title.textContent = pendingTitle;
+          }
+        }, 0);
+      }, true);
+      var replacements = {
+        AB: '辺AB',
+        BC: '辺BC',
+        CD: '辺CD',
+        DA: '辺DA',
+        AH: '高さAH',
+        BH: '横ずれBH',
+        '線分AH': '高さAH',
+        '線分BH': '横ずれBH',
+        '∠BAD': '角BAD',
+        '∠ABC': '角ABC',
+        '∠BCD': '角BCD',
+        '∠CDA': '角CDA',
+        '□ABCD': '四角形ABCD'
+      };
+      var observer = new MutationObserver(function () {
+        var text = title.textContent.trim();
+        if (pendingTitle && document.getElementById('editSheet').classList.contains('open')) title.textContent = pendingTitle;
+        else if (replacements[text]) title.textContent = replacements[text];
+      });
+      observer.observe(title, { childList: true, characterData: true, subtree: true });
+    })();
+  </script>
+  <script src="../../assets/draw-geometry-role-definitions.js?v=role-defs-1"></script>
+  <script src="../../assets/draw-page-schema-adapter.js?v=schema-adapter-2"></script>
+  <script src="../../assets/draw-settings.js?v=settings-contract-1"></script>
+  <script src="/assets/site-auto-i18n.js?v=settings-contract-1"></script>
+</body>
+</html>

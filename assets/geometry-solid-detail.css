@@ -1,0 +1,117 @@
+.solid-outline{
+  fill:none;
+  stroke:#2a5bd7;
+  stroke-width:3;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+
+.solid-hidden{
+  fill:none;
+  stroke:#687086;
+  stroke-width:2.4;
+  stroke-linecap:round;
+  stroke-dasharray:10 8;
+}
+
+.solid-hit{
+  fill:none;
+  stroke:transparent;
+  stroke-width:34;
+  stroke-linecap:round;
+  cursor:pointer;
+  pointer-events:stroke;
+}
+
+.solid-radius{
+  stroke:#2a5bd7;
+  stroke-width:2.4;
+  stroke-linecap:round;
+  stroke-dasharray:8 7;
+}
+
+.solid-sphere-fill{
+  fill:#fff;
+  stroke:#2a5bd7;
+  stroke-width:3.2;
+}
+
+.solid-sphere-front,
+.solid-bracket{
+  fill:none;
+  stroke:#2a5bd7;
+  stroke-width:2.4;
+  stroke-linecap:round;
+}
+
+.solid-area-hit{
+  stroke:none;
+  cursor:pointer;
+  pointer-events:fill;
+}
+
+.solid-point-hit{
+  fill:transparent;
+  stroke:transparent;
+  cursor:pointer;
+  pointer-events:all;
+}
+
+#labelLayer{
+  position:absolute;
+  inset:0;
+  z-index:4;
+  pointer-events:none;
+  overflow:hidden;
+}
+
+.floating-label{
+  position:absolute;
+  left:0;
+  top:0;
+  transform-origin:center center;
+  white-space:nowrap;
+  line-height:1;
+  will-change:transform;
+  user-select:none;
+  pointer-events:auto;
+  font-style:normal;
+  font-weight:700;
+  text-rendering:geometricPrecision;
+  -webkit-font-smoothing:antialiased;
+  cursor:pointer;
+  color:#2a5bd7;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;
+}
+
+.floating-label:focus,
+.floating-label:focus-visible,
+.solid-hit:focus,
+.solid-hit:focus-visible,
+.solid-area-hit:focus,
+.solid-area-hit:focus-visible,
+.solid-point-hit:focus,
+.solid-point-hit:focus-visible{
+  outline:none;
+  box-shadow:none;
+}
+
+.floating-label .math-unit{
+  font-size:.82em;
+  margin-left:.04em;
+}
+
+.stage-wrap.label-move-active #labelLayer .floating-label{
+  opacity:.34;
+  pointer-events:none;
+}
+
+.stage-wrap.label-move-active #labelLayer .floating-label.label-move-target{
+  opacity:1;
+  pointer-events:auto;
+  cursor:grab;
+}
+
+.stage-wrap.label-move-active #labelLayer .floating-label.label-move-target:active{
+  cursor:grabbing;
+}

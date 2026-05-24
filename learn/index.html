@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>体系学習 | Instant Geometry</title>
+  <meta name="description" content="定義、性質、定理、公式、条件、典型例、注意、証明を学ぶための体系学習入口です。" />
+  <link rel="canonical" href="https://www.instantgeometry.com/learn/" />
+  <link rel="stylesheet" href="../assets/base.css" />
+  <link rel="stylesheet" href="../assets/content-index.css" />
+</head>
+<body>
+  <div class="content-shell">
+    <div id="site-header"></div>
+
+    <main>
+      <section class="content-hero">
+        <div class="crumb">
+          <a href="/">トップ</a>
+          <span>›</span>
+          <span>体系学習</span>
+        </div>
+        <h1>定義から、<br>数学の構造を学ぶ</h1>
+        <p>
+          体系学習は、定義、性質、定理、公式、条件、典型例、注意、証明を説明ページとして整理する入口です。
+          図形、グラフ、方程式などの対象別分類はタグやカテゴリとして扱います。
+        </p>
+      </section>
+
+      <nav class="mode-tabs" aria-label="主要導線">
+        <a class="mode-tab" href="/learn/" aria-current="page">体系学習 <span>→</span></a>
+        <a class="mode-tab" href="/draw/">数理描画 <span>→</span></a>
+        <a class="mode-tab" href="/problems/">問題作成 <span>→</span></a>
+      </nav>
+
+      <section class="learn-search" aria-label="説明ページ検索">
+        <label class="learn-search-label" for="learnSearchInput">説明ページを検索</label>
+        <div class="learn-search-row">
+          <input id="learnSearchInput" class="learn-search-input" type="search" placeholder="例: 三角錐、円、公式、中2" autocomplete="off" />
+          <button id="learnSearchClear" class="learn-search-clear" type="button" hidden>クリア</button>
+        </div>
+        <div class="learn-search-tags" aria-label="よく使う検索語">
+          <button class="learn-search-tag" type="button" data-search-term="三角形">三角形</button>
+          <button class="learn-search-tag" type="button" data-search-term="四角形">四角形</button>
+          <button class="learn-search-tag" type="button" data-search-term="円">円</button>
+          <button class="learn-search-tag" type="button" data-search-term="角">角</button>
+          <button class="learn-search-tag" type="button" data-search-term="作図">作図</button>
+          <button class="learn-search-tag" type="button" data-search-term="平面図形">平面図形</button>
+          <button class="learn-search-tag" type="button" data-search-term="空間図形">空間図形</button>
+          <button class="learn-search-tag" type="button" data-search-term="定義">定義</button>
+          <button class="learn-search-tag" type="button" data-search-term="性質">性質</button>
+          <button class="learn-search-tag" type="button" data-search-term="公式">公式</button>
+        </div>
+        <p id="learnSearchStatus" class="learn-search-status" aria-live="polite"></p>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <h2>新しい説明ページ</h2>
+            <p>まずは既存の /geometry/ 配下に作った説明ページを、体系学習の入口から参照します。</p>
+          </div>
+        </div>
+
+        <div class="card-grid">
+          <a class="content-card" href="/geometry/triangle/definition/">
+            <div class="card-top"><span class="tag amber">定義</span><span class="arrow">→</span></div>
+            <h3>三角形の定義</h3>
+            <p>同一直線上にない3つの点を結んでできる図形として定義します。</p>
+            <div class="model-id">figure.triangle / 小4, 中1 / 図形, 構成要素</div>
+          </a>
+
+          <a class="content-card" href="/geometry/circle/definition/">
+            <div class="card-top"><span class="tag amber">定義</span><span class="arrow">→</span></div>
+            <h3>円の定義</h3>
+            <p>1つの点から等しい距離にある点の集まりとして定義します。</p>
+            <div class="model-id">figure.circle / 小3, 中1 / 図形, 構成要素, 量</div>
+          </a>
+
+          <a class="content-card" href="/geometry/circle/radius-diameter/">
+            <div class="card-top"><span class="tag amber">関係</span><span class="arrow">→</span></div>
+            <h3>円の半径と直径</h3>
+            <p>中心から円周までの半径と、中心を通る直径を確認します。</p>
+            <div class="model-id">figure.circle / 小3, 小4 / 図形, 量</div>
+          </a>
+
+          <a class="content-card" href="/geometry/circle/circumference/">
+            <div class="card-top"><span class="tag green">公式</span><span class="arrow">→</span></div>
+            <h3>円周の長さ</h3>
+            <p>円周の長さを、直径×円周率で求める公式として確認します。</p>
+            <div class="model-id">figure.circle / 小5, 中1 / 図形, 量</div>
+          </a>
+
+          <a class="content-card" href="/geometry/circle/area/">
+            <div class="card-top"><span class="tag green">公式</span><span class="arrow">→</span></div>
+            <h3>円の面積</h3>
+            <p>円の面積を、半径×半径×円周率で求める公式として確認します。</p>
+            <div class="model-id">figure.circle / 小6, 中1 / 図形, 量</div>
+          </a>
+
+          <a class="content-card" href="/geometry/circle/arc-chord/">
+            <div class="card-top"><span class="tag amber">関係</span><span class="arrow">→</span></div>
+            <h3>弧と弦</h3>
+            <p>円周上の2点に対応する弧と弦を確認します。</p>
+            <div class="model-id">figure.circle / 中3 / 図形, 構成要素</div>
+          </a>
+
+          <a class="content-card" href="/geometry/circle/inscribed-central-angle/">
+            <div class="card-top"><span class="tag blue">定理</span><span class="arrow">→</span></div>
+            <h3>中心角と円周角</h3>
+            <p>同じ弧に対する中心角と円周角の関係を確認します。</p>
+            <div class="model-id">figure.circle / 中3 / 図形, 量</div>
+          </a>
+
+          <a class="content-card" href="/geometry/circle/tangent/">
+            <div class="card-top"><span class="tag amber">定義</span><span class="arrow">→</span></div>
+            <h3>接線</h3>
+            <p>円と1点だけで接する直線として接線を確認します。</p>
+            <div class="model-id">figure.circle / 中3 / 図形, 構成要素</div>
+          </a>
+
+          <a class="content-card" href="/geometry/circle/tangent-radius/">
+            <div class="card-top"><span class="tag blue">性質</span><span class="arrow">→</span></div>
+            <h3>接線と半径の関係</h3>
+            <p>接線が接点を通る半径に垂直であることを確認します。</p>
+            <div class="model-id">figure.circle / 中3 / 図形, 量</div>
+          </a>
+
+          <a class="content-card" href="/geometry/circle/cyclic-quadrilateral/">
+            <div class="card-top"><span class="tag amber">定義</span><span class="arrow">→</span></div>
+            <h3>円に内接する四角形</h3>
+            <p>4つの頂点が同じ円周上にある四角形として確認します。</p>
+            <div class="model-id">figure.circle / 中3 / 図形</div>
+          </a>
+
+          <a class="content-card" href="/geometry/angle/vertical-angles/">
+            <div class="card-top"><span class="tag blue">性質</span><span class="arrow">→</span></div>
+            <h3>対頂角</h3>
+            <p>2直線が交わるとき、向かい合う角が等しいことを確認します。</p>
+            <div class="model-id">relation.verticalAngles / 中1 / 図形, 量</div>
+          </a>
+
+          <a class="content-card" href="/geometry/angle/corresponding-angles/">
+            <div class="card-top"><span class="tag amber">定義</span><span class="arrow">→</span></div>
+            <h3>同位角</h3>
+            <p>2直線を1本の直線が横切るときの対応する角を確認します。</p>
+            <div class="model-id">relation.correspondingAngles / 中1 / 図形, 量</div>
+          </a>
+
+          <a class="content-card" href="/geometry/angle/alternate-interior-angles/">
+            <div class="card-top"><span class="tag amber">定義</span><span class="arrow">→</span></div>
+            <h3>錯角</h3>
+            <p>2直線の内側で反対側にできる角を確認します。</p>
+            <div class="model-id">relation.alternateInteriorAngles / 中1 / 図形, 量</div>
+          </a>
+
+          <a class="content-card" href="/geometry/line/perpendicular-bisector/">
+            <div class="card-top"><span class="tag amber">定義</span><span class="arrow">→</span></div>
+            <h3>垂直二等分線</h3>
+            <p>線分の中点を通り、その線分に垂直な直線を確認します。</p>
+            <div class="model-id">relation.perpendicularBisectorConfiguration / 中1 / 図形, 関係</div>
+          </a>
+
+          <a class="content-card" href="/geometry/angle/angle-bisector/">
+            <div class="card-top"><span class="tag amber">定義</span><span class="arrow">→</span></div>
+            <h3>角の二等分線</h3>
+            <p>1つの角を等しい2つの角に分ける半直線を確認します。</p>
+            <div class="model-id">relation.angleBisectorConfiguration / 中1 / 図形, 量</div>
+          </a>
+
+          <a class="content-card" href="/geometry/construction/perpendicular-line/">
+            <div class="card-top"><span class="tag amber">作図</span><span class="arrow">→</span></div>
+            <h3>垂線の作図</h3>
+            <p>点を通り、もとの直線と直角に交わる直線を作図します。</p>
+            <div class="model-id">relation.perpendicularSegments / 中1 / 図形, 関係</div>
+          </a>
+
+          <a class="content-card" href="/geometry/construction/perpendicular-bisector/">
+            <div class="card-top"><span class="tag amber">作図</span><span class="arrow">→</span></div>
+            <h3>垂直二等分線の作図</h3>
+            <p>線分の中点を通り、その線分に垂直な直線を作図します。</p>
+            <div class="model-id">relation.perpendicularBisectorConfiguration / 中1 / 図形, 関係</div>
+          </a>
+
+          <a class="content-card" href="/geometry/construction/angle-bisector/">
+            <div class="card-top"><span class="tag amber">作図</span><span class="arrow">→</span></div>
+            <h3>角の二等分線の作図</h3>
+            <p>1つの角を等しい2つの角に分ける半直線を作図します。</p>
+            <div class="model-id">relation.angleBisectorConfiguration / 中1 / 図形, 量</div>
+          </a>
+
+          <a class="content-card" href="/geometry/construction/equilateral-triangle/">
+            <div class="card-top"><span class="tag amber">作図</span><span class="arrow">→</span></div>
+            <h3>正三角形の作図</h3>
+            <p>与えられた線分を1辺として正三角形を作図します。</p>
+            <div class="model-id">figure.triangle / 小4, 中1 / 図形, 構成要素</div>
+          </a>
+
+          <a class="content-card" href="/geometry/construction/circle-tangent/">
+            <div class="card-top"><span class="tag amber">作図</span><span class="arrow">→</span></div>
+            <h3>円の接線の作図</h3>
+            <p>円に1点で接し、半径に垂直な直線を作図します。</p>
+            <div class="model-id">relation.segmentTangentToCircle / 中3 / 図形, 関係</div>
+          </a>
+
+          <a class="content-card" href="/geometry/construction/angle-90/">
+            <div class="card-top"><span class="tag amber">作図</span><span class="arrow">→</span></div>
+            <h3>90°の作図</h3>
+            <p>垂線を作図して90°の角を作ります。</p>
+            <div class="model-id">relation.perpendicularSegments / 中1 / 図形, 量</div>
+          </a>
+
+          <a class="content-card" href="/geometry/construction/angle-45/">
+            <div class="card-top"><span class="tag amber">作図</span><span class="arrow">→</span></div>
+            <h3>45°の作図</h3>
+            <p>90°の角を二等分して45°の角を作ります。</p>
+            <div class="model-id">relation.angleBisectorConfiguration / 中1 / 図形, 量</div>
+          </a>
+
+          <a class="content-card" href="/geometry/construction/angle-60/">
+            <div class="card-top"><span class="tag amber">作図</span><span class="arrow">→</span></div>
+            <h3>60°の作図</h3>
+            <p>正三角形を作図して60°の角を作ります。</p>
+            <div class="model-id">figure.triangle / 小4, 中1 / 図形, 量</div>
+          </a>
+
+          <a class="content-card" href="/geometry/construction/angle-30/">
+            <div class="card-top"><span class="tag amber">作図</span><span class="arrow">→</span></div>
+            <h3>30°の作図</h3>
+            <p>60°の角を二等分して30°の角を作ります。</p>
+            <div class="model-id">relation.angleBisectorConfiguration / 中1 / 図形, 量</div>
+          </a>
+
+          <a class="content-card" href="/geometry/construction/angle-15/">
+            <div class="card-top"><span class="tag amber">作図</span><span class="arrow">→</span></div>
+            <h3>15°の作図</h3>
+            <p>30°の角を二等分して15°の角を作ります。</p>
+            <div class="model-id">relation.angleBisectorConfiguration / 中1 / 図形, 量</div>
+          </a>
+
+          <a class="content-card" href="/geometry/construction/angle-75/">
+            <div class="card-top"><span class="tag amber">作図</span><span class="arrow">→</span></div>
+            <h3>75°の作図</h3>
+            <p>60°と90°の間の角を二等分して75°の角を作ります。</p>
+            <div class="model-id">relation.angleBisectorConfiguration / 中1 / 図形, 量</div>
+          </a>
+
+          <a class="content-card" href="/geometry/transform/translation/">
+            <div class="card-top"><span class="tag amber">定義</span><span class="arrow">→</span></div>
+            <h3>平行移動</h3>
+            <p>図形を同じ方向に同じ距離だけ動かす移動を確認します。</p>
+            <div class="model-id">function.complex / 中1 / 図形, 変換</div>
+          </a>
+
+          <a class="content-card" href="/geometry/transform/rotation/">
+            <div class="card-top"><span class="tag amber">定義</span><span class="arrow">→</span></div>
+            <h3>回転移動</h3>
+            <p>1つの点を中心に図形を一定の角度だけ回す移動を確認します。</p>
+            <div class="model-id">function.complex / 中1 / 図形, 変換</div>
+          </a>
+
+          <a class="content-card" href="/geometry/transform/reflection/">
+            <div class="card-top"><span class="tag amber">定義</span><span class="arrow">→</span></div>
+            <h3>対称移動</h3>
+            <p>直線を軸として鏡に映したように移す移動を確認します。</p>
+            <div class="model-id">function.complex / 中1 / 図形, 変換</div>
+          </a>
+
+          <a class="content-card" href="/geometry/transform/dilation/">
+            <div class="card-top"><span class="tag amber">定義</span><span class="arrow">→</span></div>
+            <h3>拡大・縮小</h3>
+            <p>形を保ったまま図形の大きさを変える変換を確認します。</p>
+            <div class="model-id">function.complex / 中1 / 図形, 変換</div>
+          </a>
+
+          <a class="content-card" href="/geometry/triangular-pyramid/definition/">
+            <div class="card-top"><span class="tag amber">定義</span><span class="arrow">→</span></div>
+            <h3>三角錐</h3>
+            <p>底面が三角形で、1つの頂点に集まる角錐を確認します。</p>
+            <div class="model-id">figure.triangularPyramid / 小6, 中1 / 空間図形, 構成要素</div>
+          </a>
+
+          <a class="content-card" href="/geometry/quadrangular-pyramid/definition/">
+            <div class="card-top"><span class="tag amber">定義</span><span class="arrow">→</span></div>
+            <h3>四角錐</h3>
+            <p>底面が四角形で、1つの頂点に集まる角錐を確認します。</p>
+            <div class="model-id">figure.quadrangularPyramid / 小6, 中1 / 空間図形, 構成要素</div>
+          </a>
+
+          <a class="content-card" href="/geometry/pentagonal-pyramid/definition/">
+            <div class="card-top"><span class="tag amber">定義</span><span class="arrow">→</span></div>
+            <h3>五角錐</h3>
+            <p>底面が五角形で、1つの頂点に集まる角錐を確認します。</p>
+            <div class="model-id">figure.pentagonalPyramid / 小6, 中1 / 空間図形, 構成要素</div>
+          </a>
+
+          <a class="content-card" href="/geometry/hexagonal-pyramid/definition/">
+            <div class="card-top"><span class="tag amber">定義</span><span class="arrow">→</span></div>
+            <h3>六角錐</h3>
+            <p>底面が六角形で、1つの頂点に集まる角錐を確認します。</p>
+            <div class="model-id">figure.hexagonalPyramid / 小6, 中1 / 空間図形, 構成要素</div>
+          </a>
+
+          <a class="content-card" href="/geometry/triangular-prism/definition/">
+            <div class="card-top"><span class="tag amber">定義</span><span class="arrow">→</span></div>
+            <h3>三角柱</h3>
+            <p>合同で平行な2つの三角形を底面にもつ角柱を確認します。</p>
+            <div class="model-id">figure.triangularPrism / 小6, 中1 / 空間図形, 構成要素</div>
+          </a>
+
+          <a class="content-card" href="/geometry/quadrangular-prism/definition/">
+            <div class="card-top"><span class="tag amber">定義</span><span class="arrow">→</span></div>
+            <h3>四角柱</h3>
+            <p>合同で平行な2つの四角形を底面にもつ角柱を確認します。</p>
+            <div class="model-id">figure.quadrangularPrism / 小6, 中1 / 空間図形, 構成要素</div>
+          </a>
+
+          <a class="content-card" href="/geometry/pentagonal-prism/definition/">
+            <div class="card-top"><span class="tag amber">定義</span><span class="arrow">→</span></div>
+            <h3>五角柱</h3>
+            <p>合同で平行な2つの五角形を底面にもつ角柱を確認します。</p>
+            <div class="model-id">figure.pentagonalPrism / 小6, 中1 / 空間図形, 構成要素</div>
+          </a>
+
+          <a class="content-card" href="/geometry/hexagonal-prism/definition/">
+            <div class="card-top"><span class="tag amber">定義</span><span class="arrow">→</span></div>
+            <h3>六角柱</h3>
+            <p>合同で平行な2つの六角形を底面にもつ角柱を確認します。</p>
+            <div class="model-id">figure.hexagonalPrism / 小6, 中1 / 空間図形, 構成要素</div>
+          </a>
+
+          <a class="content-card" href="/geometry/cone/definition/">
+            <div class="card-top"><span class="tag amber">定義</span><span class="arrow">→</span></div>
+            <h3>円錐</h3>
+            <p>円の底面と1つの頂点をもつ立体を確認します。</p>
+            <div class="model-id">figure.cone / 小6, 中1 / 空間図形, 構成要素</div>
+          </a>
+
+          <a class="content-card" href="/geometry/cylinder/definition/">
+            <div class="card-top"><span class="tag amber">定義</span><span class="arrow">→</span></div>
+            <h3>円柱</h3>
+            <p>合同で平行な2つの円を底面にもつ柱体を確認します。</p>
+            <div class="model-id">figure.cylinder / 小6, 中1 / 空間図形, 構成要素</div>
+          </a>
+
+          <a class="content-card" href="/geometry/rectangular-cuboid/definition/">
+            <div class="card-top"><span class="tag amber">定義</span><span class="arrow">→</span></div>
+            <h3>直方体</h3>
+            <p>6つの面がすべて長方形である立体を確認します。</p>
+            <div class="model-id">figure.rectangularCuboid / 小6, 中1 / 空間図形, 構成要素</div>
+          </a>
+
+          <a class="content-card" href="/geometry/cube/definition/">
+            <div class="card-top"><span class="tag amber">定義</span><span class="arrow">→</span></div>
+            <h3>立方体</h3>
+            <p>6つの面がすべて正方形である立体を確認します。</p>
+            <div class="model-id">figure.cube / 小6, 中1 / 空間図形, 構成要素</div>
+          </a>
+
+          <a class="content-card" href="/geometry/conical-frustum/definition/">
+            <div class="card-top"><span class="tag amber">定義</span><span class="arrow">→</span></div>
+            <h3>円錐台</h3>
+            <p>円錐を底面に平行な平面で切った立体を確認します。</p>
+            <div class="model-id">figure.conicalFrustum / 小6, 中1 / 空間図形, 構成要素</div>
+          </a>
+
+          <a class="content-card" href="/geometry/ellipse/definition/">
+            <div class="card-top"><span class="tag amber">定義</span><span class="arrow">→</span></div>
+            <h3>楕円の定義</h3>
+            <p>2つの焦点からの距離の和が一定となる点の集まりとして定義します。</p>
+            <div class="model-id">figure.ellipse / 中1, 高2 / 図形, 構成要素</div>
+          </a>
+
+          <a class="content-card" href="/geometry/ellipse/axes/">
+            <div class="card-top"><span class="tag amber">関係</span><span class="arrow">→</span></div>
+            <h3>楕円の長軸・短軸</h3>
+            <p>楕円の中心を通る最も長い幅と最も短い幅を確認します。</p>
+            <div class="model-id">figure.ellipse / 中1, 高2 / 図形, 量</div>
+          </a>
+
+          <a class="content-card" href="/geometry/ellipse/foci/">
+            <div class="card-top"><span class="tag amber">定義</span><span class="arrow">→</span></div>
+            <h3>楕円の焦点</h3>
+            <p>長軸上にある2つの特別な点として焦点を確認します。</p>
+            <div class="model-id">figure.ellipse / 高2 / 図形, 関係</div>
+          </a>
+
+          <a class="content-card" href="/geometry/ellipse/area/">
+            <div class="card-top"><span class="tag green">公式</span><span class="arrow">→</span></div>
+            <h3>楕円の面積</h3>
+            <p>楕円の面積を、横半径×縦半径×円周率で求める公式として確認します。</p>
+            <div class="model-id">figure.ellipse / 高2 / 図形, 量</div>
+          </a>
+
+          <a class="content-card" href="/geometry/sector/arc-length/">
+            <div class="card-top"><span class="tag green">公式</span><span class="arrow">→</span></div>
+            <h3>おうぎ形の弧の長さ</h3>
+            <p>弧の長さを、円周のうち中心角に対応する部分として確認します。</p>
+            <div class="model-id">figure.sector / 小6, 中1 / 図形, 量</div>
+          </a>
+
+          <a class="content-card" href="/geometry/sector/area/">
+            <div class="card-top"><span class="tag green">公式</span><span class="arrow">→</span></div>
+            <h3>おうぎ形の面積</h3>
+            <p>おうぎ形の面積を、円の面積のうち中心角に対応する部分として確認します。</p>
+            <div class="model-id">figure.sector / 小6, 中1 / 図形, 量</div>
+          </a>
+
+          <a class="content-card" href="/geometry/polygon/definition/">
+            <div class="card-top"><span class="tag amber">定義</span><span class="arrow">→</span></div>
+            <h3>多角形の定義</h3>
+            <p>いくつかの線分で囲まれた図形として定義します。</p>
+            <div class="model-id">figure.polygon / 小5, 中1 / 図形, 構成要素</div>
+          </a>
+
+          <a class="content-card" href="/geometry/polygon/regular-polygon-definition/">
+            <div class="card-top"><span class="tag amber">定義</span><span class="arrow">→</span></div>
+            <h3>正多角形の定義</h3>
+            <p>すべての辺の長さと、すべての角の大きさが等しい多角形として定義します。</p>
+            <div class="model-id">figure.regularPolygon / 小5, 中1 / 図形, 構成要素</div>
+          </a>
+
+          <a class="content-card" href="/geometry/polygon/interior-angle-sum/">
+            <div class="card-top"><span class="tag green">公式</span><span class="arrow">→</span></div>
+            <h3>多角形の内角の和</h3>
+            <p>n角形の内角の和を、三角形に分けて求める公式として確認します。</p>
+            <div class="model-id">figure.polygon / 小5, 中2 / 図形, 量</div>
+          </a>
+
+          <a class="content-card" href="/geometry/quadrilateral/interior-angle-sum/">
+            <div class="card-top"><span class="tag green">公式</span><span class="arrow">→</span></div>
+            <h3>四角形の内角の和</h3>
+            <p>四角形の4つの内角の和が360°になることを確認します。</p>
+            <div class="model-id">figure.quadrilateral / 小5, 中2 / 図形, 量</div>
+          </a>
+
+          <a class="content-card" href="/geometry/pentagon/interior-angle-sum/">
+            <div class="card-top"><span class="tag green">公式</span><span class="arrow">→</span></div>
+            <h3>五角形の内角の和</h3>
+            <p>五角形の5つの内角の和が540°になることを確認します。</p>
+            <div class="model-id">figure.pentagon / 小5, 中2 / 図形, 量</div>
+          </a>
+
+          <a class="content-card" href="/geometry/hexagon/interior-angle-sum/">
+            <div class="card-top"><span class="tag green">公式</span><span class="arrow">→</span></div>
+            <h3>六角形の内角の和</h3>
+            <p>六角形の6つの内角の和が720°になることを確認します。</p>
+            <div class="model-id">figure.hexagon / 小5, 中2 / 図形, 量</div>
+          </a>
+
+          <a class="content-card" href="/geometry/polygon/exterior-angle-sum/">
+            <div class="card-top"><span class="tag green">公式</span><span class="arrow">→</span></div>
+            <h3>多角形の外角の和</h3>
+            <p>多角形の外角の和がいつでも360°になることを確認します。</p>
+            <div class="model-id">figure.polygon / 小5, 中2 / 図形, 量</div>
+          </a>
+
+          <a class="content-card" href="/geometry/polygon/regular-polygon-one-interior-angle/">
+            <div class="card-top"><span class="tag green">公式</span><span class="arrow">→</span></div>
+            <h3>正多角形の1つの内角</h3>
+            <p>正n角形の1つの内角を、内角の和から求める公式として確認します。</p>
+            <div class="model-id">figure.regularPolygon / 小5, 中2 / 図形, 量</div>
+          </a>
+
+          <a class="content-card" href="/geometry/polygon/regular-polygon-area/">
+            <div class="card-top"><span class="tag green">公式</span><span class="arrow">→</span></div>
+            <h3>正多角形の面積（底辺と高さ）</h3>
+            <p>正多角形の面積を、底辺と高さで表した三角形の面積として確認します。</p>
+            <div class="model-id">figure.regularPolygon / 小5, 中1 / 図形, 量</div>
+          </a>
+
+          <a class="content-card" href="/geometry/pentagon/definition/">
+            <div class="card-top"><span class="tag amber">定義</span><span class="arrow">→</span></div>
+            <h3>五角形の定義</h3>
+            <p>5つの辺をもつ多角形として定義します。</p>
+            <div class="model-id">figure.pentagon / 小5, 中1 / 図形, 構成要素</div>
+          </a>
+
+          <a class="content-card" href="/geometry/hexagon/definition/">
+            <div class="card-top"><span class="tag amber">定義</span><span class="arrow">→</span></div>
+            <h3>六角形の定義</h3>
+            <p>6つの辺をもつ多角形として定義します。</p>
+            <div class="model-id">figure.hexagon / 小5, 中1 / 図形, 構成要素</div>
+          </a>
+
+          <a class="content-card" href="/geometry/parallelogram/definition/">
+            <div class="card-top"><span class="tag amber">定義</span><span class="arrow">→</span></div>
+            <h3>平行四辺形の定義</h3>
+            <p>2組の向かい合う辺がそれぞれ平行な四角形として定義します。</p>
+            <div class="model-id">figure.parallelogram / 小5, 中2 / 図形, 関係</div>
+          </a>
+
+          <a class="content-card" href="/geometry/parallelogram/opposite-sides/">
+            <div class="card-top"><span class="tag blue">性質</span><span class="arrow">→</span></div>
+            <h3>平行四辺形の性質①（向かい合う辺）</h3>
+            <p>向かい合う辺の長さがそれぞれ等しいことを確認します。</p>
+            <div class="model-id">figure.parallelogram / 小5, 中2 / 図形, 関係</div>
+          </a>
+
+          <a class="content-card" href="/geometry/parallelogram/opposite-angles/">
+            <div class="card-top"><span class="tag blue">性質</span><span class="arrow">→</span></div>
+            <h3>平行四辺形の性質②（向かい合う角）</h3>
+            <p>向かい合う角の大きさがそれぞれ等しいことを確認します。</p>
+            <div class="model-id">figure.parallelogram / 小5, 中2 / 図形, 関係</div>
+          </a>
+
+          <a class="content-card" href="/geometry/parallelogram/diagonals-bisect/">
+            <div class="card-top"><span class="tag blue">性質</span><span class="arrow">→</span></div>
+            <h3>平行四辺形の性質③（対角線）</h3>
+            <p>2本の対角線がそれぞれの中点で交わることを確認します。</p>
+            <div class="model-id">figure.parallelogram / 小5, 中2 / 図形, 関係</div>
+          </a>
+
+          <a class="content-card" href="/geometry/parallelogram/condition-two-pairs-parallel/">
+            <div class="card-top"><span class="tag rose">条件</span><span class="arrow">→</span></div>
+            <h3>平行四辺形になる条件①（2組の向かい合う辺）</h3>
+            <p>2組の向かい合う辺がそれぞれ平行である場合を確認します。</p>
+            <div class="model-id">figure.parallelogram / 小5, 中2 / 図形, 条件</div>
+          </a>
+
+          <a class="content-card" href="/geometry/parallelogram/condition-opposite-sides/">
+            <div class="card-top"><span class="tag rose">条件</span><span class="arrow">→</span></div>
+            <h3>平行四辺形になる条件②（向かい合う辺）</h3>
+            <p>2組の向かい合う辺の長さがそれぞれ等しい場合を確認します。</p>
+            <div class="model-id">figure.parallelogram / 中2 / 図形, 条件</div>
+          </a>
+
+          <a class="content-card" href="/geometry/parallelogram/condition-opposite-angles/">
+            <div class="card-top"><span class="tag rose">条件</span><span class="arrow">→</span></div>
+            <h3>平行四辺形になる条件③（向かい合う角）</h3>
+            <p>2組の向かい合う角の大きさがそれぞれ等しい場合を確認します。</p>
+            <div class="model-id">figure.parallelogram / 中2 / 図形, 条件</div>
+          </a>
+
+          <a class="content-card" href="/geometry/parallelogram/condition-diagonals-bisect/">
+            <div class="card-top"><span class="tag rose">条件</span><span class="arrow">→</span></div>
+            <h3>平行四辺形になる条件④（対角線）</h3>
+            <p>2本の対角線がそれぞれの中点で交わる場合を確認します。</p>
+            <div class="model-id">figure.parallelogram / 中2 / 図形, 条件</div>
+          </a>
+
+          <a class="content-card" href="/geometry/parallelogram/one-pair-parallel-equal/">
+            <div class="card-top"><span class="tag rose">条件</span><span class="arrow">→</span></div>
+            <h3>平行四辺形になる条件⑤（1組の向かい合う辺）</h3>
+            <p>平行四辺形になる5つの条件のうち、1組の向かい合う辺が平行で長さも等しい場合を確認します。</p>
+            <div class="model-id">figure.parallelogram / 中2 / 図形, 条件</div>
+          </a>
+
+          <a class="content-card" href="/geometry/rectangle/definition/">
+            <div class="card-top"><span class="tag amber">定義</span><span class="arrow">→</span></div>
+            <h3>長方形の定義</h3>
+            <p>4つの角がすべて直角である四角形として定義します。</p>
+            <div class="model-id">figure.rectangle / 小4, 小5, 中2 / 図形, 関係</div>
+          </a>
+
+          <a class="content-card" href="/geometry/rectangle/diagonals/">
+            <div class="card-top"><span class="tag">性質</span><span class="arrow">→</span></div>
+            <h3>長方形の性質①（対角線）</h3>
+            <p>対角線の長さが等しく、それぞれの中点で交わることを確認します。</p>
+            <div class="model-id">figure.rectangle / 小5, 中2 / 図形, 関係</div>
+          </a>
+
+          <a class="content-card" href="/geometry/rectangle/condition-diagonals/">
+            <div class="card-top"><span class="tag rose">条件</span><span class="arrow">→</span></div>
+            <h3>長方形になるための条件①（対角線）</h3>
+            <p>平行四辺形で、対角線の長さが等しい場合を確認します。</p>
+            <div class="model-id">figure.rectangle / 中2 / 図形, 条件</div>
+          </a>
+
+          <a class="content-card" href="/geometry/rectangle/condition-three-right-angles/">
+            <div class="card-top"><span class="tag rose">条件</span><span class="arrow">→</span></div>
+            <h3>長方形になるための条件②（3つの角）</h3>
+            <p>四角形で、3つの角が直角の場合を確認します。</p>
+            <div class="model-id">figure.rectangle / 中2 / 図形, 条件</div>
+          </a>
+
+          <a class="content-card" href="/geometry/rhombus/definition/">
+            <div class="card-top"><span class="tag amber">定義</span><span class="arrow">→</span></div>
+            <h3>ひし形の定義</h3>
+            <p>4つの辺の長さがすべて等しい四角形として定義します。</p>
+            <div class="model-id">figure.rhombus / 小4, 小5, 中2 / 図形, 関係</div>
+          </a>
+
+          <a class="content-card" href="/geometry/rhombus/diagonals/">
+            <div class="card-top"><span class="tag">性質</span><span class="arrow">→</span></div>
+            <h3>ひし形の性質①（対角線）</h3>
+            <p>対角線が垂直に交わり、それぞれの中点で交わることを確認します。</p>
+            <div class="model-id">figure.rhombus / 小5, 中2 / 図形, 関係</div>
+          </a>
+
+          <a class="content-card" href="/geometry/rhombus/condition-diagonals/">
+            <div class="card-top"><span class="tag rose">条件</span><span class="arrow">→</span></div>
+            <h3>ひし形になるための条件①（対角線）</h3>
+            <p>平行四辺形で、対角線が垂直に交わる場合を確認します。</p>
+            <div class="model-id">figure.rhombus / 中2 / 図形, 条件</div>
+          </a>
+
+          <a class="content-card" href="/geometry/rhombus/condition-four-equal-sides/">
+            <div class="card-top"><span class="tag rose">条件</span><span class="arrow">→</span></div>
+            <h3>ひし形になるための条件②（4つの辺）</h3>
+            <p>四角形で、4つの辺の長さがすべて等しい場合を確認します。</p>
+            <div class="model-id">figure.rhombus / 中2 / 図形, 条件</div>
+          </a>
+
+          <a class="content-card" href="/geometry/square/definition/">
+            <div class="card-top"><span class="tag amber">定義</span><span class="arrow">→</span></div>
+            <h3>正方形の定義</h3>
+            <p>4辺が等しく、4つの角が直角である四角形として定義します。</p>
+            <div class="model-id">figure.square / 小4, 小5, 中2 / 図形, 関係</div>
+          </a>
+
+          <a class="content-card" href="/geometry/square/diagonals/">
+            <div class="card-top"><span class="tag">性質</span><span class="arrow">→</span></div>
+            <h3>正方形の性質①（対角線）</h3>
+            <p>対角線の長さが等しく、垂直に交わり、それぞれの中点で交わることを確認します。</p>
+            <div class="model-id">figure.square / 小5, 中2 / 図形, 関係</div>
+          </a>
+
+          <a class="content-card" href="/geometry/square/condition-diagonals/">
+            <div class="card-top"><span class="tag rose">条件</span><span class="arrow">→</span></div>
+            <h3>正方形になるための条件①（対角線）</h3>
+            <p>平行四辺形で、対角線の長さが等しく垂直に交わる場合を確認します。</p>
+            <div class="model-id">figure.square / 中2 / 図形, 条件</div>
+          </a>
+
+          <a class="content-card" href="/geometry/square/condition-rectangle-equal-adjacent-sides/">
+            <div class="card-top"><span class="tag rose">条件</span><span class="arrow">→</span></div>
+            <h3>正方形になるための条件②（長方形と辺）</h3>
+            <p>長方形で、隣り合う辺の長さが等しい場合を確認します。</p>
+            <div class="model-id">figure.square / 中2 / 図形, 条件</div>
+          </a>
+
+          <a class="content-card" href="/geometry/square/condition-rhombus-right-angle/">
+            <div class="card-top"><span class="tag rose">条件</span><span class="arrow">→</span></div>
+            <h3>正方形になるための条件③（ひし形と角）</h3>
+            <p>ひし形で、1つの角が直角の場合を確認します。</p>
+            <div class="model-id">figure.square / 中2 / 図形, 条件</div>
+          </a>
+
+          <a class="content-card" href="/geometry/square/condition-rectangle-perpendicular-diagonals/">
+            <div class="card-top"><span class="tag rose">条件</span><span class="arrow">→</span></div>
+            <h3>正方形になるための条件④（長方形と対角線）</h3>
+            <p>長方形で、対角線が垂直に交わる場合を確認します。</p>
+            <div class="model-id">figure.square / 中2 / 図形, 条件</div>
+          </a>
+
+          <a class="content-card" href="/geometry/square/condition-rhombus-equal-diagonals/">
+            <div class="card-top"><span class="tag rose">条件</span><span class="arrow">→</span></div>
+            <h3>正方形になるための条件⑤（ひし形と対角線）</h3>
+            <p>ひし形で、対角線の長さが等しい場合を確認します。</p>
+            <div class="model-id">figure.square / 中2 / 図形, 条件</div>
+          </a>
+
+          <a class="content-card" href="/geometry/trapezoid/definition/">
+            <div class="card-top"><span class="tag amber">定義</span><span class="arrow">→</span></div>
+            <h3>台形の定義</h3>
+            <p>1組の向かい合う辺が平行な四角形として定義します。</p>
+            <div class="model-id">figure.trapezoid / 小5, 中2 / 図形, 関係</div>
+          </a>
+
+          <a class="content-card" href="/geometry/rectangle/area/">
+            <div class="card-top"><span class="tag green">公式</span><span class="arrow">→</span></div>
+            <h3>長方形の面積</h3>
+            <p>長方形の面積を、縦×横で求める公式として確認します。</p>
+            <div class="model-id">figure.rectangle / 小4, 小5 / 図形, 量</div>
+          </a>
+
+          <a class="content-card" href="/geometry/rectangle/perimeter/">
+            <div class="card-top"><span class="tag green">公式</span><span class="arrow">→</span></div>
+            <h3>長方形の周の長さ</h3>
+            <p>長方形の周の長さを、縦と横から求める公式として確認します。</p>
+            <div class="model-id">figure.rectangle / 小4, 小5 / 図形, 量</div>
+          </a>
+
+          <a class="content-card" href="/geometry/square/area/">
+            <div class="card-top"><span class="tag green">公式</span><span class="arrow">→</span></div>
+            <h3>正方形の面積</h3>
+            <p>正方形の面積を、1辺×1辺で求める公式として確認します。</p>
+            <div class="model-id">figure.square / 小4, 小5 / 図形, 量</div>
+          </a>
+
+          <a class="content-card" href="/geometry/square/perimeter/">
+            <div class="card-top"><span class="tag green">公式</span><span class="arrow">→</span></div>
+            <h3>正方形の周の長さ</h3>
+            <p>正方形の周の長さを、1辺×4で求める公式として確認します。</p>
+            <div class="model-id">figure.square / 小4, 小5 / 図形, 量</div>
+          </a>
+
+          <a class="content-card" href="/geometry/parallelogram/area-base-height/">
+            <div class="card-top"><span class="tag green">公式</span><span class="arrow">→</span></div>
+            <h3>平行四辺形の面積（底辺と高さ）</h3>
+            <p>平行四辺形の面積を、底辺×高さで求める公式として確認します。</p>
+            <div class="model-id">figure.parallelogram / 小5, 中1 / 図形, 量</div>
+          </a>
+
+          <a class="content-card" href="/geometry/trapezoid/area-bases-height/">
+            <div class="card-top"><span class="tag green">公式</span><span class="arrow">→</span></div>
+            <h3>台形の面積（上底・下底・高さ）</h3>
+            <p>台形の面積を、（上底＋下底）×高さ÷2で求める公式として確認します。</p>
+            <div class="model-id">figure.trapezoid / 小5, 中1 / 図形, 量</div>
+          </a>
+
+          <a class="content-card" href="/geometry/rhombus/area-diagonals/">
+            <div class="card-top"><span class="tag green">公式</span><span class="arrow">→</span></div>
+            <h3>ひし形の面積（対角線）</h3>
+            <p>ひし形の面積を、2本の対角線から求める公式として確認します。</p>
+            <div class="model-id">figure.rhombus / 小5, 中1 / 図形, 量</div>
+          </a>
+
+          <a class="content-card" href="/geometry/triangle/congruence-conditions/">
+            <div class="card-top"><span class="tag rose">条件</span><span class="arrow">→</span></div>
+            <h3>三角形の合同条件①（3組の辺）</h3>
+            <p>3組の辺がそれぞれ等しいとき、2つの三角形が合同になることを確認します。</p>
+            <div class="model-id">figure.triangle / 中2 / 図形, 条件</div>
+          </a>
+
+          <a class="content-card" href="/geometry/triangle/congruence-sas/">
+            <div class="card-top"><span class="tag rose">条件</span><span class="arrow">→</span></div>
+            <h3>三角形の合同条件②（2辺とその間の角）</h3>
+            <p>2組の辺とその間の角がそれぞれ等しいとき、合同になることを確認します。</p>
+            <div class="model-id">figure.triangle / 中2 / 図形, 条件</div>
+          </a>
+
+          <a class="content-card" href="/geometry/triangle/congruence-asa/">
+            <div class="card-top"><span class="tag rose">条件</span><span class="arrow">→</span></div>
+            <h3>三角形の合同条件③（1辺とその両端の角）</h3>
+            <p>1組の辺とその両端の角がそれぞれ等しいとき、合同になることを確認します。</p>
+            <div class="model-id">figure.triangle / 中2 / 図形, 条件</div>
+          </a>
+
+          <a class="content-card" href="/geometry/triangle/right-congruence-hypotenuse-leg/">
+            <div class="card-top"><span class="tag rose">条件</span><span class="arrow">→</span></div>
+            <h3>直角三角形の合同条件①（斜辺と他の辺）</h3>
+            <p>斜辺と他の1辺がそれぞれ等しい直角三角形の合同条件を確認します。</p>
+            <div class="model-id">figure.triangle / 中2 / 図形, 条件</div>
+          </a>
+
+          <a class="content-card" href="/geometry/triangle/right-congruence-hypotenuse-acute-angle/">
+            <div class="card-top"><span class="tag rose">条件</span><span class="arrow">→</span></div>
+            <h3>直角三角形の合同条件②（斜辺と1つの鋭角）</h3>
+            <p>斜辺と1つの鋭角がそれぞれ等しい直角三角形の合同条件を確認します。</p>
+            <div class="model-id">figure.triangle / 中2 / 図形, 条件</div>
+          </a>
+
+          <a class="content-card" href="/geometry/triangle/similarity-sss/">
+            <div class="card-top"><span class="tag rose">条件</span><span class="arrow">→</span></div>
+            <h3>三角形の相似条件①（3組の辺の比）</h3>
+            <p>3組の辺の比がすべて等しいとき、相似になることを確認します。</p>
+            <div class="model-id">figure.triangle / 中3 / 図形, 条件</div>
+          </a>
+
+          <a class="content-card" href="/geometry/triangle/similarity-sas/">
+            <div class="card-top"><span class="tag rose">条件</span><span class="arrow">→</span></div>
+            <h3>三角形の相似条件②（2組の辺の比とその間の角）</h3>
+            <p>2組の辺の比とその間の角がそれぞれ等しいとき、相似になることを確認します。</p>
+            <div class="model-id">figure.triangle / 中3 / 図形, 条件</div>
+          </a>
+
+          <a class="content-card" href="/geometry/triangle/similarity-aa/">
+            <div class="card-top"><span class="tag rose">条件</span><span class="arrow">→</span></div>
+            <h3>三角形の相似条件③（2組の角）</h3>
+            <p>2組の角がそれぞれ等しいとき、相似になることを確認します。</p>
+            <div class="model-id">figure.triangle / 中3 / 図形, 条件</div>
+          </a>
+
+          <a class="content-card" href="/geometry/triangle/isosceles-definition/">
+            <div class="card-top"><span class="tag amber">定義</span><span class="arrow">→</span></div>
+            <h3>二等辺三角形の定義</h3>
+            <p>2つの辺の長さが等しい三角形として定義します。</p>
+            <div class="model-id">figure.triangle / 中2 / 図形, 関係</div>
+          </a>
+
+          <a class="content-card" href="/geometry/triangle/isosceles-base-angles/">
+            <div class="card-top"><span class="tag blue">性質</span><span class="arrow">→</span></div>
+            <h3>二等辺三角形の性質①（底角）</h3>
+            <p>等しい辺に向かい合う2つの角が等しくなることを確認します。</p>
+            <div class="model-id">figure.triangle / 中2 / 図形, 関係</div>
+          </a>
+
+          <a class="content-card" href="/geometry/triangle/isosceles-apex-bisector/">
+            <div class="card-top"><span class="tag blue">性質</span><span class="arrow">→</span></div>
+            <h3>二等辺三角形の性質②（頂角の二等分線）</h3>
+            <p>頂角の二等分線が底辺を垂直に二等分することを確認します。</p>
+            <div class="model-id">figure.triangle / 中2 / 図形, 関係</div>
+          </a>
+
+          <a class="content-card" href="/geometry/triangle/isosceles-condition-base-angles/">
+            <div class="card-top"><span class="tag rose">条件</span><span class="arrow">→</span></div>
+            <h3>二等辺三角形になるための条件（2つの角）</h3>
+            <p>2つの角が等しい三角形が二等辺三角形になることを確認します。</p>
+            <div class="model-id">figure.triangle / 中2 / 図形, 条件</div>
+          </a>
+
+          <a class="content-card" href="/geometry/triangle/equilateral-definition/">
+            <div class="card-top"><span class="tag amber">定義</span><span class="arrow">→</span></div>
+            <h3>正三角形の定義</h3>
+            <p>3つの辺の長さがすべて等しい三角形として定義します。</p>
+            <div class="model-id">figure.triangle / 小3, 中2 / 図形, 関係</div>
+          </a>
+
+          <a class="content-card" href="/geometry/triangle/equilateral-angles/">
+            <div class="card-top"><span class="tag blue">性質</span><span class="arrow">→</span></div>
+            <h3>正三角形の3つの角</h3>
+            <p>正三角形の3つの角がすべて等しく、60°になることを確認します。</p>
+            <div class="model-id">figure.triangle / 小3, 中2 / 図形, 関係</div>
+          </a>
+
+          <a class="content-card" href="/geometry/triangle/right-definition/">
+            <div class="card-top"><span class="tag amber">定義</span><span class="arrow">→</span></div>
+            <h3>直角三角形の定義</h3>
+            <p>1つの角が直角である三角形として定義します。</p>
+            <div class="model-id">figure.rightTriangle / 小4, 中1 / 図形</div>
+          </a>
+
+          <a class="content-card" href="/geometry/triangle/acute-definition/">
+            <div class="card-top"><span class="tag amber">定義</span><span class="arrow">→</span></div>
+            <h3>鋭角三角形の定義</h3>
+            <p>3つの角がすべて鋭角である三角形として定義します。</p>
+            <div class="model-id">figure.triangle / 小4, 中1 / 図形</div>
+          </a>
+
+          <a class="content-card" href="/geometry/triangle/obtuse-definition/">
+            <div class="card-top"><span class="tag amber">定義</span><span class="arrow">→</span></div>
+            <h3>鈍角三角形の定義</h3>
+            <p>1つの角が鈍角である三角形として定義します。</p>
+            <div class="model-id">figure.triangle / 小4, 中1 / 図形</div>
+          </a>
+
+          <a class="content-card" href="/geometry/triangle/angle-sum/">
+            <div class="card-top"><span class="tag blue">定理</span><span class="arrow">→</span></div>
+            <h3>三角形の内角の和</h3>
+            <p>三角形の3つの内角の和が180°であることを確認します。</p>
+            <div class="model-id">figure.triangle / 小5, 中2 / 図形, 関係</div>
+          </a>
+
+          <a class="content-card" href="/geometry/triangle/existence-condition/">
+            <div class="card-top"><span class="tag rose">条件</span><span class="arrow">→</span></div>
+            <h3>三角形の存在条件</h3>
+            <p>3つの線分が三角形をつくるための条件を確認します。</p>
+            <div class="model-id">figure.triangle / 中1, 中2 / 図形, 条件</div>
+          </a>
+
+          <a class="content-card" href="/geometry/triangle/exterior-angle/">
+            <div class="card-top"><span class="tag blue">定理</span><span class="arrow">→</span></div>
+            <h3>三角形の外角</h3>
+            <p>外角が、それととなり合わない2つの内角の和に等しいことを確認します。</p>
+            <div class="model-id">figure.triangle / 中2 / 図形, 関係</div>
+          </a>
+
+          <a class="content-card" href="/geometry/triangle/area-base-height/">
+            <div class="card-top"><span class="tag green">公式</span><span class="arrow">→</span></div>
+            <h3>三角形の面積（底辺と高さ）</h3>
+            <p>底辺と高さから三角形の面積を求める公式を確認します。</p>
+            <div class="model-id">figure.triangle / 小5, 中1 / 図形, 量</div>
+          </a>
+
+          <a class="content-card" href="/geometry/triangle/segment-area-ratio-same-height/">
+            <div class="card-top"><span class="tag green">性質</span><span class="arrow">→</span></div>
+            <h3>線分比と面積比①（高さが等しい三角形）</h3>
+            <p>高さが等しい2つの三角形では、面積の比が底辺の比に等しくなることを確認します。</p>
+            <div class="model-id">figure.triangle / 中2, 中3 / 図形, 量, 関係</div>
+          </a>
+
+          <a class="content-card" href="/geometry/triangle/segment-area-ratio-same-base/">
+            <div class="card-top"><span class="tag green">性質</span><span class="arrow">→</span></div>
+            <h3>線分比と面積比②（底辺が等しい三角形）</h3>
+            <p>底辺が等しい2つの三角形では、面積の比が高さの比に等しくなることを確認します。</p>
+            <div class="model-id">figure.triangle / 中2, 中3 / 図形, 量, 関係</div>
+          </a>
+
+          <a class="content-card" href="/geometry/triangle/pythagorean-theorem/">
+            <div class="card-top"><span class="tag green">定理</span><span class="arrow">→</span></div>
+            <h3>三平方の定理</h3>
+            <p>直角三角形で a²+b²=c² となることを確認します。</p>
+            <div class="model-id">figure.rightTriangle / 中3 / 図形, 公式</div>
+          </a>
+
+          <a class="content-card" href="/geometry/triangle/right-triangle-ratios/">
+            <div class="card-top"><span class="tag green">典型例</span><span class="arrow">→</span></div>
+            <h3>整数比の直角三角形</h3>
+            <p>三平方の定理で頻出する 3:4:5 などの整数比を、典型例として整理します。</p>
+            <div class="model-id">figure.rightTriangle / 中3 / 図形, 数, 量</div>
+          </a>
+        </div>
+      </section>
+
+      <section class="note-band">
+        <div class="note-panel">
+          <h2>体系学習の役割</h2>
+          <p>/learn/ は説明ページの入口です。ページ本体は当面 /geometry/ などの対象別カテゴリに残し、安定してからURL移行を検討します。</p>
+        </div>
+        <div class="note-panel">
+          <h2>分類の扱い</h2>
+          <p>図形、グラフ、方程式、関係、公式、条件は上位導線ではなく、topicTags や分類ページとして使います。</p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="site-footer"></div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../assets/supabase-client.js"></script>
+  <script src="../assets/auth-helpers.js"></script>
+  <script src="../assets/auth-ui.js"></script>
+  <script src="../assets/components.js"></script>
+  <script src="../assets/learn-search.js"></script>
+  <script src="../assets/site-auto-i18n.js"></script>
+</body>
+</html>

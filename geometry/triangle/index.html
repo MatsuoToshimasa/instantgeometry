@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ja" data-geometry-figure-model="figure.triangle">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>三角形 | Instant Geometry</title>
+  <link rel="canonical" href="https://www.instantgeometry.com/geometry/triangle/" />
+  <link rel="stylesheet" href="../../assets/triangle-mobile-page.css?v=triangle-katex-8" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" />
+  <script src="../../assets/save-quota.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <button class="btn" id="backBtn" type="button">戻る</button>
+      <h1 class="topbar-title">三角形</h1>
+      <button class="btn" id="saveBtn" type="button">保存</button>
+    </header>
+
+    <section class="stage-wrap" id="captureRoot">
+      <div class="status" id="statusBox">3辺を入力すると、三角形を描画します。</div>
+      <svg class="stage" id="stage" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet" aria-label="三角形の描画画面"></svg>
+    </section>
+
+    <footer class="bottom-bar">
+      <div class="field">
+        <div class="field-label">辺BC</div>
+        <input class="field-input" id="sideA" type="text" inputmode="text" value="5" />
+      </div>
+      <div class="field">
+        <div class="field-label">辺CA</div>
+        <input class="field-input" id="sideB" type="text" inputmode="text" value="6" />
+      </div>
+      <div class="field">
+        <div class="field-label">辺AB</div>
+        <input class="field-input" id="sideC" type="text" inputmode="text" value="7" />
+      </div>
+    </footer>
+  </div>
+
+  <div class="sheet-backdrop" id="sheetBackdrop"></div>
+  <section class="sheet" id="editSheet" aria-hidden="true">
+    <div class="sheet-header">
+      <h2 class="sheet-title" id="sheetTitle">設定</h2>
+      <button class="sheet-close" id="sheetClose" type="button" aria-label="閉じる">×</button>
+    </div>
+    <div class="sheet-body" id="sheetBody"></div>
+  </section>
+
+  <section class="sheet" id="saveSheet" aria-hidden="true">
+    <div class="sheet-header">
+      <h2 class="sheet-title">保存</h2>
+      <button class="sheet-close" id="saveSheetClose" type="button" aria-label="閉じる">×</button>
+    </div>
+    <div class="sheet-body">
+      <div class="save-grid">
+        <button class="btn" id="savePngBtn" type="button">PNG</button>
+        <button class="btn" id="saveTransparentBtn" type="button">透過PNG</button>
+        <button class="btn" id="savePdfBtn" type="button">PDF</button>
+      </div>
+    </div>
+  </section>
+
+  <script type="application/json" id="geometryFigureModel">{"model":"figure.triangle","adopted":true}</script>
+  <script src="../../assets/mobile-angle-ornaments.js?v=label-wording-3"></script>
+  <script src="../../assets/function-svg-labels.js?v=triangle-katex-1"></script>
+  <script src="../../assets/draw-shared-labels.js?v=shared-katex-2"></script>
+  <script src="../../assets/draw-label-taxonomy.js?v=taxonomy-1"></script>
+  <script src="../../assets/draw-shared-label-engine.js?v=controller-1"></script>
+  <script src="../../assets/triangle-mobile-page.js?v=controller-24"></script>
+  <script>
+    window.InstantGeometryTriangleMobile.createPage({
+      readyMessage: '入力をもとに三角形を描画しています。',
+      fileBase: 'geometry-triangle',
+      controlInputIds: { a: 'sideA', b: 'sideB', c: 'sideC' },
+      getObjectDisplayName: function (kind, id, context) {
+        var state = context && context.state || {};
+        var labels = state.pointInputs || {};
+        function pointName(pointId) {
+          return String(labels[pointId] || pointId || '').trim() || pointId;
+        }
+        if (kind === 'side') {
+          if (id === 'a') return '辺' + pointName('B') + pointName('C');
+          if (id === 'b') return '辺' + pointName('C') + pointName('A');
+          if (id === 'c') return '辺' + pointName('A') + pointName('B');
+        }
+        if (kind === 'angle') {
+          if (id === 'A') return '角' + pointName('B') + pointName('A') + pointName('C');
+          if (id === 'B') return '角' + pointName('C') + pointName('B') + pointName('A');
+          if (id === 'C') return '角' + pointName('A') + pointName('C') + pointName('B');
+        }
+        if (kind === 'area') return '三角形' + pointName('A') + pointName('B') + pointName('C');
+        if (kind === 'point') return '点' + pointName(id);
+        return '';
+      },
+      initialState: {
+        sides: { a: 5, b: 6, c: 7 },
+        pointInputs: { A: 'A', B: 'B', C: 'C' },
+        sideInputs: { a: ' ', b: ' ', c: ' ' },
+        sideKinds: { a: 'plain', b: 'plain', c: 'plain' },
+        sideArcVisible: { a: true, b: true, c: true },
+        angleInputs: { A: '', B: '', C: '' },
+        angleKinds: { A: 'hidden', B: 'hidden', C: 'hidden' },
+        areaValue: ''
+      },
+      readControls: function (inputs, parseNatural) {
+        return {
+          a: parseNatural(inputs.a.value, '辺BC'),
+          b: parseNatural(inputs.b.value, '辺CA'),
+          c: parseNatural(inputs.c.value, '辺AB')
+        };
+      },
+      applyControlsToState: function (state, parsed) {
+        state.sides.a = parsed.a;
+        state.sides.b = parsed.b;
+        state.sides.c = parsed.c;
+      },
+      computeGeometry: function (state, parsed, helpers) {
+        return helpers.computeTriangleFromSides(parsed.a, parsed.b, parsed.c);
+      },
+      formatAreaLabel: function (state, geometry, helpers) {
+        return helpers.formatHeronAreaFromInputs(state.sides.a, state.sides.b, state.sides.c, state.rawControlInputs);
+      },
+      sideNumericMode: function () {
+        return 'control';
+      },
+      angleNumericMode: function () {
+        return 'readonly';
+      },
+      updateSideControl: function (id, value, state, inputs) {
+        inputs[id].value = String(value);
+        state.sides[id] = value;
+      },
+      updateAngleControl: function () {}
+    });
+  </script>
+  <script src="../../assets/draw-geometry-role-definitions.js?v=role-defs-1"></script>
+  <script src="../../assets/draw-page-schema-adapter.js?v=schema-adapter-2"></script>
+  <script src="../../assets/draw-settings.js?v=settings-contract-1"></script>
+  <script src="/assets/site-auto-i18n.js?v=settings-contract-1"></script>
+</body>
+</html>

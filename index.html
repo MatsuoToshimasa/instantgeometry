@@ -4,11 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Instant Geometry</title>
-  <meta name="description" content="Instant Geometry は、三角形・四角形・円・楕円などを条件入力からすぐ描ける、数学教育向けの無料図形作図ツールです。" />
+  <meta name="description" content="Instant Geometry は、体系学習、数理描画、問題作成をつなぐ数学教育向けのWebツールです。" />
   <meta name="google-site-verification" content="4cgJHQ7JPUxt7vcbEIvOfi7a_HeQBFVl9RC-XrXhkho" />
   <link rel="canonical" href="https://www.instantgeometry.com/" />
   <meta property="og:title" content="Instant Geometry" />
-  <meta property="og:description" content="三角形・四角形・円・楕円などを条件入力からすぐ描ける、数学教育向けの無料図形作図ツールです。" />
+  <meta property="og:description" content="体系学習、数理描画、問題作成をつなぐ数学教育向けのWebツールです。" />
   <meta property="og:url" content="https://www.instantgeometry.com/" />
   <meta property="og:type" content="website" />
   <link rel="stylesheet" href="/assets/base.css" />
@@ -148,29 +148,28 @@
   </div>
 
   <main class="wrap hero">
-    <h1>条件を入れて、図形をすぐ描く。</h1>
+    <h1>学ぶ、描く、問題を作る。</h1>
     <p class="lead">
-      Instant Geometry は、三角形・四角形・円や楕円をスマホSafariで扱いやすい形に整理した作図ツールです。
-      まずは対応済みの図形からWeb版として公開しています。
+      Instant Geometry は、定義や定理を学ぶページ、数学的対象を描くページ、問題を作るページを
+      目的別に整理していく数学教育向けのWebツールです。
     </p>
     <div class="actions">
-      <a class="btn primary" href="/draw/">図形を描く</a>
-      <a class="btn function" href="/function/">関数を描く</a>
-      <a class="btn settings" href="/settings/">表示設定</a>
-      <a class="btn pricing" href="/pricing/">料金プラン</a>
+      <a class="btn primary" href="/learn/">体系学習</a>
+      <a class="btn function" href="/draw/">数理描画</a>
+      <a class="btn pricing" href="/problems/">問題作成</a>
     </div>
-    <section class="grid" aria-label="対応済みカテゴリ">
-      <a class="card" href="/draw/#triangles">
-        <strong>三角形</strong>
-        <span>SSS、SAS、ASA、直角三角形などを入力から描画します。</span>
+    <section class="grid" aria-label="主要導線">
+      <a class="card" href="/learn/">
+        <strong>体系学習</strong>
+        <span>定義、性質、定理、公式、条件、典型例、注意、証明を説明ページとして整理します。</span>
       </a>
-      <a class="card" href="/draw/#quadrilaterals">
-        <strong>四角形</strong>
-        <span>正方形、長方形、台形、平行四辺形、一般四角形に対応しています。</span>
+      <a class="card" href="/draw/">
+        <strong>数理描画</strong>
+        <span>図形描画、関数描画、グラフ描画、作図、ラベル調整、保存を扱います。</span>
       </a>
-      <a class="card" href="/draw/#curves">
-        <strong>曲線図形</strong>
-        <span>円、楕円、扇形、楕円の扇形を描画できます。</span>
+      <a class="card" href="/problems/">
+        <strong>問題作成</strong>
+        <span>受験問題、複雑図形、面積分解、条件付き出題、解説生成を育てます。</span>
       </a>
     </section>
   </main>
@@ -188,62 +187,58 @@
       const translations = {
         ja: {
           title: 'Instant Geometry',
-          heroTitle: '条件を入れて、図形をすぐ描く。',
-          heroLead: 'Instant Geometry は、三角形・四角形・円や楕円をスマホSafariで扱いやすい形に整理した作図ツールです。まずは対応済みの図形からWeb版として公開しています。',
-          draw: '図形を描く',
-          functions: '関数を描く',
-          settings: '表示設定',
-          pricing: '料金プラン',
-          aria: '対応済みカテゴリ',
+          heroTitle: '学ぶ、描く、問題を作る。',
+          heroLead: 'Instant Geometry は、定義や定理を学ぶページ、数学的対象を描くページ、問題を作るページを目的別に整理していく数学教育向けのWebツールです。',
+          learn: '体系学習',
+          draw: '数理描画',
+          problems: '問題作成',
+          aria: '主要導線',
           cards: [
-            ['三角形', 'SSS、SAS、ASA、直角三角形などを入力から描画します。'],
-            ['四角形', '正方形、長方形、台形、平行四辺形、一般四角形に対応しています。'],
-            ['曲線図形', '円、楕円、扇形、楕円の扇形を描画できます。']
+            ['体系学習', '定義、性質、定理、公式、条件、典型例、注意、証明を説明ページとして整理します。'],
+            ['数理描画', '図形描画、関数描画、グラフ描画、作図、ラベル調整、保存を扱います。'],
+            ['問題作成', '受験問題、複雑図形、面積分解、条件付き出題、解説生成を育てます。']
           ]
         },
         en: {
           title: 'Instant Geometry',
-          heroTitle: 'Enter conditions and draw shapes instantly.',
-          heroLead: 'Instant Geometry is a drawing tool organized for smartphone Safari, starting with triangles, quadrilaterals, circles, and ellipses. The web version currently focuses on supported shapes.',
-          draw: 'Draw Shapes',
-          functions: 'Graph Functions',
-          settings: 'Display Settings',
-          pricing: 'Pricing',
-          aria: 'Supported categories',
+          heroTitle: 'Learn, draw, and build problems.',
+          heroLead: 'Instant Geometry organizes concept pages, mathematical drawing pages, and problem-building pages by user intent.',
+          learn: 'Learn',
+          draw: 'Draw',
+          problems: 'Problems',
+          aria: 'Primary navigation',
           cards: [
-            ['Triangles', 'Draw from SSS, SAS, ASA, right triangle conditions, and more.'],
-            ['Quadrilaterals', 'Supports squares, rectangles, trapezoids, parallelograms, and general quadrilaterals.'],
-            ['Curved Shapes', 'Draw circles, ellipses, sectors, and elliptic sectors.']
+            ['Learn', 'Definitions, properties, theorems, formulas, conditions, examples, cautions, and proofs.'],
+            ['Draw', 'Geometry drawing, function drawing, graphing, construction, label adjustment, and saving.'],
+            ['Problems', 'Entrance-exam problems, complex figures, area decomposition, conditional prompts, and explanations.']
           ]
         },
         zh: {
           title: 'Instant Geometry',
-          heroTitle: '输入条件，立即绘制图形。',
-          heroLead: 'Instant Geometry 是为手机 Safari 整理的绘图工具，当前 Web 版先支持三角形、四边形、圆和椭圆等图形。',
-          draw: '绘制图形',
-          functions: '绘制函数',
-          settings: '显示设置',
-          pricing: '价格方案',
-          aria: '已支持的分类',
+          heroTitle: '学习、绘制、制作问题。',
+          heroLead: 'Instant Geometry 按用户目的整理概念学习、数学绘图和问题制作页面。',
+          learn: '体系学习',
+          draw: '数学绘图',
+          problems: '问题制作',
+          aria: '主要导航',
           cards: [
-            ['三角形', '可根据 SSS、SAS、ASA、直角三角形等条件绘制。'],
-            ['四边形', '支持正方形、长方形、梯形、平行四边形和一般四边形。'],
-            ['曲线图形', '可以绘制圆、椭圆、扇形和椭圆扇形。']
+            ['体系学习', '整理定义、性质、定理、公式、条件、典型例、注意点和证明。'],
+            ['数学绘图', '处理几何绘图、函数绘图、图表、作图、标签调整和保存。'],
+            ['问题制作', '整理考试题、复杂图形、面积分解、条件出题和解说生成。']
           ]
         },
         es: {
           title: 'Instant Geometry',
-          heroTitle: 'Introduce condiciones y dibuja figuras al instante.',
-          heroLead: 'Instant Geometry es una herramienta de dibujo organizada para Safari en smartphone. La versión web comienza con triángulos, cuadriláteros, círculos y elipses compatibles.',
-          draw: 'Dibujar figuras',
-          functions: 'Graficar funciones',
-          settings: 'Ajustes de visualización',
-          pricing: 'Precios',
-          aria: 'Categorías compatibles',
+          heroTitle: 'Aprende, dibuja y crea problemas.',
+          heroLead: 'Instant Geometry organiza páginas de aprendizaje, dibujo matemático y creación de problemas según la intención del usuario.',
+          learn: 'Aprender',
+          draw: 'Dibujar',
+          problems: 'Problemas',
+          aria: 'Navegación principal',
           cards: [
-            ['Triángulos', 'Dibuja con condiciones SSS, SAS, ASA, triángulos rectángulos y más.'],
-            ['Cuadriláteros', 'Admite cuadrados, rectángulos, trapecios, paralelogramos y cuadriláteros generales.'],
-            ['Figuras curvas', 'Dibuja círculos, elipses, sectores y sectores elípticos.']
+            ['Aprender', 'Definiciones, propiedades, teoremas, fórmulas, condiciones, ejemplos, notas y pruebas.'],
+            ['Dibujar', 'Dibujo geométrico, funciones, gráficas, construcción, etiquetas y guardado.'],
+            ['Problemas', 'Problemas de examen, figuras complejas, descomposición de áreas, condiciones y explicaciones.']
           ]
         }
       };
@@ -260,17 +255,15 @@
         document.title = t.title;
         const h1 = document.querySelector('.hero h1');
         const lead = document.querySelector('.lead');
-        const drawLink = document.querySelector('.actions .primary');
-        const functionLink = document.querySelector('.actions .function');
-        const settingsLink = document.querySelector('.actions .settings');
-        const pricingLink = document.querySelector('.actions .pricing');
+        const learnLink = document.querySelector('.actions .primary');
+        const drawLink = document.querySelector('.actions .function');
+        const problemsLink = document.querySelector('.actions .pricing');
         const grid = document.querySelector('.grid');
         if (h1) h1.textContent = t.heroTitle;
         if (lead) lead.textContent = t.heroLead;
+        if (learnLink) learnLink.textContent = t.learn;
         if (drawLink) drawLink.textContent = t.draw;
-        if (functionLink) functionLink.textContent = t.functions;
-        if (settingsLink) settingsLink.textContent = t.settings;
-        if (pricingLink) pricingLink.textContent = t.pricing;
+        if (problemsLink) problemsLink.textContent = t.problems;
         if (grid) grid.setAttribute('aria-label', t.aria);
         document.querySelectorAll('.card').forEach(function (card, index) {
           const data = t.cards[index];

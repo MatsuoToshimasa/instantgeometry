@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ja" data-geometry-figure-model="figure.circle">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>円 | Instant Geometry</title>
+  <link rel="canonical" href="https://www.instantgeometry.com/geometry/circle/" />
+  <link rel="stylesheet" href="../../assets/conic-mobile-page.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" />
+  <script src="../../assets/save-quota.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <button class="btn" id="backBtn" type="button">戻る</button>
+      <h1 class="topbar-title">円</h1>
+      <button class="btn" id="saveBtn" type="button">保存</button>
+    </header>
+
+    <section class="stage-wrap" id="captureRoot">
+      <div class="status" id="statusBox">半径を入力すると、円を描画します。</div>
+      <svg class="stage" id="stage" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet" aria-label="円の描画画面"></svg>
+    </section>
+
+    <footer class="bottom-bar one-field">
+      <div class="field">
+        <div class="field-label">半径OA</div>
+        <input class="field-input" id="radiusLen" type="text" inputmode="decimal" value="5" />
+      </div>
+    </footer>
+  </div>
+
+  <div class="sheet-backdrop" id="sheetBackdrop"></div>
+  <section class="sheet" id="editSheet" aria-hidden="true">
+    <div class="sheet-header">
+      <h2 class="sheet-title" id="sheetTitle">設定</h2>
+      <button class="sheet-close" id="sheetClose" type="button" aria-label="閉じる">×</button>
+    </div>
+    <div class="sheet-body" id="sheetBody"></div>
+  </section>
+
+  <section class="sheet" id="saveSheet" aria-hidden="true">
+    <div class="sheet-header">
+      <h2 class="sheet-title">保存</h2>
+      <button class="sheet-close" id="saveSheetClose" type="button" aria-label="閉じる">×</button>
+    </div>
+    <div class="sheet-body">
+      <div class="save-grid">
+        <button class="btn" id="savePngBtn" type="button">PNG</button>
+        <button class="btn" id="saveTransparentBtn" type="button">透過PNG</button>
+        <button class="btn" id="savePdfBtn" type="button">PDF</button>
+      </div>
+    </div>
+  </section>
+
+  <script type="application/json" id="geometryFigureModel">{"model":"figure.circle","adopted":true}</script>
+  <script src="../../assets/function-svg-labels.js?v=triangle-katex-1"></script>
+  <script src="../../assets/draw-shared-labels.js?v=shared-katex-2"></script>
+  <script src="../../assets/draw-label-taxonomy.js?v=taxonomy-1"></script>
+  <script src="../../assets/draw-shared-label-engine.js?v=controller-1"></script>
+  <script src="../../assets/conic-mobile-page.js?v=controller-1"></script>
+  <script>
+    window.InstantGeometryConicMobile.createPage({
+      shape: 'circle',
+      readyMessage: '入力をもとに円を描画しています。',
+      fileBase: 'geometry-circle',
+      controlInputIds: { radius: 'radiusLen' },
+      getControllerTitle: function (kind, id, context) {
+        var state = context && context.state || {};
+        var labels = state.pointInputs || {};
+        var center = String(labels.O || 'O').trim() || 'O';
+        var point = String(labels.A || 'A').trim() || 'A';
+        if (kind === 'measure' && (id === 'r' || id === 'radius' || id === 'OA')) return '半径' + center + point;
+        if (kind === 'point') return '点' + String(labels[id] || id || '').trim();
+        if (kind === 'area') return '円' + center;
+        return '';
+      },
+      initialState: {
+        pointInputs: { O: 'O', A: 'A' },
+        measures: { r: 5 },
+        measureInputs: { r: ' ' },
+        areaInput: ''
+      }
+    });
+  </script>
+  <script src="../../assets/draw-geometry-role-definitions.js?v=role-defs-1"></script>
+  <script src="../../assets/draw-page-schema-adapter.js?v=schema-adapter-2"></script>
+  <script src="../../assets/draw-settings.js?v=settings-contract-1"></script>
+  <script src="/assets/site-auto-i18n.js?v=settings-contract-1"></script>
+</body>
+</html>
